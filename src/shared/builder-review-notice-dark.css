@@ -1,0 +1,281 @@
+/*
+ * Dark drawer palette for builder review UI — Figma inverse semantics
+ * (2026-05_jumplinks_v01). Applied via flow-ew-classic--builder-dark on the
+ * review root in Bricks, Elementor, Breakdance, Avada, and Beaver drawers.
+ */
+
+.flow-ew-classic--builder-dark {
+	--flow-ew-dark-text: #e6eef8;
+	--flow-ew-dark-muted: #9faac0;
+	--flow-ew-dark-border: #4a556a;
+	--flow-ew-dark-card-bg: #262c36;
+	--flow-ew-dark-card-text: #e6eef8;
+	--flow-ew-dark-card-radius: 4px;
+	color: var(--flow-ew-dark-text);
+}
+
+.flow-ew-classic--bricks.flow-ew-classic--builder-dark {
+	--flow-ew-dark-muted: var(--builder-color-description, #8a99a8);
+	--flow-ew-dark-text: var(--builder-color, #e2e6e9);
+	--flow-ew-dark-card-bg: #3d4752;
+	--flow-ew-dark-border: #4e5c6a;
+	--flow-ew-dark-card-text: var(--builder-color, #e2e6e9);
+}
+
+.flow-ew-classic--elementor.flow-ew-classic--builder-dark {
+	--flow-ew-dark-muted: var(--flow-ew-el-muted, #9da5ae);
+	--flow-ew-dark-text: var(--flow-ew-el-txt, #d5d8dc);
+	--flow-ew-dark-card-bg: var(--flow-ew-el-bg-elevated, #2b2c31);
+	--flow-ew-dark-border: var(--flow-ew-el-border, #333438);
+	--flow-ew-dark-card-text: var(--flow-ew-el-txt, #d5d8dc);
+	--flow-ew-dark-card-radius: 3px;
+}
+
+.flow-ew-classic--avada.flow-ew-classic--builder-dark {
+	--flow-ew-dark-muted: #9aa8b7;
+	--flow-ew-dark-text: #d5dde6;
+	--flow-ew-dark-card-bg: #3a424c;
+	--flow-ew-dark-border: #505a66;
+	--flow-ew-dark-card-text: #dbe4ed;
+	--flow-ew-dark-card-radius: 3px;
+}
+
+.flow-ew-classic--oxygen.flow-ew-classic--builder-dark {
+	--flow-ew-dark-muted: #a1a1a1;
+	--flow-ew-dark-text: #ffffff;
+	--flow-ew-dark-card-bg: #262626;
+	--flow-ew-dark-border: #333333;
+	--flow-ew-dark-card-text: #ffffff;
+	--flow-ew-dark-card-radius: 4px;
+}
+
+.flow-ew-classic--beaver.flow-ew-classic--builder-dark {
+	--flow-ew-dark-muted: var(--fl-builder-dim-color, hsl(210, 12%, 55%));
+	--flow-ew-dark-text: var(--fl-builder-panel-color, #e6eef8);
+	--flow-ew-dark-card-bg: var(--fl-builder-platter-bg-color, #181b20);
+	--flow-ew-dark-border: var(--fl-builder-outline-color, hsl(210, 11%, 25%));
+	--flow-ew-dark-card-text: var(--fl-builder-panel-color, #e6eef8);
+}
+
+.flow-ew-classic--divi.flow-ew-classic--builder-dark {
+	--flow-ew-dark-muted: #586892;
+	--flow-ew-dark-text: #f2f3f7;
+	--flow-ew-dark-card-bg: #354559;
+	--flow-ew-dark-border: #a2acc7;
+	--flow-ew-dark-card-text: #f2f3f7;
+	--flow-ew-dark-card-radius: 3px;
+}
+
+.flow-ew-classic--builder-dark .flow-ew-classic__label,
+.flow-ew-classic--builder-dark .flow-ew-classic__share-label,
+.flow-ew-classic--builder-dark .flow-ew-pro-multi-reviewer__label {
+	color: var(--flow-ew-dark-muted);
+	display: block;
+	font-size: 11px;
+	font-weight: 500;
+	letter-spacing: 0.03em;
+	margin: 0 0 6px;
+	opacity: 1;
+	text-transform: uppercase;
+}
+
+.flow-ew-classic--bricks.flow-ew-classic--builder-dark .flow-ew-classic__label,
+.flow-ew-classic--bricks.flow-ew-classic--builder-dark .flow-ew-classic__share-label,
+.flow-ew-classic--bricks.flow-ew-classic--builder-dark .flow-ew-pro-multi-reviewer__label {
+	font-weight: 600;
+	letter-spacing: 0.02em;
+}
+
+.flow-ew-classic--builder-dark .flow-ew-review-notice--in-review {
+	--flow-status-bg: #1e140c;
+	--flow-status-text: #fcf0ce;
+	--flow-status-border: #957500;
+	background: var(--flow-status-bg);
+	border-left: 3px solid var(--flow-status-border);
+	color: var(--flow-status-text);
+}
+
+.flow-ew-classic--builder-dark .flow-ew-review-notice--in-review .flow-ew-review-notice__title {
+	color: #fffcf3;
+}
+
+.flow-ew-classic--builder-dark .flow-ew-review-notice--in-review .flow-ew-review-notice__desc {
+	color: var(--flow-status-text);
+}
+
+.flow-ew-classic--builder-dark .flow-ew-review-notice--changes-requested {
+	--flow-status-bg: #1e1214;
+	--flow-status-text: #ffebea;
+	--flow-status-border: #c92222;
+	background: var(--flow-status-bg);
+	border-left: 3px solid var(--flow-status-border);
+	color: var(--flow-status-text);
+}
+
+.flow-ew-classic--builder-dark .flow-ew-review-notice--changes-requested .flow-ew-review-notice__title {
+	color: #fefbfb;
+}
+
+.flow-ew-classic--builder-dark .flow-ew-review-notice--changes-requested .flow-ew-review-notice__desc {
+	color: var(--flow-status-text);
+}
+
+.flow-ew-classic--builder-dark .flow-ew-review-notice__link {
+	color: #ffd54d;
+}
+
+.flow-ew-classic--builder-dark .flow-ew-review-notice__link:hover,
+.flow-ew-classic--builder-dark .flow-ew-review-notice__link:focus {
+	color: #fffcf3;
+}
+
+/* Pro multi-reviewer status pills (inverse palette) */
+.flow-ew-classic--builder-dark .flow-ew-pro-reviewer-row__status--pending {
+	--flow-status-bg: #10171a;
+	--flow-status-text: #cde3e7;
+	--flow-status-border: #5e777b;
+}
+
+.flow-ew-classic--builder-dark .flow-ew-pro-reviewer-row__status--in_review {
+	--flow-status-bg: #1e140c;
+	--flow-status-text: #fcf0ce;
+	--flow-status-border: #957500;
+}
+
+.flow-ew-classic--builder-dark .flow-ew-pro-reviewer-row__status--changes_requested {
+	--flow-status-bg: #1e1214;
+	--flow-status-text: #ffebea;
+	--flow-status-border: #c92222;
+}
+
+.flow-ew-classic--builder-dark .flow-ew-pro-reviewer-row__status--approved {
+	--flow-status-bg: #10190e;
+	--flow-status-text: #e7f5e4;
+	--flow-status-border: #458037;
+}
+
+.flow-ew-classic--builder-dark .flow-ew-pro-reviewer-row__status--open_review {
+	--flow-status-bg: #0a1822;
+	--flow-status-text: #dff4ff;
+	--flow-status-border: #1579a5;
+}
+
+/* Drawer header status badge */
+.flow-ew-builder-drawer__header .flow-ew-drawer-status[data-status='pending'] {
+	--flow-status-bg: #10171a;
+	--flow-status-text: #cde3e7;
+	--flow-status-border: #5e777b;
+	background-color: var(--flow-status-bg) !important;
+	border: 1px solid var(--flow-status-border);
+	color: var(--flow-status-text) !important;
+}
+
+.flow-ew-builder-drawer__header .flow-ew-drawer-status[data-status='in_review'] {
+	--flow-status-bg: #1e140c;
+	--flow-status-text: #fcf0ce;
+	--flow-status-border: #957500;
+	background-color: var(--flow-status-bg) !important;
+	border: 1px solid var(--flow-status-border);
+	color: var(--flow-status-text) !important;
+}
+
+.flow-ew-builder-drawer__header .flow-ew-drawer-status[data-status='changes_requested'] {
+	--flow-status-bg: #1e1214;
+	--flow-status-text: #ffebea;
+	--flow-status-border: #c92222;
+	background-color: var(--flow-status-bg) !important;
+	border: 1px solid var(--flow-status-border);
+	color: var(--flow-status-text) !important;
+}
+
+.flow-ew-builder-drawer__header .flow-ew-drawer-status[data-status='approved'] {
+	--flow-status-bg: #10190e;
+	--flow-status-text: #e7f5e4;
+	--flow-status-border: #458037;
+	background-color: var(--flow-status-bg) !important;
+	border: 1px solid var(--flow-status-border);
+	color: var(--flow-status-text) !important;
+}
+
+.flow-ew-builder-drawer__header .flow-ew-drawer-status[data-status='open_review'] {
+	--flow-status-bg: #0a1822;
+	--flow-status-text: #dff4ff;
+	--flow-status-border: #1579a5;
+	background-color: var(--flow-status-bg) !important;
+	border: 1px solid var(--flow-status-border);
+	color: var(--flow-status-text) !important;
+}
+
+/* Pro multi-reviewer list cards */
+.flow-ew-classic--builder-dark .flow-ew-pro-reviewers-list > .flow-ew-reviewer-card {
+	background-color: var(--flow-ew-dark-card-bg);
+	border: 1px solid var(--flow-ew-dark-border);
+	border-radius: var(--flow-ew-dark-card-radius);
+	color: var(--flow-ew-dark-card-text);
+}
+
+.flow-ew-classic--builder-dark .flow-ew-pro-reviewers-list .flow-ew-truncate {
+	color: var(--flow-ew-dark-card-text);
+}
+
+.flow-ew-classic--builder-dark .flow-ew-pro-reviewers-list .flow-ew-reviewer-card__remove {
+	align-items: center;
+	background: transparent;
+	border: 0;
+	color: var(--flow-ew-dark-muted);
+	display: inline-flex;
+	flex-shrink: 0;
+	font-size: inherit;
+	font-weight: 400;
+	height: 24px;
+	justify-content: center;
+	line-height: 1;
+	min-height: 24px;
+	min-width: 24px;
+	opacity: 1;
+	padding: 0;
+	width: 24px;
+}
+
+.flow-ew-classic--builder-dark .flow-ew-pro-reviewers-list .flow-ew-reviewer-card__remove svg {
+	display: block;
+	height: 14px;
+	width: 14px;
+}
+
+.flow-ew-classic--builder-dark .flow-ew-pro-reviewers-list .flow-ew-reviewer-card__remove:hover,
+.flow-ew-classic--builder-dark .flow-ew-pro-reviewers-list .flow-ew-reviewer-card__remove:focus-visible {
+	background: transparent;
+	box-shadow: none;
+	color: var(--flow-ew-dark-text);
+	opacity: 1;
+	outline: none;
+}
+
+.flow-ew-classic--bricks.flow-ew-classic--builder-dark .flow-ew-pro-multi-reviewer__add .flow-ew-reviewer-combobox__input {
+	background-color: var(--flow-ew-dark-card-bg);
+	border-color: var(--flow-ew-dark-border);
+}
+
+.flow-ew-classic--breakdance.flow-ew-classic--builder-dark .flow-ew-pro-multi-reviewer__add .flow-ew-reviewer-combobox__input {
+	background: transparent;
+	border-color: var(--flow-ew-dark-border);
+	height: var(--flow-ew-bd-field-height, 40px);
+	max-height: var(--flow-ew-bd-field-height, 40px);
+	min-height: var(--flow-ew-bd-field-height, 40px);
+}
+
+.flow-ew-classic--avada.flow-ew-classic--builder-dark .flow-ew-pro-multi-reviewer__add .flow-ew-reviewer-combobox__input {
+	background-color: var(--flow-ew-dark-card-bg);
+	border-color: var(--flow-ew-dark-border);
+	height: var(--flow-ew-avada-field-height, 40px);
+	max-height: var(--flow-ew-avada-field-height, 40px);
+	min-height: var(--flow-ew-avada-field-height, 40px);
+}
+
+.flow-ew-classic--beaver.flow-ew-classic--builder-dark .flow-ew-reviewer-combobox__input,
+.flow-ew-classic--beaver.flow-ew-classic--builder-dark .flow-ew-pro-multi-reviewer__add .flow-ew-reviewer-combobox__input {
+	background-color: var(--fl-builder-input-bg-color, var(--flow-ew-dark-card-bg));
+	border-color: var(--fl-builder-outline-color, var(--flow-ew-dark-border));
+	color: var(--fl-builder-input-color, var(--flow-ew-dark-text));
+}

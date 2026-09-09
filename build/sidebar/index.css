@@ -1,0 +1,574 @@
+/*!******************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/css-loader/dist/cjs.js??ruleSet[1].rules[4].use[1]!./node_modules/postcss-loader/dist/cjs.js??ruleSet[1].rules[4].use[2]!./src/shared/share-bar.css ***!
+  \******************************************************************************************************************************************************************************/
+/**
+ * Shared Current Review share bar — Figma Frame 38 (Select reviewer).
+ */
+.flow-ew-share-bar__row,
+.flow-ew-classic__share-row {
+	--flow-ew-share-row-height: 40px;
+	height: var(--flow-ew-share-row-height, 40px);
+	max-height: var(--flow-ew-share-row-height, 40px);
+	--flow-ew-share-action-width: 40px;
+	--flow-ew-share-action-padding-x: 8px;
+	--flow-ew-share-link-padding-x: 8px;
+	--flow-ew-share-link-padding-y: 4px;
+	--flow-ew-share-font-size: 13px;
+	--flow-ew-share-icon-size: 24px;
+	--flow-ew-wp-charcoal-3: #40464c;
+	--flow-ew-wp-charcoal-5: #979aa0;
+	--flow-ew-wp-nero: #1c2024;
+}
+/* Let copy + open buttons keep width; URL truncates with ellipsis. */
+.flow-ew-share-bar__link,
+.flow-ew-classic__share-link {
+	flex: 1 1 0;
+	min-width: 0;
+	max-width: 100%;
+	height: 100%;
+	display: flex;
+	align-items: center;
+	overflow: hidden;
+	text-decoration: none;
+}
+.flow-ew-share-bar__link-text,
+.flow-ew-classic__share-link-text {
+	display: block;
+	min-width: 0;
+	flex: 1 1 auto;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	text-decoration: underline;
+}
+.flow-ew-share-icon {
+	display: block;
+	flex-shrink: 0;
+	width: var(--flow-ew-share-icon-size, 24px);
+	height: var(--flow-ew-share-icon-size, 24px);
+}
+.flow-ew-share-bar__goto .components-icon.flow-ew-share-icon,
+.flow-ew-share-bar__goto .flow-ew-share-icon svg,
+.flow-ew-share-bar__copy .flow-ew-share-icon svg {
+	width: var(--flow-ew-share-icon-size, 24px);
+	height: var(--flow-ew-share-icon-size, 24px);
+}
+.flow-ew-share-bar__copy.components-button,
+.flow-ew-share-bar__goto,
+.flow-ew-classic__share-copy,
+.flow-ew-classic__share-goto {
+	height: 100%;
+	max-height: 100%;
+	padding: var(--flow-ew-share-action-padding-x, 8px) !important;
+	box-sizing: border-box;
+}
+.flow-ew-share-bar__copy.components-button,
+.flow-ew-classic__share-copy {
+	min-height: 0 !important;
+}
+.flow-ew-share-bar__goto,
+.flow-ew-classic__share-goto {
+	border-radius: 0;
+	color: #fff;
+}
+.flow-ew-share-bar__goto .flow-ew-share-icon,
+.flow-ew-share-bar__goto svg,
+.flow-ew-classic__share-goto .flow-ew-share-icon,
+.flow-ew-classic__share-goto svg {
+	color: #fff;
+}
+.flow-ew-share-bar__goto svg path,
+.flow-ew-classic__share-goto svg path {
+	fill: currentColor;
+}
+.flow-ew-share-bar__copy .flow-ew-share-icon--copy path,
+.flow-ew-classic__share-copy .flow-ew-share-icon--copy path {
+	fill: currentColor;
+}
+/* Copy-success checkmark is stroke-based; builder path fills distort it. */
+.flow-ew-share-icon--copied path,
+.flow-ew-classic__share-copy--done .flow-ew-share-icon path,
+.flow-ew-share-bar__copy--done .flow-ew-share-icon path {
+	fill: none !important;
+	stroke: currentColor;
+	stroke-width: 2;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+}
+/* Field section labels (Current Review, Reviewer, etc.) */
+.flow-ew-field-label,
+.flow-ew-share-bar__label,
+.flow-ew-classic__label,
+.flow-ew-classic__share-label {
+	color: rgb(30, 30, 30);
+	font-size: 11px;
+	font-weight: 400;
+	text-transform: uppercase;
+}
+
+/*!***************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/css-loader/dist/cjs.js??ruleSet[1].rules[4].use[1]!./node_modules/postcss-loader/dist/cjs.js??ruleSet[1].rules[4].use[2]!./src/sidebar/index.css ***!
+  \***************************************************************************************************************************************************************************/
+/**
+ * Flow Editorial Workflow — editor sidebar styles.
+ */
+
+/* Main Review panel — stays at the bottom of the sidebar panels list */
+
+.interface-complementary-area .components-panel {
+	display: flex;
+	flex-direction: column;
+}
+
+.interface-complementary-area .components-panel__body.flow-ew-review-panel {
+	order: 100;
+	/* Figma Flow Plugin — wp/* tokens (Frame 38). */
+	--flow-ew-wp-charcoal-2: #23282d;
+	--flow-ew-wp-charcoal-3: #40464c;
+	--flow-ew-wp-charcoal-4: #656a70;
+	--flow-ew-wp-charcoal-5: #979aa0;
+	--flow-ew-wp-light-grey-2: #f6f6f6;
+	--flow-ew-wp-nero: #1c2024;
+	--flow-ew-control-height: 40px;
+	--flow-ew-control-radius: 2px;
+	--flow-ew-remove-color: #c92122;
+	--flow-ew-remove-color-hover: #b32d2e;
+}
+
+/* ----------------------------------------------------------------
+ * Status badge (used in panel title and inline)
+ * ---------------------------------------------------------------- */
+
+.flow-ew-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	font-size: 12px;
+	font-weight: 600;
+	color: var(--flow-status-text, var(--flow-badge-color, #5e777b));
+	padding: 2px 8px;
+	border-radius: 999px;
+	background: var(--flow-status-bg, #e6f3f5);
+	border: 1px solid var(--flow-status-border, #cde3e7);
+}
+
+.flow-ew-badge__dot {
+	width: 6px;
+	height: 6px;
+	border-radius: 50%;
+	background: currentColor;
+	display: inline-block;
+	flex-shrink: 0;
+}
+
+/* Panel title badge — smaller variant */
+
+.flow-ew-panel-title {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	line-height: 1.4;
+}
+
+.flow-ew-panel-title__badge {
+	font-size: 10px;
+	font-weight: 500;
+	color: var(--flow-status-text, var(--flow-badge-color, #5e777b));
+	background: var(--flow-status-bg, #e6f3f5);
+	border: 1px solid var(--flow-status-border, #cde3e7);
+	padding: 2px 8px;
+	border-radius: 999px;
+	vertical-align: middle;
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+}
+
+/* ----------------------------------------------------------------
+ * Reviewer field
+ * ---------------------------------------------------------------- */
+
+.flow-ew-label-row {
+	margin-bottom: 8px;
+}
+
+.flow-ew-label-row .flow-ew-field-label {
+	margin: 0;
+}
+
+.flow-ew-review-panel .flow-ew-field-label {
+	color: var(--flow-ew-wp-charcoal-2, #23282d);
+	font-size: 11px;
+	font-weight: 500;
+	letter-spacing: 0.11px;
+	line-height: 15px;
+	text-transform: uppercase;
+}
+
+.flow-ew-link-btn {
+	font-size: 11px;
+	min-height: unset;
+	height: auto;
+	padding: 0;
+}
+
+/* Selected reviewer — same 40px footprint as the combobox (Frame 38). */
+
+.flow-ew-reviewer-card {
+	box-sizing: border-box;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	width: 100%;
+	min-height: var(--flow-ew-control-height, 40px);
+	height: var(--flow-ew-control-height, 40px);
+	padding: 8px;
+	border: 1px solid var(--flow-ew-wp-light-grey-2, #f6f6f6);
+	border-radius: var(--flow-ew-control-radius, 2px);
+	background: var(--flow-ew-wp-light-grey-2, #f6f6f6);
+}
+
+.flow-ew-reviewer-card__main {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	min-width: 0;
+	flex: 1;
+}
+
+.flow-ew-reviewer-card .flow-ew-avatar {
+	border-radius: 50%;
+	flex-shrink: 0;
+	width: 24px;
+	height: 24px;
+}
+
+.flow-ew-reviewer-card .flow-ew-truncate,
+.flow-ew-reviewer-card .components-text {
+	color: var(--flow-ew-wp-charcoal-4, #656a70);
+	font-size: 13px;
+	font-weight: 500;
+	line-height: 20px;
+	letter-spacing: -0.195px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.flow-ew-reviewer-card__remove.components-button {
+	flex-shrink: 0;
+	width: 24px;
+	height: 24px;
+	min-width: 24px;
+	min-height: 24px;
+	margin-left: 0;
+	padding: 0;
+	color: var(--flow-ew-remove-color, #c92122);
+}
+
+.flow-ew-reviewer-card__remove.components-button svg {
+	fill: currentColor;
+}
+
+.flow-ew-reviewer-card__remove.components-button:hover,
+.flow-ew-reviewer-card__remove.components-button:focus {
+	color: var(--flow-ew-remove-color-hover, #b32d2e);
+	background: transparent;
+	box-shadow: none;
+}
+
+/* Pro multi-reviewer rows reuse `.flow-ew-reviewer-card` in `.flow-ew-pro-reviewers-list`. */
+
+.flow-ew-review-panel .flow-ew-pro-reviewers-list > .flow-ew-pro-reviewer-row {
+	margin-bottom: 0;
+}
+
+.flow-ew-review-panel .flow-ew-pro-reviewers-list .flow-ew-pro-reviewer-row__status {
+	flex-shrink: 0;
+}
+
+.flow-ew-truncate {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+/* Match Tags/Categories FormTokenField sizing (__next40pxDefaultSize). */
+
+.flow-ew-reviewer-combobox {
+	position: relative;
+	width: 100%;
+}
+
+.flow-ew-reviewer-combobox--pro {
+	margin-top: 8px;
+}
+
+.flow-ew-reviewer-combobox .components-combobox-control,
+.flow-ew-reviewer-combobox .components-combobox-control__suggestions-container {
+	width: 100%;
+}
+
+.flow-ew-reviewer-combobox .components-combobox-control__suggestions-container {
+	min-height: var(--flow-ew-control-height, 40px);
+	align-items: center;
+	border-radius: var(--flow-ew-control-radius, 2px);
+}
+
+.flow-ew-reviewer-combobox .components-combobox-control__input {
+	min-height: 24px;
+}
+
+.flow-ew-reviewer-invite-suggestion.components-button {
+	display: flex;
+	justify-content: flex-start;
+	margin-top: 6px;
+	width: 100%;
+}
+
+/* External Email is always the first suggestion — keep it bold + separated. */
+
+.flow-ew-reviewer-combobox .components-form-token-field__suggestions-list > li:first-child,
+.flow-ew-reviewer-combobox .components-combobox-control__suggestions-container [role="option"]:first-child,
+.flow-ew-reviewer-combobox .components-form-token-field__suggestion:first-child {
+	font-weight: 700;
+	border-bottom: 1px solid #dcdcde;
+	margin-bottom: 4px;
+	padding-bottom: 8px;
+}
+
+.flow-ew-spinner-overlay {
+	position: absolute;
+	right: 32px;
+	top: 50%;
+	transform: translateY(-50%);
+}
+
+.flow-ew-reviewer-email-error {
+	margin: 6px 0 0;
+	font-size: 12px;
+	line-height: 1.4;
+	color: #b32d2e;
+}
+
+/* ----------------------------------------------------------------
+ * Action buttons
+ * ---------------------------------------------------------------- */
+
+.flow-ew-actions {
+	width: 100%;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.flow-ew-actions__btn {
+	justify-content: center;
+	width: 100%;
+}
+
+.flow-ew-actions__btn--approve {
+	background: #43a047;
+	border-color: #43a047;
+}
+
+/* ----------------------------------------------------------------
+ * Revision share bar
+ * ---------------------------------------------------------------- */
+
+.flow-ew-share-bar {
+	margin-top: 0;
+}
+
+.flow-ew-review-panel .flow-ew-share-bar__label {
+	margin: 0 0 8px;
+}
+
+.flow-ew-share-bar__row {
+	display: flex;
+	align-items: stretch;
+	border: 1px solid var(--flow-ew-wp-charcoal-5, #979aa0);
+	border-radius: var(--flow-ew-control-radius, 2px);
+	overflow: hidden;
+	background: #fff;
+	height: var(--flow-ew-share-row-height, 40px);
+	min-height: var(--flow-ew-share-row-height, 40px);
+	max-height: var(--flow-ew-share-row-height, 40px);
+}
+
+.flow-ew-share-bar__link {
+	flex: 1 1 0;
+	min-width: 0;
+	max-width: 100%;
+	display: flex;
+	align-items: center;
+	height: 100%;
+	padding: 0 var(--flow-ew-share-link-padding-x, 8px);
+	box-sizing: border-box;
+	border-right: 1px solid var(--flow-ew-wp-charcoal-5, #979aa0);
+	color: var(--flow-ew-wp-charcoal-3, #40464c);
+	text-decoration: none;
+	overflow: hidden;
+}
+
+.flow-ew-share-bar__link-text {
+	display: block;
+	min-width: 0;
+	flex: 1 1 auto;
+	font-size: var(--flow-ew-share-font-size, 13px);
+	font-weight: 400;
+	line-height: 20px;
+	letter-spacing: -0.195px;
+	color: inherit;
+	text-decoration: underline;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.flow-ew-share-bar__copy.components-button {
+	flex-shrink: 0;
+	align-self: stretch;
+	border: 0;
+	border-radius: 0;
+	background: transparent;
+	width: var(--flow-ew-share-action-width, 40px);
+	min-width: var(--flow-ew-share-action-width, 40px);
+	height: 100% !important;
+	min-height: 0 !important;
+	max-height: 100%;
+	padding: var(--flow-ew-share-action-padding-x, 8px) !important;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: var(--flow-ew-wp-charcoal-3, #40464c);
+}
+
+.flow-ew-share-bar__copy.components-button:hover,
+.flow-ew-share-bar__copy.components-button:focus {
+	background: transparent;
+	color: var(--flow-ew-wp-charcoal-3, #40464c);
+	box-shadow: none;
+}
+
+.flow-ew-share-bar__copy--done {
+	color: #46b450;
+}
+
+.flow-ew-share-bar__goto {
+	flex-shrink: 0;
+	align-self: stretch;
+	align-items: center;
+	background: var(--flow-ew-wp-nero, #1c2024);
+	border-radius: 0;
+	color: #fff;
+	display: flex;
+	height: 100%;
+	min-height: 0;
+	max-height: 100%;
+	justify-content: center;
+	min-width: var(--flow-ew-share-action-width, 40px);
+	padding: var(--flow-ew-share-action-padding-x, 8px);
+	text-decoration: none;
+	width: var(--flow-ew-share-action-width, 40px);
+	box-sizing: border-box;
+}
+
+.flow-ew-share-bar__goto:hover,
+.flow-ew-share-bar__goto:focus {
+	background: var(--flow-ew-wp-nero, #1c2024);
+	color: #fff;
+}
+
+.components-checkbox-control__help {
+	margin-inline-start: 0;
+}
+
+/* ----------------------------------------------------------------
+ * Review mode notices (mandatory / no reviewers)
+ * ---------------------------------------------------------------- */
+
+.flow-ew-review-notice[hidden] {
+	display: none;
+}
+
+.flow-ew-review-notice {
+	position: relative;
+	width: 100%;
+	background: var(--flow-status-bg, #fcf0ce);
+	border: 0;
+	border-left: 3px solid var(--flow-status-border, #f2dda4);
+	border-radius: 0;
+	color: var(--flow-status-text, #957500);
+	font-size: 13px;
+	line-height: 1.4;
+	padding: 8px 28px 8px 12px;
+}
+
+.flow-ew-review-notice__dismiss {
+	position: absolute;
+	top: 2px;
+	right: 2px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 24px;
+	height: 24px;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	border-radius: 2px;
+	background: transparent;
+	color: inherit;
+	cursor: pointer;
+	opacity: 0.7;
+	line-height: 1;
+	font-size: 16px;
+}
+
+.flow-ew-review-notice__dismiss:hover,
+.flow-ew-review-notice__dismiss:focus {
+	opacity: 1;
+	background: rgba(0, 0, 0, 0.06);
+}
+
+.flow-ew-review-notice__dismiss .dashicon {
+	width: 16px;
+	height: 16px;
+	font-size: 16px;
+}
+
+.flow-ew-review-notice--in-review {
+	--flow-status-bg: #fcf0ce;
+	--flow-status-text: #957500;
+	--flow-status-border: #f2dda4;
+}
+
+.flow-ew-review-notice--changes-requested {
+	--flow-status-bg: #ffebea;
+	--flow-status-text: #c92122;
+	--flow-status-border: #ffd1d0;
+}
+
+.flow-ew-review-notice__title {
+	font-weight: 600;
+	margin: 0 0 2px;
+}
+
+.flow-ew-review-notice__desc {
+	font-weight: 400;
+	margin: 0;
+}
+
+.flow-ew-review-notice__link {
+	color: var(--wp-admin-theme-color, #2271b1);
+	text-decoration: underline;
+}
+
+.flow-ew-review-notice__link:hover,
+.flow-ew-review-notice__link:focus {
+	color: var(--wp-admin-theme-color-darker-10, #135e96);
+}
+
+
+/*# sourceMappingURL=index.css.map*/

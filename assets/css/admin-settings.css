@@ -1,0 +1,116 @@
+.flow-ew-setup-wrap .flow-ew-setup-lead {
+	font-size: 15px;
+	max-width: 720px;
+	margin: 0 0 8px;
+}
+
+.flow-ew-setup-card {
+	max-width: 720px;
+	margin-top: 16px;
+	padding: 24px 28px;
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	border-radius: 2px;
+	box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+}
+
+.flow-ew-setup-step-title {
+	margin: 28px 0 0;
+	font-size: 1.1em;
+}
+
+.flow-ew-setup-step-title:first-of-type {
+	margin-top: 0;
+}
+
+.flow-ew-setup-step-desc {
+	margin: 6px 0 12px;
+	color: #646970;
+	font-size: 13px;
+	max-width: 640px;
+}
+
+.flow-ew-setup-actions {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 12px;
+	margin-top: 28px;
+	padding-top: 20px;
+	border-top: 1px solid #dcdcde;
+}
+
+.flow-ew-setup-actions .button-large {
+	min-height: 40px;
+	line-height: 38px;
+}
+
+.flow-ew-reviewer-roles-divider {
+	border-top: 1px solid #dcdcde;
+	display: block;
+	margin: 10px 0 12px;
+	width: 100%;
+}
+
+.flow-ew-reviewer-roles-field {
+	border: 0;
+	margin: 0;
+	min-width: 0;
+	padding: 0;
+}
+
+.flow-ew-reviewer-roles-intro {
+	color: #646970;
+	font-size: 13px;
+	margin: 0 0 10px;
+}
+
+.flow-ew-reviewer-roles-select-all {
+	display: inline-block;
+	font-size: 12px;
+	margin-bottom: 10px;
+	text-decoration: none;
+}
+
+.flow-ew-reviewer-roles-select-all:hover {
+	text-decoration: underline;
+}
+
+.flow-ew-reviewer-role-item {
+	align-items: flex-start;
+	cursor: pointer;
+	display: flex;
+	gap: 8px;
+	margin-bottom: 8px;
+	width: 100%;
+}
+
+.flow-ew-reviewer-role-item input[type='checkbox'] {
+	flex-shrink: 0;
+	margin: 3px 0 0;
+}
+
+.flow-ew-reviewer-role-item input[type='checkbox']:focus {
+	box-shadow: none;
+	outline: none;
+}
+
+.flow-ew-reviewer-role-content {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	min-width: 0;
+}
+
+.flow-ew-reviewer-role-name {
+	display: block;
+	line-height: 1.4;
+}
+
+.flow-ew-reviewer-role-desc {
+	color: #8c8f94;
+	display: block;
+	font-size: 13px;
+	line-height: 1.5;
+	margin: 0;
+}

@@ -1,0 +1,67 @@
+.column-flow_ew_review {
+	width: 11em;
+}
+
+/* Review status pills — palette matches src/shared/status-themes.js */
+.flow-ew-review-status {
+	align-items: center;
+	background: #e6f3f5;
+	border: 1px solid #cde3e7;
+	border-radius: 999px;
+	color: #5e777b;
+	display: inline-flex;
+	font-size: 11px;
+	font-weight: 600;
+	gap: 5px;
+	letter-spacing: 0.02em;
+	line-height: 1.2;
+	padding: 2px 8px;
+	white-space: nowrap;
+}
+
+.flow-ew-status-pill__dot {
+	background: currentColor;
+	border-radius: 50%;
+	flex-shrink: 0;
+	height: 6px;
+	width: 6px;
+}
+
+.flow-ew-review-status--open-review {
+	background: #dff4ff;
+	border-color: #b6e6ff;
+	color: #1579a5;
+}
+
+.flow-ew-review-status--approved {
+	background: #e7f5e4;
+	border-color: #cae8c4;
+	color: #458037;
+}
+
+.flow-ew-review-status--in-review {
+	background: #fcf0ce;
+	border-color: #f2dda4;
+	color: #957500;
+}
+
+.flow-ew-review-status--changes-requested {
+	background: #ffebea;
+	border-color: #ffd1d0;
+	color: #c92122;
+}
+
+.flow-ew-review-status--pending {
+	background: #e6f3f5;
+	border-color: #cde3e7;
+	color: #5e777b;
+}
+
+.flow-ew-review-status--none {
+	background: transparent;
+	border: 0;
+	color: #a7aaad;
+	font-weight: 400;
+	letter-spacing: 0;
+	padding: 0;
+}

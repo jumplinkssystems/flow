@@ -1,0 +1,558 @@
+/*
+ * Flow Review — Top Bar styles.
+ * Injected into Shadow root #1. Fully isolated from theme CSS.
+ * wp-components styles are cloned in from document.head at mount time.
+ */
+
+@use './tokens' as *;
+
+*,
+*::before,
+*::after { box-sizing: border-box; }
+
+// Replicate the wp-admin base styles that Shadow DOM cuts off from inheritance.
+:host {
+	display: block;
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	height: $bar-height;
+	z-index: $z-bar;
+	font-family: $font-stack;
+	font-size: $font-size-base;
+	line-height: $line-height-base;
+	color: $color-text;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+}
+
+// Browsers don't inherit font into form elements — force it.
+button,
+input,
+select,
+textarea {
+	font-family: inherit;
+	font-size: inherit;
+	line-height: inherit;
+	color: inherit;
+}
+
+.components-button {
+	font-weight: 600;
+}
+
+// ---------------------------------------------------------------------------
+// Bar shell
+// ---------------------------------------------------------------------------
+
+.flow-bar {
+	height: $bar-height;
+	background: $color-bg-white;
+	border-bottom: 1px solid $color-border;
+	display: flex;
+	align-items: center;
+	padding: 0 16px 0 0;
+	position: relative;
+
+	&__left {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		min-width: 0;
+		flex: 1;
+	}
+
+	&__right {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		flex-shrink: 0;
+	}
+
+	&__wp-logo {
+		position: relative;
+		flex-shrink: 0;
+		width: 64px;
+		height: $bar-height;
+		overflow: hidden;
+	}
+
+	&__wp-logo-link {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 100%;
+		height: 100%;
+		color: #fff;
+		text-decoration: none;
+
+		&:hover,
+		&:active { color: #fff; }
+
+		&:focus {
+			box-shadow: none;
+			outline: none;
+		}
+	}
+
+	&__wp-logo-icon {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 100%;
+		height: 100%;
+		clip-path: inset(0% round 0px);
+		transition: clip-path 0.2s ease;
+
+		svg {
+			fill: currentColor;
+			display: block;
+			background: #1e1e1e;
+			padding: 12px;
+			width: 100%;
+			height: 100%;
+		}
+	}
+
+	&__wp-logo-back {
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 64px;
+		height: $bar-height;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background-color: #ccc;
+		color: $color-text;
+		pointer-events: none;
+		opacity: 0;
+		transform: scale(0.2);
+		clip-path: inset(0% round 0px);
+		transition: opacity 0.2s ease, transform 0.2s ease, clip-path 0.2s ease;
+
+		svg { fill: currentColor; }
+	}
+
+	&__wp-logo:hover &__wp-logo-icon,
+	&__wp-logo:focus-within &__wp-logo-icon {
+		clip-path: inset(22% round 2px);
+	}
+
+	&__wp-logo:hover &__wp-logo-back,
+	&__wp-logo:focus-within &__wp-logo-back {
+		opacity: 1;
+		transform: scale(1);
+		clip-path: inset(22% round 2px);
+	}
+
+	&__sidebar-toggle.components-button,
+	&__comments-toggle.components-button,
+	&__edit-post.components-button {
+		height: 32px;
+		min-width: 32px;
+		padding: 4px;
+		flex-shrink: 0;
+		border-radius: $radius-sm;
+		color: $color-text;
+
+		svg {
+			fill: currentColor;
+		}
+
+		&:focus:not(:disabled) {
+			box-shadow: 0 0 0 var(--wp-admin-border-width-focus, 2px) $color-accent,
+				inset 0 0 0 1px #fff;
+			outline: 1px solid transparent;
+		}
+	}
+
+	&__edit-post.components-button {
+		text-decoration: none;
+		border: 1px solid $color-text;
+		box-shadow: none;
+
+		&:hover:not(:disabled),
+		&:active:not(:disabled),
+		&:visited {
+			color: $color-text;
+		}
+
+		&:hover:not(:disabled) {
+			background: $color-bg-subtle;
+		}
+	}
+
+	&__sidebar-toggle.components-button.is-pressed,
+	&__comments-toggle.components-button.is-pressed {
+		background: #1e1e1e;
+		color: #fff;
+	}
+
+	// Status badge — same compact pill scale as freshness / debug.
+	&__badge {
+		display: inline-flex;
+		align-items: center;
+		flex-shrink: 0;
+		gap: 4px;
+		font-size: 11px;
+		font-weight: 500;
+		line-height: 1.4;
+		padding: 2px 8px;
+		border-radius: $radius-badge;
+		white-space: nowrap;
+		// Default = pending
+		color: $badge-pending-text;
+		background: $badge-pending-bg;
+		border: 1px solid $badge-pending-border;
+
+		&__dot {
+			width: 5px;
+			height: 5px;
+			border-radius: 50%;
+			background: currentColor;
+			flex-shrink: 0;
+		}
+
+		&--in_review         { color: $badge-review-text;   background: $badge-review-bg;   border-color: $badge-review-border; }
+		&--approved          { color: $badge-approved-text; background: $badge-approved-bg; border-color: $badge-approved-border; }
+		&--changes_requested { color: $badge-changes-text;  background: $badge-changes-bg;  border-color: $badge-changes-border; }
+		&--open_review       { color: $badge-open-text;     background: $badge-open-bg;     border-color: $badge-open-border; }
+	}
+
+	&__title {
+		display: flex;
+		align-items: baseline;
+		gap: 0.35em;
+		min-width: 0;
+		font-size: 14px;
+		line-height: 1.35;
+		white-space: nowrap;
+		overflow: hidden;
+
+		&-prefix {
+			flex-shrink: 0;
+			color: $color-muted;
+			font-weight: 400;
+		}
+
+		&-name,
+		&-type {
+			font-weight: 600;
+			color: $color-text;
+		}
+
+		&-name {
+			flex: 0 1 auto;
+			min-width: 0;
+			// Cap so the title can't run under the absolutely-positioned
+			// `__meta` notice (centered at 50%). Tightened from
+			// min(40ch, 30vw) — even editorial titles like "Designing
+			// Effective Typography for Web" comfortably ellipsize past
+			// 22ch / 18vw, and the bar then stays balanced with action
+			// buttons on the right.
+			max-width: min(22ch, 18vw);
+			overflow: hidden;
+			text-overflow: ellipsis;
+		}
+
+		&-type {
+			flex-shrink: 0;
+		}
+
+		&-suffix {
+			flex-shrink: 0;
+			display: inline-flex;
+			align-items: baseline;
+			gap: 0.35em;
+		}
+
+		&-dot {
+			color: $color-muted;
+			font-weight: 400;
+		}
+
+		&--simple {
+			display: block;
+			font-weight: 500;
+			color: $color-text;
+			text-overflow: ellipsis;
+		}
+	}
+
+	// Revision status + snapshot label — centred absolutely
+	&__meta {
+		position: absolute;
+		left: 50%;
+		transform: translateX(-50%);
+		max-width: 42%;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 3px;
+		text-align: center;
+		pointer-events: none;
+	}
+
+	&__freshness-row {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		flex-wrap: nowrap;
+		gap: 6px;
+		max-width: 100%;
+	}
+
+	&__freshness {
+		display: inline-flex;
+		align-items: center;
+		gap: 4px;
+		font-size: 11px;
+		font-weight: 500;
+		padding: 2px 8px;
+		border-radius: $radius-badge;
+		white-space: nowrap;
+
+		&--latest {
+			color: $badge-approved-text;
+			background: $badge-approved-bg;
+		}
+
+		&--outdated {
+			color: $badge-review-text;
+			background: $badge-review-bg;
+		}
+
+		&--debug {
+			color: $badge-review-text;
+			background: $badge-review-bg;
+		}
+
+		&-icon {
+			display: inline-flex;
+			flex-shrink: 0;
+			width: 14px;
+			height: 14px;
+
+			svg {
+				display: block;
+				width: 14px;
+				height: 14px;
+			}
+		}
+
+		&-link {
+			color: var(--wp-admin-theme-color, #2271b1);
+			text-decoration: underline;
+			cursor: pointer;
+			pointer-events: auto;
+
+			&:hover,
+			&:focus {
+				color: var(--wp-admin-theme-color-darker-10, #135e96);
+			}
+		}
+
+		&-snapshot {
+			font-size: 10px;
+			color: $color-muted;
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			max-width: 100%;
+		}
+	}
+
+	// Action buttons group
+	&__actions {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		flex-shrink: 0;
+	}
+
+	&__btn--request-changes.components-button {
+		background: transparent !important;
+		border: 1px solid #1e1e1e !important;
+		color: #1e1e1e !important;
+		box-shadow: none !important;
+
+		&:hover:not(:disabled),
+		&:active:not(:disabled) {
+			background: #f6f7f7 !important;
+			border-color: #1e1e1e !important;
+			color: #1e1e1e !important;
+		}
+
+		&:focus:not(:disabled) {
+			box-shadow: 0 0 0 var(--wp-admin-border-width-focus, 2px) #fff,
+				0 0 0 calc(var(--wp-admin-border-width-focus, 2px) + 1px) #1e1e1e !important;
+			outline: 1px solid transparent;
+		}
+
+		&:disabled,
+		&[aria-disabled='true'] {
+			background: #f6f7f7 !important;
+			border-color: #ddd !important;
+			color: #8c8f94 !important;
+			opacity: 1 !important;
+		}
+	}
+
+	&__btn--revoke.components-button {
+		background:   #d63638 !important;
+		border-color: #d63638 !important;
+		color:        #fff !important;
+		box-shadow: none !important;
+
+		&:hover:not(:disabled),
+		&:active:not(:disabled) {
+			background:   #b32d2e !important;
+			border-color: #b32d2e !important;
+			color:        #fff !important;
+		}
+
+		&:focus:not(:disabled) {
+			box-shadow: 0 0 0 var(--wp-admin-border-width-focus, 2px) #fff,
+				0 0 0 calc(var(--wp-admin-border-width-focus, 2px) + 1px) #d63638 !important;
+			outline: 1px solid transparent;
+		}
+
+		&:disabled,
+		&[aria-disabled='true'] {
+			background: #f6f7f7 !important;
+			border-color: #ddd !important;
+			color: #8c8f94 !important;
+			opacity: 1 !important;
+			cursor: not-allowed;
+		}
+	}
+}
+
+// ---------------------------------------------------------------------------
+// "View" dropdown — mirrors Gutenberg's preview dropdown button
+// ---------------------------------------------------------------------------
+
+.flow-bar__view-dropdown {
+	margin: 0;
+}
+
+// Mobile: the bar is already cramped with the title, status badge and
+// action buttons — drop the View dropdown entirely (its only Free-side
+// item, "Preview in new tab", is rarely needed on a phone anyway).
+// We target our own wrapper class — `flow-bar__view-dropdown` is on the
+// inner DropdownMenu, which doesn't always land on the outermost node.
+@media (max-width: $mobile-bp) {
+	.flow-bar__view-dropdown-wrap {
+		display: none !important;
+	}
+}
+
+// Wide-laptop (up to $wide-bp): the centred freshness/snapshot meta
+// risks overlapping a long title, so pop it out of absolute centre and
+// let it sit as a flex child. With `__left: flex: 1` the meta + right
+// area naturally pin themselves to the right edge — no auto-margins
+// needed. The snapshot label ("Review submitted on … by …") gets
+// hidden because it's the verbose part; the freshness pill ("You are
+// viewing the latest content" / "Content may be outdated") stays so
+// the viewer still sees whether they're on the latest revision.
+@media (max-width: $wide-bp) {
+	.flow-bar__meta {
+		position: static;
+		transform: none;
+		max-width: none;
+		flex-direction: row;
+		align-items: center;
+		gap: 6px;
+		text-align: right;
+		pointer-events: auto;
+	}
+	.flow-bar__freshness-snapshot {
+		display: none;
+	}
+}
+
+// Tablet / narrow-laptop (up to $tablet-bp): trim the bar further.
+// Hidden: "Reviewing" prefix + "· Post type" suffix on the title row,
+// the "Edit content" pencil icon. The status badge shrinks. Kept: post
+// title, sidebar toggle, action buttons, View dropdown, freshness pill
+// (already floated right by the $wide-bp block above).
+// Mobile's own rule below hides everything not strictly required for
+// the action buttons, so this is effectively scoped to
+// $mobile-bp + 1 … $tablet-bp.
+@media (max-width: $tablet-bp) {
+	.flow-bar__title-prefix,
+	.flow-bar__title-suffix {
+		display: none;
+	}
+	.flow-bar__edit-post.components-button {
+		display: none !important;
+	}
+}
+
+.flow-bar__snackbar-list.components-snackbar-list {
+	position: fixed;
+	left: 16px;
+	// Lift above the upsell bar when it's mounted (see sidebar.scss for the
+	// `--flow-ew-upsell-bar-height` contract); falls back to the original
+	// 16px when the bar isn't present.
+	bottom: calc(16px + var(--flow-ew-upsell-bar-height, 0px));
+	width: auto;
+	max-width: min(420px, calc(100vw - 32px));
+	pointer-events: none;
+	z-index: 1000000;
+}
+
+.flow-bar__snackbar-list .components-snackbar-list__notice-container {
+	padding-top: 0;
+	pointer-events: auto;
+}
+
+.flow-bar__snackbar.components-snackbar {
+	cursor: default;
+	min-height: 32px;
+	max-width: 360px;
+}
+
+// ---------------------------------------------------------------------------
+// Mobile: keep only what's needed to drive the review — sidebar toggle and
+// the approve / request-changes buttons. Everything else (centred meta
+// notice, title, edit-post icon, status badge) is suppressed so the action
+// buttons fit on a phone-width bar.
+// ---------------------------------------------------------------------------
+
+@media (max-width: $mobile-bp) {
+	.flow-bar {
+		padding: 0 8px 0 0;
+		gap: 4px;
+
+		&__wp-logo,
+		&__wp-logo-back {
+			width: 48px;
+		}
+
+		&__edit-post.components-button,
+		&__title,
+		&__meta,
+		&__badge {
+			display: none !important;
+		}
+
+		&__right {
+			gap: 6px;
+		}
+
+		&__actions {
+			gap: 6px;
+		}
+
+		// Tighten action button padding so "Request Changes" + "Approve" both
+		// fit on a 360–390px viewport without wrapping.
+		&__btn--request-changes.components-button,
+		&__btn--revoke.components-button {
+			padding-left: 10px !important;
+			padding-right: 10px !important;
+		}
+	}
+}

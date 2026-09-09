@@ -1,0 +1,92 @@
+// =============================================================================
+// Flow Editorial Workflow — Design tokens
+// Shared by bar.scss and sidebar.scss (both injected into Shadow DOM roots).
+// =============================================================================
+
+// ----- Layout ----------------------------------------------------------------
+$bar-height:    64px;
+$sidebar-width: 360px;
+// Activity sidebar (Pro) is the slim Gutenberg-style timeline strip; kept
+// distinct from the comments sidebar so the two can be tuned independently.
+$activity-sidebar-width: 260px;
+// Matches the JS-side mobile breakpoint in ReviewBar.js (iframe scaling and
+// default sidebar state). Aligned with wp-admin's 782px breakpoint.
+$mobile-bp:     782px;
+// Upper edge for the "narrow" bar layout — between $mobile-bp and this
+// width the bar trims itself: drops the "Reviewing … · Post type"
+// prefix/suffix, the snapshot meta label, the edit-content icon, and
+// shrinks the status badge. Set at 1400px so the trim kicks in well
+// before small-laptop widths get cramped. The name "tablet-bp" is
+// retained for continuity with earlier rules — the constant doubles as
+// both "tablet" and "narrow laptop" in practice.
+$tablet-bp:     1400px;
+
+// One step wider — at this width the centred freshness indicator gets
+// repositioned to the right side of the bar so it can't overlap a
+// long title in the centre. Other trims still wait until $tablet-bp.
+$wide-bp:       1600px;
+
+// ----- Z-index ---------------------------------------------------------------
+$z-bar:     999999;
+$z-sidebar: 999998;
+
+// ----- Typography ------------------------------------------------------------
+$font-stack:       -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                   Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+$font-size-base:   13px;
+$line-height-base: 1.4;
+
+// ----- Colours ---------------------------------------------------------------
+$color-text:         #1e1e1e;
+$color-muted:        #757575;
+$color-placeholder:  #949494;
+$color-bg-white:     #fff;
+$color-bg-subtle:    #f6f7f7;
+$color-bg-header:    #f9f9f9;
+$color-border:       #e0e0e0;
+$color-border-input: #949494;
+// CSS custom property — resolved at paint time; inherits across shadow boundary.
+$color-accent: var(--wp-admin-theme-color, #007cba);
+
+// ----- Status badge colours --------------------------------------------------
+// Keep in sync with src/shared/status-themes.js and assets/css/status-themes.css.
+$badge-open-text:   #1579a5;
+$badge-open-bg:     #dff4ff;
+$badge-open-border: #b6e6ff;
+
+$badge-approved-text:   #458037;
+$badge-approved-bg:     #e7f5e4;
+$badge-approved-border: #cae8c4;
+
+$badge-review-text:   #957500;
+$badge-review-bg:     #fcf0ce;
+$badge-review-border: #f2dda4;
+
+$badge-changes-text:   #c92122;
+$badge-changes-bg:     #ffebea;
+$badge-changes-border: #ffd1d0;
+
+$badge-pending-text:   #5e777b;
+$badge-pending-bg:     #e6f3f5;
+$badge-pending-border: #cde3e7;
+
+// ----- Notice / error colours ------------------------------------------------
+$notice-info-text:   #1579a5;
+$notice-info-bg:     #dff4ff;
+$notice-info-border: #b6e6ff;
+
+$notice-success-text: #1a6b28;
+$notice-success-bg:   #edfaee;
+$notice-error-text:   #8a2424;
+$notice-error-bg:     #fbeaea;
+
+$error-text:   #cc1818;
+$error-bg:     #fcf0f1;
+$error-border: #cc1818;
+
+// ----- Radii -----------------------------------------------------------------
+$radius-sm:    2px;
+$radius-badge: 10px;
+
+// ----- Transitions -----------------------------------------------------------
+$transition-fast: 0.1s;

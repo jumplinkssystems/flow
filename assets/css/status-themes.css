@@ -1,0 +1,78 @@
+/**
+ * Flow Editorial Workflow — unified review status colors.
+ * Keep in sync with src/shared/status-themes.js and src/review-page/_tokens.scss.
+ */
+
+/* ----- Modifier tokens (status slug → palette) ----------------------------- */
+
+.flow-ew-dashboard-page__status--open_review,
+.flow-ew-pro-reviewer-row__status--open_review {
+	--flow-status-bg: #dff4ff;
+	--flow-status-text: #1579a5;
+	--flow-status-border: #b6e6ff;
+}
+
+.flow-ew-dashboard-page__status--approved,
+.flow-ew-pro-reviewer-row__status--approved {
+	--flow-status-bg: #e7f5e4;
+	--flow-status-text: #458037;
+	--flow-status-border: #cae8c4;
+}
+
+.flow-ew-dashboard-page__status--in_review,
+.flow-ew-pro-reviewer-row__status--in_review {
+	--flow-status-bg: #fcf0ce;
+	--flow-status-text: #957500;
+	--flow-status-border: #f2dda4;
+}
+
+.flow-ew-dashboard-page__status--changes_requested,
+.flow-ew-pro-reviewer-row__status--changes_requested {
+	--flow-status-bg: #ffebea;
+	--flow-status-text: #c92122;
+	--flow-status-border: #ffd1d0;
+}
+
+.flow-ew-dashboard-page__status--pending,
+.flow-ew-pro-reviewer-row__status--pending {
+	--flow-status-bg: #e6f3f5;
+	--flow-status-text: #5e777b;
+	--flow-status-border: #cde3e7;
+}
+
+/* ----- Shared status pill layout ------------------------------------------- */
+
+.flow-ew-status-pill__dot,
+.flow-ew-badge__dot,
+.flow-ew-classic__badge-dot {
+	background: currentColor;
+	border-radius: 50%;
+	flex-shrink: 0;
+	height: 6px;
+	width: 6px;
+}
+
+.flow-ew-dashboard-page__status,
+.flow-ew-pro-reviewer-row__status {
+	align-items: center;
+	border-radius: 999px;
+	display: inline-flex;
+	gap: 5px;
+	padding: 2px 8px;
+}
+
+/* ----- Dashboard page row pills -------------------------------------------- */
+
+.flow-ew-dashboard-page__status {
+	background: var(--flow-status-bg, #e6f3f5);
+	border: 1px solid var(--flow-status-border, #cde3e7);
+	color: var(--flow-status-text, #5e777b);
+}
+
+/* ----- Pro multi-reviewer row pills ---------------------------------------- */
+
+.flow-ew-pro-reviewer-row__status {
+	background: var(--flow-status-bg, #e6f3f5);
+	border: 1px solid var(--flow-status-border, #cde3e7);
+	color: var(--flow-status-text, #5e777b);
+}

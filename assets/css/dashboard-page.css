@@ -1,0 +1,141 @@
+/* Flow Dashboard subpage. Layered on top of dashboard-widget.css so the
+   section / list / item visuals stay consistent with the home-screen
+   dashboard widget. Only adds full-page layout and per-row status pill. */
+
+.flow-ew-dashboard-page__section {
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	border-radius: 4px;
+	padding: 16px 18px 12px;
+	box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+	margin: 0 0 18px;
+}
+.flow-ew-dashboard-page__section:last-child {
+	margin-bottom: 0;
+}
+
+.flow-ew-dashboard-page__empty {
+	margin: 8px 0 0;
+	color: #6c7077;
+	font-style: italic;
+}
+
+.flow-ew-dashboard-page__section .flow-ew-dash-section__title {
+	font-size: 15px;
+	margin: 0 0 4px;
+	padding: 6px 0 6px 10px;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	border-left: 3px solid #c3c4c7;
+	color: #1d2327;
+	font-weight: 600;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+}
+
+/* Per-section title accents — status text colors (keep in sync with
+   assets/css/status-themes.css / Review::status_themes()). */
+.flow-ew-dash-section--assigned .flow-ew-dash-section__title {
+	border-left-color: #957500;
+}
+.flow-ew-dash-section--my-requests .flow-ew-dash-section__title {
+	border-left-color: #5e777b;
+}
+.flow-ew-dash-section--open-reviews .flow-ew-dash-section__title {
+	border-left-color: #1579a5;
+}
+
+.flow-ew-dashboard-page__section .flow-ew-dash-section__count {
+	background: rgba(0, 0, 0, 0.07);
+	color: #50575e;
+	padding: 1px 8px;
+	border-radius: 999px;
+	font-size: 11px;
+	font-weight: 600;
+}
+
+.flow-ew-dashboard-page__section-desc {
+	margin: 0 0 12px;
+	color: #6c7077;
+	font-size: 12px;
+}
+
+.flow-ew-dashboard-page__section .flow-ew-dash-list {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.flow-ew-dashboard-page__section .flow-ew-dash-item {
+	display: flex;
+	align-items: flex-start;
+	gap: 10px;
+	padding: 8px 0;
+	border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.flow-ew-dashboard-page__section .flow-ew-dash-item:first-child {
+	border-top: 0;
+}
+
+.flow-ew-dashboard-page__section .flow-ew-dash-item__main {
+	flex: 1 1 auto;
+	min-width: 0;
+}
+
+.flow-ew-dashboard-page__section .flow-ew-dash-item__title {
+	display: block;
+	font-weight: 600;
+	text-decoration: none;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+/* Edit link + meta share a single sub-line under the title — same
+   horizontal grouping as the WP post-list rows ("Edit | Quick Edit |
+   View · Post · 11 min ago"). Both are inline; a CSS separator dot
+   ("·") gets inserted before the meta only when the Edit link
+   precedes it, so rows without Edit just show the meta on its own. */
+.flow-ew-dashboard-page__section .flow-ew-dash-item__meta {
+	display: inline;
+	color: #6c7077;
+	font-size: 12px;
+}
+.flow-ew-dashboard-page__edit {
+	display: inline;
+	margin: 0;
+	font-size: 12px;
+	color: #2271b1;
+	text-decoration: none;
+}
+.flow-ew-dashboard-page__edit:hover,
+.flow-ew-dashboard-page__edit:focus {
+	color: #135e96;
+	text-decoration: underline;
+}
+/* Drop a separator between Edit and the meta on the same line. */
+.flow-ew-dashboard-page__edit + .flow-ew-dash-item__meta::before {
+	content: "·";
+	color: #6c7077;
+	margin: 0 6px;
+}
+
+
+/* Per-row status pill — palette in assets/css/status-themes.css */
+.flow-ew-dashboard-page__status {
+	flex: 0 0 auto;
+	font-size: 11px;
+	font-weight: 500;
+	line-height: 1;
+	white-space: nowrap;
+	align-self: center;
+}
+
+.flow-ew-dashboard-page__section .flow-ew-dash-empty {
+	margin: 4px 0 0;
+	color: #6c7077;
+	font-style: italic;
+	font-size: 13px;
+}

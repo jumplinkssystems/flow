@@ -1,0 +1,1101 @@
+/*!*****************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/css-loader/dist/cjs.js??ruleSet[1].rules[4].use[1]!./node_modules/postcss-loader/dist/cjs.js??ruleSet[1].rules[4].use[2]!./src/elementor/style.css ***!
+  \*****************************************************************************************************************************************************************************/
+/*
+ * Dark drawer palette for builder review UI — Figma inverse semantics
+ * (2026-05_jumplinks_v01). Applied via flow-ew-classic--builder-dark on the
+ * review root in Bricks, Elementor, Breakdance, Avada, and Beaver drawers.
+ */
+
+.flow-ew-classic--builder-dark {
+	--flow-ew-dark-text: #e6eef8;
+	--flow-ew-dark-muted: #9faac0;
+	--flow-ew-dark-border: #4a556a;
+	--flow-ew-dark-card-bg: #262c36;
+	--flow-ew-dark-card-text: #e6eef8;
+	--flow-ew-dark-card-radius: 4px;
+	color: var(--flow-ew-dark-text);
+}
+
+.flow-ew-classic--bricks.flow-ew-classic--builder-dark {
+	--flow-ew-dark-muted: var(--builder-color-description, #8a99a8);
+	--flow-ew-dark-text: var(--builder-color, #e2e6e9);
+	--flow-ew-dark-card-bg: #3d4752;
+	--flow-ew-dark-border: #4e5c6a;
+	--flow-ew-dark-card-text: var(--builder-color, #e2e6e9);
+}
+
+.flow-ew-classic--elementor.flow-ew-classic--builder-dark {
+	--flow-ew-dark-muted: var(--flow-ew-el-muted, #9da5ae);
+	--flow-ew-dark-text: var(--flow-ew-el-txt, #d5d8dc);
+	--flow-ew-dark-card-bg: var(--flow-ew-el-bg-elevated, #2b2c31);
+	--flow-ew-dark-border: var(--flow-ew-el-border, #333438);
+	--flow-ew-dark-card-text: var(--flow-ew-el-txt, #d5d8dc);
+	--flow-ew-dark-card-radius: 3px;
+}
+
+.flow-ew-classic--avada.flow-ew-classic--builder-dark {
+	--flow-ew-dark-muted: #9aa8b7;
+	--flow-ew-dark-text: #d5dde6;
+	--flow-ew-dark-card-bg: #3a424c;
+	--flow-ew-dark-border: #505a66;
+	--flow-ew-dark-card-text: #dbe4ed;
+	--flow-ew-dark-card-radius: 3px;
+}
+
+.flow-ew-classic--oxygen.flow-ew-classic--builder-dark {
+	--flow-ew-dark-muted: #a1a1a1;
+	--flow-ew-dark-text: #ffffff;
+	--flow-ew-dark-card-bg: #262626;
+	--flow-ew-dark-border: #333333;
+	--flow-ew-dark-card-text: #ffffff;
+	--flow-ew-dark-card-radius: 4px;
+}
+
+.flow-ew-classic--beaver.flow-ew-classic--builder-dark {
+	--flow-ew-dark-muted: var(--fl-builder-dim-color, hsl(210, 12%, 55%));
+	--flow-ew-dark-text: var(--fl-builder-panel-color, #e6eef8);
+	--flow-ew-dark-card-bg: var(--fl-builder-platter-bg-color, #181b20);
+	--flow-ew-dark-border: var(--fl-builder-outline-color, hsl(210, 11%, 25%));
+	--flow-ew-dark-card-text: var(--fl-builder-panel-color, #e6eef8);
+}
+
+.flow-ew-classic--divi.flow-ew-classic--builder-dark {
+	--flow-ew-dark-muted: #586892;
+	--flow-ew-dark-text: #f2f3f7;
+	--flow-ew-dark-card-bg: #354559;
+	--flow-ew-dark-border: #a2acc7;
+	--flow-ew-dark-card-text: #f2f3f7;
+	--flow-ew-dark-card-radius: 3px;
+}
+
+.flow-ew-classic--builder-dark .flow-ew-classic__label,
+.flow-ew-classic--builder-dark .flow-ew-classic__share-label,
+.flow-ew-classic--builder-dark .flow-ew-pro-multi-reviewer__label {
+	color: var(--flow-ew-dark-muted);
+	display: block;
+	font-size: 11px;
+	font-weight: 500;
+	letter-spacing: 0.03em;
+	margin: 0 0 6px;
+	opacity: 1;
+	text-transform: uppercase;
+}
+
+.flow-ew-classic--bricks.flow-ew-classic--builder-dark .flow-ew-classic__label,
+.flow-ew-classic--bricks.flow-ew-classic--builder-dark .flow-ew-classic__share-label,
+.flow-ew-classic--bricks.flow-ew-classic--builder-dark .flow-ew-pro-multi-reviewer__label {
+	font-weight: 600;
+	letter-spacing: 0.02em;
+}
+
+.flow-ew-classic--builder-dark .flow-ew-review-notice--in-review {
+	--flow-status-bg: #1e140c;
+	--flow-status-text: #fcf0ce;
+	--flow-status-border: #957500;
+	background: var(--flow-status-bg);
+	border-left: 3px solid var(--flow-status-border);
+	color: var(--flow-status-text);
+}
+
+.flow-ew-classic--builder-dark .flow-ew-review-notice--in-review .flow-ew-review-notice__title {
+	color: #fffcf3;
+}
+
+.flow-ew-classic--builder-dark .flow-ew-review-notice--in-review .flow-ew-review-notice__desc {
+	color: var(--flow-status-text);
+}
+
+.flow-ew-classic--builder-dark .flow-ew-review-notice--changes-requested {
+	--flow-status-bg: #1e1214;
+	--flow-status-text: #ffebea;
+	--flow-status-border: #c92222;
+	background: var(--flow-status-bg);
+	border-left: 3px solid var(--flow-status-border);
+	color: var(--flow-status-text);
+}
+
+.flow-ew-classic--builder-dark .flow-ew-review-notice--changes-requested .flow-ew-review-notice__title {
+	color: #fefbfb;
+}
+
+.flow-ew-classic--builder-dark .flow-ew-review-notice--changes-requested .flow-ew-review-notice__desc {
+	color: var(--flow-status-text);
+}
+
+.flow-ew-classic--builder-dark .flow-ew-review-notice__link {
+	color: #ffd54d;
+}
+
+.flow-ew-classic--builder-dark .flow-ew-review-notice__link:hover,
+.flow-ew-classic--builder-dark .flow-ew-review-notice__link:focus {
+	color: #fffcf3;
+}
+
+/* Pro multi-reviewer status pills (inverse palette) */
+
+.flow-ew-classic--builder-dark .flow-ew-pro-reviewer-row__status--pending {
+	--flow-status-bg: #10171a;
+	--flow-status-text: #cde3e7;
+	--flow-status-border: #5e777b;
+}
+
+.flow-ew-classic--builder-dark .flow-ew-pro-reviewer-row__status--in_review {
+	--flow-status-bg: #1e140c;
+	--flow-status-text: #fcf0ce;
+	--flow-status-border: #957500;
+}
+
+.flow-ew-classic--builder-dark .flow-ew-pro-reviewer-row__status--changes_requested {
+	--flow-status-bg: #1e1214;
+	--flow-status-text: #ffebea;
+	--flow-status-border: #c92222;
+}
+
+.flow-ew-classic--builder-dark .flow-ew-pro-reviewer-row__status--approved {
+	--flow-status-bg: #10190e;
+	--flow-status-text: #e7f5e4;
+	--flow-status-border: #458037;
+}
+
+.flow-ew-classic--builder-dark .flow-ew-pro-reviewer-row__status--open_review {
+	--flow-status-bg: #0a1822;
+	--flow-status-text: #dff4ff;
+	--flow-status-border: #1579a5;
+}
+
+/* Drawer header status badge */
+
+.flow-ew-builder-drawer__header .flow-ew-drawer-status[data-status='pending'] {
+	--flow-status-bg: #10171a;
+	--flow-status-text: #cde3e7;
+	--flow-status-border: #5e777b;
+	background-color: var(--flow-status-bg) !important;
+	border: 1px solid var(--flow-status-border);
+	color: var(--flow-status-text) !important;
+}
+
+.flow-ew-builder-drawer__header .flow-ew-drawer-status[data-status='in_review'] {
+	--flow-status-bg: #1e140c;
+	--flow-status-text: #fcf0ce;
+	--flow-status-border: #957500;
+	background-color: var(--flow-status-bg) !important;
+	border: 1px solid var(--flow-status-border);
+	color: var(--flow-status-text) !important;
+}
+
+.flow-ew-builder-drawer__header .flow-ew-drawer-status[data-status='changes_requested'] {
+	--flow-status-bg: #1e1214;
+	--flow-status-text: #ffebea;
+	--flow-status-border: #c92222;
+	background-color: var(--flow-status-bg) !important;
+	border: 1px solid var(--flow-status-border);
+	color: var(--flow-status-text) !important;
+}
+
+.flow-ew-builder-drawer__header .flow-ew-drawer-status[data-status='approved'] {
+	--flow-status-bg: #10190e;
+	--flow-status-text: #e7f5e4;
+	--flow-status-border: #458037;
+	background-color: var(--flow-status-bg) !important;
+	border: 1px solid var(--flow-status-border);
+	color: var(--flow-status-text) !important;
+}
+
+.flow-ew-builder-drawer__header .flow-ew-drawer-status[data-status='open_review'] {
+	--flow-status-bg: #0a1822;
+	--flow-status-text: #dff4ff;
+	--flow-status-border: #1579a5;
+	background-color: var(--flow-status-bg) !important;
+	border: 1px solid var(--flow-status-border);
+	color: var(--flow-status-text) !important;
+}
+
+/* Pro multi-reviewer list cards */
+
+.flow-ew-classic--builder-dark .flow-ew-pro-reviewers-list > .flow-ew-reviewer-card {
+	background-color: var(--flow-ew-dark-card-bg);
+	border: 1px solid var(--flow-ew-dark-border);
+	border-radius: var(--flow-ew-dark-card-radius);
+	color: var(--flow-ew-dark-card-text);
+}
+
+.flow-ew-classic--builder-dark .flow-ew-pro-reviewers-list .flow-ew-truncate {
+	color: var(--flow-ew-dark-card-text);
+}
+
+.flow-ew-classic--builder-dark .flow-ew-pro-reviewers-list .flow-ew-reviewer-card__remove {
+	align-items: center;
+	background: transparent;
+	border: 0;
+	color: var(--flow-ew-dark-muted);
+	display: inline-flex;
+	flex-shrink: 0;
+	font-size: inherit;
+	font-weight: 400;
+	height: 24px;
+	justify-content: center;
+	line-height: 1;
+	min-height: 24px;
+	min-width: 24px;
+	opacity: 1;
+	padding: 0;
+	width: 24px;
+}
+
+.flow-ew-classic--builder-dark .flow-ew-pro-reviewers-list .flow-ew-reviewer-card__remove svg {
+	display: block;
+	height: 14px;
+	width: 14px;
+}
+
+.flow-ew-classic--builder-dark .flow-ew-pro-reviewers-list .flow-ew-reviewer-card__remove:hover,
+.flow-ew-classic--builder-dark .flow-ew-pro-reviewers-list .flow-ew-reviewer-card__remove:focus-visible {
+	background: transparent;
+	box-shadow: none;
+	color: var(--flow-ew-dark-text);
+	opacity: 1;
+	outline: none;
+}
+
+.flow-ew-classic--bricks.flow-ew-classic--builder-dark .flow-ew-pro-multi-reviewer__add .flow-ew-reviewer-combobox__input {
+	background-color: var(--flow-ew-dark-card-bg);
+	border-color: var(--flow-ew-dark-border);
+}
+
+.flow-ew-classic--breakdance.flow-ew-classic--builder-dark .flow-ew-pro-multi-reviewer__add .flow-ew-reviewer-combobox__input {
+	background: transparent;
+	border-color: var(--flow-ew-dark-border);
+	height: var(--flow-ew-bd-field-height, 40px);
+	max-height: var(--flow-ew-bd-field-height, 40px);
+	min-height: var(--flow-ew-bd-field-height, 40px);
+}
+
+.flow-ew-classic--avada.flow-ew-classic--builder-dark .flow-ew-pro-multi-reviewer__add .flow-ew-reviewer-combobox__input {
+	background-color: var(--flow-ew-dark-card-bg);
+	border-color: var(--flow-ew-dark-border);
+	height: var(--flow-ew-avada-field-height, 40px);
+	max-height: var(--flow-ew-avada-field-height, 40px);
+	min-height: var(--flow-ew-avada-field-height, 40px);
+}
+
+.flow-ew-classic--beaver.flow-ew-classic--builder-dark .flow-ew-reviewer-combobox__input,
+.flow-ew-classic--beaver.flow-ew-classic--builder-dark .flow-ew-pro-multi-reviewer__add .flow-ew-reviewer-combobox__input {
+	background-color: var(--fl-builder-input-bg-color, var(--flow-ew-dark-card-bg));
+	border-color: var(--fl-builder-outline-color, var(--flow-ew-dark-border));
+	color: var(--fl-builder-input-color, var(--flow-ew-dark-text));
+}
+
+/**
+ * Shared Current Review share bar — Figma Frame 38 (Select reviewer).
+ */
+
+.flow-ew-share-bar__row,
+.flow-ew-classic__share-row {
+	--flow-ew-share-row-height: 40px;
+	height: var(--flow-ew-share-row-height, 40px);
+	max-height: var(--flow-ew-share-row-height, 40px);
+	--flow-ew-share-action-width: 40px;
+	--flow-ew-share-action-padding-x: 8px;
+	--flow-ew-share-link-padding-x: 8px;
+	--flow-ew-share-link-padding-y: 4px;
+	--flow-ew-share-font-size: 13px;
+	--flow-ew-share-icon-size: 24px;
+	--flow-ew-wp-charcoal-3: #40464c;
+	--flow-ew-wp-charcoal-5: #979aa0;
+	--flow-ew-wp-nero: #1c2024;
+}
+
+/* Let copy + open buttons keep width; URL truncates with ellipsis. */
+
+.flow-ew-share-bar__link,
+.flow-ew-classic__share-link {
+	flex: 1 1 0;
+	min-width: 0;
+	max-width: 100%;
+	height: 100%;
+	display: flex;
+	align-items: center;
+	overflow: hidden;
+	text-decoration: none;
+}
+
+.flow-ew-share-bar__link-text,
+.flow-ew-classic__share-link-text {
+	display: block;
+	min-width: 0;
+	flex: 1 1 auto;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	text-decoration: underline;
+}
+
+.flow-ew-share-icon {
+	display: block;
+	flex-shrink: 0;
+	width: var(--flow-ew-share-icon-size, 24px);
+	height: var(--flow-ew-share-icon-size, 24px);
+}
+
+.flow-ew-share-bar__goto .components-icon.flow-ew-share-icon,
+.flow-ew-share-bar__goto .flow-ew-share-icon svg,
+.flow-ew-share-bar__copy .flow-ew-share-icon svg {
+	width: var(--flow-ew-share-icon-size, 24px);
+	height: var(--flow-ew-share-icon-size, 24px);
+}
+
+.flow-ew-share-bar__copy.components-button,
+.flow-ew-share-bar__goto,
+.flow-ew-classic__share-copy,
+.flow-ew-classic__share-goto {
+	height: 100%;
+	max-height: 100%;
+	padding: var(--flow-ew-share-action-padding-x, 8px) !important;
+	box-sizing: border-box;
+}
+
+.flow-ew-share-bar__copy.components-button,
+.flow-ew-classic__share-copy {
+	min-height: 0 !important;
+}
+
+.flow-ew-share-bar__goto,
+.flow-ew-classic__share-goto {
+	border-radius: 0;
+	color: #fff;
+}
+
+.flow-ew-share-bar__goto .flow-ew-share-icon,
+.flow-ew-share-bar__goto svg,
+.flow-ew-classic__share-goto .flow-ew-share-icon,
+.flow-ew-classic__share-goto svg {
+	color: #fff;
+}
+
+.flow-ew-share-bar__goto svg path,
+.flow-ew-classic__share-goto svg path {
+	fill: currentColor;
+}
+
+.flow-ew-share-bar__copy .flow-ew-share-icon--copy path,
+.flow-ew-classic__share-copy .flow-ew-share-icon--copy path {
+	fill: currentColor;
+}
+
+/* Copy-success checkmark is stroke-based; builder path fills distort it. */
+
+.flow-ew-share-icon--copied path,
+.flow-ew-classic__share-copy--done .flow-ew-share-icon path,
+.flow-ew-share-bar__copy--done .flow-ew-share-icon path {
+	fill: none !important;
+	stroke: currentColor;
+	stroke-width: 2;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+}
+
+/* Field section labels (Current Review, Reviewer, etc.) */
+
+.flow-ew-field-label,
+.flow-ew-share-bar__label,
+.flow-ew-classic__label,
+.flow-ew-classic__share-label {
+	color: rgb(30, 30, 30);
+	font-size: 11px;
+	font-weight: 400;
+	text-transform: uppercase;
+}
+
+/* -----------------------------------------------------------------
+   Elementor Review: floating chip below Publish + dark drawer
+   ----------------------------------------------------------------- */
+
+/* Base: fixed chip below Publish (JS) or fallback under top bar */
+
+.flow-ew-elementor-toggle {
+	position: fixed;
+	/* Below MUI Popover/Menu (~1300); above editor canvas */
+	z-index: 1250;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0;
+	box-sizing: border-box;
+	min-height: 28px;
+	padding: 4px 6px;
+	margin: 0;
+	/* MUI Outlined + dark toolbar (matches Publish group neighbor) */
+	border: 1px solid rgba(255, 255, 255, 0.23);
+	border-radius: 4px;
+	background: transparent;
+	color: #fff;
+	font-family: Roboto, "Helvetica Neue", Helvetica, Arial, sans-serif;
+	font-size: 0.875rem;
+	font-weight: 500;
+	line-height: 1.75;
+	letter-spacing: 0.02857em;
+	text-transform: none;
+	cursor: pointer;
+	box-shadow: none;
+	transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.flow-ew-elementor-toggle:hover {
+	background-color: rgba(255, 255, 255, 0.08);
+	border-color: rgba(255, 255, 255, 0.35);
+}
+
+.flow-ew-elementor-toggle.is-active {
+	background-color: rgba(255, 255, 255, 0.12);
+	border-color: rgba(255, 255, 255, 0.4);
+}
+
+/* Chip skin for the floating fallback (Publish not found yet) */
+
+.flow-ew-elementor-toggle.flow-ew-elementor-toggle--fallback {
+	background-color: rgba(31, 33, 36, 0.94);
+	border-color: rgba(255, 255, 255, 0.22);
+	box-shadow: 0 2px 10px rgba(0, 0, 0, 0.18);
+	top: calc(var(--editor-v2-top-bar-height, 48px) + 8px);
+	inset-inline-end: 16px;
+}
+
+/* Inline next to Publish inside the top bar. Match Elementor search /
+   other MUI IconButton controls: circular hover ripple area. */
+
+.flow-ew-elementor-toggle.flow-ew-elementor-toggle--inline {
+	position: static;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	align-self: center;
+	flex-shrink: 0;
+	box-sizing: border-box;
+	width: 40px;
+	height: 40px;
+	min-height: 40px;
+	min-width: 40px;
+	padding: 0;
+	margin: 0 4px 0 0;
+	background: transparent;
+	border: 0;
+	border-radius: 50%;
+	color: #fff;
+	font-size: 0;
+	line-height: 0;
+	letter-spacing: 0;
+	text-transform: none;
+	vertical-align: middle;
+	transition: background-color 150ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+#elementor-editor-wrapper-v2 .flow-ew-elementor-toggle.flow-ew-elementor-toggle--inline,
+#elementor-editor-wrapper .flow-ew-elementor-toggle.flow-ew-elementor-toggle--inline {
+	align-self: center;
+}
+
+.flow-ew-elementor-toggle.flow-ew-elementor-toggle--inline:hover,
+.flow-ew-elementor-toggle.flow-ew-elementor-toggle--inline:focus-visible {
+	background-color: rgba(255, 255, 255, 0.08);
+	border-color: transparent;
+	color: #fff;
+	outline: none;
+}
+
+.flow-ew-elementor-toggle.flow-ew-elementor-toggle--inline.is-active {
+	background-color: rgba(255, 255, 255, 0.12);
+	border-color: transparent;
+	color: #fff;
+}
+
+.flow-ew-elementor-toggle__icon {
+	align-items: center;
+	display: inline-flex;
+	justify-content: center;
+	line-height: 0;
+}
+
+.flow-ew-elementor-toggle__icon svg {
+	display: block;
+	flex-shrink: 0;
+	height: 24px;
+	margin: 0;
+	vertical-align: middle;
+	width: 24px;
+}
+
+.flow-ew-elementor-toggle.flow-ew-elementor-toggle--inline .flow-ew-elementor-toggle__icon {
+	align-items: center;
+	display: flex;
+	height: 100%;
+	justify-content: center;
+	width: 100%;
+}
+
+.flow-ew-elementor-toggle.flow-ew-elementor-toggle--inline .flow-ew-elementor-toggle__icon svg {
+	height: 24px;
+	width: 24px;
+}
+
+/* Head and limbs match neighboring MUI toolbar icons; torso carries status. */
+
+.flow-ew-elementor-toggle .flow-ew-jumplink-icon__head,
+.flow-ew-elementor-toggle .flow-ew-jumplink-icon__limbs {
+	color: currentColor;
+}
+
+.flow-ew-elementor-toggle .flow-ew-jumplink-icon__torso {
+	color: var(--flow-ew-el-muted, #9da5ae);
+}
+
+.flow-ew-elementor-toggle[data-status='pending'] .flow-ew-jumplink-icon__torso {
+	color: #5e777b;
+}
+
+.flow-ew-elementor-toggle[data-status='in_review'] .flow-ew-jumplink-icon__torso {
+	color: #957500;
+}
+
+.flow-ew-elementor-toggle[data-status='changes_requested'] .flow-ew-jumplink-icon__torso {
+	color: #c92122;
+}
+
+.flow-ew-elementor-toggle[data-status='approved'] .flow-ew-jumplink-icon__torso {
+	color: #458037;
+}
+
+.flow-ew-elementor-toggle[data-status='open_review'] .flow-ew-jumplink-icon__torso {
+	color: #1579a5;
+}
+
+/* Brighten the full icon on hover/active like other top-bar controls. */
+
+.flow-ew-elementor-toggle:hover .flow-ew-jumplink-icon__torso,
+.flow-ew-elementor-toggle:focus-visible .flow-ew-jumplink-icon__torso,
+.flow-ew-elementor-toggle.is-active .flow-ew-jumplink-icon__torso,
+.flow-ew-elementor-toggle:hover .flow-ew-jumplink-icon__limbs,
+.flow-ew-elementor-toggle:focus-visible .flow-ew-jumplink-icon__limbs,
+.flow-ew-elementor-toggle.is-active .flow-ew-jumplink-icon__limbs,
+.flow-ew-elementor-toggle:hover .flow-ew-jumplink-icon__head,
+.flow-ew-elementor-toggle:focus-visible .flow-ew-jumplink-icon__head,
+.flow-ew-elementor-toggle.is-active .flow-ew-jumplink-icon__head {
+	color: currentColor;
+}
+
+/* ---- Drawer (Elementor dark panel) ---- */
+
+.flow-ew-elementor-drawer {
+	--flow-ew-el-bg: #1f2124;
+	--flow-ew-el-bg-elevated: #2b2c31;
+	--flow-ew-el-border: #333438;
+	--flow-ew-el-txt: #d5d8dc;
+	--flow-ew-el-muted: #9da5ae;
+	--flow-ew-el-accent: var(--e-a-color-accent, #93003f);
+	--flow-ew-el-btn-secondary: #515962;
+
+	position: fixed;
+	width: 320px;
+	max-width: calc(100vw - 16px);
+	/* Height comes from JS: top under the toggle, bottom near the viewport edge. */
+	z-index: 1270;
+	background: var(--flow-ew-el-bg);
+	border: 1px solid var(--flow-ew-el-border);
+	border-radius: 6px;
+	box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5);
+	display: flex;
+	flex-direction: column;
+	font-family: Roboto, "Helvetica Neue", Helvetica, Arial, sans-serif;
+	font-size: 12px;
+	color: var(--flow-ew-el-txt);
+	opacity: 0;
+	transform: translateY(-4px);
+	transition: opacity 0.12s ease, transform 0.12s ease;
+	pointer-events: none;
+}
+
+.flow-ew-elementor-drawer.is-open {
+	opacity: 1;
+	transform: translateY(0);
+	pointer-events: auto;
+}
+
+.flow-ew-elementor-drawer__header {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	height: 48px;
+	padding: 0 14px;
+	border-bottom: 1px solid var(--flow-ew-el-border);
+	flex-shrink: 0;
+	background: var(--flow-ew-el-bg);
+}
+
+.flow-ew-elementor-drawer__header .flow-ew-drawer-status {
+	align-items: center;
+	background: var(--flow-ew-el-bg-elevated);
+	border-radius: 999px;
+	color: #fff;
+	display: inline-flex;
+	font-size: 11px;
+	font-weight: 500;
+	gap: 6px;
+	letter-spacing: 0.02em;
+	line-height: 1;
+	padding: 4px 10px;
+	text-transform: uppercase;
+	white-space: nowrap;
+}
+
+.flow-ew-elementor-drawer__header .flow-ew-drawer-status .flow-ew-classic__badge-dot {
+	background: var(--flow-badge-color, currentColor);
+	border-radius: 50%;
+	display: inline-block;
+	height: 8px;
+	width: 8px;
+}
+
+.flow-ew-elementor-drawer__header .flow-ew-drawer-status[hidden] {
+	display: none;
+}
+
+.flow-ew-elementor-drawer__title {
+	font-size: 13px;
+	font-weight: 600;
+	color: #fff;
+	letter-spacing: 0.01em;
+}
+
+.flow-ew-elementor-drawer__close {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	margin-left: auto;
+	width: 28px;
+	height: 28px;
+	border: none;
+	border-radius: 3px;
+	background: transparent;
+	color: var(--flow-ew-el-muted);
+	cursor: pointer;
+	padding: 0;
+}
+
+.flow-ew-elementor-drawer__close:hover {
+	background: var(--flow-ew-el-bg-elevated);
+	color: #fff;
+}
+
+.flow-ew-elementor-drawer__close .dashicons {
+	font-size: 18px;
+	width: 18px;
+	height: 18px;
+	line-height: 18px;
+}
+
+.flow-ew-elementor-drawer__body {
+	flex: 1 1 auto;
+	overflow-y: auto;
+	overflow-x: hidden;
+	padding: 14px;
+	background: var(--flow-ew-el-bg);
+}
+
+.flow-ew-elementor-drawer .flow-ew-classic {
+	margin: 0;
+	padding: 0;
+	max-width: 100%;
+}
+
+.flow-ew-elementor-drawer .flow-ew-classic__value {
+	color: var(--flow-ew-el-txt);
+}
+
+.flow-ew-elementor-drawer .flow-ew-classic__field {
+	margin-bottom: 14px;
+}
+
+.flow-ew-elementor-drawer .flow-ew-classic__badge {
+	background: rgba(255, 255, 255, 0.06);
+	border: 1px solid var(--flow-ew-el-border);
+	color: var(--flow-ew-el-txt);
+}
+
+.flow-ew-elementor-drawer .flow-ew-reviewer-combobox {
+	position: relative;
+}
+
+.flow-ew-elementor-drawer .flow-ew-reviewer-combobox__wrap {
+	position: relative;
+	isolation: isolate;
+}
+
+.flow-ew-elementor-drawer .flow-ew-reviewer-combobox__input {
+	width: 100%;
+	box-sizing: border-box;
+	height: 36px;
+	padding: 0 40px 0 10px;
+	border: 1px solid var(--flow-ew-el-border);
+	border-radius: 3px;
+	background: var(--flow-ew-el-bg-elevated);
+	color: #fff;
+	font-size: 13px;
+	font-family: inherit;
+	outline: none;
+	position: relative;
+	z-index: 0;
+}
+
+.flow-ew-elementor-drawer .flow-ew-reviewer-combobox__clear {
+	align-items: center;
+	background: transparent;
+	border: 0;
+	color: var(--flow-ew-el-muted);
+	cursor: pointer;
+	display: flex;
+	height: 32px;
+	justify-content: center;
+	padding: 0;
+	pointer-events: auto !important;
+	position: absolute;
+	right: 2px;
+	top: 50%;
+	transform: translateY(-50%);
+	width: 32px;
+	z-index: 20;
+}
+
+.flow-ew-elementor-drawer .flow-ew-reviewer-combobox__clear svg,
+.flow-ew-elementor-drawer .flow-ew-reviewer-combobox__clear path {
+	pointer-events: none;
+}
+
+.flow-ew-elementor-drawer .flow-ew-reviewer-combobox__clear:hover,
+.flow-ew-elementor-drawer .flow-ew-reviewer-combobox__clear:focus {
+	color: #fff;
+	outline: none;
+}
+
+.flow-ew-elementor-drawer .flow-ew-reviewer-combobox__clear[hidden] {
+	display: none !important;
+}
+
+.flow-ew-elementor-drawer .flow-ew-pro-reviewers-list .flow-ew-reviewer-card__remove {
+	color: var(--flow-ew-el-muted);
+}
+
+.flow-ew-elementor-drawer .flow-ew-pro-reviewers-list .flow-ew-reviewer-card__remove:hover,
+.flow-ew-elementor-drawer .flow-ew-pro-reviewers-list .flow-ew-reviewer-card__remove:focus-visible {
+	color: #fff;
+	outline: none;
+}
+
+.flow-ew-elementor-drawer .flow-ew-reviewer-combobox__input:focus {
+	border-color: #69727d;
+	box-shadow: 0 0 0 1px #69727d;
+}
+
+.flow-ew-elementor-drawer .flow-ew-reviewer-combobox__input::-moz-placeholder {
+	color: var(--flow-ew-el-muted);
+}
+
+.flow-ew-elementor-drawer .flow-ew-reviewer-combobox__input::placeholder {
+	color: var(--flow-ew-el-muted);
+}
+
+.flow-ew-elementor-drawer .flow-ew-reviewer-combobox__input:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+.flow-ew-elementor-drawer .flow-ew-reviewer-combobox__input[readonly] {
+	cursor: default;
+	pointer-events: none !important;
+}
+
+.flow-ew-elementor-drawer .flow-ew-reviewer-combobox__list {
+	position: absolute;
+	left: 0;
+	right: 0;
+	top: calc(100% + 4px);
+	z-index: 5;
+	max-height: 200px;
+	overflow-y: auto;
+	margin: 0;
+	padding: 4px 0;
+	list-style: none;
+	background: var(--flow-ew-el-bg-elevated);
+	border: 1px solid var(--flow-ew-el-border);
+	border-radius: 3px;
+	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.flow-ew-elementor-drawer .flow-ew-reviewer-combobox__option {
+	padding: 8px 12px;
+	cursor: pointer;
+	color: var(--flow-ew-el-txt);
+	font-size: 13px;
+}
+
+.flow-ew-elementor-drawer .flow-ew-reviewer-combobox__option:hover,
+.flow-ew-elementor-drawer .flow-ew-reviewer-combobox__option:focus {
+	background: #333438;
+	outline: none;
+}
+
+.flow-ew-elementor-drawer .flow-ew-reviewer-combobox__option[aria-selected="true"] {
+	background: rgba(147, 0, 63, 0.2);
+}
+
+.flow-ew-elementor-drawer .flow-ew-reviewer-combobox__native {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border: 0;
+	opacity: 0;
+	pointer-events: none;
+}
+
+.flow-ew-elementor-drawer .flow-ew-classic__actions {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	margin-top: 4px;
+}
+
+.flow-ew-elementor-drawer .flow-ew-classic__actions .button,
+.flow-ew-elementor-drawer .flow-ew-classic__actions .flow-ew-classic__btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 100%;
+	box-sizing: border-box;
+	min-height: 36px;
+	padding: 0 16px;
+	border-radius: 4px;
+	font-size: 0.875rem;
+	font-weight: 500;
+	font-family: inherit;
+	line-height: 1.75;
+	box-shadow: none;
+	text-shadow: none;
+	transition: background 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
+}
+
+.flow-ew-elementor-drawer .flow-ew-classic__actions .button.button-primary,
+.flow-ew-elementor-drawer
+	.flow-ew-classic__actions
+	.flow-ew-classic__btn.button-primary {
+	background: var(--flow-ew-el-accent);
+	border: 1px solid var(--flow-ew-el-accent);
+	color: #fff;
+}
+
+.flow-ew-elementor-drawer .flow-ew-classic__actions .button.button-primary:hover:not(:disabled),
+.flow-ew-elementor-drawer
+	.flow-ew-classic__actions
+	.flow-ew-classic__btn.button-primary:hover:not(:disabled) {
+	filter: brightness(1.08);
+}
+
+.flow-ew-elementor-drawer
+	.flow-ew-classic__actions
+	.flow-ew-classic__btn.flow-ew-classic__btn--changes,
+.flow-ew-elementor-drawer
+	.flow-ew-classic__actions
+	.button.flow-ew-classic__btn:not(.button-primary) {
+	background: var(--flow-ew-el-btn-secondary);
+	border: 1px solid var(--flow-ew-el-btn-secondary);
+	color: #fff;
+}
+
+.flow-ew-elementor-drawer
+	.flow-ew-classic__actions
+	.flow-ew-classic__btn.flow-ew-classic__btn--changes:hover:not(:disabled),
+.flow-ew-elementor-drawer
+	.flow-ew-classic__actions
+	.button.flow-ew-classic__btn:not(.button-primary):hover:not(:disabled) {
+	filter: brightness(1.1);
+}
+
+.flow-ew-elementor-drawer .flow-ew-classic__actions .button:disabled,
+.flow-ew-elementor-drawer .flow-ew-classic__actions .flow-ew-classic__btn:disabled {
+	opacity: 0.45;
+	cursor: not-allowed;
+}
+
+/* Current review share bar — Bricks layout, Elementor tokens */
+
+.flow-ew-elementor-drawer .flow-ew-classic__share {
+	margin-top: 12px;
+}
+
+.flow-ew-elementor-drawer .flow-ew-classic__share-row {
+	--flow-ew-el-share-field-border: var(--flow-ew-el-border);
+	align-items: stretch;
+	background-color: var(--flow-ew-el-bg-elevated);
+	border: 1px solid var(--flow-ew-el-share-field-border);
+	border-radius: 3px;
+	display: flex;
+	height: var(--flow-ew-share-row-height, 40px);
+	max-height: var(--flow-ew-share-row-height, 40px);
+	min-height: var(--flow-ew-share-row-height, 40px);
+	overflow: hidden;
+	width: 100%;
+	min-width: 0;
+	--flow-ew-share-icon-size: 16px;
+	--flow-ew-share-action-width: 32px;
+}
+
+.flow-ew-elementor-drawer .flow-ew-classic__share-link {
+	align-items: center;
+	background-color: transparent;
+	border-right: none;
+	box-sizing: border-box;
+	color: var(--e-a-color-primary-bold, var(--flow-ew-el-accent, #93003f));
+	display: flex;
+	flex: 1 1 auto;
+	font-size: var(--flow-ew-share-font-size, 13px);
+	line-height: 1.2;
+	min-height: var(--flow-ew-share-row-height, 40px);
+	min-width: 0;
+	overflow: hidden;
+	padding: 0 var(--flow-ew-share-link-padding-x, 12px);
+	text-decoration: none;
+}
+
+.flow-ew-elementor-drawer .flow-ew-classic__share-link:hover {
+	background: rgba(255, 255, 255, 0.04);
+	color: var(--e-a-color-primary-bold, var(--flow-ew-el-accent, #93003f));
+}
+
+.flow-ew-elementor-drawer .flow-ew-classic__share-link-text {
+	color: inherit;
+	display: block;
+	flex: 1 1 auto;
+	min-width: 0;
+	overflow: hidden;
+	text-decoration: underline;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.flow-ew-elementor-drawer .flow-ew-classic__share-copy,
+.flow-ew-elementor-drawer .flow-ew-classic__share-copy.button,
+.flow-ew-elementor-drawer .flow-ew-classic__share-copy.button:hover,
+.flow-ew-elementor-drawer .flow-ew-classic__share-copy.button:focus {
+	align-items: center;
+	align-self: stretch;
+	background: transparent !important;
+	border: 0 !important;
+	border-inline-start: 1px solid var(--flow-ew-el-share-field-border) !important;
+	border-radius: 0 !important;
+	box-shadow: none !important;
+	box-sizing: border-box;
+	color: var(--flow-ew-el-txt) !important;
+	cursor: pointer;
+	display: inline-flex !important;
+	flex: 0 0 auto;
+	justify-content: center;
+	line-height: 1 !important;
+	margin: 0 !important;
+	min-height: var(--flow-ew-share-row-height, 40px) !important;
+	min-width: var(--flow-ew-share-action-width, 32px);
+	padding: 0 !important;
+	text-shadow: none !important;
+	vertical-align: top;
+	width: var(--flow-ew-share-action-width, 32px);
+}
+
+.flow-ew-elementor-drawer .flow-ew-classic__share-copy:hover,
+.flow-ew-elementor-drawer .flow-ew-classic__share-copy.button:hover,
+.flow-ew-elementor-drawer .flow-ew-classic__share-copy.button:focus {
+	background: rgba(255, 255, 255, 0.06) !important;
+	border-inline-start: 1px solid var(--flow-ew-el-share-field-border) !important;
+	color: #fff !important;
+	filter: none;
+}
+
+.flow-ew-elementor-drawer .flow-ew-classic__share-copy .dashicons,
+.flow-ew-elementor-drawer .flow-ew-classic__share-copy .flow-ew-share-icon,
+.flow-ew-elementor-drawer .flow-ew-classic__share-copy svg {
+	color: inherit;
+	flex-shrink: 0;
+	height: var(--flow-ew-share-icon-size, 16px) !important;
+	line-height: 1;
+	min-height: var(--flow-ew-share-icon-size, 16px);
+	min-width: var(--flow-ew-share-icon-size, 16px);
+	width: var(--flow-ew-share-icon-size, 16px) !important;
+}
+
+.flow-ew-elementor-drawer .flow-ew-classic__share-copy--done,
+.flow-ew-elementor-drawer .flow-ew-classic__share-copy--done svg {
+	color: #39b54a !important;
+}
+
+.flow-ew-elementor-drawer .flow-ew-classic__share-goto {
+	align-items: center;
+	align-self: stretch;
+	background: #1e1e1e !important;
+	box-sizing: border-box;
+	color: #fff !important;
+	display: inline-flex;
+	flex: 0 0 auto;
+	justify-content: center;
+	min-height: var(--flow-ew-share-row-height, 40px);
+	min-width: var(--flow-ew-share-action-width, 32px);
+	padding: 0 !important;
+	text-decoration: none;
+	width: var(--flow-ew-share-action-width, 32px);
+}
+
+.flow-ew-elementor-drawer .flow-ew-classic__share-goto:hover,
+.flow-ew-elementor-drawer .flow-ew-classic__share-goto:focus {
+	background: #000 !important;
+	color: #fff !important;
+}
+
+.flow-ew-elementor-drawer .flow-ew-classic__share-goto .flow-ew-share-icon,
+.flow-ew-elementor-drawer .flow-ew-classic__share-goto svg {
+	color: #fff;
+	flex-shrink: 0;
+	height: var(--flow-ew-share-icon-size, 16px) !important;
+	min-height: var(--flow-ew-share-icon-size, 16px);
+	min-width: var(--flow-ew-share-icon-size, 16px);
+	width: var(--flow-ew-share-icon-size, 16px) !important;
+}
+
+.flow-ew-elementor-drawer .spinner {
+	float: none;
+	margin: 12px auto 0;
+}
+
+.flow-ew-elementor-drawer .spinner.is-active {
+	visibility: visible;
+}
+
+.flow-ew-elementor-drawer .flow-ew-classic-open__desc {
+	margin-left: 0;
+}
+
+.flow-ew-elementor-drawer #flow-ew-classic-open-slot {
+	color: var(--flow-ew-el-txt);
+}
+
+.flow-ew-elementor-drawer #flow-ew-classic-open-slot label {
+	color: var(--flow-ew-el-txt);
+	font-size: 13px;
+}
+
+.flow-ew-elementor-drawer .flow-ew-review-notice {
+	display: block;
+	margin-bottom: 14px;
+}
+
+
+/*# sourceMappingURL=style-index.css.map*/

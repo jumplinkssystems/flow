@@ -1,0 +1,116 @@
+/**
+ * Shared Current Review share bar — Figma Frame 38 (Select reviewer).
+ */
+.flow-ew-share-bar__row,
+.flow-ew-classic__share-row {
+	--flow-ew-share-row-height: 40px;
+	height: var(--flow-ew-share-row-height, 40px);
+	max-height: var(--flow-ew-share-row-height, 40px);
+	--flow-ew-share-action-width: 40px;
+	--flow-ew-share-action-padding-x: 8px;
+	--flow-ew-share-link-padding-x: 8px;
+	--flow-ew-share-link-padding-y: 4px;
+	--flow-ew-share-font-size: 13px;
+	--flow-ew-share-icon-size: 24px;
+	--flow-ew-wp-charcoal-3: #40464c;
+	--flow-ew-wp-charcoal-5: #979aa0;
+	--flow-ew-wp-nero: #1c2024;
+}
+
+/* Let copy + open buttons keep width; URL truncates with ellipsis. */
+.flow-ew-share-bar__link,
+.flow-ew-classic__share-link {
+	flex: 1 1 0;
+	min-width: 0;
+	max-width: 100%;
+	height: 100%;
+	display: flex;
+	align-items: center;
+	overflow: hidden;
+	text-decoration: none;
+}
+
+.flow-ew-share-bar__link-text,
+.flow-ew-classic__share-link-text {
+	display: block;
+	min-width: 0;
+	flex: 1 1 auto;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	text-decoration: underline;
+}
+
+.flow-ew-share-icon {
+	display: block;
+	flex-shrink: 0;
+	width: var(--flow-ew-share-icon-size, 24px);
+	height: var(--flow-ew-share-icon-size, 24px);
+}
+
+.flow-ew-share-bar__goto .components-icon.flow-ew-share-icon,
+.flow-ew-share-bar__goto .flow-ew-share-icon svg,
+.flow-ew-share-bar__copy .flow-ew-share-icon svg {
+	width: var(--flow-ew-share-icon-size, 24px);
+	height: var(--flow-ew-share-icon-size, 24px);
+}
+
+.flow-ew-share-bar__copy.components-button,
+.flow-ew-share-bar__goto,
+.flow-ew-classic__share-copy,
+.flow-ew-classic__share-goto {
+	height: 100%;
+	max-height: 100%;
+	padding: var(--flow-ew-share-action-padding-x, 8px) !important;
+	box-sizing: border-box;
+}
+
+.flow-ew-share-bar__copy.components-button,
+.flow-ew-classic__share-copy {
+	min-height: 0 !important;
+}
+
+.flow-ew-share-bar__goto,
+.flow-ew-classic__share-goto {
+	border-radius: 0;
+	color: #fff;
+}
+
+.flow-ew-share-bar__goto .flow-ew-share-icon,
+.flow-ew-share-bar__goto svg,
+.flow-ew-classic__share-goto .flow-ew-share-icon,
+.flow-ew-classic__share-goto svg {
+	color: #fff;
+}
+
+.flow-ew-share-bar__goto svg path,
+.flow-ew-classic__share-goto svg path {
+	fill: currentColor;
+}
+
+.flow-ew-share-bar__copy .flow-ew-share-icon--copy path,
+.flow-ew-classic__share-copy .flow-ew-share-icon--copy path {
+	fill: currentColor;
+}
+
+/* Copy-success checkmark is stroke-based; builder path fills distort it. */
+.flow-ew-share-icon--copied path,
+.flow-ew-classic__share-copy--done .flow-ew-share-icon path,
+.flow-ew-share-bar__copy--done .flow-ew-share-icon path {
+	fill: none !important;
+	stroke: currentColor;
+	stroke-width: 2;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+}
+
+/* Field section labels (Current Review, Reviewer, etc.) */
+.flow-ew-field-label,
+.flow-ew-share-bar__label,
+.flow-ew-classic__label,
+.flow-ew-classic__share-label {
+	color: rgb(30, 30, 30);
+	font-size: 11px;
+	font-weight: 400;
+	text-transform: uppercase;
+}

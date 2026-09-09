@@ -1,0 +1,306 @@
+/**
+ * Flow Editorial Workflow — Review Page layout styles.
+ * Imported by src/review-page/index.js; extracted to build/review-page/style-index.css.
+ *
+ * Only page-level layout rules live here — component styles live in
+ * bar.scss and sidebar.scss, injected directly into their Shadow DOM roots.
+ */
+
+@use './tokens' as *;
+
+// `--wp-admin-theme-color` (plus rgb / darker variants) is injected by
+// `Assets::get_admin_theme_inline_css()` based on the user's wp-admin
+// colour scheme. Individual rules use `var(... , #fallback)` so missing
+// vars still render — no `:root` declaration needed here.
+
+// Push content below the fixed bar. The comments sidebar lives on the
+// RIGHT and is open by default on desktop, so default margin-right is
+// reserved. The activity sidebar lives on the LEFT and is closed by
+// default, so default margin-left is 0; the `--activity-open` modifier
+// pushes content right when it slides in.
+body.flow-review-page {
+	padding-top: $bar-height !important;
+	margin-right: $sidebar-width !important;
+	transition: margin-left 180ms ease, margin-right 180ms ease;
+}
+
+body.flow-review-page--comments-closed {
+	margin-right: 0 !important;
+}
+
+body.flow-review-page--activity-open {
+	margin-left: $activity-sidebar-width !important;
+}
+
+// Device preview mode (Pro): iframe is centered + clamped to a fixed
+// designed width, so the surrounding canvas needs a backdrop to make
+// the device frame readable.
+body.flow-device-preview {
+	background-color: #ddd;
+}
+
+// Mobile: both sidebars overlay content instead of pushing it, so the
+// iframe preview can use the full viewport width (matched in
+// ReviewBar.js iframe scaling, which treats sidebars as 0px below this
+// breakpoint).
+@media (max-width: $mobile-bp) {
+	body.flow-review-page {
+		margin-left: 0 !important;
+		margin-right: 0 !important;
+	}
+}
+
+// Host element only — the popover itself is mounted into a Shadow DOM root
+// (see mount-in-shadow + popover.scss) so theme / page-builder CSS in the
+// parent document can't reach the popover button styles. The big light-DOM
+// button reset that used to live here is no longer needed.
+#flow-inline-popover-host {
+	position: relative;
+	z-index: 100000;
+	pointer-events: none;
+}
+
+#flow-bar-host,
+#flow-sidebar-host,
+#flow-activity-sidebar-host {
+	display: block;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	body.flow-review-page {
+		transition: none;
+	}
+}
+
+// =============================================================================
+// Inline comment help — Figma Alert / info (Frame 30).
+// =============================================================================
+
+.flow-review-info-notice {
+	// Floats under the bar centered in the viewport — does not take up
+	// layout space in the iframe / shell. Z-index sits above the iframe but
+	// below the comment popover / sidebar shadow roots.
+	position: fixed;
+	top: $bar-height + 12px;
+	left: 50%;
+	transform: translateX(-50%);
+	z-index: 99999;
+	width: max-content;
+	max-width: min(720px, calc(100% - 32px));
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding: 12px 16px;
+	font-family: $font-stack;
+	font-size: $font-size-base;
+	line-height: $line-height-base;
+	color: $notice-info-text;
+	background: $notice-info-bg;
+	border: 1px solid $notice-info-border;
+	border-left-width: 4px;
+	border-left-color: $notice-info-text;
+	border-radius: $radius-sm;
+	box-shadow: none;
+	user-select: none;
+	-webkit-user-select: none;
+}
+
+.flow-review-info-notice__icon {
+	display: flex;
+	flex-shrink: 0;
+	align-items: center;
+	justify-content: center;
+	width: 24px;
+	height: 24px;
+	color: $notice-info-text;
+
+	svg {
+		display: block;
+		width: 24px;
+		height: 24px;
+	}
+}
+
+.flow-review-info-notice__content {
+	flex: 1 1 auto;
+	min-width: 0;
+}
+
+.flow-review-info-notice__title {
+	margin: 0 0 2px;
+	font-size: inherit;
+	font-weight: 600;
+	line-height: inherit;
+	color: inherit;
+}
+
+.flow-review-info-notice__text {
+	margin: 0;
+	font-size: inherit;
+	font-weight: 400;
+	line-height: inherit;
+	color: inherit;
+}
+
+.flow-review-info-notice__link {
+	display: inline;
+	margin: 0;
+	padding: 0;
+	font: inherit;
+	font-weight: inherit;
+	color: inherit;
+	text-decoration: underline;
+	text-underline-offset: 2px;
+	background: none;
+	border: none;
+	border-radius: 0;
+	cursor: pointer;
+	vertical-align: baseline;
+
+	&:hover {
+		color: #0f6387;
+	}
+
+	&:focus-visible {
+		outline: 2px solid $notice-info-text;
+		outline-offset: 2px;
+	}
+}
+
+.flow-review-info-notice__dismiss {
+	display: inline-flex;
+	flex-shrink: 0;
+	align-items: center;
+	justify-content: center;
+	width: 36px;
+	height: 36px;
+	margin: -8px -8px -8px 0;
+	padding: 0;
+	color: $notice-info-text;
+	background: transparent;
+	border: 0;
+	border-radius: $radius-sm;
+	cursor: pointer;
+
+	svg {
+		display: block;
+		width: 20px;
+		height: 20px;
+	}
+
+	&:hover {
+		background: rgba( $notice-info-text, 0.08 );
+	}
+
+	&:focus-visible {
+		outline: 2px solid $notice-info-text;
+		outline-offset: 1px;
+	}
+}
+
+// =============================================================================
+// Inline comment highlights (light DOM — content area)
+// =============================================================================
+
+.flow-inline-highlight {
+	background: rgba(255, 212, 59, 0.35);
+	// box-shadow underline — same visual as border-bottom but doesn't push
+	// the line box, so wrapping text doesn't reflow when a highlight lands.
+	box-shadow: inset 0 -2px 0 rgba(255, 183, 0, 0.6);
+	cursor: pointer;
+	border-radius: 2px;
+	transition: background 0.2s ease, box-shadow 0.2s ease;
+
+	&:hover {
+		background: rgba(255, 212, 59, 0.55);
+	}
+
+	&--active {
+		background: rgba(255, 183, 0, 0.55);
+		box-shadow: inset 0 -2px 0 #e69500;
+	}
+
+	&--resolved {
+		background: rgba(130, 214, 142, 0.3);
+		box-shadow: inset 0 -2px 0 rgba(130, 214, 142, 0.5);
+
+		&:hover {
+			background: rgba(130, 214, 142, 0.45);
+		}
+	}
+}
+
+// The highlight ring on commented media renders as an inset outline on the
+// `.flow-embed-overlay` sibling (see init-embed-overlays.js for that CSS).
+// This unifies the look across wrapped media (figures), positioned media
+// (.wp-block-cover backgrounds, embed iframes in aspect-ratio wrappers),
+// where parent overflow:hidden clipping rules out a per-media outset
+// outline that matches everywhere.
+img.flow-inline-highlight-media,
+video.flow-inline-highlight-media,
+iframe.flow-inline-highlight-media {
+	cursor: pointer;
+}
+
+// =============================================================================
+// Embed iframe overlay (YouTube, Vimeo, etc.)
+//
+// Each iframe is wrapped in `.flow-embed-wrap` so the overlay only covers
+// the iframe itself — never sibling content. `pointer-events: none` on the
+// iframe means the cross-origin player can't intercept clicks; the overlay
+// captures them and routes to the comment popover.
+// =============================================================================
+
+.flow-embed-wrap {
+	display: inline-block;
+	line-height: 0;
+	max-width: 100%;
+	position: relative;
+	vertical-align: top;
+
+	> iframe {
+		display: block;
+		max-width: 100%;
+	}
+}
+
+.flow-embed-overlay {
+	align-items: center;
+	background: transparent;
+	border: 0;
+	cursor: pointer;
+	display: flex;
+	inset: 0;
+	justify-content: center;
+	position: absolute;
+	transition: background-color 0.15s ease;
+	z-index: 2;
+
+	&:hover,
+	&:focus-visible {
+		background: rgba(0, 0, 0, 0.25);
+
+		.flow-embed-overlay__hint {
+			opacity: 1;
+		}
+	}
+
+	&:focus-visible {
+		outline: 2px solid var(--wp-admin-theme-color, #2271b1);
+		outline-offset: -2px;
+	}
+}
+
+.flow-embed-overlay__hint {
+	background: rgba(0, 0, 0, 0.7);
+	border-radius: 4px;
+	color: #ffffff;
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+	font-size: 13px;
+	font-weight: 500;
+	line-height: 1.2;
+	opacity: 0;
+	padding: 8px 14px;
+	pointer-events: none;
+	transition: opacity 0.15s ease;
+}

@@ -1,0 +1,586 @@
+@import '../shared/builder-review-notice-dark.css';
+
+/* Publish button lock (when mandatory review isn't approved) */
+body.flow-ew-bricks-publish-blocked #bricks-toolbar li:has( [data-name='publish'] ) {
+	cursor: not-allowed !important;
+	opacity: 0.4 !important;
+}
+
+/* Toolbar trigger inside #bricks-toolbar */
+#bricks-toolbar li.flow-ew-bricks-review {
+	margin-inline-start: 5px;
+	padding: 0;
+	width: auto;
+}
+
+.flow-ew-bricks-toggle {
+	align-items: center;
+	background: transparent;
+	border: 0;
+	border-radius: var( --builder-border-radius, 4px );
+	color: inherit;
+	cursor: pointer;
+	display: inline-flex;
+	height: 28px;
+	justify-content: center;
+	padding: 0 6px;
+	width: auto;
+}
+
+/* The toggle is rendered into wp_footer with the `hidden` attribute set and
+ * only revealed once the JS attaches it to the Bricks toolbar. The explicit
+ * `display: inline-flex` above otherwise wins over the UA's
+ * `[hidden] { display: none }` rule, so during the gap between footer output
+ * and the JS moving the node into the toolbar it briefly flashes at the
+ * bottom of <body>. !important here is necessary to beat the matching
+ * specificity of the base rule. */
+.flow-ew-bricks-toggle[hidden] {
+	display: none !important;
+}
+
+.flow-ew-bricks-toggle:hover,
+.flow-ew-bricks-toggle.is-active,
+.flow-ew-bricks-toggle:focus-visible {
+	outline: none;
+}
+
+.flow-ew-bricks-toggle__icon {
+	display: inline-flex;
+	line-height: 0;
+}
+
+/* Beat Bricks' global `#bricks-toolbar li svg { height: 17px }` rule. */
+#bricks-toolbar li.flow-ew-bricks-review .flow-ew-bricks-toggle__icon svg {
+	display: block;
+	height: 24px !important;
+	margin: 0;
+	vertical-align: middle;
+	width: 24px !important;
+}
+
+/* Head and limbs use Bricks border token; torso reflects review status. */
+.flow-ew-bricks-review .flow-ew-jumplink-icon__head,
+.flow-ew-bricks-review .flow-ew-jumplink-icon__limbs {
+	color: var( --bricks-border-color );
+}
+
+.flow-ew-bricks-review .flow-ew-jumplink-icon__torso {
+	color: var( --builder-color-description, #8a99a8 );
+}
+
+.flow-ew-bricks-review[ data-status='pending' ] .flow-ew-jumplink-icon__torso {
+	color: #5e777b;
+}
+
+.flow-ew-bricks-review[ data-status='in_review' ] .flow-ew-jumplink-icon__torso {
+	color: #957500;
+}
+
+.flow-ew-bricks-review[ data-status='changes_requested' ] .flow-ew-jumplink-icon__torso {
+	color: #c92122;
+}
+
+.flow-ew-bricks-review[ data-status='approved' ] .flow-ew-jumplink-icon__torso {
+	color: #458037;
+}
+
+.flow-ew-bricks-review[ data-status='open_review' ] .flow-ew-jumplink-icon__torso {
+	color: #1579a5;
+}
+
+/* Match other toolbar icons: Bricks yellow on hover/active for torso only. */
+#bricks-toolbar li.flow-ew-bricks-review:hover .flow-ew-jumplink-icon__torso,
+#bricks-toolbar li.flow-ew-bricks-review:focus-within .flow-ew-jumplink-icon__torso,
+#bricks-toolbar li.flow-ew-bricks-review .flow-ew-bricks-toggle.is-active .flow-ew-jumplink-icon__torso {
+	color: var( --builder-color-accent, #ffd54d ) !important;
+}
+
+#bricks-toolbar li.flow-ew-bricks-review:hover .flow-ew-bricks-toggle__icon svg,
+#bricks-toolbar li.flow-ew-bricks-review:focus-within .flow-ew-bricks-toggle__icon svg,
+#bricks-toolbar li.flow-ew-bricks-review .flow-ew-bricks-toggle.is-active .flow-ew-bricks-toggle__icon svg {
+	opacity: 1 !important;
+}
+
+/* Drawer (Bricks dark theme) */
+.flow-ew-bricks-drawer {
+	background-color: var( --builder-bg, #161a1d );
+	border: 1px solid var( --builder-border-color, #3d4752 );
+	border-radius: var( --builder-border-radius, 4px );
+	bottom: auto;
+	box-shadow: var( --builder-box-shadow, 0 14px 40px rgba( 0, 0, 0, 0.4 ) );
+	color: var( --builder-color, #e2e6e9 );
+	display: none;
+	flex-direction: column;
+	font-family: Inter, sans-serif;
+	/* Match Elementor drawer: 320px wide, about half the viewport tall. */
+	height: 50vh;
+	max-height: 50vh;
+	min-width: 320px;
+	opacity: 0;
+	overflow: hidden;
+	position: fixed;
+	right: 16px;
+	top: calc( var( --builder-toolbar-height, 48px ) + 8px );
+	transform: translateY( -8px );
+	transition: opacity 0.18s ease, transform 0.18s ease;
+	width: 320px;
+	z-index: 100000;
+}
+
+body.admin-bar .flow-ew-bricks-drawer {
+	top: calc( var( --builder-toolbar-height, 48px ) + 8px + var( --wp-admin--admin-bar--height, 32px ) );
+}
+
+.flow-ew-bricks-drawer.is-open {
+	display: flex;
+	opacity: 1;
+	transform: translateY( 0 );
+}
+
+.flow-ew-bricks-drawer__header {
+	align-items: center;
+	background-color: var( --builder-bg-2, #293038 );
+	border-bottom: 1px solid var( --builder-border-color, #3d4752 );
+	display: flex;
+	flex: 0 0 auto;
+	gap: 8px;
+	padding: 10px 14px;
+}
+
+.flow-ew-bricks-drawer__header .flow-ew-drawer-status {
+	align-items: center;
+	background-color: var( --builder-bg-3, #3d4752 );
+	border-radius: 999px;
+	color: var( --builder-color, #e2e6e9 );
+	display: inline-flex;
+	font-size: 11px;
+	font-weight: 500;
+	gap: 6px;
+	letter-spacing: 0.02em;
+	line-height: 1;
+	padding: 4px 10px;
+	text-transform: uppercase;
+	white-space: nowrap;
+}
+
+.flow-ew-bricks-drawer__header .flow-ew-drawer-status .flow-ew-classic__badge-dot {
+	background: var( --flow-badge-color, currentColor );
+	border-radius: 50%;
+	display: inline-block;
+	height: 8px;
+	width: 8px;
+}
+
+.flow-ew-bricks-drawer__header .flow-ew-drawer-status[hidden] {
+	display: none;
+}
+
+.flow-ew-bricks-drawer__title {
+	color: var( --builder-color, #e2e6e9 );
+	font-size: 13px;
+	font-weight: 600;
+	line-height: 1.2;
+}
+
+.flow-ew-bricks-drawer__close {
+	align-items: center;
+	background: transparent;
+	border: 0;
+	border-radius: var( --builder-border-radius, 4px );
+	color: #fff;
+	cursor: pointer;
+	display: inline-flex;
+	flex-shrink: 0;
+	height: 24px;
+	justify-content: center;
+	margin-left: auto;
+	padding: 0;
+	width: 24px;
+}
+
+.flow-ew-bricks-drawer__close svg {
+	display: block;
+	height: 14px;
+	width: 14px;
+}
+
+.flow-ew-bricks-drawer__close:hover,
+.flow-ew-bricks-drawer__close:focus-visible {
+	background-color: transparent;
+	color: #fff;
+	opacity: 0.85;
+	outline: none;
+}
+
+.flow-ew-bricks-drawer__body {
+	color: var( --builder-color, #e2e6e9 );
+	flex: 1 1 auto;
+	font-size: 12px;
+	min-height: 0;
+	overflow-x: hidden;
+	overflow-y: auto;
+	padding: 14px 16px 16px;
+}
+
+@media ( max-width: 600px ) {
+	.flow-ew-bricks-drawer {
+		left: 8px;
+		right: 8px;
+		width: auto;
+	}
+}
+
+/* Drawer body content (overrides classic-editor light styles inside Bricks drawer) */
+.flow-ew-classic--bricks {
+	color: var( --builder-color, #e2e6e9 );
+}
+
+.flow-ew-classic--bricks .flow-ew-classic-open,
+.flow-ew-classic--bricks .flow-ew-classic-open__row {
+	color: var( --builder-color, #e2e6e9 );
+	font-family: inherit;
+	font-size: 13px;
+	font-weight: 400;
+	line-height: 1.4;
+}
+
+.flow-ew-classic--bricks .flow-ew-classic-open__desc {
+	color: var( --builder-color-description, #8a99a8 );
+	font-size: 12px;
+	font-weight: 400;
+	line-height: 1.4;
+	margin-left: 0;
+	margin-top: 4px;
+}
+
+.flow-ew-classic--bricks .flow-ew-classic-open__row input[type='checkbox'] {
+	accent-color: var( --builder-color-accent, #ffd54d );
+}
+
+.flow-ew-classic--bricks .flow-ew-classic__field {
+	margin-bottom: 14px;
+}
+
+.flow-ew-classic--bricks .flow-ew-classic__value {
+	color: var( --builder-color, #e2e6e9 );
+	font-size: 13px;
+}
+
+.flow-ew-classic--bricks .flow-ew-classic__status {
+	margin-bottom: 12px;
+}
+
+.flow-ew-classic--bricks .flow-ew-classic__badge {
+	align-items: center;
+	background-color: var( --builder-bg-2, #293038 );
+	border: 1px solid var( --builder-border-color, #3d4752 );
+	border-radius: var( --builder-border-radius, 4px );
+	color: var( --builder-color, #e2e6e9 );
+	display: inline-flex;
+	font-size: 12px;
+	font-weight: 500;
+	gap: 6px;
+	padding: 4px 10px;
+}
+
+.flow-ew-classic--bricks .flow-ew-classic__badge-dot {
+	background-color: var( --flow-badge-color, currentColor );
+	border-radius: 50%;
+	display: inline-block;
+	height: 8px;
+	width: 8px;
+}
+
+.flow-ew-classic--bricks .flow-ew-classic__share {
+	margin-top: 12px;
+}
+
+.flow-ew-classic--bricks .flow-ew-classic__share-row {
+	align-items: stretch;
+	background-color: #3d4752;
+	border: 1px solid #4e5c6a;
+	border-radius: var( --builder-border-radius, 4px );
+	display: flex;
+	overflow: hidden;
+	--flow-ew-share-icon-size: 16px;
+	--flow-ew-share-action-width: 32px;
+}
+
+.flow-ew-classic--bricks .flow-ew-classic__share-link {
+	background-color: transparent;
+	color: var( --builder-color-accent, #ffd54d );
+	flex: 1;
+	font-size: var(--flow-ew-share-font-size, 13px);
+	min-width: 0;
+	overflow: hidden;
+	padding: 0 var(--flow-ew-share-link-padding-x, 14px);
+	min-height: var(--flow-ew-share-row-height, 40px);
+	line-height: var(--flow-ew-share-row-height, 40px);
+	text-decoration: underline;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	box-sizing: border-box;
+}
+
+.flow-ew-classic--bricks .flow-ew-classic__share-link:hover {
+	text-decoration: underline;
+}
+
+.flow-ew-classic--bricks .flow-ew-classic__share-copy {
+	align-items: center;
+	align-self: stretch;
+	background-color: transparent;
+	border: 0;
+	border-left: 1px solid #4e5c6a;
+	border-radius: 0;
+	color: #e2e6e9;
+	cursor: pointer;
+	display: inline-flex;
+	flex: 0 0 auto;
+	justify-content: center;
+	min-height: var(--flow-ew-share-row-height, 40px);
+	min-width: var(--flow-ew-share-action-width, 36px);
+	width: var(--flow-ew-share-action-width, 36px);
+	box-sizing: border-box;
+}
+
+.flow-ew-classic--bricks .flow-ew-classic__share-copy:hover {
+	background-color: #4e5c6a;
+}
+
+.flow-ew-classic--bricks .flow-ew-classic__share-copy .dashicons,
+.flow-ew-classic--bricks .flow-ew-classic__share-copy .flow-ew-share-icon,
+.flow-ew-classic--bricks .flow-ew-classic__share-copy svg {
+	line-height: 1;
+	width: var(--flow-ew-share-icon-size, 16px);
+	height: var(--flow-ew-share-icon-size, 16px);
+}
+
+.flow-ew-classic--bricks .flow-ew-classic__share-goto {
+	align-items: center;
+	align-self: stretch;
+	background: #1e1e1e;
+	color: #fff;
+	display: inline-flex;
+	flex: 0 0 auto;
+	justify-content: center;
+	min-height: var(--flow-ew-share-row-height, 40px);
+	min-width: var(--flow-ew-share-action-width, 36px);
+	text-decoration: none;
+	width: var(--flow-ew-share-action-width, 36px);
+	box-sizing: border-box;
+}
+
+.flow-ew-classic--bricks .flow-ew-classic__share-goto:hover,
+.flow-ew-classic--bricks .flow-ew-classic__share-goto:focus {
+	background: #000;
+	color: #fff;
+}
+
+.flow-ew-classic--bricks .flow-ew-classic__share-goto .flow-ew-share-icon,
+.flow-ew-classic--bricks .flow-ew-classic__share-goto svg {
+	color: #fff;
+	width: var(--flow-ew-share-icon-size, 16px);
+	height: var(--flow-ew-share-icon-size, 16px);
+}
+
+/* Reviewer combobox (Bricks dark drawer) */
+.flow-ew-classic--bricks .flow-ew-reviewer-combobox {
+	position: relative;
+}
+
+.flow-ew-classic--bricks .flow-ew-reviewer-combobox__wrap {
+	position: relative;
+}
+
+.flow-ew-classic--bricks .flow-ew-reviewer-combobox__input {
+	background-color: #3d4752;
+	border: 1px solid #4e5c6a;
+	border-radius: var( --builder-border-radius, 4px );
+	box-sizing: border-box;
+	color: var( --builder-color, #e2e6e9 );
+	font-family: inherit;
+	font-size: var(--flow-ew-share-font-size, 13px);
+	height: var(--flow-ew-share-row-height, 40px);
+	min-height: var(--flow-ew-share-row-height, 40px);
+	outline: none;
+	padding: 0 32px 0 var( --builder-input-padding-x, 12px );
+	width: 100%;
+}
+
+.flow-ew-classic--bricks .flow-ew-reviewer-combobox__clear {
+	align-items: center;
+	background: transparent;
+	border: 0;
+	color: var( --builder-color-description, #8a99a8 );
+	cursor: pointer;
+	display: flex;
+	height: 24px;
+	justify-content: center;
+	padding: 0;
+	position: absolute;
+	right: 6px;
+	top: 50%;
+	transform: translateY(-50%);
+	width: 24px;
+}
+
+.flow-ew-classic--bricks .flow-ew-reviewer-combobox__clear:hover,
+.flow-ew-classic--bricks .flow-ew-reviewer-combobox__clear:focus {
+	color: var( --builder-color, #e2e6e9 );
+	outline: none;
+}
+
+.flow-ew-classic--bricks .flow-ew-reviewer-combobox__clear[hidden] {
+	display: none;
+}
+
+.flow-ew-classic--bricks .flow-ew-pro-reviewers-list .flow-ew-reviewer-card__remove {
+	color: var(--builder-color-description, #8a99a8);
+}
+
+.flow-ew-classic--bricks .flow-ew-pro-reviewers-list .flow-ew-reviewer-card__remove:hover,
+.flow-ew-classic--bricks .flow-ew-pro-reviewers-list .flow-ew-reviewer-card__remove:focus-visible {
+	color: var(--builder-color, #e2e6e9);
+	outline: none;
+}
+
+.flow-ew-classic--bricks .flow-ew-reviewer-combobox__input:focus {
+	border-color: var( --builder-color-accent, #ffd54d );
+	box-shadow: 0 0 0 1px var( --builder-color-accent, #ffd54d );
+}
+
+.flow-ew-classic--bricks .flow-ew-reviewer-combobox__input::placeholder {
+	color: var( --builder-color-description, #8a99a8 );
+	opacity: var( --builder-placeholder-opacity, 0.65 );
+}
+
+.flow-ew-classic--bricks .flow-ew-reviewer-combobox__input:disabled {
+	cursor: not-allowed;
+	opacity: 0.6;
+}
+
+.flow-ew-classic--bricks .flow-ew-reviewer-combobox__list {
+	background-color: var( --builder-bg-2, #293038 );
+	border: 1px solid var( --builder-border-color, #3d4752 );
+	border-radius: var( --builder-border-radius, 4px );
+	box-shadow: var( --builder-box-shadow, 0 8px 24px rgba( 0, 0, 0, 0.4 ) );
+	left: 0;
+	list-style: none;
+	margin: 0;
+	max-height: 200px;
+	overflow-y: auto;
+	padding: 4px 0;
+	position: absolute;
+	right: 0;
+	top: calc( 100% + 4px );
+	z-index: 5;
+}
+
+.flow-ew-classic--bricks .flow-ew-reviewer-combobox__option {
+	color: var( --builder-color, #e2e6e9 );
+	cursor: pointer;
+	font-size: 13px;
+	padding: 8px 12px;
+}
+
+.flow-ew-classic--bricks .flow-ew-reviewer-combobox__option:hover,
+.flow-ew-classic--bricks .flow-ew-reviewer-combobox__option:focus {
+	background-color: var( --builder-bg-3, #3d4752 );
+	outline: none;
+}
+
+.flow-ew-classic--bricks .flow-ew-reviewer-combobox__option[ aria-selected='true' ] {
+	background-color: var( --builder-bg-accent, #58470e );
+	color: var( --builder-color-accent, #ffd54d );
+}
+
+.flow-ew-classic--bricks .flow-ew-reviewer-combobox__native {
+	border: 0;
+	clip: rect( 0, 0, 0, 0 );
+	height: 1px;
+	margin: -1px;
+	opacity: 0;
+	overflow: hidden;
+	padding: 0;
+	pointer-events: none;
+	position: absolute;
+	white-space: nowrap;
+	width: 1px;
+}
+
+/* Action buttons (Bricks dark theme). The preceding reviewer field
+   already contributes its own bottom margin (or, when Pro takes over,
+   sits flush against the next row), so a small additional offset is
+   enough to read as "next section" without a yawning gap. */
+.flow-ew-classic--bricks .flow-ew-classic__actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin-top: 4px;
+}
+
+.flow-ew-classic--bricks .flow-ew-classic__btn {
+	background-color: var( --builder-bg-2, #293038 );
+	border: 1px solid var( --builder-border-color, #3d4752 );
+	border-radius: var( --builder-border-radius, 4px );
+	color: var( --builder-color, #e2e6e9 );
+	cursor: pointer;
+	font-family: inherit;
+	font-size: 12px;
+	font-weight: 500;
+	height: 32px;
+	line-height: 1;
+	padding: 0 14px;
+	text-shadow: none;
+	transition: background-color 0.12s ease, border-color 0.12s ease, color 0.12s ease, box-shadow 0.12s ease;
+}
+
+.flow-ew-classic--bricks .flow-ew-classic__btn:hover,
+.flow-ew-classic--bricks .flow-ew-classic__btn:focus-visible {
+	background-color: var( --builder-bg-3, #3d4752 );
+	border-color: var( --builder-bg-4, #4e5c6a );
+	color: var( --builder-color, #e2e6e9 );
+	outline: none;
+}
+
+.flow-ew-classic--bricks .flow-ew-classic__btn:focus-visible {
+	box-shadow: 0 0 0 2px var( --builder-color-accent, #ffd54d );
+}
+
+.flow-ew-classic--bricks .flow-ew-classic__btn.button-primary,
+.flow-ew-classic--bricks .flow-ew-classic__btn--approve {
+	background-color: var( --builder-color-accent, #ffd54d );
+	border-color: var( --builder-color-accent, #ffd54d );
+	color: var( --builder-color-accent-inverse, #1e2124 );
+}
+
+.flow-ew-classic--bricks .flow-ew-classic__btn.button-primary:hover,
+.flow-ew-classic--bricks .flow-ew-classic__btn.button-primary:focus-visible,
+.flow-ew-classic--bricks .flow-ew-classic__btn--approve:hover,
+.flow-ew-classic--bricks .flow-ew-classic__btn--approve:focus-visible {
+	background-color: var( --builder-color-accent-dark, var( --builder-color-accent, #ffd54d ) );
+	border-color: var( --builder-color-accent-dark, var( --builder-color-accent, #ffd54d ) );
+	color: var( --builder-color-accent-inverse, #1e2124 );
+	filter: brightness( 0.95 );
+}
+
+.flow-ew-classic--bricks .flow-ew-classic__btn--changes {
+	background-color: transparent;
+	border-color: var( --builder-color-danger, #e13333 );
+	color: var( --builder-color-danger, #e13333 );
+}
+
+.flow-ew-classic--bricks .flow-ew-classic__btn--changes:hover,
+.flow-ew-classic--bricks .flow-ew-classic__btn--changes:focus-visible {
+	background-color: var( --builder-bg-danger, #470b0b );
+	border-color: var( --builder-color-danger, #e13333 );
+	color: var( --builder-color-danger, #e13333 );
+}
+
+.flow-ew-classic--bricks .flow-ew-classic__btn:disabled,
+.flow-ew-classic--bricks .flow-ew-classic__btn[ disabled ] {
+	cursor: not-allowed;
+	filter: none;
+	opacity: 0.5;
+}

@@ -1,0 +1,132 @@
+.flow-ew-dash-section {
+	border-top: 1px solid #dcdcde;
+	margin-top: 14px;
+	padding-top: 14px;
+}
+
+.flow-ew-dash-section:first-child {
+	border-top: 0;
+	margin-top: 0;
+	padding-top: 0;
+}
+
+.flow-ew-dash-section__title {
+	align-items: center;
+	border-left: 3px solid #c3c4c7;
+	color: #1d2327;
+	display: flex;
+	font-size: 11px;
+	font-weight: 600;
+	gap: 8px;
+	letter-spacing: 0.06em;
+	margin: 0 0 8px;
+	padding-left: 5px !important;
+	text-transform: uppercase;
+}
+
+/* Section title accents — use each status’s text color (see status-themes.js). */
+.flow-ew-dash-section--in-review .flow-ew-dash-section__title {
+	border-left-color: #957500;
+}
+
+.flow-ew-dash-section--changes-requested .flow-ew-dash-section__title {
+	border-left-color: #c92122;
+}
+
+.flow-ew-dash-section--open-review .flow-ew-dash-section__title {
+	border-left-color: #1579a5;
+}
+
+.flow-ew-dash-section__count {
+	background: #f0f0f1;
+	border-radius: 9px;
+	color: #50575e;
+	font-size: 11px;
+	font-weight: 500;
+	letter-spacing: 0;
+	padding: 1px 7px;
+	text-transform: none;
+}
+
+.flow-ew-dash-list {
+	margin: 0;
+}
+
+.flow-ew-dash-item {
+	align-items: baseline;
+	border-top: 1px solid #f0f0f1;
+	display: flex;
+	gap: 8px;
+	justify-content: space-between;
+	padding: 8px 0;
+}
+
+.flow-ew-dash-item:first-child {
+	border-top: 0;
+	padding-top: 4px;
+}
+
+.flow-ew-dash-item__main {
+	min-width: 0;
+}
+
+.flow-ew-dash-item__title {
+	display: block;
+	font-weight: 500;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.flow-ew-dash-item__meta {
+	color: #8c8f94;
+	font-size: 12px;
+	margin-top: 2px;
+}
+
+.flow-ew-dash-item--hidden {
+	display: none;
+}
+
+.flow-ew-dash-section.is-expanded .flow-ew-dash-item--hidden {
+	display: flex;
+}
+
+.flow-ew-dash-toggle {
+	background: transparent;
+	border: 0;
+	color: var( --wp-admin-theme-color, #2271b1 );
+	cursor: pointer;
+	font-size: 12px;
+	margin-top: 4px;
+	padding: 4px 0;
+}
+
+.flow-ew-dash-toggle:hover {
+	text-decoration: underline;
+}
+
+.flow-ew-dash-empty {
+	color: #50575e;
+	margin: 0;
+}
+
+/* Footer link → Flow Dashboard subpage. Same visual pattern as core WP
+   widget footers (e.g. "View all activity →" in the Activity widget). */
+.flow-ew-dash-footer {
+	border-top: 1px solid #f0f0f1;
+	margin: 14px 0 0;
+	padding-top: 12px;
+	text-align: right;
+}
+
+.flow-ew-dash-footer a {
+	color: var( --wp-admin-theme-color, #2271b1 );
+	font-size: 13px;
+	text-decoration: none;
+}
+
+.flow-ew-dash-footer a:hover,
+.flow-ew-dash-footer a:focus {
+	text-decoration: underline;
+}

@@ -1,0 +1,1233 @@
+/*!*************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/css-loader/dist/cjs.js??ruleSet[1].rules[4].use[1]!./node_modules/postcss-loader/dist/cjs.js??ruleSet[1].rules[4].use[2]!./src/avada/style.css ***!
+  \*************************************************************************************************************************************************************************/
+/*
+ * Dark drawer palette for builder review UI — Figma inverse semantics
+ * (2026-05_jumplinks_v01). Applied via flow-ew-classic--builder-dark on the
+ * review root in Bricks, Elementor, Breakdance, Avada, and Beaver drawers.
+ */
+
+.flow-ew-classic--builder-dark {
+	--flow-ew-dark-text: #e6eef8;
+	--flow-ew-dark-muted: #9faac0;
+	--flow-ew-dark-border: #4a556a;
+	--flow-ew-dark-card-bg: #262c36;
+	--flow-ew-dark-card-text: #e6eef8;
+	--flow-ew-dark-card-radius: 4px;
+	color: var(--flow-ew-dark-text);
+}
+
+.flow-ew-classic--bricks.flow-ew-classic--builder-dark {
+	--flow-ew-dark-muted: var(--builder-color-description, #8a99a8);
+	--flow-ew-dark-text: var(--builder-color, #e2e6e9);
+	--flow-ew-dark-card-bg: #3d4752;
+	--flow-ew-dark-border: #4e5c6a;
+	--flow-ew-dark-card-text: var(--builder-color, #e2e6e9);
+}
+
+.flow-ew-classic--elementor.flow-ew-classic--builder-dark {
+	--flow-ew-dark-muted: var(--flow-ew-el-muted, #9da5ae);
+	--flow-ew-dark-text: var(--flow-ew-el-txt, #d5d8dc);
+	--flow-ew-dark-card-bg: var(--flow-ew-el-bg-elevated, #2b2c31);
+	--flow-ew-dark-border: var(--flow-ew-el-border, #333438);
+	--flow-ew-dark-card-text: var(--flow-ew-el-txt, #d5d8dc);
+	--flow-ew-dark-card-radius: 3px;
+}
+
+.flow-ew-classic--avada.flow-ew-classic--builder-dark {
+	--flow-ew-dark-muted: #9aa8b7;
+	--flow-ew-dark-text: #d5dde6;
+	--flow-ew-dark-card-bg: #3a424c;
+	--flow-ew-dark-border: #505a66;
+	--flow-ew-dark-card-text: #dbe4ed;
+	--flow-ew-dark-card-radius: 3px;
+}
+
+.flow-ew-classic--oxygen.flow-ew-classic--builder-dark {
+	--flow-ew-dark-muted: #a1a1a1;
+	--flow-ew-dark-text: #ffffff;
+	--flow-ew-dark-card-bg: #262626;
+	--flow-ew-dark-border: #333333;
+	--flow-ew-dark-card-text: #ffffff;
+	--flow-ew-dark-card-radius: 4px;
+}
+
+.flow-ew-classic--beaver.flow-ew-classic--builder-dark {
+	--flow-ew-dark-muted: var(--fl-builder-dim-color, hsl(210, 12%, 55%));
+	--flow-ew-dark-text: var(--fl-builder-panel-color, #e6eef8);
+	--flow-ew-dark-card-bg: var(--fl-builder-platter-bg-color, #181b20);
+	--flow-ew-dark-border: var(--fl-builder-outline-color, hsl(210, 11%, 25%));
+	--flow-ew-dark-card-text: var(--fl-builder-panel-color, #e6eef8);
+}
+
+.flow-ew-classic--divi.flow-ew-classic--builder-dark {
+	--flow-ew-dark-muted: #586892;
+	--flow-ew-dark-text: #f2f3f7;
+	--flow-ew-dark-card-bg: #354559;
+	--flow-ew-dark-border: #a2acc7;
+	--flow-ew-dark-card-text: #f2f3f7;
+	--flow-ew-dark-card-radius: 3px;
+}
+
+.flow-ew-classic--builder-dark .flow-ew-classic__label,
+.flow-ew-classic--builder-dark .flow-ew-classic__share-label,
+.flow-ew-classic--builder-dark .flow-ew-pro-multi-reviewer__label {
+	color: var(--flow-ew-dark-muted);
+	display: block;
+	font-size: 11px;
+	font-weight: 500;
+	letter-spacing: 0.03em;
+	margin: 0 0 6px;
+	opacity: 1;
+	text-transform: uppercase;
+}
+
+.flow-ew-classic--bricks.flow-ew-classic--builder-dark .flow-ew-classic__label,
+.flow-ew-classic--bricks.flow-ew-classic--builder-dark .flow-ew-classic__share-label,
+.flow-ew-classic--bricks.flow-ew-classic--builder-dark .flow-ew-pro-multi-reviewer__label {
+	font-weight: 600;
+	letter-spacing: 0.02em;
+}
+
+.flow-ew-classic--builder-dark .flow-ew-review-notice--in-review {
+	--flow-status-bg: #1e140c;
+	--flow-status-text: #fcf0ce;
+	--flow-status-border: #957500;
+	background: var(--flow-status-bg);
+	border-right: 3px solid var(--flow-status-border);
+	color: var(--flow-status-text);
+}
+
+.flow-ew-classic--builder-dark .flow-ew-review-notice--in-review .flow-ew-review-notice__title {
+	color: #fffcf3;
+}
+
+.flow-ew-classic--builder-dark .flow-ew-review-notice--in-review .flow-ew-review-notice__desc {
+	color: var(--flow-status-text);
+}
+
+.flow-ew-classic--builder-dark .flow-ew-review-notice--changes-requested {
+	--flow-status-bg: #1e1214;
+	--flow-status-text: #ffebea;
+	--flow-status-border: #c92222;
+	background: var(--flow-status-bg);
+	border-right: 3px solid var(--flow-status-border);
+	color: var(--flow-status-text);
+}
+
+.flow-ew-classic--builder-dark .flow-ew-review-notice--changes-requested .flow-ew-review-notice__title {
+	color: #fefbfb;
+}
+
+.flow-ew-classic--builder-dark .flow-ew-review-notice--changes-requested .flow-ew-review-notice__desc {
+	color: var(--flow-status-text);
+}
+
+.flow-ew-classic--builder-dark .flow-ew-review-notice__link {
+	color: #ffd54d;
+}
+
+.flow-ew-classic--builder-dark .flow-ew-review-notice__link:hover,
+.flow-ew-classic--builder-dark .flow-ew-review-notice__link:focus {
+	color: #fffcf3;
+}
+
+/* Pro multi-reviewer status pills (inverse palette) */
+
+.flow-ew-classic--builder-dark .flow-ew-pro-reviewer-row__status--pending {
+	--flow-status-bg: #10171a;
+	--flow-status-text: #cde3e7;
+	--flow-status-border: #5e777b;
+}
+
+.flow-ew-classic--builder-dark .flow-ew-pro-reviewer-row__status--in_review {
+	--flow-status-bg: #1e140c;
+	--flow-status-text: #fcf0ce;
+	--flow-status-border: #957500;
+}
+
+.flow-ew-classic--builder-dark .flow-ew-pro-reviewer-row__status--changes_requested {
+	--flow-status-bg: #1e1214;
+	--flow-status-text: #ffebea;
+	--flow-status-border: #c92222;
+}
+
+.flow-ew-classic--builder-dark .flow-ew-pro-reviewer-row__status--approved {
+	--flow-status-bg: #10190e;
+	--flow-status-text: #e7f5e4;
+	--flow-status-border: #458037;
+}
+
+.flow-ew-classic--builder-dark .flow-ew-pro-reviewer-row__status--open_review {
+	--flow-status-bg: #0a1822;
+	--flow-status-text: #dff4ff;
+	--flow-status-border: #1579a5;
+}
+
+/* Drawer header status badge */
+
+.flow-ew-builder-drawer__header .flow-ew-drawer-status[data-status='pending'] {
+	--flow-status-bg: #10171a;
+	--flow-status-text: #cde3e7;
+	--flow-status-border: #5e777b;
+	background-color: var(--flow-status-bg) !important;
+	border: 1px solid var(--flow-status-border);
+	color: var(--flow-status-text) !important;
+}
+
+.flow-ew-builder-drawer__header .flow-ew-drawer-status[data-status='in_review'] {
+	--flow-status-bg: #1e140c;
+	--flow-status-text: #fcf0ce;
+	--flow-status-border: #957500;
+	background-color: var(--flow-status-bg) !important;
+	border: 1px solid var(--flow-status-border);
+	color: var(--flow-status-text) !important;
+}
+
+.flow-ew-builder-drawer__header .flow-ew-drawer-status[data-status='changes_requested'] {
+	--flow-status-bg: #1e1214;
+	--flow-status-text: #ffebea;
+	--flow-status-border: #c92222;
+	background-color: var(--flow-status-bg) !important;
+	border: 1px solid var(--flow-status-border);
+	color: var(--flow-status-text) !important;
+}
+
+.flow-ew-builder-drawer__header .flow-ew-drawer-status[data-status='approved'] {
+	--flow-status-bg: #10190e;
+	--flow-status-text: #e7f5e4;
+	--flow-status-border: #458037;
+	background-color: var(--flow-status-bg) !important;
+	border: 1px solid var(--flow-status-border);
+	color: var(--flow-status-text) !important;
+}
+
+.flow-ew-builder-drawer__header .flow-ew-drawer-status[data-status='open_review'] {
+	--flow-status-bg: #0a1822;
+	--flow-status-text: #dff4ff;
+	--flow-status-border: #1579a5;
+	background-color: var(--flow-status-bg) !important;
+	border: 1px solid var(--flow-status-border);
+	color: var(--flow-status-text) !important;
+}
+
+/* Pro multi-reviewer list cards */
+
+.flow-ew-classic--builder-dark .flow-ew-pro-reviewers-list > .flow-ew-reviewer-card {
+	background-color: var(--flow-ew-dark-card-bg);
+	border: 1px solid var(--flow-ew-dark-border);
+	border-radius: var(--flow-ew-dark-card-radius);
+	color: var(--flow-ew-dark-card-text);
+}
+
+.flow-ew-classic--builder-dark .flow-ew-pro-reviewers-list .flow-ew-truncate {
+	color: var(--flow-ew-dark-card-text);
+}
+
+.flow-ew-classic--builder-dark .flow-ew-pro-reviewers-list .flow-ew-reviewer-card__remove {
+	align-items: center;
+	background: transparent;
+	border: 0;
+	color: var(--flow-ew-dark-muted);
+	display: inline-flex;
+	flex-shrink: 0;
+	font-size: inherit;
+	font-weight: 400;
+	height: 24px;
+	justify-content: center;
+	line-height: 1;
+	min-height: 24px;
+	min-width: 24px;
+	opacity: 1;
+	padding: 0;
+	width: 24px;
+}
+
+.flow-ew-classic--builder-dark .flow-ew-pro-reviewers-list .flow-ew-reviewer-card__remove svg {
+	display: block;
+	height: 14px;
+	width: 14px;
+}
+
+.flow-ew-classic--builder-dark .flow-ew-pro-reviewers-list .flow-ew-reviewer-card__remove:hover,
+.flow-ew-classic--builder-dark .flow-ew-pro-reviewers-list .flow-ew-reviewer-card__remove:focus-visible {
+	background: transparent;
+	box-shadow: none;
+	color: var(--flow-ew-dark-text);
+	opacity: 1;
+	outline: none;
+}
+
+.flow-ew-classic--bricks.flow-ew-classic--builder-dark .flow-ew-pro-multi-reviewer__add .flow-ew-reviewer-combobox__input {
+	background-color: var(--flow-ew-dark-card-bg);
+	border-color: var(--flow-ew-dark-border);
+}
+
+.flow-ew-classic--breakdance.flow-ew-classic--builder-dark .flow-ew-pro-multi-reviewer__add .flow-ew-reviewer-combobox__input {
+	background: transparent;
+	border-color: var(--flow-ew-dark-border);
+	height: var(--flow-ew-bd-field-height, 40px);
+	max-height: var(--flow-ew-bd-field-height, 40px);
+	min-height: var(--flow-ew-bd-field-height, 40px);
+}
+
+.flow-ew-classic--avada.flow-ew-classic--builder-dark .flow-ew-pro-multi-reviewer__add .flow-ew-reviewer-combobox__input {
+	background-color: var(--flow-ew-dark-card-bg);
+	border-color: var(--flow-ew-dark-border);
+	height: var(--flow-ew-avada-field-height, 40px);
+	max-height: var(--flow-ew-avada-field-height, 40px);
+	min-height: var(--flow-ew-avada-field-height, 40px);
+}
+
+.flow-ew-classic--beaver.flow-ew-classic--builder-dark .flow-ew-reviewer-combobox__input,
+.flow-ew-classic--beaver.flow-ew-classic--builder-dark .flow-ew-pro-multi-reviewer__add .flow-ew-reviewer-combobox__input {
+	background-color: var(--fl-builder-input-bg-color, var(--flow-ew-dark-card-bg));
+	border-color: var(--fl-builder-outline-color, var(--flow-ew-dark-border));
+	color: var(--fl-builder-input-color, var(--flow-ew-dark-text));
+}
+
+/* Publish control lock while mandatory review is unmet */
+
+body.flow-ew-avada-publish-blocked .flow-ew-avada-publish-blocked-control {
+	cursor: not-allowed !important;
+	opacity: 0.45 !important;
+}
+
+/* Toolbar trigger */
+
+.flow-ew-avada-review {
+	position: relative;
+}
+
+.additional-tools .flow-ew-avada-review {
+	display: block;
+	float: right;
+}
+
+.flow-ew-avada-toggle {
+	align-items: center;
+	color: rgba(255, 255, 255, 0.8);
+	display: flex;
+	font-size: 20px;
+	height: 54px;
+	justify-content: center;
+	line-height: 20px;
+	padding: 15px 17px;
+	text-decoration: none;
+	transition: all 0.1s ease;
+}
+
+.additional-tools .flow-ew-avada-toggle {
+	height: 54px;
+}
+
+.flow-ew-avada-toggle[hidden] {
+	display: none !important;
+}
+
+.flow-ew-avada-review .flow-ew-avada-toggle:hover,
+.flow-ew-avada-review .flow-ew-avada-toggle.active {
+	background: #373e44;
+	color: #ffffff;
+}
+
+.flow-ew-avada-toggle:focus-visible {
+	outline: 2px solid #65bc7b;
+	outline-offset: -2px;
+}
+
+.flow-ew-avada-toggle__icon {
+	display: inline-flex;
+	line-height: 0;
+	margin: 0;
+}
+
+.flow-ew-avada-toggle__icon svg {
+	display: block;
+	height: 26px;
+	margin: 0;
+	vertical-align: middle;
+	width: 26px;
+}
+
+/* Head/limbs follow toolbar icon color; torso reflects review status. */
+
+.flow-ew-avada-review .flow-ew-avada-toggle .flow-ew-jumplink-icon__head,
+.flow-ew-avada-review .flow-ew-avada-toggle .flow-ew-jumplink-icon__limbs {
+	color: currentColor;
+}
+
+.flow-ew-avada-review .flow-ew-avada-toggle .flow-ew-jumplink-icon__torso,
+.flow-ew-avada-review .flow-ew-avada-toggle .flow-ew-jumplink-icon__torso path {
+	color: #7f8a96;
+	fill: currentColor;
+}
+
+.flow-ew-avada-review .flow-ew-avada-toggle[data-status='pending'] .flow-ew-jumplink-icon__torso,
+.flow-ew-avada-review .flow-ew-avada-toggle[data-status='pending'] .flow-ew-jumplink-icon__torso path,
+.flow-ew-avada-review[data-status='pending'] .flow-ew-avada-toggle .flow-ew-jumplink-icon__torso,
+.flow-ew-avada-review[data-status='pending'] .flow-ew-avada-toggle .flow-ew-jumplink-icon__torso path {
+	color: #5e777b;
+}
+
+.flow-ew-avada-review .flow-ew-avada-toggle[data-status='in_review'] .flow-ew-jumplink-icon__torso,
+.flow-ew-avada-review .flow-ew-avada-toggle[data-status='in_review'] .flow-ew-jumplink-icon__torso path,
+.flow-ew-avada-review[data-status='in_review'] .flow-ew-avada-toggle .flow-ew-jumplink-icon__torso,
+.flow-ew-avada-review[data-status='in_review'] .flow-ew-avada-toggle .flow-ew-jumplink-icon__torso path {
+	color: #957500;
+}
+
+.flow-ew-avada-review .flow-ew-avada-toggle[data-status='changes_requested'] .flow-ew-jumplink-icon__torso,
+.flow-ew-avada-review .flow-ew-avada-toggle[data-status='changes_requested'] .flow-ew-jumplink-icon__torso path,
+.flow-ew-avada-review[data-status='changes_requested'] .flow-ew-avada-toggle .flow-ew-jumplink-icon__torso,
+.flow-ew-avada-review[data-status='changes_requested'] .flow-ew-avada-toggle .flow-ew-jumplink-icon__torso path {
+	color: #c92122;
+}
+
+.flow-ew-avada-review .flow-ew-avada-toggle[data-status='approved'] .flow-ew-jumplink-icon__torso,
+.flow-ew-avada-review .flow-ew-avada-toggle[data-status='approved'] .flow-ew-jumplink-icon__torso path,
+.flow-ew-avada-review[data-status='approved'] .flow-ew-avada-toggle .flow-ew-jumplink-icon__torso,
+.flow-ew-avada-review[data-status='approved'] .flow-ew-avada-toggle .flow-ew-jumplink-icon__torso path {
+	color: #458037;
+}
+
+.flow-ew-avada-review .flow-ew-avada-toggle[data-status='open_review'] .flow-ew-jumplink-icon__torso,
+.flow-ew-avada-review .flow-ew-avada-toggle[data-status='open_review'] .flow-ew-jumplink-icon__torso path,
+.flow-ew-avada-review[data-status='open_review'] .flow-ew-avada-toggle .flow-ew-jumplink-icon__torso,
+.flow-ew-avada-review[data-status='open_review'] .flow-ew-avada-toggle .flow-ew-jumplink-icon__torso path {
+	color: #1579a5;
+}
+
+/* Only brighten the icon on the toggle itself — not when the drawer has focus. */
+
+.flow-ew-avada-review .flow-ew-avada-toggle:hover .flow-ew-jumplink-icon__torso,
+.flow-ew-avada-review .flow-ew-avada-toggle:hover .flow-ew-jumplink-icon__torso path,
+.flow-ew-avada-review .flow-ew-avada-toggle:focus-visible .flow-ew-jumplink-icon__torso,
+.flow-ew-avada-review .flow-ew-avada-toggle:focus-visible .flow-ew-jumplink-icon__torso path,
+.flow-ew-avada-review .flow-ew-avada-toggle.active .flow-ew-jumplink-icon__torso,
+.flow-ew-avada-review .flow-ew-avada-toggle.active .flow-ew-jumplink-icon__torso path {
+	color: currentColor;
+}
+
+.fusion-builder-live .fusion-builder-live-toolbar .flow-ew-avada-review .flow-ew-avada-toggle .flow-ew-jumplink-icon__torso path,
+.fusion-builder-live .fusion-builder-live-toolbar .flow-ew-avada-review .flow-ew-avada-toggle .flow-ew-jumplink-icon__head path,
+.fusion-builder-live .fusion-builder-live-toolbar .flow-ew-avada-review .flow-ew-avada-toggle .flow-ew-jumplink-icon__limbs path {
+	fill: currentColor !important;
+}
+
+/* Drawer (Avada dark builder look) */
+
+.flow-ew-avada-drawer {
+	background: #373e44;
+	border: 0;
+	border-radius: 0 0 6px 6px;
+	box-shadow: 0 30px 30px rgba(0, 0, 0, 0.3);
+	color: #d5dde6;
+	/* Match Elementor drawer: 320px wide, about half the viewport tall. */
+	width: 320px;
+	min-width: 320px;
+	height: 50vh;
+	max-height: 50vh;
+	overflow-x: hidden;
+	overflow-y: auto;
+	position: absolute;
+	right: auto;
+	left: 0;
+	top: 100%;
+	z-index: 1000;
+}
+
+/* Match native Avada submenu chrome once mounted in the toolbar */
+
+.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav > li.flow-ew-avada-review .flow-ew-avada-drawer.submenu-trigger-target,
+.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav > li.flow-ew-avada-review .flow-ew-avada-drawer {
+	border-radius: 0 0 6px 6px !important;
+	overflow-x: hidden !important;
+	overflow-y: auto !important;
+	width: 320px !important;
+	min-width: 320px !important;
+	height: 50vh !important;
+	max-height: 50vh !important;
+}
+
+.flow-ew-avada-drawer[aria-expanded='false'] {
+	display: none;
+}
+
+.flow-ew-avada-drawer[aria-expanded='true'] {
+	display: block;
+}
+
+.flow-ew-avada-drawer .flow-ew-avada-drawer__header,
+.flow-ew-avada-drawer .flow-ew-avada-drawer__body {
+	display: flex;
+	flex-direction: column;
+}
+
+.flow-ew-avada-drawer .flow-ew-avada-drawer__header {
+	flex-direction: row;
+}
+
+.flow-ew-avada-drawer__header {
+	align-items: center;
+	background: #373e44;
+	border-bottom: 0;
+	display: flex;
+	gap: 8px;
+	padding: 10px 12px;
+}
+
+.flow-ew-avada-drawer__title {
+	color: #e4ebf2;
+	font-size: 13px;
+	font-weight: 600;
+	line-height: 1.2;
+}
+
+.flow-ew-avada-drawer__close {
+	display: none !important;
+}
+
+.flow-ew-avada-drawer__close:hover,
+.flow-ew-avada-drawer__close:focus-visible {
+	background: #3f464f;
+	color: #ffffff;
+	outline: none;
+}
+
+.flow-ew-avada-drawer__body {
+	background: #373e44;
+	border-radius: 0 0 6px 6px;
+	color: #dbe4ed;
+	font-size: 12px;
+	overflow: visible;
+	padding: 12px;
+}
+
+.flow-ew-avada-drawer .flow-ew-reviewer-combobox {
+	position: relative;
+	z-index: 10;
+}
+
+.flow-ew-avada-drawer .flow-ew-reviewer-combobox__list {
+	z-index: 1200;
+}
+
+/* Avada toolbar styles target any ".fusion-toolbar-nav > li ul" and can
+   override Flow combobox dropdown placement; re-pin the reviewer listbox. */
+
+.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav > li.flow-ew-avada-review .flow-ew-avada-drawer ul:not(.flow-ew-pro-reviewers-list) {
+	right: auto !important;
+	margin: 0 !important;
+	position: static !important;
+	top: auto !important;
+}
+
+/* Broader host-agnostic fallback: even if the drawer is mounted under a
+   different toolbar list item, keep all nested lists out of Avada's absolute
+   toolbar-dropdown positioning. */
+
+.fusion-builder-live .fusion-builder-live-toolbar .flow-ew-avada-drawer ul:not(.flow-ew-pro-reviewers-list),
+.fusion-builder-live .fusion-builder-live-toolbar .flow-ew-avada-drawer li ul:not(.flow-ew-pro-reviewers-list) {
+	right: auto !important;
+	margin: 0 !important;
+	position: static !important;
+	left: auto !important;
+	top: auto !important;
+}
+
+.flow-ew-avada-drawer .flow-ew-pro-reviewers-list {
+	margin: 0 0 8px !important;
+}
+
+/* Host-agnostic: keep reviewer chips in normal flow even when the drawer is
+   not mounted under li.flow-ew-avada-review yet. */
+
+.fusion-builder-live .fusion-builder-live-toolbar .flow-ew-avada-drawer .flow-ew-pro-multi-reviewer,
+.fusion-builder-live .fusion-builder-live-toolbar .flow-ew-avada-drawer .flow-ew-pro-multi-reviewer__body,
+.fusion-builder-live .fusion-builder-live-toolbar .flow-ew-avada-drawer .flow-ew-pro-multi-reviewer__chips,
+.fusion-builder-live .fusion-builder-live-toolbar .flow-ew-avada-drawer .flow-ew-pro-reviewers-list,
+.fusion-builder-live .fusion-builder-live-toolbar .flow-ew-avada-drawer .flow-ew-pro-reviewers-list > li,
+.fusion-builder-live .fusion-builder-live-toolbar .flow-ew-avada-drawer #flow-ew-classic-reviewer-slot {
+	position: static !important;
+	right: auto !important;
+	left: auto !important;
+	top: auto !important;
+	inset: auto !important;
+	transform: none !important;
+	width: 100% !important;
+	box-sizing: border-box !important;
+}
+
+.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav > li.flow-ew-avada-review .flow-ew-avada-drawer .flow-ew-pro-reviewers-list,
+.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav > li.flow-ew-avada-review .flow-ew-avada-drawer .flow-ew-pro-reviewers-list li,
+.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav > li.flow-ew-avada-review .flow-ew-avada-drawer #flow-ew-classic-reviewer-slot,
+.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav > li.flow-ew-avada-review .flow-ew-avada-drawer .flow-ew-pro-multi-reviewer {
+	position: static !important;
+	transform: none !important;
+	width: 100% !important;
+}
+
+.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav > li.flow-ew-avada-review .flow-ew-reviewer-combobox__wrap {
+	position: relative !important;
+}
+
+.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav > li.flow-ew-avada-review .flow-ew-reviewer-combobox__list {
+	position: static !important;
+	top: auto !important;
+	left: auto !important;
+	right: auto !important;
+	margin: 0 !important;
+	padding: 4px 0 !important;
+	list-style: none !important;
+	width: 100% !important;
+}
+
+/* Failsafe: regardless of host <li> class wiring, keep reviewer lists out of
+   Avada's global `.fusion-toolbar-nav > li ul { position:absolute; ... }` rule. */
+
+.fusion-builder-live .fusion-builder-live-toolbar .flow-ew-avada-drawer .flow-ew-reviewer-combobox__list,
+.fusion-builder-live .fusion-builder-live-toolbar .flow-ew-avada-drawer #flow-ew-reviewer-listbox,
+.fusion-builder-live .fusion-builder-live-toolbar .flow-ew-avada-drawer #flow-ew-pro-multi-reviewer-listbox {
+	position: static !important;
+	top: auto !important;
+	left: auto !important;
+	right: auto !important;
+	inset: auto !important;
+	width: 100% !important;
+}
+
+.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav > li.flow-ew-avada-review .flow-ew-reviewer-combobox__list:not([hidden]) {
+	display: block !important;
+}
+
+/* In Avada the list items are present but UA `[hidden]` + toolbar overrides
+   keep the autocomplete visually collapsed. Force-show while focused, but only
+   when the list is actually open — never override `[hidden]` after selection. */
+
+.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav > li.flow-ew-avada-review .flow-ew-reviewer-combobox__wrap:focus-within .flow-ew-reviewer-combobox__list:not([hidden]),
+.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav > li.flow-ew-avada-review .flow-ew-classic__field--combobox:focus-within .flow-ew-reviewer-combobox__list:not([hidden]) {
+	display: block !important;
+	opacity: 1 !important;
+	visibility: visible !important;
+}
+
+/* Reviewer dropdowns should overlay actions (e.g. Send for review) */
+
+.flow-ew-avada-drawer .flow-ew-reviewer-combobox__wrap {
+	position: relative !important;
+}
+
+/* Reviewer combobox (Avada dark drawer) */
+
+.flow-ew-classic--avada {
+	--flow-ew-avada-field-height: 40px;
+}
+
+.flow-ew-classic--avada .flow-ew-reviewer-combobox {
+	position: relative;
+}
+
+.flow-ew-classic--avada .flow-ew-reviewer-combobox__wrap {
+	position: relative !important;
+}
+
+.flow-ew-classic--avada .flow-ew-reviewer-combobox__input {
+	background: #3a424c !important;
+	border: 1px solid #505a66 !important;
+	border-radius: 3px !important;
+	box-sizing: border-box !important;
+	color: #ffffff !important;
+	font-family: inherit !important;
+	font-size: 13px !important;
+	font-weight: 500;
+	height: var(--flow-ew-avada-field-height, 40px) !important;
+	line-height: 1.2 !important;
+	max-height: var(--flow-ew-avada-field-height, 40px) !important;
+	min-height: var(--flow-ew-avada-field-height, 40px) !important;
+	outline: none !important;
+	padding: 0 10px 0 32px !important;
+	width: 100% !important;
+}
+
+.flow-ew-classic--avada .flow-ew-reviewer-combobox__input:focus {
+	border-color: #65bc7b !important;
+	box-shadow: 0 0 0 1px #65bc7b !important;
+}
+
+.flow-ew-classic--avada .flow-ew-reviewer-combobox__input::-moz-placeholder {
+	color: #9aa8b7 !important;
+}
+
+.flow-ew-classic--avada .flow-ew-reviewer-combobox__input::placeholder {
+	color: #9aa8b7 !important;
+}
+
+.flow-ew-classic--avada .flow-ew-reviewer-combobox__clear {
+	align-items: center !important;
+	background: transparent !important;
+	border: 0 !important;
+	color: #9aa8b7 !important;
+	cursor: pointer !important;
+	display: flex !important;
+	font-size: 14px !important;
+	height: 24px !important;
+	justify-content: center !important;
+	line-height: 1 !important;
+	margin: 0 !important;
+	min-height: 24px !important;
+	min-width: 24px !important;
+	padding: 0 !important;
+	position: absolute !important;
+	left: 4px !important;
+	top: 50% !important;
+	transform: translateY(-50%) !important;
+	width: 24px !important;
+}
+
+.flow-ew-classic--avada .flow-ew-reviewer-combobox__clear svg,
+.flow-ew-classic--avada .flow-ew-reviewer-combobox__clear path {
+	fill: #9aa8b7 !important;
+}
+
+.flow-ew-classic--avada .flow-ew-reviewer-combobox__clear:hover,
+.flow-ew-classic--avada .flow-ew-reviewer-combobox__clear:focus-visible {
+	color: #ffffff !important;
+	outline: none !important;
+}
+
+.flow-ew-classic--avada .flow-ew-reviewer-combobox__clear:hover svg,
+.flow-ew-classic--avada .flow-ew-reviewer-combobox__clear:hover path,
+.flow-ew-classic--avada .flow-ew-reviewer-combobox__clear:focus-visible svg,
+.flow-ew-classic--avada .flow-ew-reviewer-combobox__clear:focus-visible path {
+	fill: #ffffff !important;
+}
+
+.flow-ew-classic--avada .flow-ew-reviewer-combobox__clear[hidden] {
+	display: none !important;
+}
+
+.flow-ew-classic--avada .flow-ew-pro-reviewers-list .flow-ew-reviewer-card__remove {
+	color: #9aa8b7 !important;
+}
+
+.flow-ew-classic--avada .flow-ew-pro-reviewers-list .flow-ew-reviewer-card__remove svg,
+.flow-ew-classic--avada .flow-ew-pro-reviewers-list .flow-ew-reviewer-card__remove path {
+	fill: #9aa8b7 !important;
+}
+
+.flow-ew-classic--avada .flow-ew-pro-reviewers-list .flow-ew-reviewer-card__remove:hover,
+.flow-ew-classic--avada .flow-ew-pro-reviewers-list .flow-ew-reviewer-card__remove:focus-visible {
+	color: #ffffff !important;
+	outline: none !important;
+}
+
+.flow-ew-classic--avada .flow-ew-pro-reviewers-list .flow-ew-reviewer-card__remove:hover svg,
+.flow-ew-classic--avada .flow-ew-pro-reviewers-list .flow-ew-reviewer-card__remove:hover path,
+.flow-ew-classic--avada .flow-ew-pro-reviewers-list .flow-ew-reviewer-card__remove:focus-visible svg,
+.flow-ew-classic--avada .flow-ew-pro-reviewers-list .flow-ew-reviewer-card__remove:focus-visible path {
+	fill: #ffffff !important;
+}
+
+/* Override Avada toolbar button defaults inside the Flow drawer */
+
+.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav > li.flow-ew-avada-review .flow-ew-avada-drawer .flow-ew-reviewer-combobox__input {
+	background: #3a424c !important;
+	border: 1px solid #505a66 !important;
+	color: #ffffff !important;
+	font-size: 13px !important;
+	height: var(--flow-ew-avada-field-height, 40px) !important;
+	line-height: 1.2 !important;
+	max-height: var(--flow-ew-avada-field-height, 40px) !important;
+	min-height: var(--flow-ew-avada-field-height, 40px) !important;
+	padding: 0 10px 0 32px !important;
+}
+
+.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav > li.flow-ew-avada-review .flow-ew-avada-drawer .flow-ew-reviewer-combobox__clear {
+	align-items: center !important;
+	background: transparent !important;
+	border: 0 !important;
+	box-shadow: none !important;
+	color: #9aa8b7 !important;
+	cursor: pointer !important;
+	display: flex !important;
+	font-size: 14px !important;
+	height: 24px !important;
+	justify-content: center !important;
+	line-height: 1 !important;
+	margin: 0 !important;
+	min-height: 24px !important;
+	min-width: 24px !important;
+	padding: 0 !important;
+	position: absolute !important;
+	left: 4px !important;
+	top: 50% !important;
+	transform: translateY(-50%) !important;
+	width: 24px !important;
+}
+
+.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav > li.flow-ew-avada-review .flow-ew-avada-drawer .flow-ew-reviewer-combobox__clear svg,
+.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav > li.flow-ew-avada-review .flow-ew-avada-drawer .flow-ew-reviewer-combobox__clear path {
+	fill: #9aa8b7 !important;
+}
+
+.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav > li.flow-ew-avada-review .flow-ew-avada-drawer .flow-ew-reviewer-combobox__clear:hover,
+.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav > li.flow-ew-avada-review .flow-ew-avada-drawer .flow-ew-reviewer-combobox__clear:focus-visible {
+	background: transparent !important;
+	color: #ffffff !important;
+}
+
+.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav > li.flow-ew-avada-review .flow-ew-avada-drawer .flow-ew-reviewer-combobox__clear:hover svg,
+.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav > li.flow-ew-avada-review .flow-ew-avada-drawer .flow-ew-reviewer-combobox__clear:hover path,
+.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav > li.flow-ew-avada-review .flow-ew-avada-drawer .flow-ew-reviewer-combobox__clear:focus-visible svg,
+.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav > li.flow-ew-avada-review .flow-ew-avada-drawer .flow-ew-reviewer-combobox__clear:focus-visible path {
+	fill: #ffffff !important;
+}
+
+.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav > li.flow-ew-avada-review .flow-ew-avada-drawer .flow-ew-reviewer-combobox__clear[hidden] {
+	display: none !important;
+}
+
+.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav > li.flow-ew-avada-review .flow-ew-avada-drawer .flow-ew-pro-reviewers-list .flow-ew-reviewer-card__remove {
+	color: #9aa8b7 !important;
+}
+
+.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav > li.flow-ew-avada-review .flow-ew-avada-drawer .flow-ew-pro-reviewers-list .flow-ew-reviewer-card__remove svg,
+.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav > li.flow-ew-avada-review .flow-ew-avada-drawer .flow-ew-pro-reviewers-list .flow-ew-reviewer-card__remove path {
+	fill: #9aa8b7 !important;
+}
+
+.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav > li.flow-ew-avada-review .flow-ew-avada-drawer .flow-ew-pro-reviewers-list .flow-ew-reviewer-card__remove:hover,
+.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav > li.flow-ew-avada-review .flow-ew-avada-drawer .flow-ew-pro-reviewers-list .flow-ew-reviewer-card__remove:focus-visible {
+	color: #ffffff !important;
+	outline: none !important;
+}
+
+.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav > li.flow-ew-avada-review .flow-ew-avada-drawer .flow-ew-pro-reviewers-list .flow-ew-reviewer-card__remove:hover svg,
+.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav > li.flow-ew-avada-review .flow-ew-avada-drawer .flow-ew-pro-reviewers-list .flow-ew-reviewer-card__remove:hover path,
+.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav > li.flow-ew-avada-review .flow-ew-avada-drawer .flow-ew-pro-reviewers-list .flow-ew-reviewer-card__remove:focus-visible svg,
+.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav > li.flow-ew-avada-review .flow-ew-avada-drawer .flow-ew-pro-reviewers-list .flow-ew-reviewer-card__remove:focus-visible path {
+	fill: #ffffff !important;
+}
+
+.flow-ew-avada-drawer .flow-ew-reviewer-combobox__list,
+.flow-ew-avada-drawer #flow-ew-reviewer-listbox,
+.flow-ew-avada-drawer #flow-ew-pro-multi-reviewer-listbox {
+	position: absolute !important;
+	top: calc(100% + 4px) !important;
+	left: 0 !important;
+	right: 0 !important;
+	z-index: 2000 !important;
+}
+
+/* Drawer status pill */
+
+.flow-ew-avada-drawer__header .flow-ew-drawer-status {
+	align-items: center;
+	background: #3b424b;
+	border-radius: 999px;
+	color: #dbe4ed;
+	display: inline-flex;
+	font-size: 11px;
+	font-weight: 500;
+	gap: 6px;
+	letter-spacing: 0.02em;
+	line-height: 1;
+	padding: 4px 10px;
+	text-transform: uppercase;
+	white-space: nowrap;
+}
+
+.flow-ew-avada-drawer__header .flow-ew-drawer-status .flow-ew-classic__badge-dot {
+	background: var(--flow-badge-color, currentColor);
+	border-radius: 50%;
+	display: inline-block;
+	height: 8px;
+	width: 8px;
+}
+
+.flow-ew-avada-drawer__header .flow-ew-drawer-status[hidden] {
+	display: none;
+}
+
+/* Review-panel body skin for Avada */
+
+.flow-ew-classic--avada .flow-ew-classic__badge {
+	align-items: center;
+	background: #3a424c;
+	border: 1px solid #505a66;
+	border-radius: 4px;
+	color: #dbe4ed;
+	display: inline-flex;
+	font-size: 12px;
+	font-weight: 500;
+	gap: 6px;
+	padding: 4px 10px;
+}
+
+.flow-ew-classic--avada .flow-ew-classic__badge-dot {
+	background: var(--flow-badge-color, currentColor);
+	border-radius: 50%;
+	display: inline-block;
+	height: 8px;
+	width: 8px;
+}
+
+.flow-ew-classic--avada .flow-ew-classic__actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin-top: 4px;
+}
+
+.flow-ew-classic--avada .flow-ew-classic__btn {
+	background: #3a424c;
+	border: 1px solid #505a66;
+	border-radius: 4px;
+	box-sizing: border-box;
+	color: #ffffff;
+	cursor: pointer;
+	display: inline-flex;
+	font-size: 12px;
+	font-weight: 500;
+	height: 32px;
+	justify-content: center;
+	align-items: center;
+	line-height: 1;
+	padding: 0 14px;
+	text-align: center;
+	transition: background-color 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+}
+
+.flow-ew-classic--avada .flow-ew-classic__btn:hover,
+.flow-ew-classic--avada .flow-ew-classic__btn:focus-visible {
+	background: #46505b;
+	border-color: #65bc7b;
+	color: #ffffff;
+	outline: none;
+}
+
+.flow-ew-classic--avada .flow-ew-classic__btn.button-primary,
+.flow-ew-classic--avada .flow-ew-classic__btn--approve {
+	background: #4a90e2;
+	border-color: #4a90e2;
+	color: #0f1a24;
+}
+
+.flow-ew-classic--avada .flow-ew-classic__btn.button-primary:hover,
+.flow-ew-classic--avada .flow-ew-classic__btn.button-primary:focus-visible,
+.flow-ew-classic--avada .flow-ew-classic__btn--approve:hover,
+.flow-ew-classic--avada .flow-ew-classic__btn--approve:focus-visible {
+	background: #5b9be6;
+	border-color: #5b9be6;
+	color: #0f1a24;
+}
+
+.flow-ew-classic--avada .flow-ew-classic__btn--changes {
+	background: transparent;
+	border-color: #d84545;
+	color: #ef6666;
+}
+
+.flow-ew-classic--avada .flow-ew-classic__btn--changes:hover,
+.flow-ew-classic--avada .flow-ew-classic__btn--changes:focus-visible {
+	background: #4a1f22;
+	border-color: #ef6666;
+	color: #ff8686;
+}
+
+.flow-ew-classic--avada .flow-ew-classic__btn[data-action='send'],
+.flow-ew-classic--avada .flow-ew-classic__btn[data-action='resubmit'] {
+	background: #65bc7b;
+	border-color: #65bc7b;
+	color: #122116;
+	display: flex !important;
+	align-items: center;
+	justify-content: center;
+	font-size: 13px;
+	font-weight: 600;
+	height: var(--flow-ew-avada-field-height, 40px);
+	line-height: 1.2 !important;
+	max-height: var(--flow-ew-avada-field-height, 40px);
+	min-height: var(--flow-ew-avada-field-height, 40px);
+	padding: 0 10px !important;
+	width: 100%;
+}
+
+.flow-ew-classic--avada .flow-ew-classic__btn[data-action='send']:hover,
+.flow-ew-classic--avada .flow-ew-classic__btn[data-action='send']:focus-visible,
+.flow-ew-classic--avada .flow-ew-classic__btn[data-action='resubmit']:hover,
+.flow-ew-classic--avada .flow-ew-classic__btn[data-action='resubmit']:focus-visible {
+	background: #57a66d;
+	border-color: #57a66d;
+	color: #122116;
+}
+
+.flow-ew-avada-drawer .flow-ew-classic__btn[data-action='send'],
+.flow-ew-avada-drawer .flow-ew-classic__btn[data-action='resubmit'],
+.fusion-builder-live .fusion-builder-live-toolbar .flow-ew-avada-drawer .flow-ew-classic__btn[data-action='send'],
+.fusion-builder-live .fusion-builder-live-toolbar .flow-ew-avada-drawer .flow-ew-classic__btn[data-action='resubmit'],
+.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav > li.flow-ew-avada-review .flow-ew-avada-drawer .flow-ew-classic__btn[data-action='send'],
+.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav > li.flow-ew-avada-review .flow-ew-avada-drawer .flow-ew-classic__btn[data-action='resubmit'] {
+	font-size: 13px !important;
+	font-weight: 600 !important;
+	height: var(--flow-ew-avada-field-height, 40px) !important;
+	line-height: 1.2 !important;
+	max-height: var(--flow-ew-avada-field-height, 40px) !important;
+	min-height: var(--flow-ew-avada-field-height, 40px) !important;
+	padding: 0 10px !important;
+	text-transform: none !important;
+	width: 100% !important;
+}
+
+.flow-ew-classic--avada a,
+.flow-ew-classic--avada .flow-ew-classic__share-link,
+.flow-ew-classic--avada .flow-ew-classic__share-copy {
+	color: #65bc7b;
+}
+
+.flow-ew-classic--avada .flow-ew-classic-open__desc {
+	color: var(--flow-ew-dark-muted, #9aa8b7);
+}
+
+.flow-ew-classic--avada input[type='checkbox'] {
+	accent-color: #65bc7b;
+}
+
+.flow-ew-classic--avada .flow-ew-classic__share-row {
+	--flow-ew-share-action-width: 36px;
+	--flow-ew-share-icon-size: 14px;
+	--flow-ew-share-row-height: var(--flow-ew-avada-field-height, 40px);
+	align-items: stretch;
+	background: #3a424c;
+	border: 1px solid #505a66;
+	border-radius: 3px;
+	display: flex;
+	height: var(--flow-ew-share-row-height, 40px);
+	max-height: var(--flow-ew-share-row-height, 40px);
+	min-height: var(--flow-ew-share-row-height, 40px);
+	overflow: hidden;
+}
+
+.flow-ew-classic--avada .flow-ew-classic__share-link {
+	align-items: center;
+	background: transparent;
+	border: 0 !important;
+	border-left: none !important;
+	box-sizing: border-box;
+	color: #65bc7b !important;
+	display: inline-flex;
+	flex: 1 1 auto;
+	font-size: var(--flow-ew-share-font-size, 13px);
+	font-weight: 500;
+	height: 100%;
+	line-height: 1.2;
+	min-height: 0;
+	min-width: 0;
+	overflow: hidden;
+	padding: 0 var(--flow-ew-share-link-padding-x, 14px);
+	text-decoration: none;
+}
+
+.flow-ew-avada-drawer .flow-ew-classic--avada .flow-ew-classic__share-link,
+.flow-ew-avada-drawer .flow-ew-classic--avada .flow-ew-classic__share-link a {
+	font-size: 12px !important;
+	font-weight: 500 !important;
+	line-height: 1.1 !important;
+}
+
+/* Override Avada toolbar's broad ".fusion-toolbar-nav > li a" rule */
+
+.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav > li.flow-ew-avada-review .flow-ew-avada-drawer .flow-ew-classic__share-link {
+	align-items: center !important;
+	border: 0 !important;
+	border-left: none !important;
+	color: #65bc7b !important;
+	display: inline-flex !important;
+	font-size: 12px !important;
+	font-weight: 500 !important;
+	height: 100% !important;
+	line-height: 1.1 !important;
+	padding: 0 14px !important;
+}
+
+.flow-ew-avada-drawer .flow-ew-classic__share-copy,
+.flow-ew-avada-drawer .flow-ew-classic__share-copy.button,
+.flow-ew-avada-drawer .flow-ew-classic__share-copy.button:hover,
+.flow-ew-avada-drawer .flow-ew-classic__share-copy.button:focus,
+.fusion-builder-live .fusion-builder-live-toolbar .flow-ew-avada-drawer .flow-ew-classic__share-copy,
+.fusion-builder-live .fusion-builder-live-toolbar .flow-ew-avada-drawer .flow-ew-classic__share-copy.button {
+	align-items: center !important;
+	align-self: stretch !important;
+	background: transparent !important;
+	border: 0 !important;
+	border-inline-start: 1px solid #505a66 !important;
+	border-radius: 0 !important;
+	box-shadow: none !important;
+	box-sizing: border-box !important;
+	color: #dbe4ed !important;
+	cursor: pointer !important;
+	display: inline-flex !important;
+	flex: 0 0 auto !important;
+	font-size: 0 !important;
+	height: 100% !important;
+	justify-content: center !important;
+	line-height: 1 !important;
+	margin: 0 !important;
+	min-height: 0 !important;
+	min-width: var(--flow-ew-share-action-width, 36px) !important;
+	padding: 0 !important;
+	text-shadow: none !important;
+	vertical-align: top !important;
+	width: var(--flow-ew-share-action-width, 36px) !important;
+}
+
+.flow-ew-avada-drawer .flow-ew-classic__share-copy:hover,
+.flow-ew-avada-drawer .flow-ew-classic__share-copy.button:hover,
+.flow-ew-avada-drawer .flow-ew-classic__share-copy.button:focus,
+.fusion-builder-live .fusion-builder-live-toolbar .flow-ew-avada-drawer .flow-ew-classic__share-copy:hover {
+	background: rgba(255, 255, 255, 0.06) !important;
+	color: #fff !important;
+}
+
+.flow-ew-avada-drawer .flow-ew-classic__share-copy .flow-ew-share-icon,
+.flow-ew-avada-drawer .flow-ew-classic__share-copy svg,
+.fusion-builder-live .fusion-builder-live-toolbar .flow-ew-avada-drawer .flow-ew-classic__share-copy svg {
+	color: inherit !important;
+	display: block !important;
+	flex-shrink: 0 !important;
+	height: var(--flow-ew-share-icon-size, 14px) !important;
+	line-height: 1 !important;
+	max-height: var(--flow-ew-share-icon-size, 14px) !important;
+	max-width: var(--flow-ew-share-icon-size, 14px) !important;
+	min-height: var(--flow-ew-share-icon-size, 14px) !important;
+	min-width: var(--flow-ew-share-icon-size, 14px) !important;
+	width: var(--flow-ew-share-icon-size, 14px) !important;
+}
+
+.flow-ew-avada-drawer .flow-ew-classic__share-copy svg path {
+	fill: currentColor !important;
+}
+
+.flow-ew-avada-drawer .flow-ew-classic__share-copy--done,
+.flow-ew-avada-drawer .flow-ew-classic__share-copy--done svg {
+	color: #22c55e !important;
+}
+
+.flow-ew-avada-drawer .flow-ew-classic__share-goto,
+.fusion-builder-live .fusion-builder-live-toolbar .flow-ew-avada-drawer .flow-ew-classic__share-goto,
+.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav > li.flow-ew-avada-review .flow-ew-avada-drawer .flow-ew-classic__share-goto {
+	align-items: center !important;
+	align-self: stretch !important;
+	background: #000 !important;
+	border-inline-start: 1px solid #505a66 !important;
+	box-sizing: border-box !important;
+	color: #fff !important;
+	display: inline-flex !important;
+	flex: 0 0 auto !important;
+	font-size: 0 !important;
+	height: 100% !important;
+	justify-content: center !important;
+	line-height: 1 !important;
+	margin: 0 !important;
+	min-height: 0 !important;
+	min-width: var(--flow-ew-share-action-width, 36px) !important;
+	padding: 0 !important;
+	text-decoration: none !important;
+	width: var(--flow-ew-share-action-width, 36px) !important;
+}
+
+.flow-ew-avada-drawer .flow-ew-classic__share-goto:hover,
+.flow-ew-avada-drawer .flow-ew-classic__share-goto:focus,
+.fusion-builder-live .fusion-builder-live-toolbar .flow-ew-avada-drawer .flow-ew-classic__share-goto:hover {
+	background: #000 !important;
+	color: #fff !important;
+}
+
+.flow-ew-avada-drawer .flow-ew-classic__share-goto .flow-ew-share-icon,
+.flow-ew-avada-drawer .flow-ew-classic__share-goto svg,
+.fusion-builder-live .fusion-builder-live-toolbar .flow-ew-avada-drawer .flow-ew-classic__share-goto svg {
+	color: #fff !important;
+	display: block !important;
+	flex-shrink: 0 !important;
+	height: var(--flow-ew-share-icon-size, 14px) !important;
+	line-height: 1 !important;
+	max-height: var(--flow-ew-share-icon-size, 14px) !important;
+	max-width: var(--flow-ew-share-icon-size, 14px) !important;
+	min-height: var(--flow-ew-share-icon-size, 14px) !important;
+	min-width: var(--flow-ew-share-icon-size, 14px) !important;
+	width: var(--flow-ew-share-icon-size, 14px) !important;
+}
+
+.flow-ew-avada-drawer .flow-ew-classic__share-goto svg path {
+	fill: currentColor !important;
+}
+
+.flow-ew-classic--avada .flow-ew-classic__btn:disabled,
+.flow-ew-classic--avada .flow-ew-classic__btn[disabled] {
+	cursor: not-allowed;
+	opacity: 0.5;
+}
+
+/* Free upsell nodes inside the Avada drawer must not inherit Avada's huge
+   `.fusion-toolbar-nav > li a { font-size: 20px; padding: 15px 17px }` rule.
+   Scope styles back to the standard drawer typography. Use a doubled
+   attribute selector to comfortably outweigh Avada's selectors regardless of
+   whether the host li lives in `.fusion-toolbar-nav` or `.additional-tools`. */
+
+.flow-ew-avada-drawer [data-flow-ew-avada-upsell-open][data-flow-ew-avada-upsell-open],
+.flow-ew-avada-drawer [data-flow-ew-avada-upsell-reviewer][data-flow-ew-avada-upsell-reviewer] {
+	font-size: 13px !important;
+	letter-spacing: normal !important;
+	line-height: 1.4 !important;
+	padding: 0 !important;
+	text-transform: none !important;
+}
+
+.flow-ew-avada-drawer [data-flow-ew-avada-upsell-open][data-flow-ew-avada-upsell-open] a,
+.flow-ew-avada-drawer [data-flow-ew-avada-upsell-reviewer][data-flow-ew-avada-upsell-reviewer] a {
+	background: transparent !important;
+	color: #018170 !important;
+	display: inline-block !important;
+	font-size: 13px !important;
+	font-weight: 600 !important;
+	height: auto !important;
+	letter-spacing: normal !important;
+	line-height: 1.4 !important;
+	margin: 0 !important;
+	padding: 0 !important;
+	text-decoration: underline !important;
+	text-transform: none !important;
+}
+
+.flow-ew-avada-drawer [data-flow-ew-avada-upsell-open][data-flow-ew-avada-upsell-open] a span,
+.flow-ew-avada-drawer [data-flow-ew-avada-upsell-reviewer][data-flow-ew-avada-upsell-reviewer] a span {
+	font-size: 9px !important;
+	font-weight: 600 !important;
+	letter-spacing: 0.04em !important;
+	line-height: 1.4 !important;
+	padding: 1px 6px !important;
+	text-transform: uppercase !important;
+}
+
+.flow-ew-avada-drawer [data-flow-ew-avada-upsell-open][data-flow-ew-avada-upsell-open] p,
+.flow-ew-avada-drawer [data-flow-ew-avada-upsell-reviewer][data-flow-ew-avada-upsell-reviewer] p {
+	color: #9aa4ad !important;
+	font-size: 12px !important;
+	font-weight: 400 !important;
+	letter-spacing: normal !important;
+	line-height: 1.4 !important;
+	margin: 4px 0 0 0 !important;
+	padding: 0 !important;
+	text-transform: none !important;
+}
+
+@media (max-width: 600px) {
+	.flow-ew-avada-drawer {
+		left: -120px;
+		width: min(320px, calc(100vw - 16px));
+		min-width: 0;
+	}
+}
+
+

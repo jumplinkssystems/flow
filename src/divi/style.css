@@ -1,0 +1,516 @@
+@import '../shared/builder-review-notice-dark.css';
+@import '../shared/share-bar.css';
+
+/* Review split button inherits Divi page-bar styles; built fresh (not cloned). */
+.flow-ew-divi-review-wrapper {
+	display: inline-block;
+	position: relative;
+	vertical-align: top;
+}
+
+.flow-ew-divi-review-wrapper .et-vb-page-bar-dropdown-button {
+	display: inline-flex;
+	align-items: stretch;
+}
+
+.flow-ew-divi-review-wrapper .et-vb-page-bar-action-button {
+	align-items: center;
+	display: inline-flex;
+	gap: 6px;
+	justify-content: center;
+	text-align: center;
+}
+
+.flow-ew-divi-review-dot {
+	border-radius: 50%;
+	display: inline-block;
+	flex-shrink: 0;
+	height: 6px;
+	width: 6px;
+}
+
+.flow-ew-divi-review-dot[hidden] {
+	display: none !important;
+}
+
+.flow-ew-divi-review-wrapper[data-status='pending'] .flow-ew-divi-review-dot {
+	background: #5e777b;
+}
+
+.flow-ew-divi-review-wrapper[data-status='in_review'] .flow-ew-divi-review-dot {
+	background: #957500;
+}
+
+.flow-ew-divi-review-wrapper[data-status='changes_requested'] .flow-ew-divi-review-dot {
+	background: #c92122;
+}
+
+.flow-ew-divi-review-wrapper[data-status='approved'] .flow-ew-divi-review-dot {
+	background: #458037;
+}
+
+.flow-ew-divi-review-wrapper[data-status='open_review'] .flow-ew-divi-review-dot {
+	background: #1579a5;
+}
+
+.flow-ew-divi-review-wrapper .et-vb-page-bar-dropdown-button--dropdown-menu {
+	align-items: center;
+	display: inline-flex;
+	justify-content: center;
+}
+
+/* Match Divi submenu panels (.et-vb-right-click-options) in all color modes. */
+.flow-ew-divi-drawer {
+	position: fixed;
+	z-index: 99999;
+	/* Match Elementor drawer: 320px wide, about half the viewport tall. */
+	width: 320px;
+	min-width: 320px;
+	max-width: min(320px, calc(100vw - 24px));
+	height: 50vh;
+	max-height: 50vh;
+	overflow: hidden;
+	display: none;
+	flex-direction: column;
+	box-sizing: border-box;
+	border-radius: 3px;
+	border: 0;
+	/* Fixed palette — Divi light/inverse submenu colors; not tied to data-app-color-mode. */
+	--flow-ew-divi-text: #f2f3f7;
+	--flow-ew-divi-muted: #586892;
+	--flow-ew-divi-border: #354559;
+	--flow-ew-divi-border-light: #a2acc7;
+	--flow-ew-divi-panel: #222c39;
+	--flow-ew-divi-hover: #586892;
+	--flow-ew-divi-link: #326bff;
+	--flow-ew-divi-link-hover: #1959ff;
+	--flow-ew-divi-shadow: rgba(34, 44, 57, 0.24);
+	background: var(--flow-ew-divi-panel);
+	color: #fff;
+	box-shadow: 0 6px 18px 0 var(--flow-ew-divi-shadow);
+	font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif;
+	font-weight: 500;
+	pointer-events: none;
+	-webkit-font-smoothing: antialiased;
+}
+
+/* Divi dark app mode — native popups use --black (#0f1319), not the light submenu panel. */
+html[data-app-color-mode='dark'] .flow-ew-divi-drawer {
+	--flow-ew-divi-panel: #0f1319;
+	--flow-ew-divi-shadow: rgba(15, 19, 25, 0.4);
+}
+
+.flow-ew-divi-drawer.is-open {
+	display: flex !important;
+	pointer-events: auto;
+}
+
+.flow-ew-divi-drawer__header {
+	align-items: center;
+	border-bottom: 1px solid var(--flow-ew-divi-border);
+	display: flex;
+	flex-shrink: 0;
+	gap: 8px;
+	padding: 12px 14px;
+}
+
+.flow-ew-divi-drawer__title {
+	color: inherit;
+	flex: 1;
+	font-size: 13px;
+	font-weight: 600;
+	line-height: 1.2;
+}
+
+.flow-ew-divi-drawer__body {
+	flex: 1;
+	min-height: 0;
+	overflow-x: hidden;
+	overflow-y: auto;
+	padding: 14px;
+}
+
+/* When the reviewer listbox is open, only the list scrolls — not the drawer body. */
+.flow-ew-divi-drawer__body:has(.flow-ew-reviewer-combobox__list:not([hidden])) {
+	overflow: hidden;
+}
+
+.flow-ew-divi-drawer .flow-ew-drawer-status {
+	align-items: center;
+	border-radius: 999px;
+	display: inline-flex;
+	flex-shrink: 0;
+	font-size: 11px;
+	font-weight: 600;
+	gap: 6px;
+	line-height: 1;
+	padding: 4px 10px;
+	text-transform: uppercase;
+	white-space: nowrap;
+}
+
+.flow-ew-divi-drawer .flow-ew-drawer-status .flow-ew-classic__badge-dot {
+	background: var(--flow-badge-color, currentColor);
+	border-radius: 50%;
+	display: inline-block;
+	flex-shrink: 0;
+	height: 6px;
+	width: 6px;
+}
+
+.flow-ew-divi-drawer .flow-ew-drawer-status[hidden] {
+	display: none !important;
+}
+
+.flow-ew-divi-drawer .flow-ew-classic--divi.flow-ew-classic--builder-dark {
+	--flow-ew-dark-muted: var(--flow-ew-divi-muted);
+	--flow-ew-dark-text: var(--flow-ew-divi-text);
+	--flow-ew-dark-card-bg: var(--flow-ew-divi-border);
+	--flow-ew-dark-border: var(--flow-ew-divi-border-light);
+	--flow-ew-dark-card-text: var(--flow-ew-divi-text);
+	--flow-ew-dark-card-radius: 3px;
+	--flow-ew-divi-field-height: 40px;
+	--flow-ew-share-row-height: var(--flow-ew-divi-field-height, 40px);
+}
+
+.flow-ew-divi-drawer .flow-ew-classic__label,
+.flow-ew-divi-drawer .flow-ew-classic__share-label,
+.flow-ew-divi-drawer .flow-ew-pro-multi-reviewer__label {
+	color: #fff !important;
+}
+
+/* Drawer copy — classic-editor + Divi VB resets force dark text on dark panels. */
+.flow-ew-divi-drawer .flow-ew-classic--divi,
+.flow-ew-divi-drawer .flow-ew-classic--divi .flow-ew-classic__value {
+	color: var(--flow-ew-divi-text);
+}
+
+.flow-ew-divi-drawer #flow-ew-classic-open-slot,
+.flow-ew-divi-drawer .flow-ew-classic-open,
+.flow-ew-divi-drawer .flow-ew-classic-open__row,
+.flow-ew-divi-drawer .flow-ew-classic-open__row label {
+	color: var(--flow-ew-divi-text) !important;
+}
+
+.flow-ew-divi-drawer .flow-ew-classic-open__desc,
+.flow-ew-divi-drawer .flow-ew-open-review-extras {
+	color: var(--flow-ew-divi-muted) !important;
+}
+
+.flow-ew-divi-drawer .flow-ew-classic-open__row input[type='checkbox'] {
+	accent-color: var(--flow-ew-divi-link, #326bff);
+}
+
+.flow-ew-divi-publish-blocked-item.et-vb-right-click-option-wrap--disabled > .et-vb-right-click-option {
+	cursor: not-allowed !important;
+}
+
+/* Classic review UI inside the drawer — override Divi / WP button resets. */
+.flow-ew-divi-drawer .flow-ew-classic__actions {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	margin-top: 4px;
+}
+
+.flow-ew-divi-drawer .flow-ew-classic__btn {
+	appearance: none;
+	background: transparent;
+	border: 1px solid var(--flow-ew-divi-border);
+	border-radius: 3px;
+	box-shadow: none;
+	box-sizing: border-box;
+	color: #fff;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	font-family: inherit;
+	font-size: 12px;
+	font-weight: 600;
+	height: 30px;
+	line-height: 1;
+	margin: 0;
+	padding: 0 12px;
+	text-align: center;
+	text-decoration: none;
+	text-transform: none;
+	width: 100%;
+}
+
+.flow-ew-divi-drawer .flow-ew-classic__btn:hover,
+.flow-ew-divi-drawer .flow-ew-classic__btn:focus-visible {
+	background: var(--flow-ew-divi-border);
+	border-color: var(--flow-ew-divi-hover);
+	color: #fff;
+	outline: none;
+}
+
+.flow-ew-divi-drawer .flow-ew-classic__btn[data-action='send'],
+.flow-ew-divi-drawer .flow-ew-classic__btn[data-action='resubmit'],
+.flow-ew-divi-drawer .flow-ew-classic__btn.button-primary[data-action='send'],
+.flow-ew-divi-drawer .flow-ew-classic__btn.button-primary[data-action='resubmit'] {
+	background-color: var(--flow-ew-divi-border) !important;
+	border: 1px solid var(--flow-ew-divi-border) !important;
+	color: #fff !important;
+}
+
+.flow-ew-divi-drawer .flow-ew-classic__btn[data-action='send']:hover,
+.flow-ew-divi-drawer .flow-ew-classic__btn[data-action='send']:focus-visible,
+.flow-ew-divi-drawer .flow-ew-classic__btn[data-action='resubmit']:hover,
+.flow-ew-divi-drawer .flow-ew-classic__btn[data-action='resubmit']:focus-visible {
+	background-color: var(--flow-ew-divi-muted) !important;
+	border-color: var(--flow-ew-divi-muted) !important;
+	color: #fff !important;
+}
+
+.flow-ew-divi-drawer .flow-ew-classic__btn--approve {
+	background-color: var(--flow-ew-divi-link) !important;
+	border-color: var(--flow-ew-divi-link) !important;
+	color: #fff !important;
+}
+
+.flow-ew-divi-drawer .flow-ew-classic__btn--approve:hover,
+.flow-ew-divi-drawer .flow-ew-classic__btn--approve:focus-visible {
+	background-color: var(--flow-ew-divi-link-hover) !important;
+	border-color: var(--flow-ew-divi-link-hover) !important;
+	color: #fff !important;
+}
+
+.flow-ew-divi-drawer .flow-ew-classic__btn--changes {
+	background: transparent !important;
+	border-color: #ef4444 !important;
+	color: #fca5a5 !important;
+}
+
+.flow-ew-divi-drawer .flow-ew-classic__btn--changes:hover,
+.flow-ew-divi-drawer .flow-ew-classic__btn--changes:focus-visible {
+	background: rgba(239, 68, 68, 0.12) !important;
+	border-color: #ef4444 !important;
+	color: #fca5a5 !important;
+}
+
+.flow-ew-divi-drawer .flow-ew-classic__btn:disabled,
+.flow-ew-divi-drawer .flow-ew-classic__btn[disabled] {
+	cursor: not-allowed;
+	opacity: 0.55;
+	pointer-events: none;
+}
+
+/* Free upsell nodes — Divi link/button resets strip default upsell styling. */
+.flow-ew-divi-drawer .flow-ew-upsell-open-review,
+.flow-ew-divi-drawer .flow-ew-upsell-reviewer,
+.flow-ew-divi-drawer [data-flow-ew-divi-upsell='1'] {
+	font-size: 13px;
+	line-height: 1.4;
+	margin-top: 8px;
+	padding: 0;
+}
+
+.flow-ew-divi-drawer .flow-ew-upsell-open-review a,
+.flow-ew-divi-drawer .flow-ew-upsell-reviewer a,
+.flow-ew-divi-drawer [data-flow-ew-divi-upsell='1'] a {
+	background: transparent !important;
+	border: 0 !important;
+	box-shadow: none !important;
+	color: #018170 !important;
+	display: inline-block !important;
+	font-size: 13px !important;
+	font-weight: 600 !important;
+	height: auto !important;
+	line-height: 1.4 !important;
+	margin: 0 !important;
+	padding: 0 !important;
+	text-decoration: underline !important;
+	text-transform: none !important;
+	width: auto !important;
+}
+
+.flow-ew-divi-drawer .flow-ew-upsell-open-review a:hover,
+.flow-ew-divi-drawer .flow-ew-upsell-reviewer a:hover,
+.flow-ew-divi-drawer [data-flow-ew-divi-upsell='1'] a:hover {
+	color: #018170 !important;
+}
+
+.flow-ew-divi-drawer .flow-ew-upsell-open-review .flow-ew-upsell-badge,
+.flow-ew-divi-drawer .flow-ew-upsell-reviewer .flow-ew-upsell-badge,
+.flow-ew-divi-drawer [data-flow-ew-divi-upsell='1'] .flow-ew-upsell-badge {
+	background: #d0f9ec !important;
+	border-radius: 8px;
+	color: #09121e !important;
+	display: inline-block !important;
+	font-size: 9px !important;
+	font-weight: 600 !important;
+	letter-spacing: 0.04em !important;
+	line-height: 1.4 !important;
+	margin-right: 4px !important;
+	padding: 1px 6px !important;
+	text-decoration: none !important;
+	text-transform: uppercase !important;
+	vertical-align: 1px;
+}
+
+.flow-ew-divi-drawer .flow-ew-upsell-open-review .flow-ew-upsell-help,
+.flow-ew-divi-drawer .flow-ew-upsell-reviewer .flow-ew-upsell-help,
+.flow-ew-divi-drawer [data-flow-ew-divi-upsell='1'] .flow-ew-upsell-help {
+	color: var(--flow-ew-divi-muted) !important;
+	font-size: 12px !important;
+	font-weight: 400 !important;
+	line-height: 1.4 !important;
+	margin: 4px 0 0 !important;
+	padding: 0 !important;
+}
+
+.flow-ew-divi-drawer .flow-ew-reviewer-combobox {
+	position: relative;
+	width: 100%;
+	z-index: 10;
+}
+
+.flow-ew-classic--divi .flow-ew-reviewer-combobox__wrap {
+	overflow: visible;
+	position: relative;
+	width: 100%;
+}
+
+.flow-ew-divi-drawer .flow-ew-classic--divi .flow-ew-reviewer-combobox__input {
+	background: transparent;
+	border: 1px solid var(--flow-ew-divi-border);
+	border-radius: 3px;
+	box-sizing: border-box;
+	color: var(--flow-ew-divi-text) !important;
+	font-family: inherit;
+	font-size: 13px;
+	font-weight: 500;
+	height: var(--flow-ew-divi-field-height, 40px);
+	line-height: 1.2;
+	max-height: var(--flow-ew-divi-field-height, 40px);
+	min-height: var(--flow-ew-divi-field-height, 40px);
+	padding: 0 28px 0 10px;
+	width: 100%;
+}
+
+.flow-ew-classic--divi .flow-ew-reviewer-combobox__input::placeholder {
+	color: var(--flow-ew-divi-muted);
+}
+
+.flow-ew-classic--divi .flow-ew-reviewer-combobox__input:focus {
+	border-color: var(--flow-ew-divi-hover);
+	box-shadow: none;
+	outline: none;
+}
+
+.flow-ew-classic--divi .flow-ew-reviewer-combobox__clear {
+	color: var(--flow-ew-divi-muted);
+}
+
+.flow-ew-classic--divi .flow-ew-reviewer-combobox__clear:hover,
+.flow-ew-classic--divi .flow-ew-reviewer-combobox__clear:focus {
+	color: var(--flow-ew-divi-text);
+}
+
+.flow-ew-classic--divi .flow-ew-reviewer-combobox__list {
+	background: var(--flow-ew-divi-panel);
+	border: 1px solid var(--flow-ew-divi-border);
+	border-radius: 3px;
+	box-shadow: 0 6px 18px 0 var(--flow-ew-divi-shadow);
+	color: var(--flow-ew-divi-text);
+	left: 0;
+	list-style: none;
+	margin: 0;
+	max-height: 200px;
+	overflow-y: auto;
+	padding: 4px 0;
+	position: absolute;
+	right: 0;
+	top: calc(100% + 4px);
+	z-index: 1200;
+}
+
+.flow-ew-classic--divi .flow-ew-reviewer-combobox__list[hidden] {
+	display: none !important;
+}
+
+.flow-ew-classic--divi .flow-ew-reviewer-combobox__option {
+	color: #fff;
+	cursor: pointer;
+	font-size: 13px;
+	padding: 8px 12px;
+}
+
+.flow-ew-classic--divi .flow-ew-reviewer-combobox__option:hover,
+.flow-ew-classic--divi .flow-ew-reviewer-combobox__option:focus {
+	background: var(--flow-ew-divi-border);
+	color: #fff;
+	outline: none;
+}
+
+.flow-ew-classic--divi .flow-ew-reviewer-combobox__option[aria-selected='true'] {
+	background: rgba(50, 107, 255, 0.2);
+	color: #fff;
+}
+
+.flow-ew-classic--divi .flow-ew-classic__share-row {
+	align-items: stretch;
+	background: transparent;
+	border: 1px solid var(--flow-ew-divi-border);
+	border-radius: 3px;
+	box-sizing: border-box;
+	display: flex;
+	height: var(--flow-ew-share-row-height, 40px);
+	max-height: var(--flow-ew-share-row-height, 40px);
+	min-height: var(--flow-ew-share-row-height, 40px);
+	overflow: hidden;
+	width: 100%;
+}
+
+.flow-ew-classic--divi .flow-ew-classic__share-link {
+	align-items: center;
+	border-right: 1px solid var(--flow-ew-divi-border);
+	box-sizing: border-box;
+	display: flex;
+	height: 100%;
+	min-height: 0;
+}
+
+.flow-ew-divi-drawer .flow-ew-classic--divi .flow-ew-classic__share-link,
+.flow-ew-divi-drawer .flow-ew-classic--divi .flow-ew-classic__share-link-text {
+	color: var(--flow-ew-divi-link, #326bff) !important;
+}
+
+.flow-ew-divi-drawer .flow-ew-classic--divi .flow-ew-classic__share-link:hover,
+.flow-ew-divi-drawer .flow-ew-classic--divi .flow-ew-classic__share-link:focus-visible {
+	color: var(--flow-ew-divi-link-hover, #1959ff) !important;
+}
+
+.flow-ew-divi-drawer .flow-ew-classic__share-copy {
+	background: var(--flow-ew-divi-border) !important;
+	border: 0 !important;
+	border-left: 1px solid var(--flow-ew-divi-border) !important;
+	border-radius: 0 !important;
+	color: #fff !important;
+	font-size: 12px !important;
+	font-weight: 600 !important;
+	height: 100% !important;
+	max-height: 100% !important;
+	min-height: 0 !important;
+	padding: 0 10px !important;
+}
+
+.flow-ew-divi-drawer .flow-ew-classic__share-copy:hover,
+.flow-ew-divi-drawer .flow-ew-classic__share-copy:focus-visible {
+	background: var(--flow-ew-divi-hover) !important;
+	color: #fff !important;
+}
+
+.flow-ew-divi-drawer .flow-ew-classic__share-copy .flow-ew-share-icon,
+.flow-ew-divi-drawer .flow-ew-classic__share-copy svg,
+.flow-ew-divi-drawer .flow-ew-classic__share-copy svg path {
+	color: #fff !important;
+	fill: currentColor;
+}
+
+.flow-ew-divi-drawer .flow-ew-classic__share-copy--done,
+.flow-ew-divi-drawer .flow-ew-classic__share-copy--done svg {
+	color: #39b54a !important;
+}
