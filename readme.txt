@@ -1,46 +1,59 @@
 === Jumplinks Flow - Editorial Feedback, Review & Approval Workflow ===
 Contributors: jumplinks, alincozari
-Tags: client feedback, website feedback, workflow, editorial, collaboration
+Tags: client feedback, website feedback, workflow, editorial, ai
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.4.1
+Stable tag: 2.4.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
-
-Client feedback and editorial workflow with inline comments and a familiar WordPress style review experience.
 
 == Description ==
 
 https://www.youtube.com/watch?v=6g9QunaILLc
 
-Frustrated with client feedback chaos, multiple staging environments, endless meetings that could have been an email, hundreds of Jira tickets and lost Slack discussions?
+Frustrated with client feedback chaos, multiple staging environments, endless meetings that could have been an email, hundreds of Jira tickets and lost Slack discussions? Or with AI drafts that look finished until a false claim, off-brand sentence, or broken layout ships?
 
 Jumplinks Flow was inspired by the GitHub pull request review experience with inline comments and approval or change requests workflow that developers love, brought natively into WordPress for content and site reviews. No SaaS subscription, no external tools, just a familiar, focused review experience your team will pick up from day one.
 
-If your current process depends on long comment threads, scattered docs and email, or third-party review tools, Flow gives you a cleaner path without complex setup or heavyweight workflow tools.
+If your current process depends on long comment threads, scattered docs and email, or third-party review tools, Flow gives you a cleaner path without complex setup or heavyweight workflow tools. If AI or automation is writing the first draft, Flow is the human checkpoint between that draft and Publish.
 
 = ⚙️ How it works =
 
-1. You assign a reviewer to the content — a WordPress user, or just an email address for people outside your site.
+1. You assign a reviewer to the content — automatically from settings, or by picking a WordPress user or an email address for people outside your site.
 2. The reviewer opens the review page and sends feedback via inline comments anchored to the content.
 3. The reviewer requests changes or approves.
 4. If changes are requested, repeat 2–3 until approval is received.
-5. You publish with confidence once the content is approved.
+5. You publish with confidence once the content is approved. Optional: show who reviewed it next to the author.
 
 = 🎯 Best for =
 
 * Agencies and developers who present in-progress work to clients for feedback and signoff
 * Editorial teams that need a clear draft-to-publish workflow
 * Website owners that want structure without heavy workflow configuration
+* Teams publishing AI-assisted posts, pages, or products who need a named human to verify facts, voice, and layout before go-live
+
+= ✨ AI-generated content review =
+
+AI speeds up production. It does not take responsibility. Flow does not generate or detect AI content — it starts where your AI workflow ends: with a draft already in WordPress.
+
+1. Draft with ChatGPT, Claude, Gemini, n8n, Make, Zapier, the REST API, or any other tool, then save the result in WordPress.
+2. Assign a named reviewer automatically for new content, or pick a WordPress user or external email by hand.
+3. The reviewer inspects the rendered page — real theme, links, images, and layout — and pins comments to the exact sentence or media that needs a rewrite.
+4. Request changes, resolve threads, and resubmit until someone with a name attached approves.
+5. Optional: require approval before Publish, and show a “Reviewed by” credit on the live page after sign-off.
+
+Use any writing assistant or automation you already have. Flow stays source-agnostic and keeps the approval decision in WordPress.
 
 = 💡 Why teams choose Flow =
 
 * **GitHub-style workflow:** Leave feedback exactly where it matters via inline comments so edits are clearer and faster.
 * **Review directly on rendered page:** Reviewers don't need access to the content editor; they review the rendered output.
 * **No WordPress account needed:** Send a review to any email address and Flow mails that person a private magic link straight to the review page — no user account, no signup, no login.
+* **Automatic assignment:** Choose a default reviewer in settings and Flow assigns them as soon as new supported content is created — including drafts from the REST API or an unattended automation.
+* **Named credit after approval:** Optionally show “Reviewed by” on published content so the human who signed off is visible next to the author.
 * **Works with any editor:** Dedicated integration with Gutenberg, Classic Editor, Elementor, Bricks Builder, Beaver Builder, Divi, Avada, Breakdance, and Oxygen Builder, but all editors are supported.
-* **Simple review and approval:** Move content through practical statuses such as in review, changes requested, and approved.
+* **Simple review and approval:** Move content through practical statuses such as in review, changes requested, and approved. Mandatory mode can block Publish until that approval exists.
 * **Familiar Gutenberg-style review page:** Dedicated review UI that feels native to WordPress.
 * **Fast team onboarding:** Minimal setup and intuitive UI for writers, editors, and reviewers.
 * **Status-change notifications:** Keep everyone aligned with timely workflow updates.
@@ -52,7 +65,7 @@ If your current process depends on long comment threads, scattered docs and emai
 * **Content type flexibility:** Use Flow for posts, pages, products, and custom post types.
 * **WooCommerce friendly:** Works smoothly with WooCommerce-based editorial setups.
 
-= ✨ What makes Flow different =
+= 🤖 What makes Flow different =
 
 Most feedback tools are paid-only SaaS subscriptions that charge per reviewer and require clients to sign up for separate accounts. Flow runs entirely inside your WordPress site, and lets you invite reviewers with a single link — no signup, no monthly fee, no third-party service collecting your content.
 
@@ -76,13 +89,13 @@ If you want an editorial workflow that is modern, focused, and easy to use from 
 
 1. Upload the plugin files to the `/wp-content/plugins/jumplinks-editorial-workflow` directory, or install the plugin through the WordPress plugins screen.
 2. Activate the plugin through the "Plugins" screen in WordPress.
-3. Go to **Settings > Flow** to configure review mode, eligible content types, and reviewer roles.
+3. Go to **Settings > Flow** to configure review mode, eligible content types, reviewer roles, automatic reviewer assignment, and the optional reviewed-by credit.
 
 == Frequently Asked Questions ==
 
 = How does the review workflow work? =
 
-Assign a reviewer, collect feedback via inline comments, request changes or approve, and publish when approved.
+Assign a reviewer (or let Flow assign one automatically), collect feedback via inline comments, request changes or approve, and publish when approved.
 
 = What does the reviewer see? =
 
@@ -114,9 +127,13 @@ Yes. Flow sends email notifications for key review lifecycle events, helping tea
 
 Yes. Flow is compatible with WooCommerce-powered sites and content workflows.
 
+= Can I use Flow to review AI-generated content? =
+
+Yes. Flow is the human review layer around a WordPress draft, whether a person wrote it or an AI tool / automation created it. It does not generate text, detect whether AI was used, or automatically fact-check claims. Reviewers read the rendered page, comment in context, and either request changes or approve. Auto-assign can attach a reviewer the moment the post is created, and Mandatory review can block the initial Publish or Schedule action until that person signs off.
+
 = Who should use Flow? =
 
-Flow is ideal for content and editorial teams that need a simple review and approval workflow in WordPress without the overhead of enterprise-style configuration. It also works well for freelance developers and agencies who want a structured way to share in-progress work with clients for feedback and approval, without sending screenshots or asking clients to navigate the WordPress admin.
+Flow is ideal for content and editorial teams that need a simple review and approval workflow in WordPress without the overhead of enterprise-style configuration — including teams that use AI or automations to produce first drafts and still want a named person to verify the live page. It also works well for freelance developers and agencies who want a structured way to share in-progress work with clients for feedback and approval, without sending screenshots or asking clients to navigate the WordPress admin.
 
 = Can I use Flow to showcase work to clients? =
 
@@ -189,124 +206,15 @@ This is the same Gravatar integration that ships with WordPress core; the plugin
 
 == Changelog ==
 
+= 2.4.2 =
+* New: Optional “Reviewed by” credit on published content. Turn it on under Settings → Flow; after approval it appears below the author and category line, with WordPress reviewer names linked to their author archives. External email reviewers are omitted.
+* New: Automatic reviewer assignment. Pick any WordPress user — including yourself, regardless of Review Roles — and Flow assigns them when new supported content is created.
+
 = 2.4.1 =
 * New: Add external emails as reviewers. Pick External Email in the reviewer field and Flow emails that person a signed magic link to the review page, where they can comment, approve, or request changes without a WordPress account. Available in every editor integration.
-* Fix: Minor bug fixes.
+* Fix: Oxygen container design fix.
 
 = 2.4.0 =
-* Added Oxygen Builder integration
+* New: Integration with Oxygen.
 
-= 2.3.1 =
-* Fix: Automatically focus the comment field after clicking Add Comment.
-
-= 2.3.0 =
-* Improvement: Major UI changes thanks to @alincozari.
-
-= 2.2.0 =
-* New: Integration with Divi.
-* New: Integration with Beaver Builder.
-* New: Integration with Avada.
-* New: Integration with Breakdance.
-
-= 2.1.0 =
-* Improvement: Add jumplinks logo to main admin areas.
-
-= 2.0.1 =
-* Improvement: Review page now follows the reviewer's WordPress admin colour scheme — matches WordPress 7's new "Modern" default.
-* Improvement: Title and metadata commenting now works on any theme with standard WordPress article markup, instead of a fixed list of theme classes.
-* Fix: Comments anchored to the post title were sometimes incorrectly flagged "Potentially outdated" on reload.
-* Compatibility: Tested up to WordPress 7.0.
-
-= 2.0.0 =
-* Launch Jumplinks Flow PRO
-
-= 1.4.0 =
-* New: Top-level "Flow" admin menu with a dedicated Dashboard page.
-* New: Site-wide admin notice surfaces in-flight reviews assigned to you, with a link to the dashboard. Dismiss it and it stays hidden until a new review is assigned.
-* New: Comments sidebar redesigned to mirror Gutenberg's Settings sidebar — moved to the right edge, open by default on desktop, with a familiar close affordance.
-* New: Resolved comments are now grouped in a collapsible "Resolved" disclosure with a count.
-* Improvement: Comment date is shown beneath the author name instead of beside it, giving the comment body more room.
-* Improvement: Review page top bar trims responsively below 1600px and 1400px so it no longer overlaps on narrow viewports.
-* Fix: Published posts are no longer silently downgraded to "Pending" when sent for a follow-up review — the live status is preserved.
-* Fix: Adding a new reviewer while a review is in "Changes requested" no longer shows two competing "Send for review" and "Resubmit" buttons.
-
-= 1.3.1 =
-* Improvement: WordPress admin bar shows a "Review" shortcut on posts with an active review the current user can access.
-* Improvement: Review page bar now ships with a "View" dropdown.
-* Improvement: Classic Editor uses autocomplete for reviewer select and better styling.
-* Fix: Inline comment popover on mobile now keeps a visible margin from the screen edges instead of touching them.
-* Fix: Open reviews with no primary reviewer no longer treat anonymous viewers as eligible reviewers.
-* Fix: Every bundled `*.l10n.php` translation file now declares a direct-access guard, resolving a Plugin Checker warning.
-
-= 1.3.0 =
-* New: Review page is now usable on mobile — selection-based commenting, approve, and request-changes work on all devices.
-* New: Open Review mode lets any logged-in user with the link comment on a post under review, not just assigned reviewers. Available in Gutenberg, Classic Editor, Elementor, and Bricks; surfaces as a virtual status in the post-listing column, listing filter, and dashboard widget.
-* Improvement: Redesigned Elementor review section.
-* Improvement: Click-to-comment overlay skips emojis, reCAPTCHA iframes, and hidden/decorative media.
-* Improvement: Long post titles and comment author names ellipsize so they no longer overlap in the review page chrome.
-* Fix: Inline highlight no longer reflows paragraph text when a comment is added.
-* Fix: "Highlight text…" hint stays put after the first comment is added.
-* Fix: Mandatory review no longer blocks Update on already-published posts.
-* Fix: Removed the duplicate "Send for Review" button above the Gutenberg editor.
-
-= 1.2.0 =
-* Refactor: Extensive code cleanup, security improvements, guidelines fixes.
-* Improvement: Add AI generated translations for all languages.
-* Fix: Some background-image cases preventing commenting on text.
-
-= 1.1.8 =
-* Improvement: Review iframe now renders content at the user's full browser viewport regardless of sidebar state — visually scaled to fit beside the sidebar.
-* Fix: Bricks no longer get the snapshot post title baked into their CSS — `font-family: "<post title>"` instead of the real font name.
-* Fix: Images wrapped in `<a>` (gallery markup) no longer collapse to their intrinsic size.
-* Fix: Dashboard "Flow Reviews" widget no longer counts reviews whose underlying post was deleted.
-* Fix: When a post is permanently deleted, its review and review-comment rows are cascade-deleted. Trashed posts are unaffected.
-
-= 1.1.7 =
-* Improvement: Inline comment popover is now mounted into a Shadow DOM root, isolating it from theme / page-builder CSS so button styles, color resets, and similar rules can't bleed in.
-* Fix: Gallery and other `<a><img></a>` markup now opens the comment popover when clicked instead of being swallowed by the review-page link guard.
-* Fix: Inline `onclick="window.open( '…', '_self' )"` handlers (common in galleries) no longer navigate the review iframe out of the chrome — same `_blank` bypass as `target="_blank"` anchors.
-* Fix: WordPress admin-bar "bump" CSS no longer reserves a 32px gap at the top of the review iframe when the admin bar is hidden.
-* Fix: Theme front-end scripts and styles are dequeued on the parent review shell, eliminating noisy initializer errors (Google Maps, sliders, etc.) that expected the live page DOM.
-
-= 1.1.6 =
-* Fix: Inline "Add Comment" popover sometimes failed to open the editor on production sites in full-page review mode — text-selection commenting now works reliably across page-builder layouts and themes that don't expose `.entry-content` / `.wp-block-post-content`.
-
-= 1.1.5 =
-* New: Dedicated "Reviewer" role added on activation. Carries the minimum capabilities to log in and act on the review page.
-* New: "Flow Reviews" dashboard widget showing posts you're a participant in.
-* New: "Review" column and filters on post / page listings.
-* Improvement: Reviewer avatars (Gravatar) shown in comment cards and the inline threads.
-* Improvement: Review iframe now renders the snapshot revision through the full singular template (header / footer / sidebar) — matching the front-end exactly.
-* Fix: Quick Edit and Bulk Edit now respect Mandatory review mode.
-* Fix: All public, REST-enabled, editor-supporting custom post types (JetEngine, ACF, CPT UI, etc.) are now auto-discovered in the Content Types settings form.
-* Fix: Resolved comment threads paint green even when the underlying inline anchor is flagged outdated.
-
-= 1.1.4 =
-* Fix: Selecting text across multiple blocks (e.g. a heading and a paragraph) and adding a comment no longer breaks the layout or drops the highlight — each block now gets its own highlight mark sharing the comment id.
-
-= 1.1.3 =
-* New: Click-to-comment overlay on images, videos, and embed iframes (YouTube, Vimeo, etc.) on the review page. Clicking media opens the comment editor directly; embed videos no longer play on click.
-* New: Highlight ring shown on commented media (images, videos, embeds) so reviewers can see at a glance which items already have feedback. Uniform look across wrap, cover, and embed layouts.
-* New: Live Preview blueprint at `assets/blueprints/blueprint.json` so the WordPress.org plugin page can spin up a one-click demo of the review experience (logged in as a reviewer with sample image/video content to comment on).
-* Improvement: Comment thread popover flips above the highlighted item when there's no room below — keeps it inside the viewport for media at the page bottom.
-* Improvement: Add Comment editor opens directly when clicking media (the in-between pill is redundant since the overlay already shows a "Click to comment" hint on hover).
-
-= 1.1.2 =
-* Fix: Restore proper styling on the inline "Add Comment" button.
-
-= 1.1.1 =
-* New: Subtle "rate this plugin" link on the Plugins screen and a small review prompt on the Flow settings page — never a popup, never a nag.
-* Fix: Review template now wins over themes that hijack `template_include` (e.g. Kallyas builder, other site-builder themes), so the dedicated review page renders correctly regardless of the active theme.
-* Fix: Inline comment popover buttons no longer inherit theme-injected button styling (border, color, padding, etc.) on themes that style bare `button` / `[type=button]` selectors.
-
-= 1.1.0 =
-* New: Bricks Builder integration with a Review toolbar button, themed review drawer, and automatic Publish-button lock when mandatory review isn't approved.
-* New: Modal-based first-run setup wizard with three guided steps (review mode, content types, reviewer roles) and a "Run setup again" affordance on the settings page.
-* New: Translation template (.pot) shipped under `languages/`, plus `Domain Path` header, so translate.wordpress.org community translations are picked up automatically.
-* Improvement: Reviewer can be re-assigned after a post is approved (creates a new review iteration so teams can request another round of review).
-* Improvement: Empty content-type and reviewer-role selections are now honored instead of silently reverting to defaults.
-* Fix: PHP 7.4 compatibility — removed union return type declarations from REST endpoints that prevented the plugin from loading on PHP 7.4.
-* Fix: WordPress 6.5.x compatibility — added a polyfill for the `react-jsx-runtime` script handle that core only registers from 6.6 onwards, restoring the review page chrome and editor sidebars on older WP versions.
-
-= 1.0.0 =
-* Initial release.
+Earlier versions: https://jumplinks.net/changelog/

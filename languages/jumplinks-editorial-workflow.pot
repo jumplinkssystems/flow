@@ -11,7 +11,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "X-Domain: jumplinks-editorial-workflow\n"
 
-#: includes/class-flow-settings.php:699
+#: includes/class-flow-settings.php:753
 msgid " Authors must assign a reviewer before the post can go live. Best when every public change should pass review."
 msgstr ""
 
@@ -44,7 +44,7 @@ msgstr ""
 msgid "(no title)"
 msgstr ""
 
-#: includes/class-flow-settings.php:1029
+#: includes/class-flow-settings.php:1226
 msgid "A 30-second setup so reviews fit how your team publishes."
 msgstr ""
 
@@ -90,7 +90,7 @@ msgstr ""
 msgid "All review statuses"
 msgstr ""
 
-#: includes/class-flow-plugin.php:185
+#: includes/class-flow-plugin.php:187
 #: src/sidebar/components/OpenReviewControl.js:73
 msgid "All users with the link will be able to add comments."
 msgstr ""
@@ -112,14 +112,14 @@ msgstr ""
 msgid "Approval revoked."
 msgstr ""
 
-#: includes/class-flow-plugin.php:162
+#: includes/class-flow-plugin.php:164
 #: templates/classic/review-ui.php:162
 #: src/review-page/components/ReviewBar.js:678
 msgid "Approve"
 msgstr ""
 
 #: includes/class-flow-review.php:29
-#: includes/class-flow-plugin.php:168
+#: includes/class-flow-plugin.php:170
 #: src/shared/status-labels.js:10
 msgid "Approved"
 msgstr ""
@@ -132,19 +132,27 @@ msgstr ""
 msgid "Assigned to me"
 msgstr ""
 
-#: includes/class-flow-settings.php:1045
+#: includes/class-flow-settings.php:1242
 msgid "Authors can publish posts freely without a review. The review workflow stays available so teams can still request approval when it helps."
 msgstr ""
 
-#: includes/class-flow-settings.php:682
+#: includes/class-flow-settings.php:736
 msgid "Authors can publish posts freely without a review. The review workflow stays available so teams can still request approval when it helps. Best for mixed or low-friction workflows."
 msgstr ""
 
-#: includes/class-flow-settings.php:1043
+#: includes/class-flow-settings.php:1240
 msgid "Authors must assign a reviewer before the post can go live."
 msgstr ""
 
-#: includes/class-flow-settings.php:1033
+#: includes/class-flow-settings.php:652
+msgid "Automatic reviewer"
+msgstr ""
+
+#: includes/class-flow-settings.php:940
+msgid "Automatically assign this user to review new content. Any WordPress user can be selected, regardless of Review Roles, including yourself."
+msgstr ""
+
+#: includes/class-flow-settings.php:1230
 msgid "Back"
 msgstr ""
 
@@ -152,7 +160,7 @@ msgstr ""
 msgid "Button label"
 msgstr ""
 
-#: includes/class-flow-plugin.php:178
+#: includes/class-flow-plugin.php:180
 #: src/review-page/components/AnonymousNamePrompt.js:166
 #: src/review-page/components/BasicCommentEditor.js:173
 #: src/review-page/components/ConfirmDialog.js:10
@@ -160,14 +168,18 @@ msgid "Cancel"
 msgstr ""
 
 #: includes/class-flow-review.php:28
-#: includes/class-flow-plugin.php:167
+#: includes/class-flow-plugin.php:169
 #: includes/class-flow-dashboard-widget.php:82
 #: src/shared/status-labels.js:9
 msgid "Changes Requested"
 msgstr ""
 
-#: includes/class-flow-settings.php:452
+#: includes/class-flow-settings.php:462
 msgid "Choose how reviews work on your site. You can change these anytime under Settings → Flow."
+msgstr ""
+
+#: includes/class-flow-settings.php:920
+msgid "Clear"
 msgstr ""
 
 #: includes/site-demo/class-demo-admin.php:300
@@ -212,9 +224,9 @@ msgstr ""
 msgid "Content may be outdated."
 msgstr ""
 
-#: includes/class-flow-settings.php:466
-#: includes/class-flow-settings.php:598
-#: includes/class-flow-settings.php:1046
+#: includes/class-flow-settings.php:476
+#: includes/class-flow-settings.php:636
+#: includes/class-flow-settings.php:1243
 msgid "Content types"
 msgstr ""
 
@@ -230,11 +242,11 @@ msgstr ""
 msgid "Continue"
 msgstr ""
 
-#: includes/class-flow-plugin.php:183
+#: includes/class-flow-plugin.php:185
 msgid "Copied!"
 msgstr ""
 
-#: includes/class-flow-plugin.php:182
+#: includes/class-flow-plugin.php:184
 msgid "Copy"
 msgstr ""
 
@@ -246,7 +258,7 @@ msgstr ""
 msgid "Could not build the demo magic link."
 msgstr ""
 
-#: includes/class-flow-settings.php:1051
+#: includes/class-flow-settings.php:1248
 #: src/sidebar/components/OpenReviewControl.js:44
 msgid "Could not save. Please try again."
 msgstr ""
@@ -259,7 +271,7 @@ msgstr ""
 msgid "Could not start the demo. Please try again."
 msgstr ""
 
-#: includes/class-flow-plugin.php:180
+#: includes/class-flow-plugin.php:182
 #: templates/classic/review-ui.php:172
 msgid "Current Review"
 msgstr ""
@@ -268,22 +280,22 @@ msgstr ""
 msgid "Dashboard"
 msgstr ""
 
-#: includes/class-flow-settings.php:640
+#: includes/class-flow-settings.php:686
 msgid "Debug Mode"
 msgstr ""
 
-#: includes/class-flow-settings.php:846
+#: includes/class-flow-settings.php:980
 #: src/review-page/components/ReviewBar.js:601
 msgid "Debug mode"
 msgstr ""
 
-#: includes/class-flow-settings.php:462
-#: includes/class-flow-settings.php:1040
+#: includes/class-flow-settings.php:472
+#: includes/class-flow-settings.php:1237
 msgid "Decide whether publishing requires an approved review, or if reviews are optional helpers your team can use when they want."
 msgstr ""
 
-#: includes/class-flow-settings.php:95
-#: includes/class-flow-settings.php:758
+#: includes/class-flow-settings.php:97
+#: includes/class-flow-settings.php:834
 msgid "Dedicated role created by the Flow plugin. Can access Review page, add comment and approve or request changes."
 msgstr ""
 
@@ -326,16 +338,16 @@ msgstr ""
 msgid "Demo – %s"
 msgstr ""
 
-#: includes/class-flow-settings.php:936
-#: includes/class-flow-settings.php:1053
+#: includes/class-flow-settings.php:1070
+#: includes/class-flow-settings.php:1250
 msgid "Deselect all"
 msgstr ""
 
-#: includes/class-flow-settings.php:867
+#: includes/class-flow-settings.php:1001
 msgid "Disable all notifications."
 msgstr ""
 
-#: includes/class-flow-settings.php:888
+#: includes/class-flow-settings.php:1022
 msgid "Disable open reviews."
 msgstr ""
 
@@ -353,7 +365,7 @@ msgstr ""
 msgid "Early-bird offer: use code %s at checkout to get an amazing 40% off — first buyers only."
 msgstr ""
 
-#: includes/class-flow-plugin.php:177
+#: includes/class-flow-plugin.php:179
 #: includes/class-flow-dashboard-page.php:618
 #: src/review-page/components/CommentCard.js:183
 msgid "Edit"
@@ -377,7 +389,7 @@ msgstr ""
 msgid "Embed"
 msgstr ""
 
-#: includes/class-flow-settings.php:721
+#: includes/class-flow-settings.php:797
 msgid "Enable the review workflow for these content types. Custom post types should be supported but not guaranteed."
 msgstr ""
 
@@ -391,12 +403,12 @@ msgid "Ended"
 msgstr ""
 
 #: includes/class-flow-dashboard-page.php:167
-#: includes/class-flow-settings.php:1129
+#: includes/class-flow-settings.php:1326
 msgid "Enjoying Flow? Please consider leaving a %s to help others discover it."
 msgstr ""
 
 #: includes/class-flow-rest-reviews.php:754
-#: includes/class-flow-plugin.php:189
+#: includes/class-flow-plugin.php:191
 #: includes/class-flow-classic-editor.php:98
 #: src/sidebar/components/ReviewerField.js:103
 msgid "External Email"
@@ -469,7 +481,7 @@ msgstr ""
 msgid "Find out more on jumplinks.net"
 msgstr ""
 
-#: includes/class-flow-settings.php:1034
+#: includes/class-flow-settings.php:1231
 msgid "Finish"
 msgstr ""
 
@@ -492,8 +504,8 @@ msgstr ""
 msgid "Flow Reviews"
 msgstr ""
 
-#: includes/class-flow-settings.php:330
-#: includes/class-flow-settings.php:1124
+#: includes/class-flow-settings.php:340
+#: includes/class-flow-settings.php:1321
 msgid "Flow Settings"
 msgstr ""
 
@@ -505,8 +517,8 @@ msgstr ""
 msgid "Flow Site Review"
 msgstr ""
 
-#: includes/class-flow-settings.php:324
-#: includes/class-flow-settings.php:341
+#: includes/class-flow-settings.php:334
+#: includes/class-flow-settings.php:351
 msgid "Flow setup"
 msgstr ""
 
@@ -515,7 +527,7 @@ msgstr ""
 msgid "Go to link"
 msgstr ""
 
-#: includes/class-flow-plugin.php:181
+#: includes/class-flow-plugin.php:183
 #: templates/classic/review-ui.php:185
 msgid "Go to review"
 msgstr ""
@@ -541,7 +553,7 @@ msgstr ""
 msgid "Hi,\n\n%1$s has sent \"%2$s\" for your review.\n\nOpen the review page:\n%3$s\n\n— %4$s"
 msgstr ""
 
-#: includes/class-flow-settings.php:890
+#: includes/class-flow-settings.php:1024
 msgid "Hide the Open Review toggle in the editor and lock review pages to assigned participants only. Existing open reviews stop accepting public-link visitors immediately."
 msgstr ""
 
@@ -561,7 +573,7 @@ msgid "Image"
 msgstr ""
 
 #: includes/class-flow-review.php:27
-#: includes/class-flow-plugin.php:166
+#: includes/class-flow-plugin.php:168
 #: includes/class-flow-dashboard-widget.php:81
 #: src/shared/status-labels.js:8
 msgid "In Review"
@@ -597,7 +609,7 @@ msgstr ""
 msgid "Invalid security token. Please refresh and try again."
 msgstr ""
 
-#: includes/class-flow-plugin.php:191
+#: includes/class-flow-plugin.php:193
 #: src/sidebar/components/ReviewerField.js:132
 msgid "Invite %s"
 msgstr ""
@@ -613,12 +625,12 @@ msgstr ""
 msgid "Invite session not found."
 msgstr ""
 
-#: includes/class-flow-plugin.php:174
+#: includes/class-flow-plugin.php:176
 msgid "Loading…"
 msgstr ""
 
-#: includes/class-flow-settings.php:696
-#: includes/class-flow-settings.php:1041
+#: includes/class-flow-settings.php:750
+#: includes/class-flow-settings.php:1238
 msgid "Mandatory"
 msgstr ""
 
@@ -627,7 +639,7 @@ msgstr ""
 msgid "Mark as resolved"
 msgstr ""
 
-#: includes/class-flow-settings.php:632
+#: includes/class-flow-settings.php:678
 msgid "Marketing"
 msgstr ""
 
@@ -648,11 +660,11 @@ msgstr ""
 msgid "Name"
 msgstr ""
 
-#: includes/class-flow-settings.php:1032
+#: includes/class-flow-settings.php:1229
 msgid "Next"
 msgstr ""
 
-#: includes/class-flow-plugin.php:194
+#: includes/class-flow-plugin.php:196
 #: templates/classic/review-notice.php:67
 #: templates/classic/review-notice.php:90
 #: src/sidebar/components/ReviewModeNotice.js:95
@@ -664,7 +676,7 @@ msgstr ""
 msgid "No demo sessions yet."
 msgstr ""
 
-#: includes/class-flow-plugin.php:170
+#: includes/class-flow-plugin.php:172
 msgid "No eligible reviewers found."
 msgstr ""
 
@@ -676,8 +688,8 @@ msgstr ""
 msgid "No resolved comments yet."
 msgstr ""
 
-#: includes/class-flow-settings.php:714
-#: includes/class-flow-settings.php:1048
+#: includes/class-flow-settings.php:790
+#: includes/class-flow-settings.php:1245
 msgid "No reviewable content types are available."
 msgstr ""
 
@@ -694,14 +706,14 @@ msgstr ""
 msgid "Nothing is waiting on you, and you haven’t sent anything for review yet."
 msgstr ""
 
-#: includes/class-flow-settings.php:622
+#: includes/class-flow-settings.php:668
 msgid "Notifications"
 msgstr ""
 
 #: includes/class-flow-review.php:30
-#: includes/class-flow-plugin.php:169
+#: includes/class-flow-plugin.php:171
 #: includes/class-flow-dashboard-widget.php:83
-#: includes/class-flow-settings.php:614
+#: includes/class-flow-settings.php:660
 #: src/shared/status-labels.js:11
 msgid "Open Review"
 msgstr ""
@@ -710,7 +722,7 @@ msgstr ""
 msgid "Open dashboard"
 msgstr ""
 
-#: includes/class-flow-plugin.php:184
+#: includes/class-flow-plugin.php:186
 #: src/sidebar/components/OpenReviewControl.js:72
 msgid "Open review"
 msgstr ""
@@ -728,8 +740,8 @@ msgstr ""
 msgid "Open the review page"
 msgstr ""
 
-#: includes/class-flow-settings.php:680
-#: includes/class-flow-settings.php:1044
+#: includes/class-flow-settings.php:734
+#: includes/class-flow-settings.php:1241
 msgid "Optional"
 msgstr ""
 
@@ -738,17 +750,17 @@ msgid "PRO"
 msgstr ""
 
 #: includes/class-flow-review.php:26
-#: includes/class-flow-plugin.php:165
+#: includes/class-flow-plugin.php:167
 #: src/shared/status-labels.js:7
 msgid "Pending Review"
 msgstr ""
 
-#: includes/class-flow-settings.php:474
+#: includes/class-flow-settings.php:484
 msgid "Pick roles that should be able to review content."
 msgstr ""
 
-#: includes/class-flow-settings.php:468
-#: includes/class-flow-settings.php:1047
+#: includes/class-flow-settings.php:478
+#: includes/class-flow-settings.php:1244
 msgid "Pick which post types use the workflow. Only types with the block editor and REST support are listed."
 msgstr ""
 
@@ -760,7 +772,7 @@ msgstr ""
 msgid "Play video"
 msgstr ""
 
-#: includes/class-flow-plugin.php:120
+#: includes/class-flow-plugin.php:122
 #: templates/classic/review-notice.php:37
 msgid "Please check the <a class=\"flow-ew-review-notice__link\" href=\"%1$s\" target=\"_blank\" rel=\"noreferrer\">settings</a> to see which user roles can review, and also if the role is applied the assigned <a class=\"flow-ew-review-notice__link\" href=\"%2$s\" target=\"_blank\" rel=\"noreferrer\">users</a>."
 msgstr ""
@@ -770,7 +782,7 @@ msgid "Please check the <settings>settings</settings> to see which user roles ca
 msgstr ""
 
 #: includes/class-flow-rest-reviews.php:310
-#: includes/class-flow-plugin.php:187
+#: includes/class-flow-plugin.php:189
 #: includes/class-flow-email-review.php:73
 #: src/sidebar/components/ReviewerField.js:27
 msgid "Please enter a valid email address."
@@ -781,8 +793,8 @@ msgstr ""
 msgid "Post"
 msgstr ""
 
-#: includes/class-flow-plugin.php:172
-#: includes/class-flow-plugin.php:193
+#: includes/class-flow-plugin.php:174
+#: includes/class-flow-plugin.php:195
 #: templates/classic/review-notice.php:94
 #: templates/classic/review-notice.php:109
 #: src/sidebar/components/ReviewModeNotice.js:123
@@ -790,7 +802,7 @@ msgstr ""
 msgid "Post can go live only after approval by a reviewer."
 msgstr ""
 
-#: includes/class-flow-plugin.php:171
+#: includes/class-flow-plugin.php:173
 msgid "Post must be approved before publishing."
 msgstr ""
 
@@ -810,8 +822,8 @@ msgstr ""
 msgid "Preview the post at desktop, tablet, and mobile widths."
 msgstr ""
 
-#: includes/class-flow-settings.php:698
-#: includes/class-flow-settings.php:1042
+#: includes/class-flow-settings.php:752
+#: includes/class-flow-settings.php:1239
 msgid "Publishing is blocked until the post is approved by a reviewer."
 msgstr ""
 
@@ -819,7 +831,7 @@ msgstr ""
 msgid "Reason"
 msgstr ""
 
-#: includes/class-flow-plugin.php:176
+#: includes/class-flow-plugin.php:178
 #: templates/classic/review-ui.php:86
 msgid "Remove reviewer"
 msgstr ""
@@ -831,7 +843,7 @@ msgstr ""
 msgid "Reply"
 msgstr ""
 
-#: includes/class-flow-plugin.php:163
+#: includes/class-flow-plugin.php:165
 #: templates/classic/review-ui.php:165
 #: src/review-page/components/ReviewBar.js:660
 msgid "Request Changes"
@@ -857,13 +869,13 @@ msgstr ""
 msgid "Resolved comment threads: %d"
 msgstr ""
 
-#: includes/class-flow-plugin.php:164
+#: includes/class-flow-plugin.php:166
 #: templates/classic/review-ui.php:156
 #: src/review-page/components/ReviewBar.js:633
 msgid "Resubmit for review"
 msgstr ""
 
-#: includes/class-flow-plugin.php:159
+#: includes/class-flow-plugin.php:161
 #: includes/class-flow-admin-bar.php:53
 #: includes/class-flow-classic-editor.php:42
 #: includes/class-flow-admin-columns.php:65
@@ -897,17 +909,17 @@ msgstr ""
 msgid "Review ID"
 msgstr ""
 
-#: includes/class-flow-settings.php:590
+#: includes/class-flow-settings.php:620
 msgid "Review Mode"
 msgstr ""
 
-#: includes/class-flow-plugin.php:192
+#: includes/class-flow-plugin.php:194
 #: templates/classic/review-notice.php:106
 #: src/sidebar/components/ReviewModeNotice.js:143
 msgid "Review Mode set to Mandatory"
 msgstr ""
 
-#: includes/class-flow-settings.php:606
+#: includes/class-flow-settings.php:644
 msgid "Review Roles"
 msgstr ""
 
@@ -915,8 +927,8 @@ msgstr ""
 msgid "Review dashboard"
 msgstr ""
 
-#: includes/class-flow-settings.php:460
-#: includes/class-flow-settings.php:1039
+#: includes/class-flow-settings.php:470
+#: includes/class-flow-settings.php:1236
 msgid "Review mode"
 msgstr ""
 
@@ -946,9 +958,17 @@ msgstr ""
 msgid "Review submitted on %1$s by %2$s."
 msgstr ""
 
+#: includes/class-flow-settings.php:628
+msgid "Reviewed by"
+msgstr ""
+
+#: includes/class-flow-reviewed-by.php:82
+msgid "Reviewed by %s"
+msgstr ""
+
 #: includes/class-flow-rest-reviews.php:581
 #: includes/class-flow-review-page.php:614
-#: includes/class-flow-plugin.php:173
+#: includes/class-flow-plugin.php:175
 #: templates/classic/review-ui.php:67
 #: templates/classic/review-ui.php:142
 msgid "Reviewer"
@@ -958,9 +978,9 @@ msgstr ""
 msgid "Reviewer cannot be the same as the requester."
 msgstr ""
 
-#: includes/class-flow-settings.php:472
-#: includes/class-flow-settings.php:768
-#: includes/class-flow-settings.php:1049
+#: includes/class-flow-settings.php:482
+#: includes/class-flow-settings.php:844
+#: includes/class-flow-settings.php:1246
 msgid "Reviewer roles"
 msgstr ""
 
@@ -991,11 +1011,11 @@ msgstr ""
 msgid "Rich text formatting and @mentions to ping teammates straight from a comment."
 msgstr ""
 
-#: includes/class-flow-plugin.php:175
+#: includes/class-flow-plugin.php:177
 msgid "Round"
 msgstr ""
 
-#: includes/class-flow-settings.php:1038
+#: includes/class-flow-settings.php:1235
 msgid "Run setup again"
 msgstr ""
 
@@ -1003,7 +1023,7 @@ msgstr ""
 msgid "Save"
 msgstr ""
 
-#: includes/class-flow-settings.php:481
+#: includes/class-flow-settings.php:491
 msgid "Save and continue"
 msgstr ""
 
@@ -1015,7 +1035,7 @@ msgstr ""
 msgid "Saving\\u2026"
 msgstr ""
 
-#: includes/class-flow-settings.php:1036
+#: includes/class-flow-settings.php:1233
 msgid "Saving…"
 msgstr ""
 
@@ -1023,18 +1043,22 @@ msgstr ""
 msgid "Scroll to highlighted text"
 msgstr ""
 
-#: includes/class-flow-plugin.php:160
+#: includes/class-flow-settings.php:909
+msgid "Search users…"
+msgstr ""
+
+#: includes/class-flow-plugin.php:162
 msgid "Select Reviewer"
 msgstr ""
 
-#: includes/class-flow-settings.php:728
-#: includes/class-flow-settings.php:778
-#: includes/class-flow-settings.php:935
-#: includes/class-flow-settings.php:1052
+#: includes/class-flow-settings.php:804
+#: includes/class-flow-settings.php:854
+#: includes/class-flow-settings.php:1069
+#: includes/class-flow-settings.php:1249
 msgid "Select all"
 msgstr ""
 
-#: includes/class-flow-plugin.php:179
+#: includes/class-flow-plugin.php:181
 #: templates/classic/review-ui.php:150
 msgid "Send for review"
 msgstr ""
@@ -1048,8 +1072,8 @@ msgid "Sessions"
 msgstr ""
 
 #: includes/site-demo/class-demo-admin.php:186
-#: includes/class-flow-settings.php:180
-#: includes/class-flow-settings.php:331
+#: includes/class-flow-settings.php:182
+#: includes/class-flow-settings.php:341
 msgid "Settings"
 msgstr ""
 
@@ -1057,18 +1081,22 @@ msgstr ""
 msgid "Settings saved."
 msgstr ""
 
-#: includes/class-flow-settings.php:1037
-#: includes/class-flow-settings.php:1153
-#: includes/class-flow-settings.php:1162
+#: includes/class-flow-settings.php:1234
+#: includes/class-flow-settings.php:1350
+#: includes/class-flow-settings.php:1359
 msgid "Setup saved. Your workflow preferences are active."
 msgstr ""
 
-#: includes/class-flow-settings.php:827
+#: includes/class-flow-settings.php:961
 msgid "Show Pro upgrade prompts across the admin menu, editors, and review page. Turn off to hide the [PRO] Site Review and Integrations menu items plus the \"unlock\" hints in editors and on the review page. The \"Upgrade\" entry and the early-bird discount bar (which reviewers can dismiss) stay visible."
 msgstr ""
 
-#: includes/class-flow-settings.php:825
+#: includes/class-flow-settings.php:959
 msgid "Show marketing"
+msgstr ""
+
+#: includes/class-flow-settings.php:774
+msgid "Show reviewed-by credit"
 msgstr ""
 
 #: includes/site-demo/class-demo-admin.php:28
@@ -1093,8 +1121,8 @@ msgstr ""
 msgid "Site demo is unavailable. Pro Site Review with external reviewers is required."
 msgstr ""
 
-#: includes/class-flow-settings.php:488
-#: includes/class-flow-settings.php:1035
+#: includes/class-flow-settings.php:498
+#: includes/class-flow-settings.php:1232
 msgid "Skip for now"
 msgstr ""
 
@@ -1122,11 +1150,11 @@ msgstr ""
 msgid "Status"
 msgstr ""
 
-#: includes/class-flow-settings.php:1030
+#: includes/class-flow-settings.php:1227
 msgid "Step"
 msgstr ""
 
-#: includes/class-flow-plugin.php:161
+#: includes/class-flow-plugin.php:163
 msgid "Submit for Review"
 msgstr ""
 
@@ -1198,15 +1226,15 @@ msgstr ""
 msgid "Upgrade to Pro"
 msgstr ""
 
-#: includes/class-flow-settings.php:505
+#: includes/class-flow-settings.php:515
 msgid "Use the options below to match how your team publishes. Debug mode remains available for administrators who need broader access while testing."
 msgstr ""
 
-#: includes/class-flow-settings.php:771
+#: includes/class-flow-settings.php:847
 msgid "Users with the following roles can be assigned as reviewers. Selected roles receive the reviewer capability so they can open the review experience and approve or request changes."
 msgstr ""
 
-#: includes/class-flow-settings.php:1050
+#: includes/class-flow-settings.php:1247
 msgid "Users with these roles can be assigned as reviewers and approve or request changes."
 msgstr ""
 
@@ -1235,8 +1263,8 @@ msgstr ""
 msgid "View the latest version"
 msgstr ""
 
-#: includes/class-flow-settings.php:450
-#: includes/class-flow-settings.php:1028
+#: includes/class-flow-settings.php:460
+#: includes/class-flow-settings.php:1225
 msgid "Welcome to Flow"
 msgstr ""
 
@@ -1244,15 +1272,19 @@ msgstr ""
 msgid "We’ll only use it to notify you when someone replies."
 msgstr ""
 
-#: includes/class-flow-settings.php:848
+#: includes/class-flow-settings.php:776
+msgid "When a review is approved, show \"Reviewed by\" next to the author name on published content. External email reviewers are not listed."
+msgstr ""
+
+#: includes/class-flow-settings.php:982
 msgid "When enabled, administrators have full access to all review pages and actions."
 msgstr ""
 
-#: includes/class-flow-settings.php:869
+#: includes/class-flow-settings.php:1003
 msgid "When enabled, no review-related emails are sent at all (assignment, approval, changes requested, mentions). Use this for staging or quiet rollouts."
 msgstr ""
 
-#: includes/class-flow-settings.php:583
+#: includes/class-flow-settings.php:613
 msgid "Workflow"
 msgstr ""
 
@@ -1294,7 +1326,7 @@ msgstr ""
 msgid "You cannot edit this comment."
 msgstr ""
 
-#: includes/class-flow-settings.php:442
+#: includes/class-flow-settings.php:452
 msgid "You do not have permission to access this page."
 msgstr ""
 
@@ -1302,7 +1334,7 @@ msgstr ""
 msgid "You do not have permission to assign reviewers."
 msgstr ""
 
-#: includes/class-flow-settings.php:410
+#: includes/class-flow-settings.php:420
 msgid "You do not have permission to do that."
 msgstr ""
 
@@ -1395,7 +1427,7 @@ msgstr ""
 msgid "\\u2714 Reviewer updated."
 msgstr ""
 
-#: includes/class-flow-plugin.php:186
+#: includes/class-flow-plugin.php:188
 #: templates/classic/review-ui.php:80
 #: src/sidebar/components/ReviewerField.js:403
 msgid "assign a dedicated reviewer"
@@ -1405,17 +1437,17 @@ msgstr ""
 msgid "by %s"
 msgstr ""
 
-#: includes/class-flow-plugin.php:188
+#: includes/class-flow-plugin.php:190
 #: src/sidebar/components/ReviewerField.js:373
 msgid "name@example.com"
 msgstr ""
 
-#: includes/class-flow-settings.php:1031
+#: includes/class-flow-settings.php:1228
 msgid "of"
 msgstr ""
 
 #: includes/class-flow-dashboard-page.php:171
-#: includes/class-flow-settings.php:1133
+#: includes/class-flow-settings.php:1330
 msgid "review on WordPress.org"
 msgstr ""
 
@@ -1427,7 +1459,7 @@ msgstr ""
 msgid "— Select Reviewer —"
 msgstr ""
 
-#: includes/class-flow-settings.php:170
+#: includes/class-flow-settings.php:172
 msgid "★ Rate this plugin"
 msgstr ""
 

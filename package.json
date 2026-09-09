@@ -1,6 +1,6 @@
 {
   "name": "jumplinks-editorial-workflow",
-  "version": "2.4.1",
+  "version": "2.4.2",
   "description": "Jumplinks Flow - Editorial Review & Content Approval Workflow",
   "scripts": {
     "test:php": "php vendor/bin/phpunit -c phpunit.xml.dist",
@@ -46,7 +46,8 @@
     "package:pro": "npm run build && npm run make-pot-pro && npm run compile-translations-pro && python3 scripts/make-pro-zip.py && npm run check:dist:pro",
     "package:jumplinks": "npm run build && npm run make-pot-pro && npm run compile-translations-pro && python3 scripts/make-jumplinks-zip.py",
     "release": "python3 scripts/release-svn.py",
-    "release:commit": "python3 scripts/release-svn.py --commit"
+    "release:commit": "python3 scripts/release-svn.py --commit",
+    "release:github": "python3 scripts/release-github.py"
   },
   "dependencies": {
     "@tiptap/extension-highlight": "^3.22.2",

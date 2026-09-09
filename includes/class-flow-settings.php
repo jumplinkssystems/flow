@@ -10,7 +10,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 class Settings {
 
 	const OPTION_MANDATORY             = 'flow_ew_review_mandatory';
+	const OPTION_SHOW_REVIEWED_BY      = 'flow_ew_show_reviewed_by';
 	const OPTION_REVIEWER_ROLES        = 'flow_ew_reviewer_roles';
+	const OPTION_AUTO_ASSIGN_REVIEWER  = 'flow_ew_auto_assign_reviewer_id';
 	const OPTION_DEBUG_MODE            = 'flow_ew_debug_mode';
 	const OPTION_DISABLE_OPEN_REVIEWS  = 'flow_ew_disable_open_reviews';
 	const OPTION_DISABLE_NOTIFICATIONS = 'flow_ew_disable_notifications';
@@ -187,6 +189,10 @@ class Settings {
 		return (bool) get_option( self::OPTION_MANDATORY, false );
 	}
 
+	public static function should_show_reviewed_by(): bool {
+		return (bool) get_option( self::OPTION_SHOW_REVIEWED_BY, false );
+	}
+
 	/**
 	 * @return string[]
 	 */
@@ -196,6 +202,10 @@ class Settings {
 			return self::get_default_reviewer_roles();
 		}
 		return (array) $saved;
+	}
+
+	public static function get_auto_assign_reviewer_id(): int {
+		return max( 0, (int) get_option( self::OPTION_AUTO_ASSIGN_REVIEWER, 0 ) );
 	}
 
 	public static function is_debug_mode(): bool {
@@ -520,11 +530,31 @@ class Settings {
 
 		register_setting(
 			self::OPTION_GROUP,
+			self::OPTION_SHOW_REVIEWED_BY,
+			[
+				'type'              => 'boolean',
+				'default'           => false,
+				'sanitize_callback' => 'rest_sanitize_boolean',
+			]
+		);
+
+		register_setting(
+			self::OPTION_GROUP,
 			self::OPTION_REVIEWER_ROLES,
 			[
 				'type'              => 'array',
 				'default'           => self::get_default_reviewer_roles(),
 				'sanitize_callback' => [ $this, 'sanitize_reviewer_roles' ],
+			]
+		);
+
+		register_setting(
+			self::OPTION_GROUP,
+			self::OPTION_AUTO_ASSIGN_REVIEWER,
+			[
+				'type'              => 'integer',
+				'default'           => 0,
+				'sanitize_callback' => [ $this, 'sanitize_auto_assign_reviewer' ],
 			]
 		);
 
@@ -594,6 +624,14 @@ class Settings {
 		);
 
 		add_settings_field(
+			self::OPTION_SHOW_REVIEWED_BY,
+			__( 'Reviewed by', 'jumplinks-editorial-workflow' ),
+			[ $this, 'render_show_reviewed_by_field' ],
+			self::PAGE_SLUG,
+			'flow_ew_general'
+		);
+
+		add_settings_field(
 			self::OPTION_SUPPORTED_POST_TYPES,
 			__( 'Content types', 'jumplinks-editorial-workflow' ),
 			[ $this, 'render_supported_post_types_field' ],
@@ -605,6 +643,14 @@ class Settings {
 			self::OPTION_REVIEWER_ROLES,
 			__( 'Review Roles', 'jumplinks-editorial-workflow' ),
 			[ $this, 'render_reviewer_roles_field' ],
+			self::PAGE_SLUG,
+			'flow_ew_general'
+		);
+
+		add_settings_field(
+			self::OPTION_AUTO_ASSIGN_REVIEWER,
+			__( 'Automatic reviewer', 'jumplinks-editorial-workflow' ),
+			[ $this, 'render_auto_assign_reviewer_field' ],
 			self::PAGE_SLUG,
 			'flow_ew_general'
 		);
@@ -650,6 +696,14 @@ class Settings {
 		}
 		$all_roles = array_keys( wp_roles()->roles );
 		return array_values( array_intersect( $value, $all_roles ) );
+	}
+
+	public function sanitize_auto_assign_reviewer( $value ): int {
+		$user_id = absint( $value );
+		if ( 0 === $user_id ) {
+			return 0;
+		}
+		return get_userdata( $user_id ) ? $user_id : 0;
 	}
 
 	/**
@@ -701,6 +755,28 @@ class Settings {
 				</span>
 			</label>
 		</fieldset>
+		<?php
+	}
+
+	public function render_show_reviewed_by_field(): void {
+		$checked = self::should_show_reviewed_by();
+		?>
+		<input type="hidden" name="<?php echo esc_attr( self::OPTION_SHOW_REVIEWED_BY ); ?>" value="0" />
+		<label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer">
+			<input
+				type="checkbox"
+				name="<?php echo esc_attr( self::OPTION_SHOW_REVIEWED_BY ); ?>"
+				value="1"
+				<?php checked( $checked, true ); ?>
+				style="margin-top:3px;flex-shrink:0"
+			/>
+			<span>
+				<strong><?php esc_html_e( 'Show reviewed-by credit', 'jumplinks-editorial-workflow' ); ?></strong><br>
+				<span class="description">
+					<?php esc_html_e( 'When a review is approved, show "Reviewed by" next to the author name on published content. External email reviewers are not listed.', 'jumplinks-editorial-workflow' ); ?>
+				</span>
+			</span>
+		</label>
 		<?php
 	}
 
@@ -810,6 +886,64 @@ class Settings {
 		$this->add_settings_field_select_all_script( $field_id, $field_id . '-role' );
 	}
 
+	public function render_auto_assign_reviewer_field(): void {
+		$user_id = self::get_auto_assign_reviewer_id();
+		$user    = $user_id > 0 ? get_userdata( $user_id ) : false;
+		if ( ! $user ) {
+			$user_id = 0;
+		}
+		?>
+		<div id="flow-ew-auto-reviewer" class="flow-ew-user-combobox">
+			<input
+				type="hidden"
+				id="flow-ew-auto-reviewer-id"
+				name="<?php echo esc_attr( self::OPTION_AUTO_ASSIGN_REVIEWER ); ?>"
+				value="<?php echo esc_attr( (string) $user_id ); ?>"
+			/>
+			<div class="flow-ew-user-combobox__field">
+				<div class="flow-ew-user-combobox__control">
+					<input
+						type="search"
+						id="flow-ew-auto-reviewer-search"
+						class="regular-text"
+						placeholder="<?php esc_attr_e( 'Search users…', 'jumplinks-editorial-workflow' ); ?>"
+						autocomplete="off"
+						role="combobox"
+						aria-autocomplete="list"
+						aria-expanded="false"
+						aria-controls="flow-ew-auto-reviewer-results"
+					/>
+					<button
+						type="button"
+						class="button flow-ew-user-combobox__clear"
+						<?php echo 0 === $user_id ? 'hidden' : ''; ?>
+					><?php esc_html_e( 'Clear', 'jumplinks-editorial-workflow' ); ?></button>
+				</div>
+				<div
+					id="flow-ew-auto-reviewer-selected"
+					class="flow-ew-user-combobox__selected"
+					<?php echo 0 === $user_id ? 'hidden' : ''; ?>
+				>
+					<?php if ( $user ) : ?>
+						<?php echo get_avatar( $user_id, 32 ); ?>
+						<span><?php echo esc_html( (string) $user->display_name ); ?></span>
+					<?php endif; ?>
+				</div>
+				<div
+					id="flow-ew-auto-reviewer-results"
+					class="flow-ew-user-combobox__results"
+					role="listbox"
+					hidden
+				></div>
+			</div>
+			<p class="description">
+				<?php esc_html_e( 'Automatically assign this user to review new content. Any WordPress user can be selected, regardless of Review Roles, including yourself.', 'jumplinks-editorial-workflow' ); ?>
+			</p>
+		</div>
+		<?php
+		$this->add_auto_assign_reviewer_script();
+	}
+
 	public function render_show_upgrade_hints_field(): void {
 		$checked = self::should_show_upgrade_hints();
 		?>
@@ -917,7 +1051,7 @@ class Settings {
 			[],
 			$ver
 		);
-		wp_register_script( 'flow-ew-settings-fields', false, [], $ver, true );
+		wp_register_script( 'flow-ew-settings-fields', false, [ 'wp-api-fetch' ], $ver, true );
 		wp_enqueue_script( 'flow-ew-settings-fields' );
 	}
 
@@ -935,6 +1069,69 @@ class Settings {
 			wp_json_encode( __( 'Select all', 'jumplinks-editorial-workflow' ) ),
 			wp_json_encode( __( 'Deselect all', 'jumplinks-editorial-workflow' ) )
 		);
+		wp_add_inline_script( 'flow-ew-settings-fields', $js, 'after' );
+	}
+
+	private function add_auto_assign_reviewer_script(): void {
+		$js = <<<'JS'
+(function(){
+	var root=document.getElementById('flow-ew-auto-reviewer');
+	if(!root||!window.wp||!window.wp.apiFetch)return;
+	var hidden=root.querySelector('#flow-ew-auto-reviewer-id');
+	var input=root.querySelector('#flow-ew-auto-reviewer-search');
+	var results=root.querySelector('#flow-ew-auto-reviewer-results');
+	var selected=root.querySelector('#flow-ew-auto-reviewer-selected');
+	var clear=root.querySelector('.flow-ew-user-combobox__clear');
+	var timer=0;
+	var request=0;
+	function close(){results.hidden=true;results.innerHTML='';input.setAttribute('aria-expanded','false');}
+	function select(user){
+		hidden.value=String(user.id);
+		selected.innerHTML='';
+		if(user.avatar_url){var img=document.createElement('img');img.src=user.avatar_url;img.alt='';img.width=32;img.height=32;selected.appendChild(img);}
+		var name=document.createElement('span');name.textContent=user.name;selected.appendChild(name);
+		selected.hidden=false;clear.hidden=false;input.value='';close();
+	}
+	function render(users){
+		results.innerHTML='';
+		users.forEach(function(user){
+			var option=document.createElement('button');
+			option.type='button';option.className='flow-ew-user-combobox__option';
+			option.setAttribute('role','option');option.textContent=user.name;
+			option.addEventListener('click',function(){select(user);});
+			results.appendChild(option);
+		});
+		results.hidden=users.length===0;input.setAttribute('aria-expanded',users.length?'true':'false');
+	}
+	input.addEventListener('input',function(){
+		window.clearTimeout(timer);
+		var query=input.value.trim();
+		if(query.length<2){close();return;}
+		timer=window.setTimeout(function(){
+			var current=++request;
+			window.wp.apiFetch({path:'/flow/v1/users/search?q='+encodeURIComponent(query)})
+				.then(function(users){if(current===request)render(Array.isArray(users)?users:[]);})
+				.catch(function(){if(current===request)close();});
+		},250);
+	});
+	input.addEventListener('keydown',function(event){
+		var options=results.querySelectorAll('.flow-ew-user-combobox__option');
+		if(event.key==='Escape'){close();return;}
+		if(event.key==='ArrowDown'&&options.length){event.preventDefault();options[0].focus();}
+	});
+	results.addEventListener('keydown',function(event){
+		var options=Array.prototype.slice.call(results.querySelectorAll('.flow-ew-user-combobox__option'));
+		var index=options.indexOf(document.activeElement);
+		if(event.key==='ArrowDown'&&index<options.length-1){event.preventDefault();options[index+1].focus();}
+		if(event.key==='ArrowUp'){event.preventDefault();if(index>0){options[index-1].focus();}else{input.focus();}}
+		if(event.key==='Escape'){close();input.focus();}
+	});
+	clear.addEventListener('click',function(){
+		hidden.value='0';selected.hidden=true;selected.innerHTML='';clear.hidden=true;input.value='';close();input.focus();
+	});
+	document.addEventListener('click',function(event){if(!root.contains(event.target))close();});
+})();
+JS;
 		wp_add_inline_script( 'flow-ew-settings-fields', $js, 'after' );
 	}
 

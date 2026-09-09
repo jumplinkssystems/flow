@@ -54,6 +54,8 @@ class Plugin {
 		( new Admin_Columns() )->boot();
 		( new Admin_Bar() )->boot();
 		( new Pro_Upsell_Menus() )->boot();
+		( new Reviewed_By() )->boot();
+		( new Auto_Assign_Reviewer() )->boot();
 
 		add_action( 'init', [ $this, 'register_post_meta' ], 20 );
 	}

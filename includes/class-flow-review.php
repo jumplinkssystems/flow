@@ -99,7 +99,7 @@ class Review {
 		return (bool) \apply_filters( 'flow_ew_open_review_feature_available', $enabled );
 	}
 
-	public static function request( int $post_id, int $reviewer_id, int $requester_id ): int {
+	public static function request( int $post_id, int $reviewer_id, int $requester_id, bool $allow_self_assignment = false ): int {
 		if ( ! get_post( $post_id ) ) {
 			throw new \InvalidArgumentException( esc_html__( 'Invalid post ID.', 'jumplinks-editorial-workflow' ) );
 		}
@@ -113,7 +113,7 @@ class Review {
 			if ( ! get_userdata( $reviewer_id ) ) {
 				throw new \InvalidArgumentException( esc_html__( 'Invalid reviewer user ID.', 'jumplinks-editorial-workflow' ) );
 			}
-			if ( $reviewer_id === $requester_id ) {
+			if ( ! $allow_self_assignment && $reviewer_id === $requester_id ) {
 				throw new \InvalidArgumentException( esc_html__( 'Reviewer cannot be the same as the requester.', 'jumplinks-editorial-workflow' ) );
 			}
 		}
