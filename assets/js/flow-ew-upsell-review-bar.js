@@ -45,6 +45,8 @@
 		'.bar__coupon svg{flex-shrink:0;}',
 		'.bar__cta{display:inline-flex;align-items:center;height:28px;padding:0 12px;background:#fff;color:#018170;font-weight:600;font-size:13px;text-decoration:none;border-radius:4px;transition:background 0.1s ease;}',
 		'.bar__cta:hover{background:#d0f9ec;}',
+		'.bar__cta--ghost{background:transparent;color:#fff;box-shadow:inset 0 0 0 1px rgba(255,255,255,0.6);}',
+		'.bar__cta--ghost:hover{background:rgba(255,255,255,0.15);color:#fff;}',
 		'.bar__close{position:absolute;right:12px;top:50%;transform:translateY(-50%);width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;background:transparent;border:0;color:rgba(255,255,255,0.8);cursor:pointer;font-size:18px;line-height:1;border-radius:50%;}',
 		'.bar__close:hover{background:rgba(255,255,255,0.15);color:#fff;}',
 		// Mobile: 40px is tight, allow growth on wrap.
@@ -120,8 +122,20 @@
 		var cta = document.createElement( 'a' );
 		cta.className = 'bar__cta';
 		cta.href = data.href;
+		cta.target = '_blank';
+		cta.rel = 'noopener noreferrer';
 		cta.textContent = data.ctaLabel;
 		bar.appendChild( cta );
+
+		if ( data.secondaryLabel ) {
+			var secondary = document.createElement( 'a' );
+			secondary.className = 'bar__cta bar__cta--ghost';
+			secondary.href = data.secondaryHref || data.href;
+			secondary.target = '_blank';
+			secondary.rel = 'noopener noreferrer';
+			secondary.textContent = data.secondaryLabel;
+			bar.appendChild( secondary );
+		}
 
 		var close = document.createElement( 'button' );
 		close.className = 'bar__close';

@@ -18,7 +18,33 @@ class Pro_Upsell_Menus {
 
 	const SITE_REVIEW_SLUG  = 'flow-ew-site-review-upsell';
 	const INTEGRATIONS_SLUG = 'flow-ew-integrations-upsell';
+	const WEBHOOKS_SLUG     = 'flow-ew-webhooks-upsell';
 	const UPGRADE_REDIRECT  = 'admin.php?page=flow-ew-dashboard-pricing';
+	const PRO_URL           = 'https://jumplinks.net/pro/';
+
+	/**
+	 * Where every upgrade surface points. The in-admin Freemius pricing screen
+	 * still exists and Freemius still links to it; these are the marketing
+	 * surfaces, so they go to the site and show the same pitch a visitor sees.
+	 */
+	public static function upgrade_url(): string {
+		return (string) \apply_filters( 'flow_ew_upgrade_url', self::PRO_URL );
+	}
+
+	/**
+	 * `wp_safe_redirect()` drops off-host targets. The destination is a class
+	 * constant, not user input, so allow just that host for this hop.
+	 *
+	 * @param array<int,string> $hosts
+	 * @return array<int,string>
+	 */
+	public function allow_marketing_host( $hosts ): array {
+		$host = wp_parse_url( self::upgrade_url(), PHP_URL_HOST );
+		if ( is_string( $host ) && '' !== $host ) {
+			$hosts[] = $host;
+		}
+		return (array) $hosts;
+	}
 
 	public function boot(): void {
 		if ( function_exists( 'flow_ew_pro_should_boot' ) && \flow_ew_pro_should_boot() ) {
@@ -133,10 +159,20 @@ class Pro_Upsell_Menus {
 			self::INTEGRATIONS_SLUG,
 			[ $this, 'redirect_to_upgrade' ]
 		);
+
+		add_submenu_page(
+			Dashboard_Page::PAGE_SLUG,
+			__( 'Flow Webhooks', 'jumplinks-editorial-workflow' ),
+			$this->labelled_menu_title( __( 'Webhooks', 'jumplinks-editorial-workflow' ) ),
+			'manage_options',
+			self::WEBHOOKS_SLUG,
+			[ $this, 'redirect_to_upgrade' ]
+		);
 	}
 
 	public function redirect_to_upgrade(): void {
-		$target = admin_url( self::UPGRADE_REDIRECT );
+		$target = self::upgrade_url();
+		add_filter( 'allowed_redirect_hosts', [ $this, 'allow_marketing_host' ] );
 		if ( ! headers_sent() ) {
 			wp_safe_redirect( $target );
 			exit;
@@ -159,9 +195,9 @@ class Pro_Upsell_Menus {
 	 * @return array<int|string,string>
 	 */
 	public function add_upgrade_action_link( array $links ): array {
-		$href         = esc_url( admin_url( self::UPGRADE_REDIRECT ) );
+		$href         = esc_url( self::upgrade_url() );
 		$label        = esc_html__( 'Upgrade to Pro', 'jumplinks-editorial-workflow' );
-		$upgrade_link = sprintf( '<a href="%s" style="color:#018170;font-weight:600;">%s</a>', $href, $label );
+		$upgrade_link = sprintf( '<a href="%s" target="_blank" rel="noopener noreferrer" style="color:#018170;font-weight:600;">%s</a>', $href, $label );
 		return array_merge( array( 'flow-ew-upgrade' => $upgrade_link ), $links );
 	}
 
@@ -298,11 +334,13 @@ class Pro_Upsell_Menus {
 			'flowEwUpsellReviewBar',
 			array(
 				/* translators: %s is the coupon code shown as a styled pill inside the upsell bar. */
-				'message'      => __( 'Early-bird offer: use code %s at checkout to get an amazing 40% off — first buyers only.', 'jumplinks-editorial-workflow' ),
-				'coupon'       => 'EARLYBIRD',
-				'ctaLabel'     => __( 'Upgrade now', 'jumplinks-editorial-workflow' ),
-				'dismissLabel' => __( 'Dismiss this notice', 'jumplinks-editorial-workflow' ),
-				'href'         => admin_url( self::UPGRADE_REDIRECT ),
+				'message'        => __( 'Early-bird offer: use code %s at checkout to get an amazing 40% off — first buyers only.', 'jumplinks-editorial-workflow' ),
+				'coupon'         => 'EARLYBIRD',
+				'ctaLabel'       => __( 'Upgrade now', 'jumplinks-editorial-workflow' ),
+				'secondaryLabel' => __( 'View more', 'jumplinks-editorial-workflow' ),
+				'dismissLabel'   => __( 'Dismiss this notice', 'jumplinks-editorial-workflow' ),
+				'href'           => self::upgrade_url(),
+				'secondaryHref'  => self::upgrade_url(),
 			)
 		);
 	}
@@ -334,7 +372,7 @@ class Pro_Upsell_Menus {
 			array(
 				'label'    => __( 'Unlock device selector', 'jumplinks-editorial-workflow' ),
 				'helpText' => __( 'Preview the post at desktop, tablet, and mobile widths.', 'jumplinks-editorial-workflow' ),
-				'href'     => admin_url( self::UPGRADE_REDIRECT ),
+				'href'     => self::upgrade_url(),
 			)
 		);
 	}
@@ -366,7 +404,7 @@ class Pro_Upsell_Menus {
 			array(
 				'label'    => __( 'Unlock advanced editor', 'jumplinks-editorial-workflow' ),
 				'helpText' => __( 'Rich text formatting and @mentions to ping teammates straight from a comment.', 'jumplinks-editorial-workflow' ),
-				'href'     => admin_url( self::UPGRADE_REDIRECT ),
+				'href'     => self::upgrade_url(),
 			)
 		);
 	}
@@ -407,7 +445,7 @@ class Pro_Upsell_Menus {
 			array(
 				'label'    => __( 'Unlock public reviews', 'jumplinks-editorial-workflow' ),
 				'helpText' => __( 'Invite anyone, even people without a WordPress account.', 'jumplinks-editorial-workflow' ),
-				'href'     => admin_url( self::UPGRADE_REDIRECT ),
+				'href'     => self::upgrade_url(),
 			)
 		);
 
@@ -424,7 +462,7 @@ class Pro_Upsell_Menus {
 			array(
 				'label'    => __( 'Unlock multiple reviewers', 'jumplinks-editorial-workflow' ),
 				'helpText' => __( 'Require approval from several reviewers before publishing.', 'jumplinks-editorial-workflow' ),
-				'href'     => admin_url( self::UPGRADE_REDIRECT ),
+				'href'     => self::upgrade_url(),
 			)
 		);
 	}

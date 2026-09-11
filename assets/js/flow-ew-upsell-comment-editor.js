@@ -63,7 +63,7 @@
 				{ className: 'flow-ew-upsell-comment-editor', style: WRAP_STYLE },
 				createElement(
 					'a',
-					{ href: data.href, style: LINK_STYLE },
+					{ href: data.href, target: '_blank', rel: 'noopener noreferrer', style: LINK_STYLE },
 					createElement( 'span', { style: BADGE_STYLE }, 'PRO' ),
 					data.label
 				),

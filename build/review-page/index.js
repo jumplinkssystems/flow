@@ -320,7 +320,7 @@ function BasicCommentEditor({
         onClick: handleSubmit,
         disabled: submitDisabled,
         __next40pxDefaultSize: true,
-        children: submitting ? (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_2__.__)('Saving\u2026', 'jumplinks-editorial-workflow') : submitLabel || (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_2__.__)('Add Comment', 'jumplinks-editorial-workflow')
+        children: submitting ? (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_2__.__)('Saving…', 'jumplinks-editorial-workflow') : submitLabel || (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_2__.__)('Add Comment', 'jumplinks-editorial-workflow')
       }), showCancel && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_1__.Button, {
         className: "flow-btn--text flow-btn--cancel",
         onClick: handleCancelClick,
@@ -3520,7 +3520,7 @@ function ReviewBar({
           })
         }), !isApproved ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_12__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_1__.Button, {
           className: "flow-bar__btn--request-changes",
-          onClick: () => doAction('request-changes', (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_5__.__)('\u2713 Changes requested \u2014 author notified.', 'jumplinks-editorial-workflow'), 'changes_requested'),
+          onClick: () => doAction('request-changes', (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_5__.__)('✓ Changes requested — author notified.', 'jumplinks-editorial-workflow'), 'changes_requested'),
           disabled: isBusy || totalCommentCount === 0 || myVote === 'changes_requested',
           children: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_5__.__)('Request Changes', 'jumplinks-editorial-workflow')
         }) : null, isApproved ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_12__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_1__.Button, {
@@ -3531,7 +3531,7 @@ function ReviewBar({
           children: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_5__.__)('Revoke Approval', 'jumplinks-editorial-workflow')
         }) : /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_12__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_1__.Button, {
           variant: "primary",
-          onClick: () => doAction('approve', (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_5__.__)('\u2713 Approval recorded.', 'jumplinks-editorial-workflow'), 'approved'),
+          onClick: () => doAction('approve', (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_5__.__)('✓ Approval recorded.', 'jumplinks-editorial-workflow'), 'approved'),
           disabled: isBusy,
           children: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_5__.__)('Approve', 'jumplinks-editorial-workflow')
         })]

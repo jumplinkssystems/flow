@@ -81,7 +81,7 @@ class Divi {
 		$show_free_upsells = Settings::should_show_upgrade_hints()
 			&& current_user_can( 'manage_options' )
 			&& ( ! function_exists( 'flow_ew_pro_should_boot' ) || ! \flow_ew_pro_should_boot() );
-		$upsell_href       = admin_url( Pro_Upsell_Menus::UPGRADE_REDIRECT );
+		$upsell_href       = Pro_Upsell_Menus::upgrade_url();
 
 		$template = (string) apply_filters(
 			'flow_ew_divi_panel_template',

@@ -654,7 +654,7 @@ export default function ReviewBar({ mode = 'review', actionsSlot = null } = {}) 
             {!isApproved ? (
               <Button
                 className="flow-bar__btn--request-changes"
-                onClick={() => doAction('request-changes', __('\u2713 Changes requested \u2014 author notified.', 'jumplinks-editorial-workflow'), 'changes_requested')}
+                onClick={() => doAction('request-changes', __('✓ Changes requested — author notified.', 'jumplinks-editorial-workflow'), 'changes_requested')}
                 disabled={isBusy || totalCommentCount === 0 || myVote === 'changes_requested'}
               >
                 {__('Request Changes', 'jumplinks-editorial-workflow')}
@@ -672,7 +672,7 @@ export default function ReviewBar({ mode = 'review', actionsSlot = null } = {}) 
             ) : (
               <Button
                 variant="primary"
-                onClick={() => doAction('approve', __('\u2713 Approval recorded.', 'jumplinks-editorial-workflow'), 'approved')}
+                onClick={() => doAction('approve', __('✓ Approval recorded.', 'jumplinks-editorial-workflow'), 'approved')}
                 disabled={isBusy}
               >
                 {__('Approve', 'jumplinks-editorial-workflow')}

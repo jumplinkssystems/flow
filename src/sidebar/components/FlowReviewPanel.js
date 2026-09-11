@@ -72,7 +72,7 @@ export default function FlowReviewPanel() {
     try {
       const data = await apiFetch({ url: `${restUrl}/reviews/${review.id}/approve`, method: 'POST' });
       if (data) setReview(data);
-      createSuccessNotice(__('\u2714 Approval recorded.', 'jumplinks-editorial-workflow'), { type: 'snackbar', isDismissible: true });
+      createSuccessNotice(__('✔ Approval recorded.', 'jumplinks-editorial-workflow'), { type: 'snackbar', isDismissible: true });
     } catch (err) {
       createErrorNotice(err?.message || __('Failed to approve.', 'jumplinks-editorial-workflow'), { isDismissible: true });
     } finally {
@@ -86,7 +86,7 @@ export default function FlowReviewPanel() {
     try {
       const data = await apiFetch({ url: `${restUrl}/reviews/${review.id}/request-changes`, method: 'POST' });
       if (data) setReview(data);
-      createSuccessNotice(__('\u2714 Changes requested.', 'jumplinks-editorial-workflow'), { type: 'snackbar', isDismissible: true });
+      createSuccessNotice(__('✔ Changes requested.', 'jumplinks-editorial-workflow'), { type: 'snackbar', isDismissible: true });
     } catch (err) {
       createErrorNotice(err?.message || __('Failed to request changes.', 'jumplinks-editorial-workflow'), { isDismissible: true });
     } finally {
@@ -114,7 +114,7 @@ export default function FlowReviewPanel() {
     try {
       const data = await apiFetch({ url: `${restUrl}/reviews/${review.id}/resubmit`, method: 'POST' });
       if (data) setReview(data);
-      createSuccessNotice(__('\u2714 Resubmitted for review.', 'jumplinks-editorial-workflow'), { type: 'snackbar', isDismissible: true });
+      createSuccessNotice(__('✔ Resubmitted for review.', 'jumplinks-editorial-workflow'), { type: 'snackbar', isDismissible: true });
     } catch (err) {
       createErrorNotice(err?.message || __('Failed to resubmit.', 'jumplinks-editorial-workflow'), { isDismissible: true });
     } finally {
@@ -134,7 +134,7 @@ export default function FlowReviewPanel() {
       await savePost();
       const data = await apiFetch({ url: `${restUrl}/reviews/${review.id}/send`, method: 'POST' });
       setReview(data);
-      createSuccessNotice(__('\u2714 Post sent for review.', 'jumplinks-editorial-workflow'), { type: 'snackbar', isDismissible: true });
+      createSuccessNotice(__('✔ Post sent for review.', 'jumplinks-editorial-workflow'), { type: 'snackbar', isDismissible: true });
     } catch (err) {
       createErrorNotice(err?.message || __('Failed to send for review.', 'jumplinks-editorial-workflow'), { isDismissible: true });
     } finally {

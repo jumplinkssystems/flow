@@ -60,7 +60,7 @@ if ( flow_ew_is_pro_build() ) {
 		define( 'FLOW_EW_PRO_VERSION', '1.4.0' );
 	}
 	if ( ! defined( 'FLOW_EW_PRO_DB_VERSION' ) ) {
-		define( 'FLOW_EW_PRO_DB_VERSION', '7' );
+		define( 'FLOW_EW_PRO_DB_VERSION', '8' );
 	}
 	if ( ! defined( 'FLOW_EW_PRO_PLUGIN_FILE' ) ) {
 		define( 'FLOW_EW_PRO_PLUGIN_FILE', dirname( __DIR__ ) . '/jumplinks-editorial-workflow.php' );
@@ -290,6 +290,8 @@ if ( ! function_exists( 'flow_fs' ) ) {
 				$wpdb->prefix . 'flow_pro_site_review_reviewers',
 				$wpdb->prefix . 'flow_pro_site_review_comments',
 				$wpdb->prefix . 'flow_review_reviewers',
+				$wpdb->prefix . 'flow_pro_webhook_endpoints',
+				$wpdb->prefix . 'flow_pro_webhook_deliveries',
 			);
 			foreach ( $flow_ew_pro_tables as $flow_ew_pro_table ) {
 				$flow_ew_pro_table = esc_sql( $flow_ew_pro_table );
@@ -302,16 +304,26 @@ if ( ! function_exists( 'flow_fs' ) ) {
 				'flow_ew_pro_db_version',
 				'flow_ew_pro_digest_enabled',
 				'flow_ew_pro_digest_hour',
-				'flow_ew_slack_bot_token',
-				'flow_ew_slack_default_dm_optin',
-				'flow_ew_slack_disabled',
-				'flow_ew_slack_error_log',
+				'flow_ew_pro_slack_bot_token',
+				'flow_ew_pro_slack_default_opt_in',
+				'flow_ew_pro_slack_disable_all',
+				'flow_ew_pro_slack_error_log',
+				'flow_ew_pro_slack_rate_limited_until',
+				'flow_ew_pro_webhooks_paused',
+				'flow_ew_pro_webhook_retention_success_days',
+				'flow_ew_pro_webhook_retention_failed_days',
+				'flow_ew_pro_webhook_last_run',
 			);
 			foreach ( $flow_ew_pro_options as $flow_ew_pro_option ) {
 				delete_option( $flow_ew_pro_option );
 			}
 
-			$flow_ew_pro_cron_hooks = array( 'flow_ew_pro_daily_digest' );
+			$flow_ew_pro_cron_hooks = array(
+				'flow_ew_pro_daily_digest',
+				'flow_ew_pro_webhook_run',
+				'flow_ew_pro_webhook_sweep',
+				'flow_ew_pro_webhook_prune',
+			);
 			foreach ( $flow_ew_pro_cron_hooks as $flow_ew_pro_cron ) {
 				$timestamp = wp_next_scheduled( $flow_ew_pro_cron );
 				while ( $timestamp ) {
@@ -321,7 +333,7 @@ if ( ! function_exists( 'flow_fs' ) ) {
 				wp_clear_scheduled_hook( $flow_ew_pro_cron );
 			}
 
-			$flow_ew_pro_user_meta = array( 'flow_ew_slack_member_id', 'flow_ew_slack_dm_optin' );
+			$flow_ew_pro_user_meta = array( 'flow_ew_slack_member_id', 'flow_ew_slack_notifications_enabled' );
 			foreach ( $flow_ew_pro_user_meta as $flow_ew_pro_meta_key ) {
 				delete_metadata( 'user', 0, $flow_ew_pro_meta_key, '', true );
 			}

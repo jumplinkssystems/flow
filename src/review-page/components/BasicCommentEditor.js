@@ -159,7 +159,7 @@ export default function BasicCommentEditor( {
 					__next40pxDefaultSize
 				>
 					{ submitting
-						? __( 'Saving\u2026', 'jumplinks-editorial-workflow' )
+						? __( 'Saving…', 'jumplinks-editorial-workflow' )
 						: submitLabel ||
 						  __( 'Add Comment', 'jumplinks-editorial-workflow' ) }
 				</Button>

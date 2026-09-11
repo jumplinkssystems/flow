@@ -56,6 +56,7 @@ class Plugin {
 		( new Pro_Upsell_Menus() )->boot();
 		( new Reviewed_By() )->boot();
 		( new Auto_Assign_Reviewer() )->boot();
+		( new Abilities() )->boot();
 
 		add_action( 'init', [ $this, 'register_post_meta' ], 20 );
 	}
@@ -183,6 +184,7 @@ class Plugin {
 				'goToReview'           => __( 'Go to review', 'jumplinks-editorial-workflow' ),
 				'copyLink'             => __( 'Copy', 'jumplinks-editorial-workflow' ),
 				'copied'               => __( 'Copied!', 'jumplinks-editorial-workflow' ),
+				'copyInviteLink'       => __( 'Copy invite link', 'jumplinks-editorial-workflow' ),
 				'openLabel'            => __( 'Open review', 'jumplinks-editorial-workflow' ),
 				'openReviewDesc'       => __( 'All users with the link will be able to add comments.', 'jumplinks-editorial-workflow' ),
 				'reviewerPlaceholder'  => __( 'assign a dedicated reviewer', 'jumplinks-editorial-workflow' ),

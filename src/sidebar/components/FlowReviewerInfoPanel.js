@@ -66,7 +66,7 @@ export default function FlowReviewerInfoPanel() {
       setReview(data);
       setFilterValue('');
       onClose();
-      createSuccessNotice(__('\u2714 Reviewer updated.', 'jumplinks-editorial-workflow'), { type: 'snackbar', isDismissible: true });
+      createSuccessNotice(__('✔ Reviewer updated.', 'jumplinks-editorial-workflow'), { type: 'snackbar', isDismissible: true });
     } catch (err) {
       createErrorNotice(err?.message || __('Failed to update reviewer.', 'jumplinks-editorial-workflow'), { isDismissible: true });
     } finally {

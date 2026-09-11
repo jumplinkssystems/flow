@@ -3,6 +3,10 @@ import {
 	getExternalEmailLabel,
 	getReviewerPlaceholder,
 } from './reviewer-email-entry';
+import {
+	bindInviteLinkCopy,
+	syncInviteLinkCopy,
+} from './invite-link-copy';
 
 /**
  * Keep the Classic / builder Free combobox in sync with the active review.
@@ -106,6 +110,9 @@ export function syncReviewerComboboxFromReview( review, scope ) {
 	if ( clearBtn ) {
 		clearBtn.toggleAttribute( 'hidden', ! locked );
 	}
+
+	bindInviteLinkCopy();
+	syncInviteLinkCopy( review, root );
 
 	if ( list ) {
 		list.querySelectorAll( '[role="option"]' ).forEach( function ( li ) {

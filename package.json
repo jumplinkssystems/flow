@@ -1,6 +1,6 @@
 {
   "name": "jumplinks-editorial-workflow",
-  "version": "2.4.2",
+  "version": "2.4.3",
   "description": "Jumplinks Flow - Editorial Review & Content Approval Workflow",
   "scripts": {
     "test:php": "php vendor/bin/phpunit -c phpunit.xml.dist",

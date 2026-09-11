@@ -62,7 +62,7 @@
 					createElement(
 						'a',
 						{
-							href: data.href,
+							href: data.href, target: '_blank', rel: 'noopener noreferrer',
 							style: { display: 'inline-block', marginTop: '6px', color: '#018170', fontSize: '13px', fontWeight: 600, lineHeight: 1.4, textDecoration: 'underline', cursor: 'pointer' },
 						},
 						createElement(
@@ -90,6 +90,8 @@
 
 		var a = document.createElement( 'a' );
 		a.href = data.href;
+		a.target = '_blank';
+		a.rel = 'noopener noreferrer';
 		a.style.cssText = LINK_STYLE;
 
 		var badge = document.createElement( 'span' );

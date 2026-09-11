@@ -69,7 +69,7 @@
 				createElement(
 					MenuItem,
 					{
-						href: data.href,
+						href: data.href, target: '_blank', rel: 'noopener noreferrer',
 						className: 'flow-ew-upsell-device-selector',
 					},
 					createElement(

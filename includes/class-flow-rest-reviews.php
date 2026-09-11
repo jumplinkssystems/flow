@@ -82,6 +82,18 @@ class REST_Reviews extends \WP_REST_Controller {
 			'/' . $this->rest_base . '/(?P<id>[\d]+)/comments',
 			[
 				[
+					'methods'             => \WP_REST_Server::READABLE,
+					'callback'            => [ $this, 'get_comment_items' ],
+					'permission_callback' => [ $this, 'action_permissions_check' ],
+					'args'                => [
+						'id' => [
+							'required'          => true,
+							'type'              => 'integer',
+							'sanitize_callback' => 'absint',
+						],
+					],
+				],
+				[
 					'methods'             => \WP_REST_Server::CREATABLE,
 					'callback'            => [ $this, 'create_comment_item' ],
 					'permission_callback' => [ $this, 'action_permissions_check' ],
@@ -178,6 +190,30 @@ class REST_Reviews extends \WP_REST_Controller {
 							'required'          => false,
 							'type'              => 'integer',
 							'sanitize_callback' => 'absint',
+						],
+					],
+				],
+			]
+		);
+
+		register_rest_route(
+			$this->namespace,
+			'/' . $this->rest_base . '/(?P<id>[\d]+)/invite-link',
+			[
+				[
+					'methods'             => \WP_REST_Server::READABLE,
+					'callback'            => [ $this, 'get_invite_link' ],
+					'permission_callback' => [ $this, 'invite_link_permissions_check' ],
+					'args'                => [
+						'id'    => [
+							'required'          => true,
+							'type'              => 'integer',
+							'sanitize_callback' => 'absint',
+						],
+						'email' => [
+							'type'              => 'string',
+							'default'           => '',
+							'sanitize_callback' => 'sanitize_email',
 						],
 					],
 				],
@@ -466,6 +502,20 @@ class REST_Reviews extends \WP_REST_Controller {
 		}
 		\do_action( 'flow_ew_review_closed', $id, (int) $updated->post_id, get_current_user_id() );
 		return rest_ensure_response( $this->prepare_review( $updated ) );
+	}
+
+	public function get_comment_items( \WP_REST_Request $request ) {
+		$review_id = (int) $request->get_param( 'id' );
+		$review    = DB::get_review( $review_id );
+		if ( ! $review ) {
+			return new \WP_Error( 'flow_ew_not_found', __( 'Review not found.', 'jumplinks-editorial-workflow' ), [ 'status' => 404 ] );
+		}
+		$type_ok = $this->assert_review_post_type_supported( $review );
+		if ( is_wp_error( $type_ok ) ) {
+			return $type_ok;
+		}
+
+		return rest_ensure_response( Ability_Context::list_comments_payload( $review, false ) );
 	}
 
 	public function create_comment_item( \WP_REST_Request $request ) {
@@ -942,6 +992,77 @@ class REST_Reviews extends \WP_REST_Controller {
 		);
 
 		return rest_ensure_response( array_values( $data ) );
+	}
+
+	/**
+	 * The magic link is deliberately not part of the shared review payload.
+	 * That payload also feeds webhooks and the editor bootstrap, and a live
+	 * entry token must not ride along to a third-party endpoint.
+	 */
+	public function invite_link_permissions_check( \WP_REST_Request $request ) {
+		if ( ! is_user_logged_in() ) {
+			return new \WP_Error(
+				'flow_ew_unauthorized',
+				__( 'You must be logged in.', 'jumplinks-editorial-workflow' ),
+				[ 'status' => 401 ]
+			);
+		}
+
+		$review = DB::get_review( (int) $request->get_param( 'id' ) );
+		if ( ! $review ) {
+			return new \WP_Error(
+				'flow_ew_not_found',
+				__( 'Review not found.', 'jumplinks-editorial-workflow' ),
+				[ 'status' => 404 ]
+			);
+		}
+
+		if ( current_user_can( 'flow_manage_reviews' ) || current_user_can( 'edit_post', (int) $review->post_id ) ) {
+			return true;
+		}
+
+		return new \WP_Error(
+			'flow_ew_forbidden',
+			__( 'You do not have permission to view this invite link.', 'jumplinks-editorial-workflow' ),
+			[ 'status' => 403 ]
+		);
+	}
+
+	/**
+	 * @return \WP_REST_Response|\WP_Error
+	 */
+	public function get_invite_link( \WP_REST_Request $request ) {
+		$review_id = (int) $request->get_param( 'id' );
+		$email     = (string) $request->get_param( 'email' );
+
+		$invites = Email_Review_Invites_DB::get_for_review( $review_id );
+		if ( empty( $invites ) ) {
+			return new \WP_Error(
+				'flow_ew_not_found',
+				__( 'This review has no email reviewer.', 'jumplinks-editorial-workflow' ),
+				[ 'status' => 404 ]
+			);
+		}
+
+		if ( '' === $email ) {
+			$email = (string) $invites[0]->email;
+		}
+
+		$url = Email_Review_Link::build_for_invite( $review_id, $email );
+		if ( '' === $url ) {
+			return new \WP_Error(
+				'flow_ew_not_found',
+				__( 'This review has no email reviewer.', 'jumplinks-editorial-workflow' ),
+				[ 'status' => 404 ]
+			);
+		}
+
+		return rest_ensure_response(
+			[
+				'email' => $email,
+				'url'   => $url,
+			]
+		);
 	}
 
 	public function search_users_permissions_check( \WP_REST_Request $request ) {

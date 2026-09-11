@@ -102,6 +102,63 @@
 	display: none;
 }
 
+.flow-ew-reviewer-combobox__copy {
+	align-items: center;
+	background: transparent;
+	border: 0;
+	color: #757575;
+	cursor: pointer;
+	display: flex;
+	height: 24px;
+	justify-content: center;
+	padding: 0;
+	pointer-events: auto;
+	position: absolute;
+	right: 30px;
+	top: 50%;
+	transform: translateY(-50%);
+	width: 24px;
+	z-index: 2;
+}
+
+.flow-ew-reviewer-combobox__copy:hover,
+.flow-ew-reviewer-combobox__copy:focus {
+	color: #1e1e1e;
+	outline: none;
+}
+
+.flow-ew-reviewer-combobox__copy--done {
+	color: #008a20;
+}
+
+/*
+ * `.flow-ew-share-icon` defaults to 24px and the swapped-in icons carry no
+ * width/height of their own, so both the initial icon and the copied state
+ * have to be pinned here. !important matches the sizing pattern the other
+ * share buttons already use against builder stylesheets.
+ */
+.flow-ew-reviewer-combobox__copy .flow-ew-share-icon,
+.flow-ew-reviewer-combobox__copy svg {
+	display: block;
+	flex: 0 0 auto;
+	height: 14px !important;
+	min-height: 14px;
+	min-width: 14px;
+	width: 14px !important;
+}
+
+.flow-ew-reviewer-combobox__copy[hidden] {
+	display: none;
+}
+
+/* Keep the email clear of both icons while they are showing. */
+.flow-ew-reviewer-combobox__wrap:has(
+		.flow-ew-reviewer-combobox__copy:not( [hidden] )
+	)
+	.flow-ew-reviewer-combobox__input {
+	padding-right: 58px;
+}
+
 .flow-ew-classic__value {
 	display: block;
 	font-size: 13px;

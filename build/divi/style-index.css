@@ -132,33 +132,33 @@
 	color: #fffcf3;
 }
 
-/* Pro multi-reviewer status pills (inverse palette) */
+/* Pro multi-reviewer status dot (inverse palette) */
 
-.flow-ew-classic--builder-dark .flow-ew-pro-reviewer-row__status--pending {
+.flow-ew-classic--builder-dark .flow-ew-pro-reviewer-row--pending {
 	--flow-status-bg: #10171a;
 	--flow-status-text: #cde3e7;
 	--flow-status-border: #5e777b;
 }
 
-.flow-ew-classic--builder-dark .flow-ew-pro-reviewer-row__status--in_review {
+.flow-ew-classic--builder-dark .flow-ew-pro-reviewer-row--in_review {
 	--flow-status-bg: #1e140c;
 	--flow-status-text: #fcf0ce;
 	--flow-status-border: #957500;
 }
 
-.flow-ew-classic--builder-dark .flow-ew-pro-reviewer-row__status--changes_requested {
+.flow-ew-classic--builder-dark .flow-ew-pro-reviewer-row--changes_requested {
 	--flow-status-bg: #1e1214;
 	--flow-status-text: #ffebea;
 	--flow-status-border: #c92222;
 }
 
-.flow-ew-classic--builder-dark .flow-ew-pro-reviewer-row__status--approved {
+.flow-ew-classic--builder-dark .flow-ew-pro-reviewer-row--approved {
 	--flow-status-bg: #10190e;
 	--flow-status-text: #e7f5e4;
 	--flow-status-border: #458037;
 }
 
-.flow-ew-classic--builder-dark .flow-ew-pro-reviewer-row__status--open_review {
+.flow-ew-classic--builder-dark .flow-ew-pro-reviewer-row--open_review {
 	--flow-status-bg: #0a1822;
 	--flow-status-text: #dff4ff;
 	--flow-status-border: #1579a5;

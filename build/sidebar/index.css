@@ -255,6 +255,24 @@
 	white-space: nowrap;
 }
 
+.flow-ew-reviewer-card__copy {
+	flex: 0 0 auto;
+	color: #757575;
+}
+
+.flow-ew-reviewer-card__copy:hover:not(:disabled) {
+	color: #1e1e1e;
+}
+
+.flow-ew-reviewer-card__copy--done {
+	color: #008a20;
+}
+
+.flow-ew-reviewer-card__copy svg {
+	width: 16px;
+	height: 16px;
+}
+
 .flow-ew-reviewer-card__remove.components-button {
 	flex-shrink: 0;
 	width: 24px;
@@ -281,10 +299,6 @@
 
 .flow-ew-review-panel .flow-ew-pro-reviewers-list > .flow-ew-pro-reviewer-row {
 	margin-bottom: 0;
-}
-
-.flow-ew-review-panel .flow-ew-pro-reviewers-list .flow-ew-pro-reviewer-row__status {
-	flex-shrink: 0;
 }
 
 .flow-ew-truncate {

@@ -12,6 +12,7 @@ import {
 import { store as noticesStore } from '@wordpress/notices';
 import { __, sprintf } from '@wordpress/i18n';
 import apiFetch from '@wordpress/api-fetch';
+import InviteLinkCopy from './InviteLinkCopy';
 import { STORE_NAME } from '../store';
 
 const { flowEW } = window;
@@ -84,6 +85,11 @@ export default function ReviewerField() {
       : null;
   const hasReviewer = !!reviewerData;
   const canAssign = currentUserCan.assignReviewer;
+
+  const reviewId = review?.id || 0;
+  const reviewStatus = review?.status || '';
+  const canCopyInvite =
+    canAssign && isEmailReviewer && reviewId > 0 && '' !== reviewStatus && 'pending' !== reviewStatus;
   const showCombobox = canAssign && (!hasReviewer || isEditing);
 
   const userOptions = useMemo(
@@ -342,6 +348,7 @@ export default function ReviewerField() {
                 {reviewerData.name || reviewerData.email}
               </Text>
             </div>
+            {canCopyInvite && <InviteLinkCopy reviewId={reviewId} />}
             {canAssign && (
               <Button
                 icon="no-alt"

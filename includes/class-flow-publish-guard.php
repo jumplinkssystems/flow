@@ -163,6 +163,78 @@ class Publish_Guard {
 		return true;
 	}
 
+	/**
+	 * Agent-facing publish gate for a post (whether a first-time publish would be blocked).
+	 *
+	 * @return array{review_mandatory:bool,can_publish:bool,block_reason:?string,status:?string}
+	 */
+	public static function describe_publish_gate( int $post_id ): array {
+		$mandatory = Settings::is_mandatory();
+		$review    = $post_id > 0 ? DB::get_active_review( $post_id ) : null;
+		$status    = $review ? (string) $review->status : null;
+
+		if ( ! $mandatory ) {
+			return [
+				'review_mandatory' => false,
+				'can_publish'      => true,
+				'block_reason'     => null,
+				'status'           => $status,
+			];
+		}
+
+		$post_status = $post_id > 0 ? get_post_status( $post_id ) : '';
+		if ( in_array( $post_status, [ 'publish', 'future' ], true ) ) {
+			return [
+				'review_mandatory' => true,
+				'can_publish'      => true,
+				'block_reason'     => null,
+				'status'           => $status,
+			];
+		}
+
+		$post_type = $post_id > 0 ? (string) get_post_type( $post_id ) : '';
+		if ( '' !== $post_type && ! Settings::is_post_type_supported( $post_type ) ) {
+			return [
+				'review_mandatory' => true,
+				'can_publish'      => true,
+				'block_reason'     => null,
+				'status'           => $status,
+			];
+		}
+
+		if ( ! $review ) {
+			return [
+				'review_mandatory' => true,
+				'can_publish'      => false,
+				'block_reason'     => 'no_review',
+				'status'           => null,
+			];
+		}
+
+		if ( Review::STATUS_APPROVED === $status ) {
+			return [
+				'review_mandatory' => true,
+				'can_publish'      => true,
+				'block_reason'     => null,
+				'status'           => $status,
+			];
+		}
+
+		$reason = 'not_approved';
+		if ( Review::STATUS_IN_REVIEW === $status ) {
+			$reason = 'in_review';
+		} elseif ( Review::STATUS_CHANGES_REQUESTED === $status ) {
+			$reason = 'changes_requested';
+		}
+
+		return [
+			'review_mandatory' => true,
+			'can_publish'      => false,
+			'block_reason'     => $reason,
+			'status'           => $status,
+		];
+	}
+
 	/** Single source of truth for "is this state transition blocked?". */
 	private static function publish_should_be_blocked( int $post_id, string $post_type, string $new_status ): bool {
 		if ( ! Settings::is_mandatory() ) {

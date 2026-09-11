@@ -82,6 +82,15 @@ if ( false !== strpos( $root_class, 'flow-ew-classic--beaver' ) ) {
 					/>
 					<button
 						type="button"
+						class="flow-ew-reviewer-combobox__copy"
+						aria-label="<?php esc_attr_e( 'Copy invite link', 'jumplinks-editorial-workflow' ); ?>"
+						title="<?php esc_attr_e( 'Copy invite link', 'jumplinks-editorial-workflow' ); ?>"
+						hidden
+					>
+						<svg class="flow-ew-share-icon flow-ew-share-icon--copy" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><path fill="currentColor" d="M18 0H8C6.897 0 6 0.897 6 2V6H2C0.897 6 0 6.897 0 8V18C0 19.103 0.897 20 2 20H12C13.103 20 14 19.103 14 18V14H18C19.103 14 20 13.103 20 12V2C20 0.897 19.103 0 18 0ZM2 18V8H12L12.002 18H2ZM18 12H14V8C14 6.897 13.103 6 12 6H8V2H18V12Z" transform="translate(2 2)"/></svg>
+					</button>
+					<button
+						type="button"
 						class="flow-ew-reviewer-combobox__clear"
 						aria-label="<?php esc_attr_e( 'Remove reviewer', 'jumplinks-editorial-workflow' ); ?>"
 						<?php echo ( $reviewer_id > 0 || '' !== $invite_email ) ? '' : 'hidden'; ?>

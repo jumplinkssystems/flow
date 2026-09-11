@@ -4,7 +4,7 @@ Tags: client feedback, website feedback, workflow, editorial, ai
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.4.2
+Stable tag: 2.4.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -31,7 +31,7 @@ If your current process depends on long comment threads, scattered docs and emai
 * Agencies and developers who present in-progress work to clients for feedback and signoff
 * Editorial teams that need a clear draft-to-publish workflow
 * Website owners that want structure without heavy workflow configuration
-* Teams publishing AI-assisted posts, pages, or products who need a named human to verify facts, voice, and layout before go-live
+* Teams publishing AI-assisted posts, pages, or products who need a named human to verify facts, assets, and layout before go-live
 
 = ✨ AI-generated content review =
 
@@ -45,6 +45,20 @@ AI speeds up production. It does not take responsibility. Flow does not generate
 
 Use any writing assistant or automation you already have. Flow stays source-agnostic and keeps the approval decision in WordPress.
 
+= 🤝 Human-in-the-loop for AI agents =
+
+When an AI agent is connected to your WordPress site (WordPress Agent Connector, MCP, or another connector that can call WordPress abilities), Flow is the gate between that agent and a human reviewer.
+
+The AI agent can:
+
+1. Assign a WordPress reviewer or an external email, then send the draft for review.
+2. Learn that Publish is blocked when mandatory review is on and the post is not yet approved.
+3. After a person leaves inline or general comments and requests changes, read those comments — including the exact passage that was selected — and see what to fix.
+4. Edit the page with whatever builder tools that agent already uses.
+5. Mark addressed comments resolved and send the post back for another human look.
+
+The person still owns approve and request-changes. Flow does not let the authoring agent approve its own work, and it does not rewrite Oxygen, Gutenberg, or Elementor trees itself. If the connected agent cannot edit the builder you use, it can still run the review workflow; someone else applies the copy edits.
+
 = 💡 Why teams choose Flow =
 
 * **GitHub-style workflow:** Leave feedback exactly where it matters via inline comments so edits are clearer and faster.
@@ -57,6 +71,7 @@ Use any writing assistant or automation you already have. Flow stays source-agno
 * **Familiar Gutenberg-style review page:** Dedicated review UI that feels native to WordPress.
 * **Fast team onboarding:** Minimal setup and intuitive UI for writers, editors, and reviewers.
 * **Status-change notifications:** Keep everyone aligned with timely workflow updates.
+* **Human-in-the-loop for agents:** Connected AI agents can assign, send, read comments, and resubmit; only a person can approve, and mandatory review still blocks Publish.
 * **Lightweight by design:** Built with native WordPress APIs and UI libraries.
 
 = 🧩 Built for your content stack =
@@ -131,6 +146,22 @@ Yes. Flow is compatible with WooCommerce-powered sites and content workflows.
 
 Yes. Flow is the human review layer around a WordPress draft, whether a person wrote it or an AI tool / automation created it. It does not generate text, detect whether AI was used, or automatically fact-check claims. Reviewers read the rendered page, comment in context, and either request changes or approve. Auto-assign can attach a reviewer the moment the post is created, and Mandatory review can block the initial Publish or Schedule action until that person signs off.
 
+= Can an AI agent use Flow? =
+
+Yes, if the agent is connected to WordPress through Agent Connector, MCP, or another client that can call WordPress abilities. The agent can assign a reviewer, send the post for review, read comments (including the selected text on inline notes), resolve threads it has addressed, and resubmit. It uses your existing builder or core tools to change the page. Flow does not generate the draft and does not edit the builder tree itself.
+
+= What is reserved for a human reviewer? =
+
+Approve, request changes, and the decision to publish. The authoring agent is not given those actions, so it cannot rubber-stamp its own draft. People still use the Flow review page to comment on the live layout and to sign off.
+
+= Can an AI agent publish without a person? =
+
+Not when **Mandatory review** is enabled. WordPress Publish and Schedule stay blocked until a human-approved review exists, even if the agent tries to publish through the REST API or a builder. With mandatory review off, Flow does not add that extra gate — turn it on under Settings → Flow if agents should never ship unreviewed content.
+
+= Do I need a specific builder for the AI features? =
+
+No. Flow’s agent abilities work for any connected client. Editing the page still depends on the agent: block/core tools for Gutenberg, Oxygen tools for Oxygen and so on. If the agent cannot edit that builder, a person (or a different connected editor) applies the requested changes, then the agent can still resubmit.
+
 = Who should use Flow? =
 
 Flow is ideal for content and editorial teams that need a simple review and approval workflow in WordPress without the overhead of enterprise-style configuration — including teams that use AI or automations to produce first drafts and still want a named person to verify the live page. It also works well for freelance developers and agencies who want a structured way to share in-progress work with clients for feedback and approval, without sending screenshots or asking clients to navigate the WordPress admin.
@@ -161,6 +192,10 @@ Request a site review with one or many reviewers — logged-in users, external e
 = 💬 Improved comments =
 
 A TipTap-powered editor brings bold, italics, headings, lists, links, quotes, and code blocks to every review comment. Type `@` to mention any reviewer, the author, or external invitees.
+
+= 🔌 Webhooks for n8n, Zapier and Make =
+
+Send review events to any automation tool. When a human approves or requests changes, Flow posts a signed JSON payload so your pipeline can carry on: publish the post, or hand the reviewer's comments back to your writing agent, fix them, and resubmit for another human look. Payloads include the exact passage each inline comment points at, pre-formatted for a prompt. Deliveries are queued and retried with a full log, so a brief outage at your end does not lose an approval.
 
 = 🔔 Slack integration =
 
@@ -206,6 +241,11 @@ This is the same Gravatar integration that ships with WordPress core; the plugin
 
 == Changelog ==
 
+= 2.4.3 =
+* New (Pro): Webhooks for n8n, Zapier, Make, and any other HTTP endpoint. Flow posts a signed JSON payload when a review is sent, approved, or sent back for changes, so an automated pipeline can pick up where the human left off — publish once it is approved, or hand the reviewer’s comments to your writing agent, apply them, and resubmit for another human look. Each payload carries the exact passage every inline comment points at, already formatted for a prompt. Deliveries are queued and retried with a full delivery log, so a short outage at your end never loses an approval.
+* New: AI agent capabilities for WordPress Agent Connector and other MCP clients. Connected agents can assign a reviewer, send content for review, read inline and general comments (including the selected text to change), resolve threads, and resubmit after they edit the page with the site’s builder. Flow stays the human-in-the-loop gate: agents cannot approve their own work, and mandatory review still blocks Publish until a person approves.
+* Improvement: Copy an external reviewer’s magic link. Once a post has been sent for review, a copy icon appears beside the external email reviewer so you can pass the link on yourself — over chat, or to someone whose spam filter swallowed the invitation. Only people who can edit the post can see it.
+
 = 2.4.2 =
 * New: Optional “Reviewed by” credit on published content. Turn it on under Settings → Flow; after approval it appears below the author and category line, with WordPress reviewer names linked to their author archives. External email reviewers are omitted.
 * New: Automatic reviewer assignment. Pick any WordPress user — including yourself, regardless of Review Roles — and Flow assigns them when new supported content is created.
@@ -213,8 +253,5 @@ This is the same Gravatar integration that ships with WordPress core; the plugin
 = 2.4.1 =
 * New: Add external emails as reviewers. Pick External Email in the reviewer field and Flow emails that person a signed magic link to the review page, where they can comment, approve, or request changes without a WordPress account. Available in every editor integration.
 * Fix: Oxygen container design fix.
-
-= 2.4.0 =
-* New: Integration with Oxygen.
 
 Earlier versions: https://jumplinks.net/changelog/
