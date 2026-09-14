@@ -3,10 +3,7 @@ import {
 	getExternalEmailLabel,
 	getReviewerPlaceholder,
 } from './reviewer-email-entry';
-import {
-	bindInviteLinkCopy,
-	syncInviteLinkCopy,
-} from './invite-link-copy';
+import { bindInviteLinkCopy, syncInviteLinkCopy } from './invite-link-copy';
 
 /**
  * Keep the Classic / builder Free combobox in sync with the active review.
@@ -55,7 +52,7 @@ export function syncReviewerComboboxFromReview( review, scope ) {
 						: '' )
 		  ).trim()
 		: '';
-	const hasInvite = !!(
+	const hasInvite = !! (
 		inviteEmail ||
 		( review && review.reviewer && review.reviewer.is_email ) ||
 		( review &&
@@ -74,9 +71,7 @@ export function syncReviewerComboboxFromReview( review, scope ) {
 		delete select.dataset.inviteEmail;
 		const opt = select.options[ select.selectedIndex ];
 		input.value =
-			opt && opt.value
-				? opt.textContent.replace( /^\s+|\s+$/g, '' )
-				: '';
+			opt && opt.value ? opt.textContent.replace( /^\s+|\s+$/g, '' ) : '';
 		input.placeholder = reviewerPlaceholder;
 	} else if ( hasInvite ) {
 		select.value = 'email';

@@ -1,84 +1,56 @@
-=== Jumplinks Flow - Editorial Feedback, Review & Approval Workflow ===
+=== Jumplinks Flow – Client Feedback & Editorial Workflow ===
 Contributors: jumplinks, alincozari
-Tags: client feedback, website feedback, workflow, editorial, ai
+Tags: client feedback, website feedback, content approval, site review, editorial workflow
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.4.3
+Stable tag: 2.5.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
+Client feedback on the live page with inline comments and content approval editorial workflow. Magic links for clients, no signup, no SaaS subscriptions, no external services. MCP AI-ready. Works with your builder.
+
 == Description ==
+
+Frustrated with client feedback chaos, multiple staging environments, endless meetings that could have been an email, hundreds of Jira tickets and lost Slack discussions?
+
+Send your clients a review magic link. They see the page exactly as visitors will see it, highlight the text or media and leave inline comments. No page is published until approved by a reviewer.
 
 https://www.youtube.com/watch?v=6g9QunaILLc
 
-Frustrated with client feedback chaos, multiple staging environments, endless meetings that could have been an email, hundreds of Jira tickets and lost Slack discussions? Or with AI drafts that look finished until a false claim, off-brand sentence, or broken layout ships?
-
-Jumplinks Flow was inspired by the GitHub pull request review experience with inline comments and approval or change requests workflow that developers love, brought natively into WordPress for content and site reviews. No SaaS subscription, no external tools, just a familiar, focused review experience your team will pick up from day one.
+Flow takes the GitHub pull request review process with inline comments and approve or request changes workflow and builds it into WordPress. It runs entirely on your site, and your clients never needs to create a Wordpress account.
 
 If your current process depends on long comment threads, scattered docs and email, or third-party review tools, Flow gives you a cleaner path without complex setup or heavyweight workflow tools. If AI or automation is writing the first draft, Flow is the human checkpoint between that draft and Publish.
 
 = ⚙️ How it works =
 
-1. You assign a reviewer to the content — automatically from settings, or by picking a WordPress user or an email address for people outside your site.
-2. The reviewer opens the review page and sends feedback via inline comments anchored to the content.
-3. The reviewer requests changes or approves.
-4. If changes are requested, repeat 2–3 until approval is received.
-5. You publish with confidence once the content is approved. Optional: show who reviewed it next to the author.
+1. Assign a reviewer to a page or post: a WordPress user, or just your client's email address.
+2. Your client gets a private magic link straight to the review page. No account, no signup, no login.
+3. They pin comments to the exact text or image on the rendered page.
+4. They approve or request changes. You fix, resubmit, and repeat until it's approved.
+5. You publish once it's approved, knowing exactly who signed off.
 
-= 🎯 Best for =
+= 🎯 Why agencies and freelancers use Flow =
 
-* Agencies and developers who present in-progress work to clients for feedback and signoff
-* Editorial teams that need a clear draft-to-publish workflow
-* Website owners that want structure without heavy workflow configuration
-* Teams publishing AI-assisted posts, pages, or products who need a named human to verify facts, assets, and layout before go-live
+* **Clients don't need an account.** Enter an email address and Flow sends a signed magic link tied to that address. It stops working the moment you remove the reviewer or cancel the review.
+* **Feedback on the real page.** Reviewers see your theme, layout, and images as visitors will, so they catch spacing and typography problems the editor view hides. They never touch the editor.
+* **Comments where the problem is.** Select text or an image to pin a comment to it. Threaded replies keep the back-and-forth in one place.
+* **A clear yes before launch.** Approve and request changes are explicit steps. Turn on mandatory review and Publish stays blocked until a reviewer approves.
+* **Nothing hosted elsewhere.** Flow runs inside your WordPress install. There's no separate SaaS account, and comments and approvals stay on your site.
+* **Works with your builder.** Dedicated integrations for Gutenberg, Classic Editor, Elementor, Bricks, Beaver Builder, Divi, Avada, Breakdance, and Oxygen.
+* **One settings screen.** Choose content types, reviewer roles, and an optional default reviewer under Settings → Flow.
 
-= ✨ AI-generated content review =
+= 📝 Also works for editorial teams =
 
-AI speeds up production. It does not take responsibility. Flow does not generate or detect AI content — it starts where your AI workflow ends: with a draft already in WordPress.
+Writers send drafts to an editor, the editor comments in context and approves, and the post goes live. No custom statuses to design, no workflow builder to configure. Flow works on posts, pages, WooCommerce products, and custom post types. It can assign a default reviewer automatically and show a "Reviewed by" credit on published content.
 
-1. Draft with ChatGPT, Claude, Gemini, n8n, Make, Zapier, the REST API, or any other tool, then save the result in WordPress.
-2. Assign a named reviewer automatically for new content, or pick a WordPress user or external email by hand.
-3. The reviewer inspects the rendered page — real theme, links, images, and layout — and pins comments to the exact sentence or media that needs a rewrite.
-4. Request changes, resolve threads, and resubmit until someone with a name attached approves.
-5. Optional: require approval before Publish, and show a “Reviewed by” credit on the live page after sign-off.
+= ✨ Human approval for AI and automated drafts =
 
-Use any writing assistant or automation you already have. Flow stays source-agnostic and keeps the approval decision in WordPress.
+Flow doesn't generate text or detect AI content. It's the checkpoint between a draft and Publish, whoever or whatever wrote the draft.
 
-= 🤝 Human-in-the-loop for AI agents =
-
-When an AI agent is connected to your WordPress site (WordPress Agent Connector, MCP, or another connector that can call WordPress abilities), Flow is the gate between that agent and a human reviewer.
-
-The AI agent can:
-
-1. Assign a WordPress reviewer or an external email, then send the draft for review.
-2. Learn that Publish is blocked when mandatory review is on and the post is not yet approved.
-3. After a person leaves inline or general comments and requests changes, read those comments — including the exact passage that was selected — and see what to fix.
-4. Edit the page with whatever builder tools that agent already uses.
-5. Mark addressed comments resolved and send the post back for another human look.
-
-The person still owns approve and request-changes. Flow does not let the authoring agent approve its own work, and it does not rewrite Oxygen, Gutenberg, or Elementor trees itself. If the connected agent cannot edit the builder you use, it can still run the review workflow; someone else applies the copy edits.
-
-= 💡 Why teams choose Flow =
-
-* **GitHub-style workflow:** Leave feedback exactly where it matters via inline comments so edits are clearer and faster.
-* **Review directly on rendered page:** Reviewers don't need access to the content editor; they review the rendered output.
-* **No WordPress account needed:** Send a review to any email address and Flow mails that person a private magic link straight to the review page — no user account, no signup, no login.
-* **Automatic assignment:** Choose a default reviewer in settings and Flow assigns them as soon as new supported content is created — including drafts from the REST API or an unattended automation.
-* **Named credit after approval:** Optionally show “Reviewed by” on published content so the human who signed off is visible next to the author.
-* **Works with any editor:** Dedicated integration with Gutenberg, Classic Editor, Elementor, Bricks Builder, Beaver Builder, Divi, Avada, Breakdance, and Oxygen Builder, but all editors are supported.
-* **Simple review and approval:** Move content through practical statuses such as in review, changes requested, and approved. Mandatory mode can block Publish until that approval exists.
-* **Familiar Gutenberg-style review page:** Dedicated review UI that feels native to WordPress.
-* **Fast team onboarding:** Minimal setup and intuitive UI for writers, editors, and reviewers.
-* **Status-change notifications:** Keep everyone aligned with timely workflow updates.
-* **Human-in-the-loop for agents:** Connected AI agents can assign, send, read comments, and resubmit; only a person can approve, and mandatory review still blocks Publish.
-* **Lightweight by design:** Built with native WordPress APIs and UI libraries.
-
-= 🧩 Built for your content stack =
-
-* **Editor support:** Dedicated integration with Gutenberg, Classic Editor, Elementor, Bricks Builder, Beaver Builder, Divi, Avada, Breakdance, and Oxygen Builder workflows.
-* **Content type flexibility:** Use Flow for posts, pages, products, and custom post types.
-* **WooCommerce friendly:** Works smoothly with WooCommerce-based editorial setups.
+* Drafts created by ChatGPT, Claude, n8n, Make, Zapier, or the REST API can get a reviewer assigned automatically the moment the post is created.
+* With mandatory review on, the first Publish or Schedule stays blocked until a person approves, including attempts through the REST API.
+* AI agents connected through WordPress Agent Connector or MCP can send content for review, read comments, resolve threads, and resubmit. Only a human can approve or request changes.
 
 = 🤖 What makes Flow different =
 
@@ -88,145 +60,38 @@ Editorial workflow plugins optimize for maximum configuration. Flow optimizes fo
 
 If you want an editorial workflow that is modern, focused, and easy to use from day one, Flow is built for you.
 
-== Screenshots ==
+= 🚀 Flow Pro =
 
-1. Assign reviewer to page in Gutenberg
-2. Add inline comment to text
-3. Add inline comment to image
-4. Reply to comment
-5. Settings page
-6. Inline comments anchored to content on the review page.
-7. Assign reviewer to page in Classic Editor
-8. Assign reviewer to page in Elementor
-9. Assign reviewer to page in Bricks
+Everything above is free. [Flow Pro](https://jumplinks.net/pro) adds:
 
-== Installation ==
+* **Public review:** share one review link that anyone can open and comment on, with no WordPress account and no email invite needed.
+* **Site-wide review:** send the whole site. Reviewers browse in review mode and comment on any page.
+* **Unlimited external reviewers:** Free includes one external email reviewer per post. Pro removes the limit.
+* **Multiple reviewers:** set a minimum number of approvals, with each reviewer's vote tracked separately.
+* **Device switcher:** reviewers check desktop, tablet, and mobile widths without leaving the page.
+* **Rich comments and @mentions:** formatting, links, and code blocks, plus mentions for reviewers, authors, and external invitees.
+* **Slack notifications:** DMs for assignments, mentions, approvals, change requests, and site review invites.
+* **Webhooks for n8n, Zapier, and Make:** signed JSON payloads when a review is sent, approved, or sent back for changes. Deliveries are queued and retried with a full log. Payloads include the exact passage each inline comment points at, formatted for a prompt, so a writing agent can apply the fixes and resubmit.
+* **Activity log:** every status change on the review page, with the user who triggered it.
 
-1. Upload the plugin files to the `/wp-content/plugins/jumplinks-editorial-workflow` directory, or install the plugin through the WordPress plugins screen.
-2. Activate the plugin through the "Plugins" screen in WordPress.
-3. Go to **Settings > Flow** to configure review mode, eligible content types, reviewer roles, automatic reviewer assignment, and the optional reviewed-by credit.
+= 🛠️ Development =
 
-== Frequently Asked Questions ==
-
-= How does the review workflow work? =
-
-Assign a reviewer (or let Flow assign one automatically), collect feedback via inline comments, request changes or approve, and publish when approved.
-
-= What does the reviewer see? =
-
-The actual page exactly as visitors will see it — Flow renders the content through your theme on the frontend. Inline comments anchor to the rendered output, so reviewers catch layout, spacing, and typography issues that the editor view hides. Reviewers also don't need to access the editor to leave feedback.
-
-= Can I send a review to someone who has no WordPress account? =
-
-Yes. In the reviewer field pick **External Email**, type the address, and send the review. Flow emails that person a signed magic link that opens the review page directly — they never create an account, register, or log in. From there they do everything a logged-in reviewer does: read the page as visitors see it, leave inline comments (Flow asks for their name the first time), and approve or request changes.
-
-The link is signed and tied to that single email address, so it can't be guessed, and it stops working as soon as you remove that reviewer or cancel the review. Free includes one external reviewer per post; Pro lets you invite several email addresses to the same post review or to a site-wide review.
-
-= Which editors are supported? =
-
-Flow is designed for Gutenberg, Classic Editor, Elementor, Bricks Builder, Beaver Builder, Divi, Avada, Breakdance, and Oxygen Builder publishing workflows.
-
-= I use a different editor. What do I do? =
-
-Flow ships with native integrations for Gutenberg, Classic Editor, Elementor, Bricks Builder, Beaver Builder, Divi, Avada, Breakdance, and Oxygen Builder. If you work in a different editor, you can still use Flow — just open the post in Gutenberg or Classic Editor (both included with WordPress) to request reviews, manage reviewers, and track status. Your existing editor stays untouched for the actual content work.
-
-= Does Flow support custom content types? =
-
-Yes. You can enable the review workflow for posts, pages, products, and custom post types from the settings screen. We cannot guarantee compatibility with all custom content types, but we are confident most cases are handled.
-
-= Does Flow send notifications? =
-
-Yes. Flow sends email notifications for key review lifecycle events, helping teams stay aligned on status changes. Slack integration is also included in the Pro version.
-
-= Is Flow compatible with WooCommerce? =
-
-Yes. Flow is compatible with WooCommerce-powered sites and content workflows.
-
-= Can I use Flow to review AI-generated content? =
-
-Yes. Flow is the human review layer around a WordPress draft, whether a person wrote it or an AI tool / automation created it. It does not generate text, detect whether AI was used, or automatically fact-check claims. Reviewers read the rendered page, comment in context, and either request changes or approve. Auto-assign can attach a reviewer the moment the post is created, and Mandatory review can block the initial Publish or Schedule action until that person signs off.
-
-= Can an AI agent use Flow? =
-
-Yes, if the agent is connected to WordPress through Agent Connector, MCP, or another client that can call WordPress abilities. The agent can assign a reviewer, send the post for review, read comments (including the selected text on inline notes), resolve threads it has addressed, and resubmit. It uses your existing builder or core tools to change the page. Flow does not generate the draft and does not edit the builder tree itself.
-
-= What is reserved for a human reviewer? =
-
-Approve, request changes, and the decision to publish. The authoring agent is not given those actions, so it cannot rubber-stamp its own draft. People still use the Flow review page to comment on the live layout and to sign off.
-
-= Can an AI agent publish without a person? =
-
-Not when **Mandatory review** is enabled. WordPress Publish and Schedule stay blocked until a human-approved review exists, even if the agent tries to publish through the REST API or a builder. With mandatory review off, Flow does not add that extra gate — turn it on under Settings → Flow if agents should never ship unreviewed content.
-
-= Do I need a specific builder for the AI features? =
-
-No. Flow’s agent abilities work for any connected client. Editing the page still depends on the agent: block/core tools for Gutenberg, Oxygen tools for Oxygen and so on. If the agent cannot edit that builder, a person (or a different connected editor) applies the requested changes, then the agent can still resubmit.
-
-= Who should use Flow? =
-
-Flow is ideal for content and editorial teams that need a simple review and approval workflow in WordPress without the overhead of enterprise-style configuration — including teams that use AI or automations to produce first drafts and still want a named person to verify the live page. It also works well for freelance developers and agencies who want a structured way to share in-progress work with clients for feedback and approval, without sending screenshots or asking clients to navigate the WordPress admin.
-
-= Can I use Flow to showcase work to clients? =
-
-Yes. Add the client as a user with a reviewer-eligible role, assign them as the reviewer, and send them the review page link. They land on a focused page with the page or post preview, leave inline comments anchored to specific content, and approve or request changes — without ever needing to learn the WordPress editor. If you'd rather not create an account for them at all, assign their email address instead and Flow sends them a magic link into the same review page. In the PRO version you can invite several external email reviewers at once or send the entire site for review!
-
-= Do I need an external account to us Flow? =
-No, Flow is a tool dedicated for WordPress and it just needs access to the admin dashboard. No SaaS subscription, no external tools.
-
-== 🚀 Pro features ==
-
-Flow Pro extends the free workflow with the following additions:
-
-= 👥 Multiple reviewers =
-
-Assign any number of reviewers per post and set a minimum approval count. Each vote (approved / changes requested / pending) is tracked independently.
-
-= 🔗 Open to public =
-
-Free covers one external email reviewer per post; Pro removes the limit. Add as many external email addresses as you need to a post review or a site review, and each recipient gets their own signed magic link that drops them straight into the review with their identity bound to that link.
-
-= 🌐 Site-wide review =
-
-Request a site review with one or many reviewers — logged-in users, external email invitees, or both. Reviewers land in a review mode overlaying your site, can navigate freely, and leave anchored comments on any page.
-
-= 💬 Improved comments =
-
-A TipTap-powered editor brings bold, italics, headings, lists, links, quotes, and code blocks to every review comment. Type `@` to mention any reviewer, the author, or external invitees.
-
-= 🔌 Webhooks for n8n, Zapier and Make =
-
-Send review events to any automation tool. When a human approves or requests changes, Flow posts a signed JSON payload so your pipeline can carry on: publish the post, or hand the reviewer's comments back to your writing agent, fix them, and resubmit for another human look. Payloads include the exact passage each inline comment points at, pre-formatted for a prompt. Deliveries are queued and retried with a full log, so a brief outage at your end does not lose an approval.
-
-= 🔔 Slack integration =
-
-Connect a Slack bot once and Flow DMs reviewers when they're assigned, mentioned, approved, asked for changes, or invited to a site review. Member IDs auto-resolve by email; users can override per-event opt-ins from their profile.
-
-= 📱 Device selector =
-
-A device switcher in the review bar lets reviewers toggle between desktop, tablet, and mobile widths without leaving the page.
-
-= 📊 Activity tracking =
-
-An activity bar on the review page tracks every status change — pending review, in review, changes requested — along with the user who triggered each event.
-
-== Development ==
-
-= Where is the JavaScript and CSS source? =
+**Where is the JavaScript and CSS source?**
 
 Human-editable source for the compiled assets in `build/` lives in the `src/` directory. Files under `build/` are generated by webpack; edit `src/` instead of hand-editing `build/`.
 
-= How do I rebuild the compiled assets? =
+**How do I rebuild the compiled assets?**
 
 From the plugin directory, with a supported Node.js release:
 
 1. Run `npm install` or `npm ci` to install dependencies.
 2. Run `npm run build` to regenerate webpack output.
 
-= Third-party JavaScript =
+**Third-party JavaScript**
 
 Packages such as `@wordpress/scripts` and `@wordpress/icons` are declared in `package.json`. After `npm install`, see each package under `node_modules/` for license text, or refer to the upstream WordPress repositories.
 
-== External services ==
+= 🔌 External services =
 
 This plugin loads avatar images from Gravatar (operated by Automattic), which is a third-party service.
 
@@ -237,17 +102,119 @@ This plugin loads avatar images from Gravatar (operated by Automattic), which is
 * **Terms:** https://automattic.com/terms/
 * **Privacy:** https://automattic.com/privacy/
 
-This is the same Gravatar integration that ships with WordPress core; the plugin does not contact any other external services.
+This is the same Gravatar integration that ships with WordPress core. The free plugin contacts no other external service.
+
+Flow Pro adds optional integrations that only send data once you configure them:
+
+* **Slack** (https://slack.com/) — when you save a Slack bot token, Flow calls `chat.postMessage` and `users.lookupByEmail` on api.slack.com to deliver direct messages. Sent: the reviewer's WordPress email address (to find their Slack account), reviewer and author display names, content titles, review links, and the text of comments they are mentioned in. Terms: https://slack.com/terms-of-service · Privacy: https://slack.com/privacy-policy
+* **Webhooks** — Flow posts signed JSON to the endpoint URLs you enter under Flow → Webhooks. Payloads contain review status, post title and links, reviewer and requester names and email addresses, and comment text including the exact passage a comment points at. Deliveries and their payloads are kept in your database for the retention period you set and pruned by cron.
+* **Akismet** — if the Akismet plugin is active and configured, anonymous comments on open-to-public reviews are checked with Akismet's `comment-check` endpoint (comment text, name, email, IP address, user agent and referrer), governed by Akismet's terms and privacy policy: https://akismet.com/privacy/
+* **Freemius** (https://freemius.com/) — Pro licences are activated and updates are fetched through Freemius; no usage data is sent unless you explicitly opt in. Privacy: https://freemius.com/privacy/
+
+== Installation ==
+
+1. Install the plugin from Plugins → Add New, or upload the files to `/wp-content/plugins/jumplinks-editorial-workflow`.
+2. Activate the plugin through the Plugins screen.
+3. Go to Settings → Flow to choose content types, reviewer roles, automatic reviewer assignment, mandatory review, and the optional "Reviewed by" credit.
+4. Open a page or post, assign a reviewer (a WordPress user or an email address), and send it for review.
+
+== Frequently Asked Questions ==
+
+= How does the review workflow work? =
+
+Assign a reviewer, collect feedback via inline comments, request changes or approve, and publish when approved.
+
+= What does the reviewer see? =
+
+The actual page exactly as visitors will see it — Flow renders the content through your theme on the frontend. Inline comments anchor to the rendered output, so reviewers catch layout, spacing, and typography issues that the editor view hides. Reviewers also don't need to access the editor to leave feedback.
+
+= Which editors are supported? =
+
+Flow has dedicated integrations for Gutenberg, Classic Editor, Elementor, Bricks Builder, Beaver Builder, Divi, Avada, Breakdance, and Oxygen, plus WooCommerce products. In Gutenberg, Flow is a panel in the document sidebar. In Classic Editor and on WooCommerce products, it's a metabox on the edit screen. In the page builders, it's a control in the builder's top bar or toolbar.
+
+= I use a different editor. What do I do? =
+
+You can still use Flow. Open the post in Gutenberg or Classic Editor (both included with WordPress) to request reviews, manage reviewers, and track status. Your existing editor stays untouched for the actual content work, and reviewers still comment on the rendered page.
+
+= Does Flow support custom content types? =
+
+Yes. You can enable the review workflow for posts, pages, products, and custom post types from the settings screen. We cannot guarantee compatibility with every custom content type, but we are confident most cases are handled.
+
+= Does Flow send notifications? =
+
+Yes. Flow sends email notifications for key review lifecycle events, helping teams stay aligned on status changes. Slack integration is also included in the Pro version.
+
+= Is Flow compatible with WooCommerce? =
+
+Yes. Open Settings → Flow and choose the Product content type. WooCommerce products use the classic editor, so Flow appears as a Review metabox under Publish. Reviewers comment on the live product page.
+
+= Who should use Flow? =
+
+Freelance developers and agencies who want a structured way to share in-progress work with clients for feedback and approval, without sending screenshots or asking clients to navigate the WordPress admin. It also suits content and editorial teams that need a simple review and approval workflow without enterprise-style configuration, and teams that use AI or automation for first drafts and want a named person to approve before publishing.
+
+= Can I use Flow to showcase work to clients? =
+
+Yes. Enter your client's email address as the reviewer and Flow sends them a private magic link to the review page, with no WordPress account needed. They comment on the live page and approve or request changes. If you'd rather give them an account, assign a WordPress user with a reviewer role instead. Flow Pro adds public review links anyone can open, several external reviewers per post, and site-wide review.
+
+= What's the difference between external reviewers, open review, and public review? =
+
+An external reviewer is a named person you invite by email. They get a private magic link tied to their address. Free includes one per post; Pro removes the limit. Open review (Free) is a link any logged-in user on your site can open and comment on. Public review (Pro) is a link anyone can open and comment on, with no WordPress account and no invite. Use an external reviewer when you need a specific person's sign-off, and public review when you want wider feedback.
+
+= Do I or my clients need to sign up for anything? =
+
+No. Flow is a WordPress plugin, not a hosted service. The free version needs no account anywhere, and clients review through a private magic link. Flow Pro is a per-site license you buy through Freemius and activate inside WordPress.
+
+= Does Flow generate or detect AI content? =
+
+No. Flow is the human review and approval layer around content already in WordPress. It does not generate text, detect whether AI was used, or automatically verify factual claims.
+
+= Can Flow stop an AI-generated draft from being published without approval? =
+
+Yes. In Mandatory review mode, Flow blocks the initial Publish or Schedule action for supported content types until the active review is approved.
+
+= Which AI agents work with it? =
+
+Any client that can call WordPress abilities: an MCP client, the WordPress Agent Connector, or your own integration against the REST API. There is no partner list and no approved-vendor gate. If your agent can reach WordPress, it can read the review queue and act on it.
+
+= Can the agent approve its own work? =
+
+No, and this is deliberate rather than an oversight. There is no approve ability and no request-changes ability exposed to agents. With Mandatory review switched on, the publish block is enforced on the server, so an agent cannot ship unreviewed work even through the REST API.
+
+== Screenshots ==
+
+1. Assign reviewer to page in Gutenberg
+2. Add inline comment to text
+3. Add inline comment to image
+4. Reply to comment
+5. Settings page
+6. Inline comments anchored to content on the review page
+7. Assign reviewer to page in Classic Editor
+8. Assign reviewer to page in Elementor
+9. Assign reviewer to page in Bricks
 
 == Changelog ==
 
+= 2.5.0 =
+* New: Live updates on the review page. Comments from another reviewer appear, change and disappear as they happen, and the status badge follows a decision someone else makes. No page refresh needed.
+* New: When the author saves a new version while you are reviewing, Flow tells you instead of swapping the page under you. The bar marks the content as outdated and a notification offers the link to the new version, so you choose when to move.
+* New: Settings are now split into Workflow, Multiple reviewers and Site Review tabs, so the Pro options no longer crowd one screen.
+* Improvement: The Jumplinks icon now sits beside Review in the admin bar, tinted with the review status.
+* Improvement: Site review now carries the same desktop, tablet and mobile preview switcher as a single-page review.
+* Improvement: A new post now names the auto-assigned reviewer straight away, marked as pending until the first save creates the review.
+* Improvement: Page cache compatibility. Reviewer sessions bypass W3 Total Cache, WP Rocket, LiteSpeed, WP Super Cache, Cache Enabler and SiteGround Optimizer, so a share link never shows a stale page.
+* Improvement: Personal data export and erase now cover Flow, so review invitations, anonymous comments and Slack details answer the WordPress privacy tools.
+* Improvement: Faster admin and review pages, with far fewer database queries per request and a smaller editor bundle.
+* Fix: Send for review no longer appears until a reviewer is assigned, so turning on Open Review does not leave a dead button behind.
+* Fix: The auto-assign reviewer setting now accepts any WordPress user, as the field describes. Picking someone outside the Review Roles, or yourself, assigns them and lets them approve.
+* Fix: Security hardening across review permissions, comment validation and webhook destinations.
+
 = 2.4.3 =
-* New (Pro): Webhooks for n8n, Zapier, Make, and any other HTTP endpoint. Flow posts a signed JSON payload when a review is sent, approved, or sent back for changes, so an automated pipeline can pick up where the human left off — publish once it is approved, or hand the reviewer’s comments to your writing agent, apply them, and resubmit for another human look. Each payload carries the exact passage every inline comment points at, already formatted for a prompt. Deliveries are queued and retried with a full delivery log, so a short outage at your end never loses an approval.
-* New: AI agent capabilities for WordPress Agent Connector and other MCP clients. Connected agents can assign a reviewer, send content for review, read inline and general comments (including the selected text to change), resolve threads, and resubmit after they edit the page with the site’s builder. Flow stays the human-in-the-loop gate: agents cannot approve their own work, and mandatory review still blocks Publish until a person approves.
-* Improvement: Copy an external reviewer’s magic link. Once a post has been sent for review, a copy icon appears beside the external email reviewer so you can pass the link on yourself — over chat, or to someone whose spam filter swallowed the invitation. Only people who can edit the post can see it.
+* New (Pro): Webhooks for n8n, Zapier, Make, and any other HTTP endpoint. Flow posts a signed JSON payload when a review is sent, approved, or sent back for changes, so an automated pipeline can pick up where the human left off — publish once it is approved, or hand the reviewer's comments to your writing agent, apply them, and resubmit for another human look. Each payload carries the exact passage every inline comment points at, already formatted for a prompt. Deliveries are queued and retried with a full delivery log, so a short outage at your end never loses an approval.
+* New: AI agent capabilities for WordPress Agent Connector and other MCP clients. Connected agents can assign a reviewer, send content for review, read inline and general comments (including the selected text to change), resolve threads, and resubmit after they edit the page with the site's builder. Flow stays the human-in-the-loop gate: agents cannot approve their own work, and mandatory review still blocks Publish until a person approves.
+* Improvement: Copy an external reviewer's magic link. Once a post has been sent for review, a copy icon appears beside the external email reviewer so you can pass the link on yourself — over chat, or to someone whose spam filter swallowed the invitation. Only people who can edit the post can see it.
 
 = 2.4.2 =
-* New: Optional “Reviewed by” credit on published content. Turn it on under Settings → Flow; after approval it appears below the author and category line, with WordPress reviewer names linked to their author archives. External email reviewers are omitted.
+* New: Optional "Reviewed by" credit on published content. Turn it on under Settings → Flow; after approval it appears below the author and category line, with WordPress reviewer names linked to their author archives. External email reviewers are omitted.
 * New: Automatic reviewer assignment. Pick any WordPress user — including yourself, regardless of Review Roles — and Flow assigns them when new supported content is created.
 
 = 2.4.1 =

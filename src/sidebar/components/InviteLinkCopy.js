@@ -4,16 +4,7 @@ import { Button } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
 import apiFetch from '@wordpress/api-fetch';
 import { ShareBarIcon } from '../../shared/share-bar-icons';
-
-/**
- * Read lazily, never at module scope. The Free sidebar script declares the Pro
- * editor bundle as a dependency, so Pro evaluates before `wp_localize_script`
- * has printed `flowEW`. Destructuring it up here throws and takes every filter
- * the Pro bundle registers down with it.
- */
-function config() {
-	return ( typeof window !== 'undefined' && window.flowEW ) || {};
-}
+import { getConfig } from '../../shared/config';
 
 /**
  * Copies an external reviewer's magic link.
@@ -39,8 +30,10 @@ export default function InviteLinkCopy( { reviewId, email = '' } ) {
 		}
 		let cancelled = false;
 		const query = email ? `?email=${ encodeURIComponent( email ) }` : '';
-		const { restUrl } = config();
-		apiFetch( { url: `${ restUrl }/reviews/${ reviewId }/invite-link${ query }` } )
+		const { restUrl } = getConfig();
+		apiFetch( {
+			url: `${ restUrl }/reviews/${ reviewId }/invite-link${ query }`,
+		} )
 			.then( ( res ) => {
 				if ( ! cancelled ) {
 					setUrl( ( res && res.url ) || '' );
@@ -65,7 +58,7 @@ export default function InviteLinkCopy( { reviewId, email = '' } ) {
 		return null;
 	}
 
-	const { i18n } = config();
+	const { i18n } = getConfig();
 	const label = copied
 		? i18n?.copied
 		: i18n?.copyInviteLink ||

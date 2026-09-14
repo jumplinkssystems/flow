@@ -4,7 +4,7 @@ import ConfirmDialog from '../components/ConfirmDialog';
 /**
  * Promise-based confirm dialog for destructive actions.
  *
- * @returns {{ confirm: Function, confirmDialog: import('react').ReactNode }}
+ * @return {{ confirm: Function, confirmDialog: import('react').ReactNode }}
  */
 export function useConfirmDialog() {
 	const [ pending, setPending ] = useState( null );

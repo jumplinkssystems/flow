@@ -7,6 +7,7 @@ import CommentSidebar from './components/CommentSidebar';
 import InlineCommentPopover from './components/InlineCommentPopover';
 import InlineThreadPopover from './components/InlineThreadPopover';
 import { initHighlights } from './utils/highlight-manager';
+import { startCommentSync } from './utils/comment-sync';
 import { initEmbedOverlays } from './utils/init-embed-overlays';
 import { pageData } from './utils/api';
 
@@ -16,42 +17,47 @@ import popoverCss from './popover.scss?raw';
 import './style.scss';
 
 function BarWithBoundary() {
-  return (
-    <ErrorBoundary>
-      <ReviewBar />
-    </ErrorBoundary>
-  );
+	return (
+		<ErrorBoundary>
+			<ReviewBar />
+		</ErrorBoundary>
+	);
 }
 
 function SidebarWithBoundary() {
-  return (
-    <ErrorBoundary>
-      <CommentSidebar />
-    </ErrorBoundary>
-  );
+	return (
+		<ErrorBoundary>
+			<CommentSidebar />
+		</ErrorBoundary>
+	);
 }
 
 function PopoverWithBoundary() {
-  return (
-    <ErrorBoundary>
-      <InlineCommentPopover />
-      <InlineThreadPopover />
-    </ErrorBoundary>
-  );
+	return (
+		<ErrorBoundary>
+			<InlineCommentPopover />
+			<InlineThreadPopover />
+		</ErrorBoundary>
+	);
 }
 
-domReady(() => {
-  const barHost = document.getElementById('flow-bar-host');
-  const sidebarHost = document.getElementById('flow-sidebar-host');
+domReady( () => {
+	const barHost = document.getElementById( 'flow-bar-host' );
+	const sidebarHost = document.getElementById( 'flow-sidebar-host' );
 
-  if (barHost) mountInShadow(barHost, barCss, BarWithBoundary);
-  if (sidebarHost) mountInShadow(sidebarHost, sidebarCss, SidebarWithBoundary);
+	if ( barHost ) {
+		mountInShadow( barHost, barCss, BarWithBoundary );
+	}
+	if ( sidebarHost ) {
+		mountInShadow( sidebarHost, sidebarCss, SidebarWithBoundary );
+	}
 
-  const popoverHost = document.createElement('div');
-  popoverHost.id = 'flow-inline-popover-host';
-  document.body.appendChild(popoverHost);
-  mountInShadow(popoverHost, popoverCss, PopoverWithBoundary);
+	const popoverHost = document.createElement( 'div' );
+	popoverHost.id = 'flow-inline-popover-host';
+	document.body.appendChild( popoverHost );
+	mountInShadow( popoverHost, popoverCss, PopoverWithBoundary );
 
-  initHighlights(pageData.inlineComments || []);
-  initEmbedOverlays();
-});
+	initHighlights( pageData.inlineComments || [] );
+	initEmbedOverlays();
+	startCommentSync();
+} );

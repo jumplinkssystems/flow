@@ -98,8 +98,8 @@ function SelectAllToggle({
     e.preventDefault();
     onChange(allChecked ? [] : all.slice());
   }
-  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("a", {
-    href: "#",
+  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("button", {
+    type: "button",
     className: "flow-ew-wizard__select-all",
     onClick: handle,
     children: allChecked ? i18n.deselectAll : i18n.selectAll
@@ -124,7 +124,11 @@ function PostTypesStep({
   }
   function toggle(slug, on) {
     const next = new Set(value);
-    if (on) next.add(slug);else next.delete(slug);
+    if (on) {
+      next.add(slug);
+    } else {
+      next.delete(slug);
+    }
     onChange(Array.from(next));
   }
   return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
@@ -157,7 +161,11 @@ function RolesStep({
   const list = choices.roles || [];
   function toggle(slug, on) {
     const next = new Set(value);
-    if (on) next.add(slug);else next.delete(slug);
+    if (on) {
+      next.add(slug);
+    } else {
+      next.delete(slug);
+    }
     onChange(Array.from(next));
   }
   return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
@@ -210,7 +218,9 @@ function Wizard({
   }
   function back() {
     setError('');
-    if (!isFirst) setStep(step - 1);
+    if (!isFirst) {
+      setStep(step - 1);
+    }
   }
   async function save() {
     setSaving(true);
@@ -302,13 +312,13 @@ function Wizard({
           onClick: back,
           disabled: isFirst || saving,
           children: i18n.back
-        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_1__.Button, {
+        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)(_wordpress_components__WEBPACK_IMPORTED_MODULE_1__.Button, {
           variant: "primary",
           onClick: next,
           disabled: saving,
-          children: saving ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.Fragment, {
+          children: [saving && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.Fragment, {
             children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_1__.Spinner, {}), " ", i18n.saving]
-          }) : isLast ? i18n.finish : i18n.next
+          }), !saving && (isLast ? i18n.finish : i18n.next)]
         })]
       })]
     })]
@@ -326,7 +336,9 @@ function App() {
     return () => document.removeEventListener('flow-ew:open-setup-wizard', onOpen);
   }, []);
   (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
-    if (!savedNotice) return undefined;
+    if (!savedNotice) {
+      return undefined;
+    }
     const t = setTimeout(() => setSavedNotice(false), 4000);
     return () => clearTimeout(t);
   }, [savedNotice]);

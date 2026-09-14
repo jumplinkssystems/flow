@@ -21,6 +21,12 @@ final class I18n {
 	/** @var array<string, string|false> Per-locale Jed JSON cache (request-scoped). */
 	private static array $cache = array();
 
+	/** @var array<string, true> Locales whose catalogue has already been inlined on this page. */
+	private static array $served = array();
+
+	/** @var bool|null Memoised: the locale filter runs on every get_locale() call and the request markers never change. */
+	private static ?bool $is_review_request = null;
+
 	public static function boot(): void {
 		add_filter( 'pre_load_script_translations', [ self::class, 'filter_script_translations' ], 10, 4 );
 		add_filter( 'locale', [ self::class, 'force_english_for_anonymous_review' ], 0 );
@@ -38,31 +44,33 @@ final class I18n {
 	 * untouched.
 	 */
 	public static function force_english_for_anonymous_review( $locale ) {
-		if ( is_admin() ) {
+		if ( is_admin() || ! self::is_review_request() ) {
 			return $locale;
 		}
 		if ( function_exists( 'is_user_logged_in' ) && is_user_logged_in() ) {
 			return $locale;
 		}
-		// Free per-post review entry URL.
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- presence-only check; the review handler verifies its own signed token.
-		if ( isset( $_GET['flow_review_id'] ) || isset( $_GET['flow_token'] ) ) {
-			return 'en_US';
+		return 'en_US';
+	}
+
+	/** Free review entry URL, Pro site-review entry URL, or an active site-review session cookie. */
+	private static function is_review_request(): bool {
+		if ( null !== self::$is_review_request ) {
+			return self::$is_review_request;
 		}
-		// Pro site-review entry URL.
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- presence-only check; the link handler verifies its own signed token.
-		if ( isset( $_GET['flow_sr'] ) || isset( $_GET['flow_sr_token'] ) ) {
-			return 'en_US';
-		}
-		// Active site-review session (cookie was set on entry, so subsequent
-		// navigation within the chrome has no query string but does carry
-		// `flow_sr_*` cookies).
-		foreach ( array_keys( $_COOKIE ) as $name ) {
-			if ( 0 === strncmp( (string) $name, 'flow_sr_', 8 ) ) {
-				return 'en_US';
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- presence-only check; the review and link handlers verify their own signed tokens.
+		$marked = isset( $_GET['flow_review_id'] ) || isset( $_GET['flow_token'] ) || isset( $_GET['flow_sr'] ) || isset( $_GET['flow_sr_token'] );
+		if ( ! $marked ) {
+			// Navigation inside the site-review chrome has no query string but carries `flow_sr_*` cookies.
+			foreach ( array_keys( $_COOKIE ) as $name ) {
+				if ( 0 === strncmp( (string) $name, 'flow_sr_', 8 ) ) {
+					$marked = true;
+					break;
+				}
 			}
 		}
-		return $locale;
+		self::$is_review_request = $marked;
+		return $marked;
 	}
 
 	/**
@@ -89,7 +97,17 @@ final class I18n {
 		}
 
 		$locale = determine_locale();
+		// One inline catalogue per page is enough: `wp.i18n` locale data is
+		// global per text domain and every Flow script depends on wp-i18n, so
+		// the first Flow script printed seeds the strings for all that follow.
+		// Returning false here skips WP's file lookup and prints nothing.
+		if ( isset( self::$served[ $locale ] ) ) {
+			return false;
+		}
 		if ( array_key_exists( $locale, self::$cache ) ) {
+			if ( false !== self::$cache[ $locale ] ) {
+				self::$served[ $locale ] = true;
+			}
 			return self::$cache[ $locale ];
 		}
 
@@ -123,6 +141,9 @@ final class I18n {
 
 		$json                   = wp_json_encode( $jed );
 		self::$cache[ $locale ] = ( false !== $json ) ? $json : false;
+		if ( false !== self::$cache[ $locale ] ) {
+			self::$served[ $locale ] = true;
+		}
 		return self::$cache[ $locale ];
 	}
 }

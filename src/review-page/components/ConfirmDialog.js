@@ -69,10 +69,7 @@ export default function ConfirmDialog( {
 					</div>
 				</div>
 				<div className="flow-confirm-dialog__actions">
-					<Button
-						className="flow-btn--cancel"
-						onClick={ onCancel }
-					>
+					<Button className="flow-btn--cancel" onClick={ onCancel }>
 						{ cancelLabel }
 					</Button>
 					<Button

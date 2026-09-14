@@ -1,8 +1,6 @@
 export function closestFromEventTarget( target, selector ) {
 	const el =
-		target?.nodeType === Node.ELEMENT_NODE
-			? target
-			: target?.parentElement;
+		target?.nodeType === Node.ELEMENT_NODE ? target : target?.parentElement;
 	return el?.closest?.( selector ) ?? null;
 }
 
@@ -29,7 +27,8 @@ export function eventHitsShadowNode( event, node ) {
 	if ( ! node || ! event ) {
 		return false;
 	}
-	const path = typeof event.composedPath === 'function' ? event.composedPath() : null;
+	const path =
+		typeof event.composedPath === 'function' ? event.composedPath() : null;
 	if ( ! path ) {
 		return !! node.contains?.( event.target );
 	}
@@ -59,10 +58,18 @@ export function eventInsidePortalUI( event ) {
 	if ( ! event ) {
 		return false;
 	}
-	const path = typeof event.composedPath === 'function' ? event.composedPath() : null;
-	const probe = path && path.length ? path : ( event.target ? [ event.target ] : [] );
+	const path =
+		typeof event.composedPath === 'function' ? event.composedPath() : null;
+	let probe = [];
+	if ( path && path.length ) {
+		probe = path;
+	} else if ( event.target ) {
+		probe = [ event.target ];
+	}
 	for ( const node of probe ) {
-		if ( ! node || node.nodeType !== 1 ) continue;
+		if ( ! node || node.nodeType !== 1 ) {
+			continue;
+		}
 		// `closest` walks ancestors too — works whether `node` is the menu
 		// item itself or a child element of it.
 		if (

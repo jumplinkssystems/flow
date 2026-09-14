@@ -34,19 +34,25 @@ function flow_ew_get_pro_dev_override(): ?bool {
 }
 
 function flow_ew_is_pro_build(): bool {
+	static $memo = null;
+	if ( null !== $memo ) {
+		return $memo;
+	}
 	$env_is_dev = in_array( wp_get_environment_type(), array( 'local', 'development' ), true );
 
 	if ( $env_is_dev ) {
 		$override = flow_ew_get_pro_dev_override();
 		if ( null !== $override ) {
-			return $override;
+			$memo = $override;
+			return $memo;
 		}
 	}
 
 	$version_is_pro = defined( 'FLOW_EW_VERSION' )
 		&& (bool) preg_match( '/^\d+\.\d+\.\d+\.\d+/', (string) FLOW_EW_VERSION );
 
-	return $version_is_pro && is_dir( __DIR__ . '/pro' );
+	$memo = $version_is_pro && is_dir( __DIR__ . '/pro' );
+	return $memo;
 }
 
 $flow_ew_runtime_autoload = __DIR__ . '/vendor/autoload.php';
@@ -60,7 +66,7 @@ if ( flow_ew_is_pro_build() ) {
 		define( 'FLOW_EW_PRO_VERSION', '1.4.0' );
 	}
 	if ( ! defined( 'FLOW_EW_PRO_DB_VERSION' ) ) {
-		define( 'FLOW_EW_PRO_DB_VERSION', '8' );
+		define( 'FLOW_EW_PRO_DB_VERSION', '9' );
 	}
 	if ( ! defined( 'FLOW_EW_PRO_PLUGIN_FILE' ) ) {
 		define( 'FLOW_EW_PRO_PLUGIN_FILE', dirname( __DIR__ ) . '/jumplinks-editorial-workflow.php' );
@@ -242,6 +248,7 @@ if ( ! function_exists( 'flow_fs' ) ) {
 
 			$flow_ew_free_tables = array(
 				$wpdb->prefix . 'flow_review_comments',
+				$wpdb->prefix . 'flow_review_invites',
 				$wpdb->prefix . 'flow_reviews',
 			);
 			foreach ( $flow_ew_free_tables as $flow_ew_table ) {
@@ -258,10 +265,21 @@ if ( ! function_exists( 'flow_fs' ) ) {
 				'flow_ew_reviewer_roles',
 				'flow_ew_supported_post_types',
 				'flow_ew_setup_completed',
+				'flow_ew_show_reviewed_by',
+				'flow_ew_auto_assign_reviewer_id',
+				'flow_ew_disable_open_reviews',
+				'flow_ew_disable_notifications',
+				'flow_ew_show_upgrade_hints',
+				'flow_ew_migration_lock_free',
+				'flow_ew_cache_integrations',
 			);
 			foreach ( $flow_ew_free_options as $flow_ew_option ) {
 				delete_option( $flow_ew_option );
 			}
+
+			// Per-post review meta written on every reviewed post.
+			delete_post_meta_by_key( '_flow_reviewer_id' );
+			delete_post_meta_by_key( '_flow_review_status' );
 
 			$flow_ew_caps  = array( 'flow_assign_reviewer', 'flow_review_posts', 'flow_manage_reviews' );
 			$flow_ew_roles = array( 'author', 'editor', 'administrator' );
@@ -302,6 +320,18 @@ if ( ! function_exists( 'flow_fs' ) ) {
 
 			$flow_ew_pro_options = array(
 				'flow_ew_pro_db_version',
+				'flow_ew_pro_schema_ok',
+				'flow_ew_migration_lock_pro',
+				'flow_ew_pro_digest_last_run',
+				'flow_ew_disable_daily_reminders',
+				'flow_ew_multi_reviewer_enabled',
+				'flow_ew_min_reviewers',
+				'flow_ew_min_approvals',
+				'flow_ew_disable_mention_notifications',
+				'flow_ew_disable_public_reviews',
+				'flow_ew_site_review_disabled',
+				'flow_ew_site_review_external_disabled',
+				'flow_ew_site_review_roles',
 				'flow_ew_pro_digest_enabled',
 				'flow_ew_pro_digest_hour',
 				'flow_ew_pro_slack_bot_token',
@@ -465,7 +495,7 @@ add_action(
 		if ( ! isset( $submenu[ $parent_slug ] ) ) {
 			return;
 		}
-		$relax = array(
+		$admin_only = array(
 			'flow-ew-dashboard-contact',
 			'flow-ew-dashboard-pricing',
 			'flow-ew-dashboard-support-forum',
@@ -473,9 +503,9 @@ add_action(
 		);
 		foreach ( $submenu[ $parent_slug ] as $i => $entry ) {
 			$href = isset( $entry[2] ) ? (string) $entry[2] : '';
-			if ( in_array( $href, $relax, true ) ) {
+			if ( in_array( $href, $admin_only, true ) ) {
 				// phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- intentional; SDK exposes no capability filter.
-				$submenu[ $parent_slug ][ $i ][1] = 'read';
+				$submenu[ $parent_slug ][ $i ][1] = 'manage_options';
 			}
 		}
 	},

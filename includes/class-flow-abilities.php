@@ -94,6 +94,19 @@ class Abilities {
 			],
 		];
 
+		// Every tool that returns the review shares this shape.
+		$review_output_schema = [
+			'type'       => 'object',
+			'properties' => array_merge(
+				[
+					'post_id'     => [ 'type' => 'integer' ],
+					'post_status' => [ 'type' => 'string' ],
+					'post_title'  => [ 'type' => 'string' ],
+				],
+				$review_gate
+			),
+		];
+
 		self::register_ability(
 			'flow/get-review',
 			[
@@ -111,17 +124,7 @@ class Abilities {
 					'required'             => [ 'post_id' ],
 					'additionalProperties' => false,
 				],
-				'output_schema'    => [
-					'type'       => 'object',
-					'properties' => array_merge(
-						[
-							'post_id'     => [ 'type' => 'integer' ],
-							'post_status' => [ 'type' => 'string' ],
-							'post_title'  => [ 'type' => 'string' ],
-						],
-						$review_gate
-					),
-				],
+				'output_schema'    => $review_output_schema,
 				'execute_callback' => static function ( array $input ) {
 					return Ability_Context::get_review( (int) ( $input['post_id'] ?? 0 ) );
 				},
@@ -204,17 +207,7 @@ class Abilities {
 					'required'             => [ 'post_id' ],
 					'additionalProperties' => false,
 				],
-				'output_schema'    => [
-					'type'       => 'object',
-					'properties' => array_merge(
-						[
-							'post_id'     => [ 'type' => 'integer' ],
-							'post_status' => [ 'type' => 'string' ],
-							'post_title'  => [ 'type' => 'string' ],
-						],
-						$review_gate
-					),
-				],
+				'output_schema'    => $review_output_schema,
 				'execute_callback' => static function ( array $input ) {
 					return Ability_Context::assign_reviewer(
 						(int) ( $input['post_id'] ?? 0 ),
@@ -254,17 +247,7 @@ class Abilities {
 				'description'      => __( 'Send the assigned review to the human reviewer. Persist all content edits first (builder save or wp_update_post) so the revision snapshot is current. Sets review to in_review and unpublished posts to pending.', 'jumplinks-editorial-workflow' ),
 				'category'         => self::CATEGORY,
 				'input_schema'     => $review_id_input,
-				'output_schema'    => [
-					'type'       => 'object',
-					'properties' => array_merge(
-						[
-							'post_id'     => [ 'type' => 'integer' ],
-							'post_status' => [ 'type' => 'string' ],
-							'post_title'  => [ 'type' => 'string' ],
-						],
-						$review_gate
-					),
-				],
+				'output_schema'    => $review_output_schema,
 				'execute_callback' => static function ( array $input ) {
 					return Ability_Context::send_for_review(
 						(int) ( $input['review_id'] ?? 0 ),
@@ -381,17 +364,7 @@ class Abilities {
 				'description'      => __( 'After applying human comments with builder tools, persist the content then resubmit. Sets status back to in_review. The authenticated user must be the post author. Do not approve; wait for the human.', 'jumplinks-editorial-workflow' ),
 				'category'         => self::CATEGORY,
 				'input_schema'     => $review_id_input,
-				'output_schema'    => [
-					'type'       => 'object',
-					'properties' => array_merge(
-						[
-							'post_id'     => [ 'type' => 'integer' ],
-							'post_status' => [ 'type' => 'string' ],
-							'post_title'  => [ 'type' => 'string' ],
-						],
-						$review_gate
-					),
-				],
+				'output_schema'    => $review_output_schema,
 				'execute_callback' => static function ( array $input ) {
 					return Ability_Context::resubmit_review(
 						(int) ( $input['review_id'] ?? 0 ),

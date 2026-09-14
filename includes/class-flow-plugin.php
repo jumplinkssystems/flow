@@ -10,14 +10,22 @@ if ( ! defined( 'ABSPATH' ) ) {
 class Plugin {
 
 	public function boot(): void {
-		if ( get_option( 'flow_ew_db_version' ) !== FLOW_EW_DB_VERSION ) {
-			Activator::create_tables();
-			Activator::create_reviewer_role();
-			$this->migrate_reviewer_roles_option();
-			update_option( 'flow_ew_db_version', FLOW_EW_DB_VERSION );
+		if ( get_option( 'flow_ew_db_version' ) !== FLOW_EW_DB_VERSION && Migration_Lock::acquire( 'free' ) ) {
+			try {
+				Activator::create_tables();
+				Activator::create_reviewer_role();
+				$this->migrate_reviewer_roles_option();
+				Settings::seed_default_options();
+				update_option( 'flow_ew_db_version', FLOW_EW_DB_VERSION );
+			} finally {
+				Migration_Lock::release( 'free' );
+			}
 		}
 
 		I18n::boot();
+		Mailer::boot();
+		Privacy::boot();
+		Page_Cache::boot();
 
 		( new Settings() )->boot();
 
@@ -32,7 +40,14 @@ class Plugin {
 		add_action(
 			'before_delete_post',
 			static function ( $post_id ): void {
-				DB::delete_reviews_for_post( (int) $post_id );
+				$post_id = (int) $post_id;
+				// Revisions and autosaves never carry reviews; skip them so
+				// deleting a post (which cascades its revisions) doesn't run
+				// two no-op DELETEs per revision.
+				if ( wp_is_post_revision( $post_id ) || wp_is_post_autosave( $post_id ) ) {
+					return;
+				}
+				DB::delete_reviews_for_post( $post_id );
 			},
 			10,
 			1
@@ -105,13 +120,27 @@ class Plugin {
 			} else {
 				$eligible     = get_users(
 					[
-						'role__in' => $reviewer_roles,
-						'exclude'  => [ $current_user_id ],
-						'fields'   => 'ID',
-						'number'   => 1,
+						'role__in'    => $reviewer_roles,
+						'exclude'     => [ $current_user_id ],
+						'fields'      => 'ID',
+						'number'      => 1,
+						'count_total' => false,
 					]
 				);
 				$no_reviewers = empty( $eligible );
+			}
+		}
+
+		$pending_reviewer    = null;
+		$pending_reviewer_id = $post_id ? Auto_Assign_Reviewer::pending_reviewer_id( $post_id ) : 0;
+		if ( $pending_reviewer_id > 0 ) {
+			$pending_user = get_userdata( $pending_reviewer_id );
+			if ( $pending_user ) {
+				$pending_reviewer = [
+					'id'         => $pending_reviewer_id,
+					'name'       => $pending_user->display_name,
+					'avatar_url' => get_avatar_url( $pending_reviewer_id, [ 'size' => 32 ] ),
+				];
 			}
 		}
 
@@ -145,10 +174,11 @@ class Plugin {
 			'currentUserId'       => $current_user_id,
 			'currentUserCan'      => [
 				'assignReviewer' => current_user_can( 'flow_assign_reviewer' ),
-				'reviewPosts'    => current_user_can( 'flow_review_posts' ),
+				'reviewPosts'    => Review::user_can_be_reviewer( $current_user_id ),
 				'manageReviews'  => current_user_can( 'flow_manage_reviews' ),
 			],
 			'activeReview'        => $active_review,
+			'pendingReviewer'     => $pending_reviewer,
 			'debugMode'           => Settings::is_debug_mode(),
 			'reviewMandatory'     => Settings::is_mandatory(),
 			'noReviewers'         => $no_reviewers,
@@ -161,7 +191,6 @@ class Plugin {
 			'i18n'                => [
 				'reviewPanelTitle'     => __( 'Review', 'jumplinks-editorial-workflow' ),
 				'selectReviewer'       => __( 'Select Reviewer', 'jumplinks-editorial-workflow' ),
-				'submitForReview'      => __( 'Submit for Review', 'jumplinks-editorial-workflow' ),
 				'approve'              => __( 'Approve', 'jumplinks-editorial-workflow' ),
 				'requestChanges'       => __( 'Request Changes', 'jumplinks-editorial-workflow' ),
 				'resubmit'             => __( 'Resubmit for review', 'jumplinks-editorial-workflow' ),
@@ -171,7 +200,6 @@ class Plugin {
 				'statusApproved'       => __( 'Approved', 'jumplinks-editorial-workflow' ),
 				'statusOpenReview'     => __( 'Open Review', 'jumplinks-editorial-workflow' ),
 				'noReviewers'          => __( 'No eligible reviewers found.', 'jumplinks-editorial-workflow' ),
-				'publishDisabledHint'  => __( 'Post must be approved before publishing.', 'jumplinks-editorial-workflow' ),
 				'publishGuardTooltip'  => __( 'Post can go live only after approval by a reviewer.', 'jumplinks-editorial-workflow' ),
 				'reviewer'             => __( 'Reviewer', 'jumplinks-editorial-workflow' ),
 				'loading'              => __( 'Loading…', 'jumplinks-editorial-workflow' ),
@@ -188,6 +216,7 @@ class Plugin {
 				'openLabel'            => __( 'Open review', 'jumplinks-editorial-workflow' ),
 				'openReviewDesc'       => __( 'All users with the link will be able to add comments.', 'jumplinks-editorial-workflow' ),
 				'reviewerPlaceholder'  => __( 'assign a dedicated reviewer', 'jumplinks-editorial-workflow' ),
+				'pendingReviewerHint'  => __( 'Will be assigned when you save.', 'jumplinks-editorial-workflow' ),
 				'invalidEmail'         => __( 'Please enter a valid email address.', 'jumplinks-editorial-workflow' ),
 				'emailPlaceholder'     => __( 'name@example.com', 'jumplinks-editorial-workflow' ),
 				'externalEmail'        => __( 'External Email', 'jumplinks-editorial-workflow' ),
@@ -244,7 +273,7 @@ class Plugin {
 			'flow-ew-editor',
 			FLOW_EW_PLUGIN_URL . 'build/sidebar/index' . $css_suffix . '.css',
 			[ 'wp-components' ],
-			$asset['version']
+			Assets::style_version( FLOW_EW_PLUGIN_DIR . 'build/sidebar/index' . $css_suffix . '.css', (string) $asset['version'] )
 		);
 
 		wp_localize_script(

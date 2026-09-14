@@ -3,7 +3,7 @@
         'name' => 'jumplinks/editorial-workflow-runtime',
         'pretty_version' => 'dev-main',
         'version' => 'dev-main',
-        'reference' => '74c5e0f6aa637792e0e41c43033d29848be0d311',
+        'reference' => '67ba50192f8ceb8bebafaf7ca081094ed54607fb',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -11,9 +11,9 @@
     ),
     'versions' => array(
         'freemius/wordpress-sdk' => array(
-            'pretty_version' => '2.13.1',
-            'version' => '2.13.1.0',
-            'reference' => '7376c0eca1ae7f92aaba9d3b550bd10affe797ff',
+            'pretty_version' => '2.13.4',
+            'version' => '2.13.4.0',
+            'reference' => 'fa43eb92ae9dffa0d9f5ae11b5a1739bd7222308',
             'type' => 'library',
             'install_path' => __DIR__ . '/../freemius/wordpress-sdk',
             'aliases' => array(),
@@ -22,7 +22,7 @@
         'jumplinks/editorial-workflow-runtime' => array(
             'pretty_version' => 'dev-main',
             'version' => 'dev-main',
-            'reference' => '74c5e0f6aa637792e0e41c43033d29848be0d311',
+            'reference' => '67ba50192f8ceb8bebafaf7ca081094ed54607fb',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

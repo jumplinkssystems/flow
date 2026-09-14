@@ -286,6 +286,42 @@
 	color: var(--fl-builder-input-color, var(--flow-ew-dark-text));
 }
 
+/*
+ * Icon buttons in the reviewer field and reviewer cards. The classic-editor
+ * and Pro base rules turn them #1e1e1e on hover, which disappears on a dark
+ * drawer; these selectors outrank every base rule so load order never matters.
+ */
+
+.flow-ew-classic--builder-dark .flow-ew-classic__select-row .flow-ew-reviewer-combobox__clear,
+.flow-ew-classic--builder-dark .flow-ew-reviewer-combobox__copy,
+.flow-ew-classic--builder-dark .flow-ew-reviewer-card__copy,
+.flow-ew-classic--builder-dark .flow-ew-pro-reviewers-list button.flow-ew-reviewer-card__remove:not(.components-button) {
+	color: var(--flow-ew-dark-muted);
+}
+
+.flow-ew-classic--builder-dark .flow-ew-classic__select-row .flow-ew-reviewer-combobox__clear:hover,
+.flow-ew-classic--builder-dark .flow-ew-classic__select-row .flow-ew-reviewer-combobox__clear:focus,
+.flow-ew-classic--builder-dark .flow-ew-classic__select-row .flow-ew-reviewer-combobox__clear:active,
+.flow-ew-classic--builder-dark .flow-ew-reviewer-combobox__copy:hover,
+.flow-ew-classic--builder-dark .flow-ew-reviewer-combobox__copy:focus,
+.flow-ew-classic--builder-dark .flow-ew-reviewer-combobox__copy:active,
+.flow-ew-classic--builder-dark .flow-ew-reviewer-card__copy:hover,
+.flow-ew-classic--builder-dark .flow-ew-reviewer-card__copy:focus,
+.flow-ew-classic--builder-dark .flow-ew-reviewer-card__copy:active,
+.flow-ew-classic--builder-dark .flow-ew-pro-reviewers-list button.flow-ew-reviewer-card__remove:not(.components-button):hover,
+.flow-ew-classic--builder-dark .flow-ew-pro-reviewers-list button.flow-ew-reviewer-card__remove:not(.components-button):focus-visible,
+.flow-ew-classic--builder-dark .flow-ew-pro-reviewers-list button.flow-ew-reviewer-card__remove:not(.components-button):active {
+	border-color: var(--flow-ew-dark-text);
+	color: var(--flow-ew-dark-text);
+}
+
+.flow-ew-classic--builder-dark .flow-ew-reviewer-combobox__copy--done,
+.flow-ew-classic--builder-dark .flow-ew-reviewer-combobox__copy--done:hover,
+.flow-ew-classic--builder-dark .flow-ew-reviewer-card__copy--done,
+.flow-ew-classic--builder-dark .flow-ew-reviewer-card__copy--done:hover {
+	color: #6fdc8c;
+}
+
 /* Publish control lock while mandatory review is unmet */
 
 body.flow-ew-avada-publish-blocked .flow-ew-avada-publish-blocked-control {

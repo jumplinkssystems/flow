@@ -17,10 +17,7 @@ const alertWarningIcon = (
 			strokeWidth="1.5"
 			fill="none"
 		/>
-		<Path
-			d="M11 9H13V14H11V9ZM11 15H13V17H11V15Z"
-			fill="currentColor"
-		/>
+		<Path d="M11 9H13V14H11V9ZM11 15H13V17H11V15Z" fill="currentColor" />
 	</SVG>
 );
 

@@ -1,19 +1,11 @@
 import './style.css';
 import { syncReviewerComboboxFromReview } from '../shared/sync-reviewer-combobox-from-review';
-import {
-	dispatchAssignInviteEmail,
-	isValidEmail,
-} from '../shared/assign-invite-email';
-import { syncBuilderReviewerUpsell } from '../shared/sync-builder-reviewer-upsell';
-import {
-	exitReviewerEmailEntryMode,
-	filterReviewerComboboxOptions,
-	getEmailPlaceholder,
-	isEmailComboboxOption,
-	shouldHideReviewerAutocomplete,
-} from '../shared/reviewer-email-entry';
 import '../shared/share-bar.css';
 import { syncPublishGuardTooltip } from '../shared/publish-guard-ui';
+import { debounce } from '../shared/debounce';
+import { mountWithRetry } from '../shared/mount-retry';
+import { createBuilderPublishGuard } from '../shared/builder-publish-guard';
+import { syncFreeUpsells } from '../shared/builder-upsell';
 
 ( function () {
 	const drawers = Array.from(
@@ -42,22 +34,18 @@ import { syncPublishGuardTooltip } from '../shared/publish-guard-ui';
 		}
 	} );
 
-	function debounce( fn, ms ) {
-		let t;
-		return function () {
-			clearTimeout( t );
-			t = setTimeout( fn, ms );
-		};
-	}
-
 	function findToolbarRoot() {
 		return (
-			document.querySelector( '.fusion-builder-live-toolbar.fusion-top-frame' ) ||
+			document.querySelector(
+				'.fusion-builder-live-toolbar.fusion-top-frame'
+			) ||
 			document.getElementById( 'fusion_builder_controls' ) ||
 			document.querySelector( '.save-wrapper.fb' ) ||
 			document.querySelector( '.fusion-builder-update-buttons' ) ||
 			document.querySelector( '.fusion-builder-controls' ) ||
-			document.querySelector( '[class*="fusion-builder"][class*="toolbar"]' )
+			document.querySelector(
+				'[class*="fusion-builder"][class*="toolbar"]'
+			)
 		);
 	}
 
@@ -152,7 +140,10 @@ import { syncPublishGuardTooltip } from '../shared/publish-guard-ui';
 		if ( ! control ) {
 			return null;
 		}
-		if ( control.classList && control.classList.contains( 'post-status' ) ) {
+		if (
+			control.classList &&
+			control.classList.contains( 'post-status' )
+		) {
 			return control;
 		}
 		return (
@@ -180,7 +171,11 @@ import { syncPublishGuardTooltip } from '../shared/publish-guard-ui';
 		if ( ! host ) {
 			host = document.createElement( 'li' );
 			host.className = 'flow-ew-avada-review has-submenu';
-			if ( additionalToolsList && previewHost && previewHost.parentElement === additionalToolsList ) {
+			if (
+				additionalToolsList &&
+				previewHost &&
+				previewHost.parentElement === additionalToolsList
+			) {
 				group.insertBefore( host, previewHost.nextSibling );
 			} else if ( additionalToolsList ) {
 				group.appendChild( host );
@@ -219,25 +214,11 @@ import { syncPublishGuardTooltip } from '../shared/publish-guard-ui';
 		subtree: true,
 	} );
 
-	const debouncedEnsure = debounce( function () {
-		ensureToolbarButton();
-		enforceShareRowSizing();
-	}, 80 );
-	const bodyObserver = new MutationObserver( debouncedEnsure );
-	bodyObserver.observe( document.body, {
-		childList: true,
-		subtree: true,
-	} );
-
-	let attempts = 0;
-	function tryEnsureLoop() {
+	mountWithRetry( function () {
 		const ok = ensureToolbarButton();
-		attempts++;
-		if ( ! ok && attempts < 240 ) {
-			requestAnimationFrame( tryEnsureLoop );
-		}
-	}
-	tryEnsureLoop();
+		enforceShareRowSizing();
+		return ok;
+	} );
 
 	// Avada registers a window-level click listener that closes all submenus when
 	// the click is not on a toggle trigger. Keep Flow drawer interactions open by
@@ -253,10 +234,10 @@ import { syncPublishGuardTooltip } from '../shared/publish-guard-ui';
 		syncReviewerComboboxFromReview( review, drawer );
 	}
 
-
-
 	function enforceShareRowSizing() {
-		const shareLink = drawer.querySelector( '.flow-ew-classic__share-link' );
+		const shareLink = drawer.querySelector(
+			'.flow-ew-classic__share-link'
+		);
 		if ( shareLink ) {
 			shareLink.style.fontSize = '13px';
 			shareLink.style.lineHeight = '40px';
@@ -270,13 +251,17 @@ import { syncPublishGuardTooltip } from '../shared/publish-guard-ui';
 			shareRow.style.minHeight = '40px';
 		}
 
-		const shareCopy = drawer.querySelector( '.flow-ew-classic__share-copy' );
+		const shareCopy = drawer.querySelector(
+			'.flow-ew-classic__share-copy'
+		);
 		if ( shareCopy ) {
 			shareCopy.style.minWidth = '36px';
 			shareCopy.style.padding = '0';
 		}
 
-		const shareGoto = drawer.querySelector( '.flow-ew-classic__share-goto' );
+		const shareGoto = drawer.querySelector(
+			'.flow-ew-classic__share-goto'
+		);
 		if ( shareGoto ) {
 			shareGoto.style.minWidth = '36px';
 			shareGoto.style.padding = '0';
@@ -375,12 +360,20 @@ import { syncPublishGuardTooltip } from '../shared/publish-guard-ui';
 			singleList.style.setProperty( 'position', 'absolute', 'important' );
 			singleList.style.setProperty( 'left', '0', 'important' );
 			singleList.style.setProperty( 'right', '0', 'important' );
-			singleList.style.setProperty( 'top', 'calc(100% + 4px)', 'important' );
+			singleList.style.setProperty(
+				'top',
+				'calc(100% + 4px)',
+				'important'
+			);
 			singleList.style.setProperty( 'inset', 'auto', 'important' );
 			singleList.style.setProperty( 'z-index', '2000', 'important' );
 			singleList.style.setProperty( 'width', '100%', 'important' );
 		}
-		if ( singleInput && singleList && ! singleInput.dataset.flowAvadaBound ) {
+		if (
+			singleInput &&
+			singleList &&
+			! singleInput.dataset.flowAvadaBound
+		) {
 			singleInput.dataset.flowAvadaBound = '1';
 			const showSingle = function () {
 				if (
@@ -399,148 +392,38 @@ import { syncPublishGuardTooltip } from '../shared/publish-guard-ui';
 			};
 			singleInput.addEventListener( 'focus', showSingle );
 			singleInput.addEventListener( 'input', showSingle );
-			singleList.addEventListener( 'flow-ew:avada-close', hideSingle );
-		}
-	}
-
-	function buildUpsellNode( data, markerAttr, linkMarginTop ) {
-		const wrap = document.createElement( 'div' );
-		wrap.className = markerAttr;
-		wrap.setAttribute( markerAttr, '1' );
-		wrap.style.setProperty( 'font-size', '13px', 'important' );
-		wrap.style.setProperty( 'line-height', '1.4', 'important' );
-		wrap.style.setProperty( 'padding', '0', 'important' );
-
-		const link = document.createElement( 'a' );
-		link.href = data.href || '#';
-		link.style.setProperty( 'display', 'inline-block', 'important' );
-		link.style.setProperty( 'margin-top', linkMarginTop, 'important' );
-		link.style.setProperty( 'padding', '0', 'important' );
-		link.style.setProperty( 'height', 'auto', 'important' );
-		link.style.setProperty( 'background', 'transparent', 'important' );
-		link.style.setProperty( 'color', '#018170', 'important' );
-		link.style.setProperty( 'font-size', '13px', 'important' );
-		link.style.setProperty( 'font-weight', '600', 'important' );
-		link.style.setProperty( 'line-height', '1.4', 'important' );
-		link.style.setProperty( 'text-decoration', 'underline', 'important' );
-		link.style.setProperty( 'cursor', 'pointer', 'important' );
-		link.style.setProperty( 'text-transform', 'none', 'important' );
-		link.style.setProperty( 'letter-spacing', 'normal', 'important' );
-
-		const badge = document.createElement( 'span' );
-		badge.style.setProperty( 'display', 'inline-block', 'important' );
-		badge.style.setProperty( 'padding', '1px 6px', 'important' );
-		badge.style.setProperty( 'margin-right', '4px', 'important' );
-		badge.style.setProperty( 'font-size', '9px', 'important' );
-		badge.style.setProperty( 'font-weight', '600', 'important' );
-		badge.style.setProperty( 'letter-spacing', '0.04em', 'important' );
-		badge.style.setProperty( 'line-height', '1.4', 'important' );
-		badge.style.setProperty( 'border-radius', '8px', 'important' );
-		badge.style.setProperty( 'background', '#d0f9ec', 'important' );
-		badge.style.setProperty( 'color', '#09121e', 'important' );
-		badge.style.setProperty( 'vertical-align', '1px', 'important' );
-		badge.style.setProperty( 'text-transform', 'uppercase', 'important' );
-		badge.textContent = 'PRO';
-		link.appendChild( badge );
-		link.appendChild( document.createTextNode( data.label ) );
-		wrap.appendChild( link );
-
-		if ( data.helpText ) {
-			const help = document.createElement( 'p' );
-			help.style.setProperty( 'margin-top', '4px', 'important' );
-			help.style.setProperty( 'margin-bottom', '0', 'important' );
-			help.style.setProperty( 'color', '#9aa4ad', 'important' );
-			help.style.setProperty( 'font-size', '12px', 'important' );
-			help.style.setProperty( 'font-weight', '400', 'important' );
-			help.style.setProperty( 'line-height', '1.4', 'important' );
-			help.style.setProperty( 'text-transform', 'none', 'important' );
-			help.style.setProperty( 'letter-spacing', 'normal', 'important' );
-			help.textContent = data.helpText;
-			wrap.appendChild( help );
-		}
-
-		return wrap;
-	}
-
-	function getFallbackUpsellData( type ) {
-		if ( ! drawer || drawer.dataset.flowEwUpsellEnabled !== '1' ) {
-			return null;
-		}
-		const href = drawer.dataset.flowEwUpsellHref || '';
-		if ( ! href ) {
-			return null;
-		}
-		if ( type === 'open' ) {
-			const label = drawer.dataset.flowEwUpsellOpenLabel || '';
-			if ( ! label ) {
-				return null;
-			}
-			return {
-				href,
-				label,
-				helpText: drawer.dataset.flowEwUpsellOpenHelp || '',
-			};
-		}
-		const label = drawer.dataset.flowEwUpsellReviewerLabel || '';
-		if ( ! label ) {
-			return null;
-		}
-		return {
-			href,
-			label,
-			helpText: drawer.dataset.flowEwUpsellReviewerHelp || '',
-		};
-	}
-
-	function syncFreeUpsells( review ) {
-		const openData = window.flowEwUpsell || getFallbackUpsellData( 'open' );
-		if ( openData && openData.label ) {
-			drawer
-				.querySelectorAll( '.flow-ew-open-review-extras' )
-				.forEach( function ( slot ) {
-					let node = slot.querySelector(
-						'[data-flow-ew-avada-upsell-open]'
-					);
-					if ( ! node ) {
-						node = buildUpsellNode(
-							openData,
-							'data-flow-ew-avada-upsell-open',
-							'6px'
-						);
-						slot.appendChild( node );
-					}
-					const open = !! ( review && review.is_open );
-					node.style.display = open ? '' : 'none';
-				} );
-		}
-
-		const reviewerData =
-			window.flowEwUpsellReviewer || getFallbackUpsellData( 'reviewer' );
-		if ( reviewerData && reviewerData.label ) {
-			syncBuilderReviewerUpsell( {
-				root: drawer,
-				review,
-				data: reviewerData,
-				className: 'flow-ew-upsell-reviewer',
-				markerAttr: 'data-flow-ew-avada-upsell-reviewer',
-				buildNode: function ( data ) {
-					return buildUpsellNode(
-						data,
-						'data-flow-ew-avada-upsell-reviewer',
-						'14px'
-					);
-				},
-			} );
-			const reviewerSelect = drawer.querySelector(
-				'#flow-ew-reviewer-select'
+			const comboboxRoot = singleInput.closest(
+				'#flow-ew-reviewer-combobox'
 			);
-			if ( reviewerSelect && ! reviewerSelect.dataset.flowAvadaUpsellBound ) {
-				reviewerSelect.dataset.flowAvadaUpsellBound = '1';
-				reviewerSelect.addEventListener( 'change', function () {
-					syncFreeUpsells(
-						( window.flowEW && window.flowEW.activeReview ) || review
-					);
-				} );
+			if ( comboboxRoot ) {
+				comboboxRoot.addEventListener(
+					'flow-ew:combobox-open-change',
+					function ( e ) {
+						if ( e.detail && e.detail.open ) {
+							showSingle();
+						} else {
+							hideSingle();
+						}
+					}
+				);
+				comboboxRoot.addEventListener(
+					'flow-ew:combobox-choose',
+					function ( e ) {
+						if ( ! e.detail || e.detail.isEmail ) {
+							return;
+						}
+						const clearBtn = drawer.querySelector(
+							'.flow-ew-reviewer-combobox__clear'
+						);
+						if ( clearBtn ) {
+							clearBtn.setAttribute( 'hidden', '' );
+						}
+						singleInput.blur();
+						syncClearBtnVisibility( {
+							reviewer_id: Number( e.detail.id ),
+						} );
+					}
+				);
 			}
 		}
 	}
@@ -555,101 +438,39 @@ import { syncPublishGuardTooltip } from '../shared/publish-guard-ui';
 		}
 		syncReviewerComboboxFromReview( review );
 		syncClearBtnVisibility( review );
-		schedulePublishGuard( review );
+		guard.schedule( review );
 		enforceShareRowSizing();
 		// Run after other classic-render listeners (e.g. pro multi-reviewer chips).
 		requestAnimationFrame( function () {
 			stabilizeReviewerUi();
 		} );
-		syncFreeUpsells( review );
+		syncFreeUpsells( {
+			root: drawer,
+			review,
+			builder: 'avada',
+			inline: true,
+		} );
 	} );
 
-	const ew = window.flowEW || {};
-	const reviewMandatory = !! ew.reviewMandatory;
-	const isPublished = !! ew.isPublished;
-	const reviewerMeta = Number( ew.reviewerMeta || 0 );
-	let lastReview = ew.activeReview || null;
-	let blockedState = false;
-	let publishGuardTimer;
-
-	function currentReviewerId( review ) {
-		const fromReview = Number(
-			( review && review.reviewer_id ) ||
-				( review && review.reviewer && review.reviewer.id ) ||
-				0
-		);
-		return fromReview > 0 ? fromReview : reviewerMeta;
-	}
-
-	function hasAssignedReviewer( review ) {
-		if ( currentReviewerId( review ) > 0 ) {
-			return true;
-		}
-		const sid = Number(
-			( review && review.reviewer && review.reviewer.id ) || 0
-		);
-		if ( sid !== 0 ) {
-			return true;
-		}
-		if (
-			( review && review.invite_email ) ||
-			( review && review.reviewer && review.reviewer.is_email )
-		) {
-			return true;
-		}
-		if (
-			review &&
-			Array.isArray( review.email_invites ) &&
-			review.email_invites.length > 0
-		) {
-			return true;
-		}
-		return false;
-	}
-
-	function isPublishBlocked( review ) {
-		if ( ! reviewMandatory ) {
-			return false;
-		}
-		if ( isPublished ) {
-			return false;
-		}
-		if ( ! review || review.status !== 'approved' ) {
-			return true;
-		}
-		return ! hasAssignedReviewer( review );
-	}
-
-	function applyPublishGuard( review ) {
-		blockedState = isPublishBlocked( review );
+	const guard = createBuilderPublishGuard( function ( blocked ) {
 		document.body.classList.toggle(
 			'flow-ew-avada-publish-blocked',
-			blockedState
+			blocked
 		);
 		const publishHost = findPublishControlHost();
 		if ( publishHost ) {
 			publishHost.classList.toggle(
 				'flow-ew-avada-publish-blocked-control',
-				blockedState
+				blocked
 			);
 		}
-		syncPublishGuardTooltip( publishHost, blockedState );
-	}
-
-	function schedulePublishGuard( review ) {
-		if ( review !== undefined ) {
-			lastReview = review;
-		}
-		clearTimeout( publishGuardTimer );
-		publishGuardTimer = setTimeout( function () {
-			applyPublishGuard( lastReview );
-		}, 80 );
-	}
+		syncPublishGuardTooltip( publishHost, blocked );
+	} );
 
 	document.addEventListener(
 		'click',
 		function ( e ) {
-			if ( ! blockedState ) {
+			if ( ! guard.isBlocked() ) {
 				return;
 			}
 			const target = e.target;
@@ -679,7 +500,7 @@ import { syncPublishGuardTooltip } from '../shared/publish-guard-ui';
 	document.addEventListener(
 		'change',
 		function ( e ) {
-			if ( ! blockedState ) {
+			if ( ! guard.isBlocked() ) {
 				return;
 			}
 			const target = e.target;
@@ -698,233 +519,12 @@ import { syncPublishGuardTooltip } from '../shared/publish-guard-ui';
 		true
 	);
 
-	const guardObserver = new MutationObserver( function () {
-		schedulePublishGuard();
-	} );
-	guardObserver.observe( document.body, {
-		childList: true,
-		subtree: true,
-	} );
-
-	schedulePublishGuard( lastReview );
 	enforceShareRowSizing();
 	stabilizeReviewerUi();
-	syncFreeUpsells( lastReview );
-
-	const comboboxRoot = document.getElementById( 'flow-ew-reviewer-combobox' );
-	if ( comboboxRoot ) {
-		initReviewerCombobox( comboboxRoot );
-	}
-
-	function initReviewerCombobox( root ) {
-		const input = root.querySelector( '.flow-ew-reviewer-combobox__input' );
-		const list = root.querySelector( '.flow-ew-reviewer-combobox__list' );
-		const select = root.querySelector( '#flow-ew-reviewer-select' );
-		if ( ! input || ! list || ! select ) {
-			return;
-		}
-
-		const options = Array.from(
-			list.querySelectorAll( '[role="option"]' )
-		);
-		let activeIndex = -1;
-		let emailEntryMode = false;
-
-		function hideAutocomplete() {
-			return shouldHideReviewerAutocomplete(
-				select,
-				input,
-				emailEntryMode
-			);
-		}
-
-		function setOpen( openList ) {
-			if ( openList && hideAutocomplete() ) {
-				openList = false;
-			}
-			list.hidden = ! openList;
-			list.style.display = openList ? 'block' : 'none';
-			input.setAttribute( 'aria-expanded', openList ? 'true' : 'false' );
-			if ( ! openList ) {
-				list.dispatchEvent( new Event( 'flow-ew:avada-close', { bubbles: false } ) );
-			}
-		}
-
-		function filterOptions( q ) {
-			filterReviewerComboboxOptions( options, q );
-		}
-
-		function visibleOptions() {
-			return options.filter( function ( li ) {
-				return ! li.hidden && li.style.display !== 'none';
-			} );
-		}
-
-		function chooseOption( li ) {
-			if ( ! li || li.hidden ) {
-				return;
-			}
-			const id = li.dataset.value;
-			const label = li.dataset.label || li.textContent.trim();
-			const isEmail = isEmailComboboxOption( li );
-			select.value = id;
-			setOpen( false );
-			activeIndex = -1;
-			if ( isEmail ) {
-				const typed = ( input.value || '' ).trim();
-				if ( isValidEmail( typed ) ) {
-					emailEntryMode = true;
-					select.value = 'email';
-					setOpen( false );
-					activeIndex = -1;
-					dispatchAssignInviteEmail( typed );
-					return;
-				}
-				emailEntryMode = true;
-				input.readOnly = false;
-				input.value = '';
-				input.placeholder = getEmailPlaceholder();
-				const clearBtn = drawer.querySelector(
-					'.flow-ew-reviewer-combobox__clear'
-				);
-				if ( clearBtn ) {
-					clearBtn.setAttribute( 'hidden', '' );
-				}
-				select.dispatchEvent( new Event( 'change', { bubbles: true } ) );
-				input.focus();
-				return;
-			}
-			emailEntryMode = false;
-			input.value = label;
-			input.blur();
-			syncClearBtnVisibility( { reviewer_id: Number( id ) } );
-			select.dispatchEvent( new Event( 'change', { bubbles: true } ) );
-		}
-
-		input.addEventListener( 'focus', function () {
-			if ( input.disabled || input.readOnly ) {
-				return;
-			}
-			if ( hideAutocomplete() ) {
-				setOpen( false );
-				return;
-			}
-			filterOptions( input.value );
-			setOpen( true );
-		} );
-
-		input.addEventListener( 'input', function () {
-			if ( input.disabled || input.readOnly ) {
-				return;
-			}
-			const typed = ( input.value || '' ).trim();
-			// Valid address → show Invite row (even after External Email).
-			if ( isValidEmail( typed ) ) {
-				emailEntryMode = true;
-				select.value = 'email';
-				filterOptions( typed );
-				setOpen( true );
-				activeIndex = -1;
-				return;
-			}
-			if ( emailEntryMode || select.value === 'email' ) {
-				if ( ! typed ) {
-					emailEntryMode = false;
-					exitReviewerEmailEntryMode( select, input, options );
-					filterOptions( '' );
-					setOpen( true );
-					activeIndex = -1;
-					return;
-				}
-				emailEntryMode = true;
-				select.value = 'email';
-				setOpen( false );
-				activeIndex = -1;
-				return;
-			}
-			filterOptions( input.value );
-			setOpen( true );
-			activeIndex = -1;
-		} );
-
-		list.addEventListener( 'mousedown', function ( e ) {
-			const li = e.target.closest( '[role="option"]' );
-			if ( li && ! li.hidden ) {
-				e.preventDefault();
-				chooseOption( li );
-			}
-		} );
-
-		document.addEventListener( 'click', function ( e ) {
-			if ( ! root.contains( e.target ) ) {
-				setOpen( false );
-				activeIndex = -1;
-			}
-		} );
-
-		document.addEventListener( 'flow-ew:reviewer-field-reset', function () {
-			emailEntryMode = false;
-			exitReviewerEmailEntryMode( select, input, options );
-			filterOptions( '' );
-			setOpen( false );
-			activeIndex = -1;
-		} );
-
-		input.addEventListener( 'keydown', function ( e ) {
-			if ( input.disabled || input.readOnly ) {
-				return;
-			}
-			const vis = visibleOptions();
-			if ( e.key === 'ArrowDown' ) {
-				e.preventDefault();
-				if ( hideAutocomplete() ) {
-					setOpen( false );
-					return;
-				}
-				if ( ! list.hidden && vis.length ) {
-					activeIndex = Math.min( activeIndex + 1, vis.length - 1 );
-					vis[ activeIndex ].focus();
-				} else {
-					filterOptions( input.value );
-					setOpen( true );
-					activeIndex = 0;
-					if ( vis[ 0 ] ) {
-						vis[ 0 ].focus();
-					}
-				}
-			} else if ( e.key === 'ArrowUp' ) {
-				e.preventDefault();
-				if ( hideAutocomplete() ) {
-					setOpen( false );
-					return;
-				}
-				if ( ! list.hidden && vis.length ) {
-					activeIndex = Math.max( activeIndex - 1, 0 );
-					vis[ activeIndex ].focus();
-				}
-			} else if ( e.key === 'Enter' ) {
-				const focused = list.querySelector( '[role="option"]:focus' );
-				if ( focused && ! focused.hidden ) {
-					e.preventDefault();
-					chooseOption( focused );
-					return;
-				}
-				const typed = ( input.value || '' ).trim();
-				if ( isValidEmail( typed ) ) {
-					e.preventDefault();
-					e.stopPropagation();
-					emailEntryMode = true;
-					select.value = 'email';
-					setOpen( false );
-					activeIndex = -1;
-					dispatchAssignInviteEmail( typed );
-				}
-			} else if ( e.key === 'Escape' ) {
-				setOpen( false );
-				activeIndex = -1;
-				input.focus();
-			}
-		} );
-	}
+	syncFreeUpsells( {
+		root: drawer,
+		review: guard.lastReview(),
+		builder: 'avada',
+		inline: true,
+	} );
 } )();
-

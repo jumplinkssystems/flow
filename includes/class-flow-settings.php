@@ -21,7 +21,6 @@ class Settings {
 	const OPTION_SETUP_COMPLETED       = 'flow_ew_setup_completed';
 	const OPTION_GROUP                 = 'flow_ew_settings';
 	const PAGE_SLUG                    = 'jumplinks-editorial-workflow';
-	const SETUP_PAGE_SLUG              = 'flow-ew-setup';
 
 	/** @var string[] */
 	private const DEFAULT_SUPPORTED_POST_TYPES = [ 'post', 'page' ];
@@ -114,16 +113,11 @@ class Settings {
 	}
 
 	public function boot(): void {
-		// phpcs:ignore WordPress.NamingConventions.ValidHookName.UseUnderscores -- $page_hook from add_submenu_page uses the menu slug.
-		add_action( 'load-admin_page_' . self::SETUP_PAGE_SLUG, [ $this, 'prime_setup_admin_title' ], 0 );
 		// Priority 11 — Dashboard_Page hooks at 10 to register the "Flow"
 		add_action( 'admin_menu', [ $this, 'add_menu_page' ], 11 );
-		add_action( 'admin_init', [ $this, 'handle_setup_skip' ], 1 );
 		add_action( 'admin_init', [ $this, 'register_settings' ] );
 		add_action( 'admin_enqueue_scripts', [ $this, 'enqueue_settings_assets' ] );
-		add_action( 'admin_enqueue_scripts', [ $this, 'enqueue_setup_wizard' ] );
-		add_action( 'admin_post_flow_ew_setup_save', [ $this, 'handle_setup_save' ] );
-		add_action( 'rest_api_init', [ $this, 'register_setup_rest_route' ] );
+		( new Setup_Wizard( $this ) )->boot();
 
 		add_filter(
 			'flow_ew_should_send_email_notification',
@@ -309,6 +303,27 @@ class Settings {
 		return in_array( $post_type, self::get_supported_post_types(), true );
 	}
 
+	/**
+	 * Persist the default values of the options read on hot paths, so those
+	 * reads hit the autoloaded `alloptions` cache instead of a per-request
+	 * `notoptions` database miss. Only creates missing rows (add_option is a
+	 * no-op when the option already exists) and never overrides a saved value.
+	 */
+	public static function seed_default_options(): void {
+		$defaults = [
+			self::OPTION_MANDATORY             => false,
+			self::OPTION_SHOW_REVIEWED_BY      => false,
+			self::OPTION_DEBUG_MODE            => false,
+			self::OPTION_DISABLE_OPEN_REVIEWS  => false,
+			self::OPTION_DISABLE_NOTIFICATIONS => false,
+			self::OPTION_SHOW_UPGRADE_HINTS    => true,
+			self::OPTION_SUPPORTED_POST_TYPES  => self::DEFAULT_SUPPORTED_POST_TYPES,
+		];
+		foreach ( $defaults as $name => $value ) {
+			add_option( $name, $value );
+		}
+	}
+
 	public function sync_reviewer_role_caps( $old_value, $new_value ): void {
 		$selected = (array) $new_value;
 		foreach ( array_keys( wp_roles()->roles ) as $slug ) {
@@ -328,12 +343,6 @@ class Settings {
 		}
 	}
 
-	public function prime_setup_admin_title(): void {
-		global $title;
-		// phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- admin $title for hidden admin.php submenu (see admin-header.php strip_tags).
-		$title = __( 'Flow setup', 'jumplinks-editorial-workflow' );
-	}
-
 	public function add_menu_page(): void {
 		$this->settings_hook_suffix = add_submenu_page(
 			Dashboard_Page::PAGE_SLUG,
@@ -343,165 +352,10 @@ class Settings {
 			self::PAGE_SLUG,
 			[ $this, 'render_page' ]
 		) ?: null;
-
-		// Setup wizard is hidden from the menu (parent slug `''`) — only
-		// reachable by direct link from the activation banner.
-		add_submenu_page(
-			'',
-			__( 'Flow setup', 'jumplinks-editorial-workflow' ),
-			'',
-			'manage_options',
-			self::SETUP_PAGE_SLUG,
-			[ $this, 'render_setup_page' ]
-		);
 	}
 
-	/**
-	 * The wizard is now a modal (no admin-page redirect). The activation transient
-	 * still acts as a one-shot signal: the React modal opens automatically the
-	 * next time the admin loads any page.
-	 */
-	private function should_show_wizard_now(): bool {
-		if ( wp_doing_ajax() || ! is_user_logged_in() ) {
-			return false;
-		}
-		if ( ! current_user_can( 'manage_options' ) ) {
-			return false;
-		}
-		if ( self::is_setup_completed() ) {
-			return false;
-		}
-		return (bool) get_transient( 'flow_ew_activation_redirect' );
-	}
-
-	/**
-	 * Allow admins to preview the activation wizard without re-activating the plugin.
-	 * Visit any screen that loads the wizard with ?flow_ew_open_setup=1 .
-	 */
-	private function should_force_setup_wizard_open(): bool {
-		if ( ! current_user_can( 'manage_options' ) ) {
-			return false;
-		}
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- display-only preview flag.
-		if ( ! isset( $_GET['flow_ew_open_setup'] ) ) {
-			return false;
-		}
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- display-only preview flag; value sanitized below.
-		return '1' === sanitize_text_field( wp_unslash( (string) $_GET['flow_ew_open_setup'] ) );
-	}
-
-	public function handle_setup_skip(): void {
-		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- verified below.
-		if ( ! isset( $_GET['page'], $_GET['flow_ew_skip_setup'], $_GET['_wpnonce'] ) ) {
-			return;
-		}
-		$page = sanitize_key( wp_unslash( $_GET['page'] ) );
-		if ( self::SETUP_PAGE_SLUG !== $page ) {
-			return;
-		}
-		$skip = sanitize_text_field( wp_unslash( $_GET['flow_ew_skip_setup'] ) );
-		if ( '1' !== $skip ) {
-			return;
-		}
-		// phpcs:enable WordPress.Security.NonceVerification.Recommended
-		if ( ! current_user_can( 'manage_options' ) ) {
-			return;
-		}
-		if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ), 'flow_ew_skip_setup' ) ) {
-			return;
-		}
-		update_option( self::OPTION_SETUP_COMPLETED, true );
-		wp_safe_redirect( admin_url( 'admin.php?page=' . self::PAGE_SLUG ) );
-		exit;
-	}
-
-	public function handle_setup_save(): void {
-		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'You do not have permission to do that.', 'jumplinks-editorial-workflow' ) );
-		}
-		check_admin_referer( 'flow_ew_setup_save', 'flow_ew_setup_nonce' );
-
-		$m_raw = isset( $_POST[ self::OPTION_MANDATORY ] )
-			? sanitize_text_field( wp_unslash( $_POST[ self::OPTION_MANDATORY ] ) )
-			: '0';
-		update_option( self::OPTION_MANDATORY, '1' === $m_raw );
-
-		$pt_in = [];
-		if ( isset( $_POST[ self::OPTION_SUPPORTED_POST_TYPES ] ) && is_array( $_POST[ self::OPTION_SUPPORTED_POST_TYPES ] ) ) {
-			$pt_in = array_map( 'sanitize_key', wp_unslash( $_POST[ self::OPTION_SUPPORTED_POST_TYPES ] ) );
-		}
-		update_option( self::OPTION_SUPPORTED_POST_TYPES, $this->sanitize_supported_post_types( $pt_in ) );
-
-		$roles_in = [];
-		if ( isset( $_POST[ self::OPTION_REVIEWER_ROLES ] ) && is_array( $_POST[ self::OPTION_REVIEWER_ROLES ] ) ) {
-			$roles_in = array_map( 'sanitize_key', wp_unslash( $_POST[ self::OPTION_REVIEWER_ROLES ] ) );
-		}
-		update_option( self::OPTION_REVIEWER_ROLES, $this->sanitize_reviewer_roles( $roles_in ) );
-
-		update_option( self::OPTION_SETUP_COMPLETED, true );
-		wp_safe_redirect(
-			admin_url(
-				'admin.php?page=' . rawurlencode( self::PAGE_SLUG ) . '&flow_ew_setup_done=1'
-			)
-		);
-		exit;
-	}
-
-	public function render_setup_page(): void {
-		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'You do not have permission to access this page.', 'jumplinks-editorial-workflow' ) );
-		}
-		$skip_url = wp_nonce_url(
-			admin_url( 'admin.php?page=' . self::SETUP_PAGE_SLUG . '&flow_ew_skip_setup=1' ),
-			'flow_ew_skip_setup'
-		);
-		?>
-		<div class="wrap flow-ew-setup-wrap">
-			<h1><?php esc_html_e( 'Welcome to Flow', 'jumplinks-editorial-workflow' ); ?></h1>
-			<p class="flow-ew-setup-lead">
-				<?php esc_html_e( 'Choose how reviews work on your site. You can change these anytime under Settings → Flow.', 'jumplinks-editorial-workflow' ); ?>
-			</p>
-
-			<div class="flow-ew-setup-card">
-				<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
-					<?php wp_nonce_field( 'flow_ew_setup_save', 'flow_ew_setup_nonce' ); ?>
-					<input type="hidden" name="action" value="flow_ew_setup_save" />
-
-					<h2 class="flow-ew-setup-step-title"><?php esc_html_e( 'Review mode', 'jumplinks-editorial-workflow' ); ?></h2>
-					<p class="flow-ew-setup-step-desc">
-						<?php esc_html_e( 'Decide whether publishing requires an approved review, or if reviews are optional helpers your team can use when they want.', 'jumplinks-editorial-workflow' ); ?>
-					</p>
-					<?php $this->render_mandatory_field(); ?>
-
-					<h2 class="flow-ew-setup-step-title"><?php esc_html_e( 'Content types', 'jumplinks-editorial-workflow' ); ?></h2>
-					<p class="flow-ew-setup-step-desc">
-						<?php esc_html_e( 'Pick which post types use the workflow. Only types with the block editor and REST support are listed.', 'jumplinks-editorial-workflow' ); ?>
-					</p>
-					<?php $this->render_supported_post_types_field(); ?>
-
-					<h2 class="flow-ew-setup-step-title"><?php esc_html_e( 'Reviewer roles', 'jumplinks-editorial-workflow' ); ?></h2>
-					<p class="flow-ew-setup-step-desc">
-						<?php esc_html_e( 'Pick roles that should be able to review content.', 'jumplinks-editorial-workflow' ); ?>
-					</p>
-					<?php $this->render_reviewer_roles_field(); ?>
-
-					<p class="flow-ew-setup-actions">
-						<?php
-						submit_button(
-							__( 'Save and continue', 'jumplinks-editorial-workflow' ),
-							'primary large',
-							'submit',
-							false
-						);
-						?>
-						<a class="button button-large" href="<?php echo esc_url( $skip_url ); ?>">
-							<?php esc_html_e( 'Skip for now', 'jumplinks-editorial-workflow' ); ?>
-						</a>
-					</p>
-				</form>
-			</div>
-		</div>
-		<?php
+	public function settings_hook_suffix(): ?string {
+		return $this->settings_hook_suffix;
 	}
 
 	/** Whether the first-run setup wizard was completed or skipped. */
@@ -722,13 +576,12 @@ class Settings {
 		$mandatory = self::is_mandatory();
 		?>
 		<fieldset>
-			<label style="display:flex;align-items:flex-start;gap:8px;margin-bottom:12px;cursor:pointer">
+			<label class="flow-ew-settings-radio">
 				<input
 					type="radio"
 					name="<?php echo esc_attr( self::OPTION_MANDATORY ); ?>"
 					value="0"
 					<?php checked( $mandatory, false ); ?>
-					style="margin-top:3px;flex-shrink:0"
 				/>
 				<span>
 					<strong><?php esc_html_e( 'Optional', 'jumplinks-editorial-workflow' ); ?></strong><br>
@@ -738,13 +591,12 @@ class Settings {
 				</span>
 			</label>
 
-			<label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer">
+			<label class="flow-ew-settings-radio">
 				<input
 					type="radio"
 					name="<?php echo esc_attr( self::OPTION_MANDATORY ); ?>"
 					value="1"
 					<?php checked( $mandatory, true ); ?>
-					style="margin-top:3px;flex-shrink:0"
 				/>
 				<span>
 					<strong><?php esc_html_e( 'Mandatory', 'jumplinks-editorial-workflow' ); ?></strong><br>
@@ -759,25 +611,13 @@ class Settings {
 	}
 
 	public function render_show_reviewed_by_field(): void {
-		$checked = self::should_show_reviewed_by();
-		?>
-		<input type="hidden" name="<?php echo esc_attr( self::OPTION_SHOW_REVIEWED_BY ); ?>" value="0" />
-		<label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer">
-			<input
-				type="checkbox"
-				name="<?php echo esc_attr( self::OPTION_SHOW_REVIEWED_BY ); ?>"
-				value="1"
-				<?php checked( $checked, true ); ?>
-				style="margin-top:3px;flex-shrink:0"
-			/>
-			<span>
-				<strong><?php esc_html_e( 'Show reviewed-by credit', 'jumplinks-editorial-workflow' ); ?></strong><br>
-				<span class="description">
-					<?php esc_html_e( 'When a review is approved, show "Reviewed by" next to the author name on published content. External email reviewers are not listed.', 'jumplinks-editorial-workflow' ); ?>
-				</span>
-			</span>
-		</label>
-		<?php
+		$this->render_checkbox(
+			self::OPTION_SHOW_REVIEWED_BY,
+			self::should_show_reviewed_by(),
+			__( 'Show reviewed-by credit', 'jumplinks-editorial-workflow' ),
+			__( 'When a review is approved, show "Reviewed by" next to the author name on published content. External email reviewers are not listed.', 'jumplinks-editorial-workflow' ),
+			true
+		);
 	}
 
 	public function render_supported_post_types_field(): void {
@@ -793,19 +633,19 @@ class Settings {
 		}
 		?>
 		<fieldset id="<?php echo esc_attr( $field_id ); ?>">
-			<p class="description" style="margin-top:0;margin-bottom:10px">
+			<p class="description flow-ew-settings-intro">
 				<?php esc_html_e( 'Enable the review workflow for these content types. Custom post types should be supported but not guaranteed.', 'jumplinks-editorial-workflow' ); ?>
 			</p>
 
 			<a
 				href="#"
 				id="<?php echo esc_attr( $field_id ); ?>-select-all"
-				style="font-size:12px;text-decoration:none;display:inline-block;margin-bottom:10px"
+				class="flow-ew-settings-select-all"
 			><?php esc_html_e( 'Select all', 'jumplinks-editorial-workflow' ); ?></a>
-			<div style="width:1px;height:1px;overflow:hidden;border-top:1px solid #ddd;margin-bottom:10px"></div>
+			<div class="flow-ew-settings-divider"></div>
 
 			<?php foreach ( $eligible as $slug => $obj ) : ?>
-				<label style="display:flex;align-items:center;gap:8px;margin-bottom:8px;cursor:pointer">
+				<label class="flow-ew-settings-pt-item">
 					<input
 						type="checkbox"
 						class="<?php echo esc_attr( $field_id ); ?>-pt"
@@ -945,88 +785,61 @@ class Settings {
 	}
 
 	public function render_show_upgrade_hints_field(): void {
-		$checked = self::should_show_upgrade_hints();
-		?>
-		<label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer">
-			<input
-				type="checkbox"
-				name="<?php echo esc_attr( self::OPTION_SHOW_UPGRADE_HINTS ); ?>"
-				value="1"
-				<?php checked( $checked, true ); ?>
-				style="margin-top:3px;flex-shrink:0"
-			/>
-			<span>
-				<strong><?php esc_html_e( 'Show marketing', 'jumplinks-editorial-workflow' ); ?></strong><br>
-				<span class="description">
-					<?php esc_html_e( 'Show Pro upgrade prompts across the admin menu, editors, and review page. Turn off to hide the [PRO] Site Review and Integrations menu items plus the "unlock" hints in editors and on the review page. The "Upgrade" entry and the early-bird discount bar (which reviewers can dismiss) stay visible.', 'jumplinks-editorial-workflow' ); ?>
-				</span>
-			</span>
-		</label>
-		<?php
+		$this->render_checkbox(
+			self::OPTION_SHOW_UPGRADE_HINTS,
+			self::should_show_upgrade_hints(),
+			__( 'Show marketing', 'jumplinks-editorial-workflow' ),
+			__( 'Show Pro upgrade prompts across the admin menu, editors, and review page. Turn off to hide the [PRO] Site Review and Integrations menu items plus the "unlock" hints in editors and on the review page. The "Upgrade" entry and the early-bird discount bar (which reviewers can dismiss) stay visible.', 'jumplinks-editorial-workflow' )
+		);
 	}
 
 	public function render_debug_mode_field(): void {
-		$checked = self::is_debug_mode();
-		?>
-		<label style="display:flex;align-items:center;gap:8px;cursor:pointer">
-			<input
-				type="checkbox"
-				name="<?php echo esc_attr( self::OPTION_DEBUG_MODE ); ?>"
-				value="1"
-				<?php checked( $checked, true ); ?>
-				style="margin-top:3px;flex-shrink:0"
-			/>
-			<span>
-				<strong><?php esc_html_e( 'Debug mode', 'jumplinks-editorial-workflow' ); ?></strong><br>
-				<span class="description">
-					<?php esc_html_e( 'When enabled, administrators have full access to all review pages and actions.', 'jumplinks-editorial-workflow' ); ?>
-				</span>
-			</span>
-		</label>
-		<?php
+		$this->render_checkbox(
+			self::OPTION_DEBUG_MODE,
+			self::is_debug_mode(),
+			__( 'Debug mode', 'jumplinks-editorial-workflow' ),
+			__( 'When enabled, administrators have full access to all review pages and actions.', 'jumplinks-editorial-workflow' )
+		);
 	}
 
 	public function render_disable_notifications_field(): void {
-		$checked = self::are_notifications_disabled();
-		?>
-		<label style="display:flex;align-items:center;gap:8px;cursor:pointer">
-			<input
-				type="checkbox"
-				name="<?php echo esc_attr( self::OPTION_DISABLE_NOTIFICATIONS ); ?>"
-				value="1"
-				<?php checked( $checked, true ); ?>
-				style="margin-top:3px;flex-shrink:0"
-			/>
-			<span>
-				<strong><?php esc_html_e( 'Disable all notifications.', 'jumplinks-editorial-workflow' ); ?></strong><br>
-				<span class="description">
-					<?php esc_html_e( 'When enabled, no review-related emails are sent at all (assignment, approval, changes requested, mentions). Use this for staging or quiet rollouts.', 'jumplinks-editorial-workflow' ); ?>
-				</span>
-			</span>
-		</label>
-		<?php
+		$this->render_checkbox(
+			self::OPTION_DISABLE_NOTIFICATIONS,
+			self::are_notifications_disabled(),
+			__( 'Disable all notifications.', 'jumplinks-editorial-workflow' ),
+			__( 'When enabled, no review-related emails are sent at all (assignment, approval, changes requested, mentions). Use this for staging or quiet rollouts.', 'jumplinks-editorial-workflow' )
+		);
 	}
 
 	public function render_disable_open_reviews_field(): void {
-		$checked = self::are_open_reviews_disabled();
+		$this->render_checkbox(
+			self::OPTION_DISABLE_OPEN_REVIEWS,
+			self::are_open_reviews_disabled(),
+			__( 'Disable open reviews.', 'jumplinks-editorial-workflow' ),
+			__( 'Hide the Open Review toggle in the editor and lock review pages to assigned participants only. Existing open reviews stop accepting public-link visitors immediately.', 'jumplinks-editorial-workflow' )
+		);
+		\do_action( 'flow_ew_after_open_review_field' );
+	}
+
+	/**
+	 * A labelled checkbox with a bold title and description.
+	 *
+	 * @param bool $hidden_zero Also post `0` when unchecked, for options that
+	 *                          must round-trip an explicit false.
+	 */
+	private function render_checkbox( string $option, bool $checked, string $label, string $description, bool $hidden_zero = false ): void {
+		if ( $hidden_zero ) {
+			printf( '<input type="hidden" name="%s" value="0" />', esc_attr( $option ) );
+		}
 		?>
-		<label style="display:flex;align-items:center;gap:8px;cursor:pointer">
-			<input
-				type="checkbox"
-				name="<?php echo esc_attr( self::OPTION_DISABLE_OPEN_REVIEWS ); ?>"
-				value="1"
-				<?php checked( $checked, true ); ?>
-				style="margin-top:3px;flex-shrink:0"
-			/>
+		<label class="flow-ew-settings-check">
+			<input type="checkbox" name="<?php echo esc_attr( $option ); ?>" value="1" <?php checked( $checked, true ); ?> />
 			<span>
-				<strong><?php esc_html_e( 'Disable open reviews.', 'jumplinks-editorial-workflow' ); ?></strong><br>
-				<span class="description">
-					<?php esc_html_e( 'Hide the Open Review toggle in the editor and lock review pages to assigned participants only. Existing open reviews stop accepting public-link visitors immediately.', 'jumplinks-editorial-workflow' ); ?>
-				</span>
+				<strong><?php echo esc_html( $label ); ?></strong><br>
+				<span class="description"><?php echo esc_html( $description ); ?></span>
 			</span>
 		</label>
 		<?php
-		\do_action( 'flow_ew_after_open_review_field' );
 	}
 
 	public function enqueue_settings_assets( string $hook_suffix ): void {
@@ -1035,7 +848,7 @@ class Settings {
 		}
 
 		$is_settings = null !== $this->settings_hook_suffix && $this->settings_hook_suffix === $hook_suffix;
-		$is_setup    = 'admin_page_' . self::SETUP_PAGE_SLUG === $hook_suffix;
+		$is_setup    = 'admin_page_' . Setup_Wizard::PAGE_SLUG === $hook_suffix;
 		if ( ! $is_settings && ! $is_setup ) {
 			return;
 		}
@@ -1135,181 +948,106 @@ JS;
 		wp_add_inline_script( 'flow-ew-settings-fields', $js, 'after' );
 	}
 
-	public function enqueue_setup_wizard( string $hook_suffix ): void {
-		if ( ! current_user_can( 'manage_options' ) ) {
-			return;
-		}
-
-		// Only enqueue where opening a modal makes sense — top-level admin pages users
-		// land on right after activation. Avoids loading on every wp-admin screen.
-		$allowed_hooks = array_filter(
-			[
-				'index.php',
-				'plugins.php',
-				'options-general.php',
-				$this->settings_hook_suffix,
-			]
-		);
-		if ( ! in_array( $hook_suffix, $allowed_hooks, true ) ) {
-			return;
-		}
-
-		$auto_open    = $this->should_force_setup_wizard_open() || $this->should_show_wizard_now();
-		$completed    = self::is_setup_completed();
-		$is_main_page = ( null !== $this->settings_hook_suffix && $this->settings_hook_suffix === $hook_suffix );
-
-		if ( ! $auto_open && $completed && ! $is_main_page ) {
-			return;
-		}
-
-		$asset_file = FLOW_EW_PLUGIN_DIR . 'build/setup-wizard/index.asset.php';
-		if ( ! file_exists( $asset_file ) ) {
-			return;
-		}
-
-		$asset      = require $asset_file;
-		$js_suffix  = Assets::webpack_build_suffix( FLOW_EW_PLUGIN_DIR . 'build/setup-wizard/index', 'js' );
-		$css_suffix = Assets::webpack_build_suffix( FLOW_EW_PLUGIN_DIR . 'build/setup-wizard/style-index', 'css' );
-
-		Assets::ensure_react_jsx_runtime_registered();
-
-		wp_enqueue_script(
-			'flow-ew-setup-wizard',
-			FLOW_EW_PLUGIN_URL . 'build/setup-wizard/index' . $js_suffix . '.js',
-			$asset['dependencies'],
-			$asset['version'],
-			true
-		);
-
-		wp_enqueue_style(
-			'flow-ew-setup-wizard',
-			FLOW_EW_PLUGIN_URL . 'build/setup-wizard/style-index' . $css_suffix . '.css',
-			[ 'wp-components' ],
-			$asset['version']
-		);
-
-		if ( $auto_open && $this->should_show_wizard_now() ) {
-			delete_transient( 'flow_ew_activation_redirect' );
-		}
-
-		$post_types = [];
-		foreach ( self::get_post_types_eligible_for_flow() as $slug => $obj ) {
-			$post_types[] = [
-				'slug'  => (string) $slug,
-				'label' => isset( $obj->labels->singular_name ) ? (string) $obj->labels->singular_name : (string) $slug,
-			];
-		}
-
-		$roles = self::get_reviewer_role_choices();
-
-		wp_localize_script(
-			'flow-ew-setup-wizard',
-			'flowEWSetup',
-			[
-				'restUrl'          => rest_url( 'flow/v1/setup' ),
-				'nonce'            => wp_create_nonce( 'wp_rest' ),
-				'autoOpen'         => $auto_open,
-				'completed'        => $completed,
-				'settingsUrl'      => admin_url( 'admin.php?page=' . self::PAGE_SLUG ),
-				'reviewerRoleSlug' => Activator::REVIEWER_ROLE,
-				'current'          => [
-					'mandatory'     => self::is_mandatory(),
-					'postTypes'     => self::get_supported_post_types(),
-					'reviewerRoles' => self::get_reviewer_roles(),
-				],
-				'choices'          => [
-					'postTypes' => $post_types,
-					'roles'     => $roles,
-				],
-				'i18n'             => [
-					'title'                    => __( 'Welcome to Flow', 'jumplinks-editorial-workflow' ),
-					'lead'                     => __( 'A 30-second setup so reviews fit how your team publishes.', 'jumplinks-editorial-workflow' ),
-					'step'                     => __( 'Step', 'jumplinks-editorial-workflow' ),
-					'of'                       => __( 'of', 'jumplinks-editorial-workflow' ),
-					'next'                     => __( 'Next', 'jumplinks-editorial-workflow' ),
-					'back'                     => __( 'Back', 'jumplinks-editorial-workflow' ),
-					'finish'                   => __( 'Finish', 'jumplinks-editorial-workflow' ),
-					'skip'                     => __( 'Skip for now', 'jumplinks-editorial-workflow' ),
-					'saving'                   => __( 'Saving…', 'jumplinks-editorial-workflow' ),
-					'saved'                    => __( 'Setup saved. Your workflow preferences are active.', 'jumplinks-editorial-workflow' ),
-					'launchAgain'              => __( 'Run setup again', 'jumplinks-editorial-workflow' ),
-					'modeTitle'                => __( 'Review mode', 'jumplinks-editorial-workflow' ),
-					'modeDesc'                 => __( 'Decide whether publishing requires an approved review, or if reviews are optional helpers your team can use when they want.', 'jumplinks-editorial-workflow' ),
-					'modeMandatory'            => __( 'Mandatory', 'jumplinks-editorial-workflow' ),
-					'modeMandatoryDescBlocked' => __( 'Publishing is blocked until the post is approved by a reviewer.', 'jumplinks-editorial-workflow' ),
-					'modeMandatoryDescRest'    => __( 'Authors must assign a reviewer before the post can go live.', 'jumplinks-editorial-workflow' ),
-					'modeOptional'             => __( 'Optional', 'jumplinks-editorial-workflow' ),
-					'modeOptionalDesc'         => __( 'Authors can publish posts freely without a review. The review workflow stays available so teams can still request approval when it helps.', 'jumplinks-editorial-workflow' ),
-					'typesTitle'               => __( 'Content types', 'jumplinks-editorial-workflow' ),
-					'typesDesc'                => __( 'Pick which post types use the workflow. Only types with the block editor and REST support are listed.', 'jumplinks-editorial-workflow' ),
-					'typesEmpty'               => __( 'No reviewable content types are available.', 'jumplinks-editorial-workflow' ),
-					'rolesTitle'               => __( 'Reviewer roles', 'jumplinks-editorial-workflow' ),
-					'rolesDesc'                => __( 'Users with these roles can be assigned as reviewers and approve or request changes.', 'jumplinks-editorial-workflow' ),
-					'errorGeneric'             => __( 'Could not save. Please try again.', 'jumplinks-editorial-workflow' ),
-					'selectAll'                => __( 'Select all', 'jumplinks-editorial-workflow' ),
-					'deselectAll'              => __( 'Deselect all', 'jumplinks-editorial-workflow' ),
-				],
-			]
-		);
-	}
-
-	public function register_setup_rest_route(): void {
-		register_rest_route(
-			'flow/v1',
-			'/setup',
-			[
-				[
-					'methods'             => \WP_REST_Server::CREATABLE,
-					'callback'            => [ $this, 'rest_save_setup' ],
-					'permission_callback' => static function () {
-						return current_user_can( 'manage_options' );
-					},
-					'args'                => [
-						'mandatory'      => [
-							'type'              => 'boolean',
-							'sanitize_callback' => 'rest_sanitize_boolean',
-						],
-						'post_types'     => [
-							'type'              => 'array',
-							'items'             => [ 'type' => 'string' ],
-							'sanitize_callback' => static function ( $value ) {
-								return is_array( $value ) ? array_map( 'sanitize_key', $value ) : [];
-							},
-						],
-						'reviewer_roles' => [
-							'type'              => 'array',
-							'items'             => [ 'type' => 'string' ],
-							'sanitize_callback' => static function ( $value ) {
-								return is_array( $value ) ? array_map( 'sanitize_key', $value ) : [];
-							},
-						],
-					],
-				],
-			]
-		);
-	}
-
 	/**
-	 * @param \WP_REST_Request $request
+	 * Registered sections as tabs. Every section stays in the DOM and in the
+	 * form — `options.php` writes null over any registered option missing from
+	 * the post, so a tab that submitted only its own fields would wipe the
+	 * others. Tabs are presentation only; without JavaScript all sections show.
 	 */
-	public function rest_save_setup( $request ) {
-		$mandatory     = (bool) $request->get_param( 'mandatory' );
-		$post_types_in = (array) $request->get_param( 'post_types' );
-		$roles_in      = (array) $request->get_param( 'reviewer_roles' );
+	private function render_sections_in_tabs(): void {
+		global $wp_settings_sections;
 
-		update_option( self::OPTION_MANDATORY, $mandatory );
-		update_option( self::OPTION_SUPPORTED_POST_TYPES, $this->sanitize_supported_post_types( $post_types_in ) );
-		update_option( self::OPTION_REVIEWER_ROLES, $this->sanitize_reviewer_roles( $roles_in ) );
-		update_option( self::OPTION_SETUP_COMPLETED, true );
+		$sections = $wp_settings_sections[ self::PAGE_SLUG ] ?? [];
+		if ( count( $sections ) < 2 ) {
+			do_settings_sections( self::PAGE_SLUG );
+			return;
+		}
 
-		return rest_ensure_response(
-			[
-				'ok'        => true,
-				'mandatory' => self::is_mandatory(),
-				'postTypes' => self::get_supported_post_types(),
-				'roles'     => self::get_reviewer_roles(),
-			]
-		);
+		$ids   = array_keys( $sections );
+		$first = (string) reset( $ids );
+		?>
+		<nav class="nav-tab-wrapper flow-ew-settings-tabs" role="tablist">
+			<?php foreach ( $sections as $id => $section ) : ?>
+				<button
+					type="button"
+					role="tab"
+					class="nav-tab<?php echo $id === $first ? ' nav-tab-active' : ''; ?>"
+					aria-selected="<?php echo $id === $first ? 'true' : 'false'; ?>"
+					aria-controls="<?php echo esc_attr( 'flow-ew-tab-' . $id ); ?>"
+					data-flow-ew-tab="<?php echo esc_attr( $id ); ?>"
+				>
+					<?php echo esc_html( (string) ( $section['title'] ?? $id ) ); ?>
+				</button>
+			<?php endforeach; ?>
+		</nav>
+
+		<?php foreach ( $sections as $id => $section ) : ?>
+			<div
+				id="<?php echo esc_attr( 'flow-ew-tab-' . $id ); ?>"
+				class="flow-ew-settings-tab-panel"
+				data-flow-ew-tab-panel="<?php echo esc_attr( $id ); ?>"
+				<?php echo $id === $first ? '' : 'hidden'; ?>
+			>
+				<?php
+				if ( ! empty( $section['callback'] ) ) {
+					call_user_func( $section['callback'], $section );
+				}
+				echo '<table class="form-table" role="presentation">';
+				do_settings_fields( self::PAGE_SLUG, (string) $id );
+				echo '</table>';
+				?>
+			</div>
+		<?php endforeach; ?>
+		<?php
+		$this->print_tab_script();
+	}
+
+	/** Remembers the open tab in the URL so a save returns to it. */
+	private function print_tab_script(): void {
+		?>
+		<script>
+			( function () {
+				var tabs = document.querySelectorAll( '[data-flow-ew-tab]' );
+				var panels = document.querySelectorAll( '[data-flow-ew-tab-panel]' );
+				if ( ! tabs.length ) {
+					return;
+				}
+				function show( id ) {
+					var matched = false;
+					panels.forEach( function ( panel ) {
+						var mine = panel.getAttribute( 'data-flow-ew-tab-panel' ) === id;
+						panel.hidden = ! mine;
+						matched = matched || mine;
+					} );
+					if ( ! matched ) {
+						return false;
+					}
+					tabs.forEach( function ( tab ) {
+						var mine = tab.getAttribute( 'data-flow-ew-tab' ) === id;
+						tab.classList.toggle( 'nav-tab-active', mine );
+						tab.setAttribute( 'aria-selected', mine ? 'true' : 'false' );
+					} );
+					return true;
+				}
+				tabs.forEach( function ( tab ) {
+					tab.addEventListener( 'click', function () {
+						var id = tab.getAttribute( 'data-flow-ew-tab' );
+						if ( show( id ) ) {
+							window.history.replaceState( null, '', '#' + id );
+						}
+					} );
+				} );
+				function fromHash() {
+					if ( window.location.hash ) {
+						show( window.location.hash.replace( /^#/, '' ) );
+					}
+				}
+				// Also on hashchange, so browser back and forward move tabs.
+				window.addEventListener( 'hashchange', fromHash );
+				fromHash();
+			}() );
+		</script>
+		<?php
 	}
 
 	public function render_page(): void {
@@ -1320,27 +1058,7 @@ JS;
 		<div class="wrap">
 			<h1><?php esc_html_e( 'Flow Settings', 'jumplinks-editorial-workflow' ); ?></h1>
 
-			<p class="flow-ew-rating-prompt" style="color:#646970;font-size:13px;margin:0 0 1em;">
-				<?php
-				/* translators: %s: link to the WordPress.org review form. */
-				$prompt_template = __( 'Enjoying Flow? Please consider leaving a %s to help others discover it.', 'jumplinks-editorial-workflow' );
-				$review_link     = sprintf(
-					'<a href="%s" target="_blank" rel="noopener">%s</a>',
-					esc_url( 'https://wordpress.org/support/plugin/jumplinks-editorial-workflow/reviews/#new-post' ),
-					esc_html__( 'review on WordPress.org', 'jumplinks-editorial-workflow' )
-				);
-				echo wp_kses(
-					sprintf( $prompt_template, $review_link ),
-					[
-						'a' => [
-							'href'   => [],
-							'target' => [],
-							'rel'    => [],
-						],
-					]
-				);
-				?>
-			</p>
+			<?php Dashboard_Page::render_rating_prompt(); ?>
 
 			<?php
 			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- display-only query flag after redirect.
@@ -1365,7 +1083,7 @@ JS;
 			<form method="post" action="options.php">
 				<?php
 				settings_fields( self::OPTION_GROUP );
-				do_settings_sections( self::PAGE_SLUG );
+				$this->render_sections_in_tabs();
 				submit_button();
 				?>
 			</form>

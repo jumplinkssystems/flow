@@ -20,7 +20,7 @@ import {
 import { deserializeRange } from '../utils/text-anchor';
 
 /**
- * @param {object} [props]
+ * @param {Object} [props]
  * @param {{
  *   postComment: Function,
  *   updateComment: Function,
@@ -116,72 +116,80 @@ export default function InlineCommentsPanel( {
 			window.removeEventListener( 'flow:inline-comment-focus', onFocus );
 	}, [] );
 
-	const handleReply = useCallback( async ( parentId, html ) => {
-		const comment = await api.postComment( { html, parentId } );
-		setComments( ( prev ) => {
-			const cid = Number( comment.id );
-			if ( prev.some( ( c ) => Number( c.id ) === cid ) ) {
-				return prev;
-			}
-			return [ ...prev, comment ];
-		} );
-		window.dispatchEvent(
-			new CustomEvent( 'flow:inline-comment-added', {
-				detail: { comment },
-			} )
-		);
-	}, [ api, setComments ] );
+	const handleReply = useCallback(
+		async ( parentId, html ) => {
+			const comment = await api.postComment( { html, parentId } );
+			setComments( ( prev ) => {
+				const cid = Number( comment.id );
+				if ( prev.some( ( c ) => Number( c.id ) === cid ) ) {
+					return prev;
+				}
+				return [ ...prev, comment ];
+			} );
+			window.dispatchEvent(
+				new CustomEvent( 'flow:inline-comment-added', {
+					detail: { comment },
+				} )
+			);
+		},
+		[ api, setComments ]
+	);
 
-	const handleEdit = useCallback( async ( id, html ) => {
-		const nid = Number( id );
-		await api.updateComment( id, { html } );
-		setComments( ( prev ) =>
-			prev.map( ( c ) =>
-				Number( c.id ) === nid ? { ...c, html } : c
-			)
-		);
-		window.dispatchEvent(
-			new CustomEvent( 'flow:inline-comment-updated', {
-				detail: { id, html },
-			} )
-		);
-	}, [ api, setComments ] );
+	const handleEdit = useCallback(
+		async ( id, html ) => {
+			const nid = Number( id );
+			await api.updateComment( id, { html } );
+			setComments( ( prev ) =>
+				prev.map( ( c ) =>
+					Number( c.id ) === nid ? { ...c, html } : c
+				)
+			);
+			window.dispatchEvent(
+				new CustomEvent( 'flow:inline-comment-updated', {
+					detail: { id, html },
+				} )
+			);
+		},
+		[ api, setComments ]
+	);
 
-	const handleResolve = useCallback( async ( id ) => {
-		const nid = Number( id );
-		await api.updateComment( id, { resolved: true } );
-		setComments( ( prev ) =>
-			prev.map( ( c ) =>
-				Number( c.id ) === nid ? { ...c, isResolved: true } : c
-			)
-		);
+	const handleResolve = useCallback(
+		async ( id ) => {
+			const nid = Number( id );
+			await api.updateComment( id, { resolved: true } );
+			setComments( ( prev ) =>
+				prev.map( ( c ) =>
+					Number( c.id ) === nid ? { ...c, isResolved: true } : c
+				)
+			);
 
-		window.dispatchEvent(
-			new CustomEvent( 'flow:highlight-resolve', {
-				detail: { commentId: id },
-			} )
-		);
-		window.dispatchEvent(
-			new CustomEvent( 'flow:inline-comment-resolved', {
-				detail: {
-					commentId: id,
-					userId: pageData.currentUserId,
-				},
-			} )
-		);
-		window.dispatchEvent(
-			new CustomEvent( 'flow:author-resubmit-activity', {
-				detail: {
-					userId: pageData.currentUserId,
-					kind: 'comment_resolved',
-				},
-			} )
-		);
-	}, [ api, setComments ] );
+			window.dispatchEvent(
+				new CustomEvent( 'flow:highlight-resolve', {
+					detail: { commentId: id },
+				} )
+			);
+			window.dispatchEvent(
+				new CustomEvent( 'flow:inline-comment-resolved', {
+					detail: {
+						commentId: id,
+						userId: pageData.currentUserId,
+					},
+				} )
+			);
+			window.dispatchEvent(
+				new CustomEvent( 'flow:author-resubmit-activity', {
+					detail: {
+						userId: pageData.currentUserId,
+						kind: 'comment_resolved',
+					},
+				} )
+			);
+		},
+		[ api, setComments ]
+	);
 
 	const handleDelete = useCallback(
 		async ( id ) => {
-			const nid = Number( id );
 			if (
 				! ( await confirm( {
 					title: __(
@@ -196,11 +204,14 @@ export default function InlineCommentsPanel( {
 			) {
 				return;
 			}
+			const nid = Number( id );
 			try {
 				await api.deleteComment( id );
 
 				setComments( ( prev ) => {
-					const deleted = prev.find( ( c ) => Number( c.id ) === nid );
+					const deleted = prev.find(
+						( c ) => Number( c.id ) === nid
+					);
 					if ( deleted && ! deleted.parentId ) {
 						window.dispatchEvent(
 							new CustomEvent( 'flow:highlight-remove', {
@@ -237,16 +248,19 @@ export default function InlineCommentsPanel( {
 		);
 	}, [] );
 
-	const handleThreadSurfaceClick = useCallback( ( event, commentId ) => {
-		if (
-			event.target.closest(
-				'button, a, input, textarea, select, [contenteditable="true"], .flow-comment-editor, .components-button, [role="menu"]'
-			)
-		) {
-			return;
-		}
-		handleAnchorClick( commentId );
-	}, [ handleAnchorClick ] );
+	const handleThreadSurfaceClick = useCallback(
+		( event, commentId ) => {
+			if (
+				event.target.closest(
+					'button, a, input, textarea, select, [contenteditable="true"], .flow-comment-editor, .components-button, [role="menu"]'
+				)
+			) {
+				return;
+			}
+			handleAnchorClick( commentId );
+		},
+		[ handleAnchorClick ]
+	);
 
 	const threads =
 		threadFilter === 'resolved' ? resolvedThreads : activeThreads;
@@ -300,6 +314,7 @@ export default function InlineCommentsPanel( {
 		return (
 			<div
 				key={ thread.id }
+				role="presentation"
 				className={
 					isOutdated
 						? 'flow-inline-thread flow-inline-thread--outdated flow-inline-thread--navigable'
@@ -329,8 +344,7 @@ export default function InlineCommentsPanel( {
 						<span className="flow-inline-anchor__text">
 							&ldquo;
 							{ thread.anchorText.length > 80
-								? thread.anchorText.slice( 0, 80 ) +
-								  '\u2026'
+								? thread.anchorText.slice( 0, 80 ) + '\u2026'
 								: thread.anchorText }
 							&rdquo;
 						</span>

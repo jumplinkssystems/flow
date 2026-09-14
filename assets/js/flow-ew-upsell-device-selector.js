@@ -6,20 +6,25 @@
 ( function () {
 	'use strict';
 
-	var data = window.flowEwUpsellDeviceSelector;
+	const data = window.flowEwUpsellDeviceSelector;
 	if ( ! data || ! data.label ) {
 		return;
 	}
 
-	if ( ! window.wp || ! window.wp.element || ! window.wp.components || ! window.wp.hooks ) {
+	if (
+		! window.wp ||
+		! window.wp.element ||
+		! window.wp.components ||
+		! window.wp.hooks
+	) {
 		return;
 	}
 
-	var createElement = window.wp.element.createElement;
-	var MenuGroup     = window.wp.components.MenuGroup;
-	var MenuItem      = window.wp.components.MenuItem;
+	const createElement = window.wp.element.createElement;
+	const MenuGroup = window.wp.components.MenuGroup;
+	const MenuItem = window.wp.components.MenuItem;
 
-	var BADGE_STYLE = {
+	const BADGE_STYLE = {
 		display: 'inline-block',
 		padding: '1px 6px',
 		marginRight: '6px',
@@ -33,12 +38,12 @@
 		verticalAlign: '1px',
 	};
 
-	var LABEL_STYLE = {
+	const LABEL_STYLE = {
 		color: '#018170',
 		fontWeight: 600,
 	};
 
-	var HELP_STYLE = {
+	const HELP_STYLE = {
 		marginTop: '2px',
 		color: '#757575',
 		fontSize: '12px',
@@ -49,7 +54,7 @@
 
 	// Column wrapper so the label sits above the description inside
 	// MenuItem's default single-row layout.
-	var STACK_STYLE = {
+	const STACK_STYLE = {
 		display: 'flex',
 		flexDirection: 'column',
 		alignItems: 'flex-start',
@@ -69,7 +74,9 @@
 				createElement(
 					MenuItem,
 					{
-						href: data.href, target: '_blank', rel: 'noopener noreferrer',
+						href: data.href,
+						target: '_blank',
+						rel: 'noopener noreferrer',
 						className: 'flow-ew-upsell-device-selector',
 					},
 					createElement(
@@ -78,11 +85,23 @@
 						createElement(
 							'span',
 							null,
-							createElement( 'span', { style: BADGE_STYLE }, 'PRO' ),
-							createElement( 'span', { style: LABEL_STYLE }, data.label )
+							createElement(
+								'span',
+								{ style: BADGE_STYLE },
+								'PRO'
+							),
+							createElement(
+								'span',
+								{ style: LABEL_STYLE },
+								data.label
+							)
 						),
 						data.helpText
-							? createElement( 'span', { style: HELP_STYLE }, data.helpText )
+							? createElement(
+									'span',
+									{ style: HELP_STYLE },
+									data.helpText
+							  )
 							: null
 					)
 				)

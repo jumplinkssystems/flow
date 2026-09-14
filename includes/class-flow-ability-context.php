@@ -217,10 +217,11 @@ class Ability_Context {
 		if ( ! empty( $roles ) ) {
 			$users = get_users(
 				[
-					'role__in' => $roles,
-					'exclude'  => [ get_current_user_id() ],
-					'fields'   => [ 'ID', 'display_name' ],
-					'number'   => 200,
+					'role__in'    => $roles,
+					'exclude'     => [ get_current_user_id() ],
+					'fields'      => [ 'ID', 'display_name' ],
+					'number'      => 200,
+					'count_total' => false,
 				]
 			);
 			foreach ( $users as $user ) {
@@ -283,39 +284,35 @@ class Ability_Context {
 	 * @return array<string,mixed>|\WP_Error
 	 */
 	public static function send_for_review( int $review_id = 0, int $post_id = 0 ) {
-		$review = self::resolve_review( $review_id, $post_id );
-		if ( $review instanceof \WP_Error ) {
-			return $review;
-		}
-
-		try {
-			Review::send_for_review( (int) $review->id, get_current_user_id() );
-		} catch ( \InvalidArgumentException $e ) {
-			return new \WP_Error( 'flow_ew_error', $e->getMessage() );
-		} catch ( \RuntimeException $e ) {
-			return new \WP_Error( 'flow_ew_error', $e->getMessage() );
-		}
-
-		return self::get_review( (int) $review->post_id );
+		return self::transition( $review_id, $post_id, [ Review::class, 'send_for_review' ] );
 	}
 
 	/**
 	 * @return array<string,mixed>|\WP_Error
 	 */
 	public static function resubmit_review( int $review_id = 0, int $post_id = 0 ) {
+		return self::transition( $review_id, $post_id, [ Review::class, 'resubmit' ] );
+	}
+
+	/**
+	 * Run a Review state change as the current user and return the fresh
+	 * review payload; domain exceptions become WP_Error.
+	 *
+	 * @param callable $action Receives (review_id, user_id).
+	 * @return array<string,mixed>|\WP_Error
+	 */
+	private static function transition( int $review_id, int $post_id, callable $action ) {
 		$review = self::resolve_review( $review_id, $post_id );
 		if ( $review instanceof \WP_Error ) {
 			return $review;
 		}
-
 		try {
-			Review::resubmit( (int) $review->id, get_current_user_id() );
+			$action( (int) $review->id, get_current_user_id() );
 		} catch ( \InvalidArgumentException $e ) {
 			return new \WP_Error( 'flow_ew_error', $e->getMessage() );
 		} catch ( \RuntimeException $e ) {
 			return new \WP_Error( 'flow_ew_error', $e->getMessage() );
 		}
-
 		return self::get_review( (int) $review->post_id );
 	}
 

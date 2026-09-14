@@ -3,6 +3,10 @@ import { Button } from '@wordpress/components';
 import { chevronUp, closeSmall } from '@wordpress/icons';
 import { __ } from '@wordpress/i18n';
 import { pageData } from '../utils/api';
+import {
+	markCommentBusy,
+	releaseCommentBusy,
+} from '../utils/local-edit-registry';
 import { eventHitsShadowNode } from '../utils/dom-helpers';
 import CommentEditor from './CommentEditor';
 import commentMoreIcon from '../icons/comment-more';
@@ -11,9 +15,13 @@ import commentEditIcon from '../icons/comment-edit';
 import commentTrashIcon from '../icons/comment-trash';
 
 function getInitials( name ) {
-	if ( ! name ) return '?';
+	if ( ! name ) {
+		return '?';
+	}
 	const parts = name.trim().split( /\s+/ );
-	if ( parts.length === 1 ) return parts[ 0 ][ 0 ].toUpperCase();
+	if ( parts.length === 1 ) {
+		return parts[ 0 ][ 0 ].toUpperCase();
+	}
 	return ( parts[ 0 ][ 0 ] + parts[ parts.length - 1 ][ 0 ] ).toUpperCase();
 }
 
@@ -34,8 +42,18 @@ export default function CommentCard( {
 } ) {
 	const currentUserId = Number( pageData.currentUserId || 0 );
 	const isAnonymousViewer = currentUserId === 0;
-	const isOwn = Number( comment.authorId ) > 0 && Number( comment.authorId ) === currentUserId;
+	const isOwn =
+		Number( comment.authorId ) > 0 &&
+		Number( comment.authorId ) === currentUserId;
 	const [ editing, setEditing ] = useState( false );
+	// A sync must not swap or remove a comment while it is being edited here.
+	useEffect( () => {
+		if ( ! editing ) {
+			return undefined;
+		}
+		markCommentBusy( comment.id );
+		return () => releaseCommentBusy( comment.id );
+	}, [ editing, comment.id ] );
 	const [ menuOpen, setMenuOpen ] = useState( false );
 	const [ truncated, setTruncated ] = useState( false );
 	const bodyRef = useRef( null );
@@ -43,7 +61,10 @@ export default function CommentCard( {
 	const menuRef = useRef( null );
 
 	useEffect( () => {
-		if ( bodyRef.current && bodyRef.current.scrollHeight > TRUNCATE_HEIGHT ) {
+		if (
+			bodyRef.current &&
+			bodyRef.current.scrollHeight > TRUNCATE_HEIGHT
+		) {
 			setTruncated( true );
 		}
 	}, [ comment.html ] );
@@ -65,9 +86,13 @@ export default function CommentCard( {
 
 		requestAnimationFrame( () => {
 			requestAnimationFrame( () => {
-				const submitRow = editEditorRef.current?.querySelector( '.flow-comment-editor__submit-row' );
+				const submitRow = editEditorRef.current?.querySelector(
+					'.flow-comment-editor__submit-row'
+				);
 				const target = submitRow || editEditorRef.current;
-				const scroller = target.closest( '.components-tab-panel__tab-content' );
+				const scroller = target.closest(
+					'.components-tab-panel__tab-content'
+				);
 
 				if ( ! scroller ) {
 					target.scrollIntoView( {
@@ -119,7 +144,11 @@ export default function CommentCard( {
 	}, [ comment.id, onDelete ] );
 
 	return (
-		<div className={ `flow-comment-card${ isReply ? ' flow-comment-card--reply' : '' }` }>
+		<div
+			className={ `flow-comment-card${
+				isReply ? ' flow-comment-card--reply' : ''
+			}` }
+		>
 			<div className="flow-comment-card__header">
 				{ comment.avatarUrl ? (
 					<img
@@ -137,34 +166,47 @@ export default function CommentCard( {
 						{ initials }
 					</span>
 				) }
-				<span className="flow-comment-card__author" title={ comment.author }>{ comment.author }</span>
-				<span className="flow-comment-card__date">{ comment.date }</span>
+				<span
+					className="flow-comment-card__author"
+					title={ comment.author }
+				>
+					{ comment.author }
+				</span>
+				<span className="flow-comment-card__date">
+					{ comment.date }
+				</span>
 				<span className="flow-comment-card__actions">
 					{ ! menuOpen &&
 						isThreadExpanded &&
 						canCollapseThread &&
 						onRequestCollapse && (
-						<Button
-							icon={ chevronUp }
-							size="small"
-							className="flow-comment-card__action-btn flow-comment-card__action-btn--collapse"
-							label={ __( 'Collapse thread', 'jumplinks-editorial-workflow' ) }
-							onClick={ onRequestCollapse }
-						/>
-					) }
+							<Button
+								icon={ chevronUp }
+								size="small"
+								className="flow-comment-card__action-btn flow-comment-card__action-btn--collapse"
+								label={ __(
+									'Collapse thread',
+									'jumplinks-editorial-workflow'
+								) }
+								onClick={ onRequestCollapse }
+							/>
+						) }
 					{ ! menuOpen &&
 						! isAnonymousViewer &&
 						showResolveInActions &&
 						onResolve &&
 						! comment.isResolved && (
-						<Button
-							icon={ commentResolveIcon }
-							size="small"
-							className="flow-comment-card__action-icon flow-comment-card__resolve-icon"
-							label={ __( 'Mark as resolved', 'jumplinks-editorial-workflow' ) }
-							onClick={ () => onResolve( comment.id ) }
-						/>
-					) }
+							<Button
+								icon={ commentResolveIcon }
+								size="small"
+								className="flow-comment-card__action-icon flow-comment-card__resolve-icon"
+								label={ __(
+									'Mark as resolved',
+									'jumplinks-editorial-workflow'
+								) }
+								onClick={ () => onResolve( comment.id ) }
+							/>
+						) }
 					{ isOwn && (
 						<div
 							ref={ menuRef }
@@ -234,17 +276,30 @@ export default function CommentCard( {
 						initialHtml={ comment.html }
 						onSubmit={ handleEditSave }
 						onCancel={ () => setEditing( false ) }
-						submitLabel={ __( 'Save', 'jumplinks-editorial-workflow' ) }
+						submitLabel={ __(
+							'Save',
+							'jumplinks-editorial-workflow'
+						) }
 					/>
 				</div>
 			) : (
 				<>
 					<div
 						ref={ bodyRef }
-						className={ `flow-comment-card__body${ truncated && ! isThreadExpanded ? ' flow-comment-card__body--truncated' : '' }` }
+						role="presentation"
+						className={ `flow-comment-card__body${
+							truncated && ! isThreadExpanded
+								? ' flow-comment-card__body--truncated'
+								: ''
+						}` }
 						dangerouslySetInnerHTML={ { __html: comment.html } }
 						onClick={ () => {
-							if ( truncated && ! isThreadExpanded && canTriggerExpand && onRequestExpand ) {
+							if (
+								truncated &&
+								! isThreadExpanded &&
+								canTriggerExpand &&
+								onRequestExpand
+							) {
 								onRequestExpand();
 							}
 						} }

@@ -113,14 +113,19 @@
 	--flow-ew-oxy-primary-soft: rgba(91, 156, 255, 0.18);
 
 	position: fixed;
-	top: calc(38px + var(--wp-admin--admin-bar--height, 0px));
+	/* The builder has no admin bar, but WordPress still defines its height
+	   variable, so adding it here left a 25px gap under the 45px topbar. */
+	top: calc(var(--flow-ew-oxy-topbar-height, 45px) + 6px);
 	right: 12px;
 	width: 320px;
 	min-width: 320px;
 	max-width: min(320px, calc(100vw - 24px));
-	/* About double the previous 50vh panel — fill remaining viewport under the topbar. */
-	height: calc(100vh - 50px - var(--wp-admin--admin-bar--height, 0px));
-	max-height: calc(100vh - 50px - var(--wp-admin--admin-bar--height, 0px));
+	height: calc(
+		(100vh - var(--flow-ew-oxy-topbar-height, 45px) - 18px) * 0.75
+	);
+	max-height: calc(
+		100vh - var(--flow-ew-oxy-topbar-height, 45px) - 18px
+	);
 	background: var(--flow-ew-oxy-bg);
 	border: 1px solid var(--flow-ew-oxy-border);
 	border-radius: 8px;
@@ -134,7 +139,10 @@
 }
 
 body.admin-bar .flow-ew-oxygen-drawer {
-	top: calc(38px + var(--wp-admin--admin-bar--height, 32px));
+	top: calc(
+		var(--flow-ew-oxy-topbar-height, 45px) + 6px +
+			var(--wp-admin--admin-bar--height, 32px)
+	);
 }
 
 .flow-ew-oxygen-drawer__header {

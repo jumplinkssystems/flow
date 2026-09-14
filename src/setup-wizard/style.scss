@@ -135,9 +135,15 @@
 
 	&__select-all {
 		display: inline-block;
+		padding: 0;
+		border: 0;
+		background: none;
+		color: var(--wp-admin-theme-color, #3858e9);
+		font: inherit;
 		font-size: 12px;
 		margin-bottom: 8px;
 		text-decoration: none;
+		cursor: pointer;
 
 		&:hover {
 			text-decoration: underline;

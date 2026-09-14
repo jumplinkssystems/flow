@@ -5,11 +5,13 @@ import {
 	dismissNoReviewRolesNotice,
 	isNoReviewRolesNoticeDismissed,
 } from '../../shared/no-review-roles-notice';
+import { getConfig } from '../../shared/config';
 
-const { flowEW } = window;
+const flowEW = getConfig();
 
 function SettingsHint( { settingsUrl, usersUrl } ) {
 	const settingsLink = (
+		// eslint-disable-next-line jsx-a11y/anchor-has-content -- createInterpolateElement fills it.
 		<a
 			href={ settingsUrl }
 			className="flow-ew-review-notice__link"
@@ -18,6 +20,7 @@ function SettingsHint( { settingsUrl, usersUrl } ) {
 		/>
 	);
 	const usersLink = (
+		// eslint-disable-next-line jsx-a11y/anchor-has-content -- createInterpolateElement fills it.
 		<a
 			href={ usersUrl }
 			className="flow-ew-review-notice__link"

@@ -23,14 +23,43 @@ export function hasUnsentReviewers( review ) {
 }
 
 /**
- * Show the Send for review CTA when the review has never been sent, or when
- * newly assigned reviewers still need a send.
+ * Whether anyone is on the hook for this review: a WordPress user, an email
+ * invitee, or a Pro roster row. Turning on Open Review creates a review with
+ * nobody assigned, which is a valid state but has nothing to send.
+ *
+ * @param {object|null|undefined} review
+ * @return {boolean}
+ */
+export function hasAssignedReviewer( review ) {
+	if ( ! review ) {
+		return false;
+	}
+	// Email invitees carry a negative synthetic id, so the id alone is not enough.
+	const reviewerId = Number( review.reviewer?.id ?? review.reviewer_id ?? 0 );
+	if ( reviewerId > 0 ) {
+		return true;
+	}
+	if ( review.invite_email || review.reviewer?.is_email ) {
+		return true;
+	}
+	if (
+		Array.isArray( review.email_invites ) &&
+		review.email_invites.length > 0
+	) {
+		return true;
+	}
+	return Array.isArray( review.reviewers ) && review.reviewers.length > 0;
+}
+
+/**
+ * Show the Send for review CTA when someone is assigned and the review has
+ * never been sent, or when newly assigned reviewers still need a send.
  *
  * @param {object|null|undefined} review
  * @return {boolean}
  */
 export function shouldShowSendForReview( review ) {
-	if ( ! review ) {
+	if ( ! review || ! hasAssignedReviewer( review ) ) {
 		return false;
 	}
 	return review.status === 'pending' || hasUnsentReviewers( review );

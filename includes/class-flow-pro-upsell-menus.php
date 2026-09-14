@@ -213,8 +213,12 @@ class Pro_Upsell_Menus {
 	 * Load Freemius's hosted Checkout overlay + a shim that exposes
 	 * `window.FlowEwUpgrade.open()` and intercepts `[data-fs-upgrade]` clicks.
 	 */
-	public function enqueue_checkout(): void {
+	public function enqueue_checkout( string $hook_suffix = '' ): void {
 		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+		// Only Flow's own screens and the plugin row carry an upgrade CTA.
+		if ( 'plugins.php' !== $hook_suffix && false === strpos( $hook_suffix, 'flow-ew' ) ) {
 			return;
 		}
 		$plugin_id  = '29591';
@@ -346,13 +350,15 @@ class Pro_Upsell_Menus {
 	}
 
 	public function enqueue_device_selector_upsell(): void {
-		if ( ! Settings::should_show_upgrade_hints() ) {
-			return;
-		}
+		// Cheap, no-DB check first so ordinary front-end views don't read the
+		// upgrade-hints option at all — the upsell only applies on the review page.
 		if ( ! wp_script_is( 'flow-ew-review-page', 'enqueued' ) ) {
 			return;
 		}
 		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+		if ( ! Settings::should_show_upgrade_hints() ) {
 			return;
 		}
 		$path = FLOW_EW_PLUGIN_DIR . 'assets/js/flow-ew-upsell-device-selector.js';
@@ -378,13 +384,13 @@ class Pro_Upsell_Menus {
 	}
 
 	public function enqueue_comment_editor_upsell(): void {
-		if ( ! Settings::should_show_upgrade_hints() ) {
-			return;
-		}
 		if ( ! wp_script_is( 'flow-ew-review-page', 'enqueued' ) ) {
 			return;
 		}
 		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+		if ( ! Settings::should_show_upgrade_hints() ) {
 			return;
 		}
 		$path = FLOW_EW_PLUGIN_DIR . 'assets/js/flow-ew-upsell-comment-editor.js';
@@ -427,15 +433,24 @@ class Pro_Upsell_Menus {
 	private function enqueue_open_review_upsell_asset(): void {
 		// filemtime suffix in the version busts the cache per edit.
 		$base     = defined( 'FLOW_EW_VERSION' ) ? FLOW_EW_VERSION : '1.0.0';
+		$lib_js   = FLOW_EW_PLUGIN_DIR . 'assets/js/flow-ew-upsell-lib.js';
 		$open_js  = FLOW_EW_PLUGIN_DIR . 'assets/js/flow-ew-upsell-open-review.js';
 		$rev_js   = FLOW_EW_PLUGIN_DIR . 'assets/js/flow-ew-upsell-reviewer.js';
+		$lib_ver  = $base . '.' . ( @filemtime( $lib_js ) ?: '0' );  // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
 		$open_ver = $base . '.' . ( @filemtime( $open_js ) ?: '0' ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
 		$rev_ver  = $base . '.' . ( @filemtime( $rev_js ) ?: '0' );  // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
 
 		wp_enqueue_script(
+			'flow-ew-upsell-lib',
+			FLOW_EW_PLUGIN_URL . 'assets/js/flow-ew-upsell-lib.js',
+			array(),
+			$lib_ver,
+			true
+		);
+		wp_enqueue_script(
 			'flow-ew-upsell-open-review',
 			FLOW_EW_PLUGIN_URL . 'assets/js/flow-ew-upsell-open-review.js',
-			array( 'wp-hooks', 'wp-element', 'wp-i18n' ),
+			array( 'flow-ew-upsell-lib', 'wp-hooks', 'wp-element', 'wp-i18n' ),
 			$open_ver,
 			true
 		);
@@ -452,7 +467,7 @@ class Pro_Upsell_Menus {
 		wp_enqueue_script(
 			'flow-ew-upsell-reviewer',
 			FLOW_EW_PLUGIN_URL . 'assets/js/flow-ew-upsell-reviewer.js',
-			array( 'wp-hooks', 'wp-element', 'wp-i18n' ),
+			array( 'flow-ew-upsell-lib', 'wp-hooks', 'wp-element', 'wp-i18n' ),
 			$rev_ver,
 			true
 		);

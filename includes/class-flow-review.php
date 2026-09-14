@@ -40,42 +40,6 @@ class Review {
 	}
 
 	/**
-	 * Unified status badge palette (bg, text, border).
-	 * Keep in sync with src/shared/status-themes.js and assets/css/status-themes.css.
-	 *
-	 * @return array<string,array{bg:string,text:string,border:string}>
-	 */
-	public static function status_themes(): array {
-		return [
-			self::STATUS_OPEN_REVIEW       => [
-				'bg'     => '#dff4ff',
-				'text'   => '#1579a5',
-				'border' => '#b6e6ff',
-			],
-			self::STATUS_APPROVED          => [
-				'bg'     => '#e7f5e4',
-				'text'   => '#458037',
-				'border' => '#cae8c4',
-			],
-			self::STATUS_IN_REVIEW         => [
-				'bg'     => '#fcf0ce',
-				'text'   => '#957500',
-				'border' => '#f2dda4',
-			],
-			self::STATUS_CHANGES_REQUESTED => [
-				'bg'     => '#ffebea',
-				'text'   => '#c92122',
-				'border' => '#ffd1d0',
-			],
-			self::STATUS_PENDING           => [
-				'bg'     => '#e6f3f5',
-				'text'   => '#5e777b',
-				'border' => '#cde3e7',
-			],
-		];
-	}
-
-	/**
 	 * Returns the status to display for a review row — virtual `open_review`
 	 * when `is_open && reviewer_id === 0`, otherwise the underlying `status`.
 	 *
@@ -112,6 +76,9 @@ class Review {
 		if ( $reviewer_id > 0 ) {
 			if ( ! get_userdata( $reviewer_id ) ) {
 				throw new \InvalidArgumentException( esc_html__( 'Invalid reviewer user ID.', 'jumplinks-editorial-workflow' ) );
+			}
+			if ( ! self::user_can_be_reviewer( $reviewer_id ) ) {
+				throw new \InvalidArgumentException( esc_html__( 'The selected user is not in a review role. Check Settings → Flow → Review Roles.', 'jumplinks-editorial-workflow' ) );
 			}
 			if ( ! $allow_self_assignment && $reviewer_id === $requester_id ) {
 				throw new \InvalidArgumentException( esc_html__( 'Reviewer cannot be the same as the requester.', 'jumplinks-editorial-workflow' ) );
@@ -392,25 +359,60 @@ class Review {
 			);
 	}
 
+	/**
+	 * Approve / request changes / revoke are reserved for the assigned
+	 * reviewer (primary column or Pro roster) and managers. The requester and
+	 * the post author are participants for viewing, but must not be able to
+	 * sign off on their own work.
+	 */
 	public static function can_user_take_reviewer_action( object $review, int $user_id ): bool {
-		if ( $user_id > 0
-			&& (
-				self::is_user_review_participant( $review, $user_id )
-				|| user_can( $user_id, 'flow_manage_reviews' )
-			)
-		) {
-			return true;
+		if ( $user_id > 0 ) {
+			return user_can( $user_id, 'flow_manage_reviews' )
+				|| self::is_assigned_reviewer( $review, $user_id );
 		}
 		// Email invite session (anonymous cookie) — full reviewer powers.
-		if ( 0 === $user_id && Email_Review::can_invite_take_action( $review ) ) {
+		return 0 === $user_id && Email_Review::can_invite_take_action( $review );
+	}
+
+	public static function is_assigned_reviewer( object $review, int $user_id ): bool {
+		if ( $user_id <= 0 ) {
+			return false;
+		}
+		if ( (int) $review->reviewer_id === $user_id ) {
 			return true;
 		}
-		return false;
+		return (bool) \apply_filters( 'flow_ew_is_review_participant', false, $review, $user_id );
+	}
+
+	/**
+	 * Users in a review role (the set the reviewer picker shows) may be
+	 * assigned. Administrators and editors carry the cap by default; other
+	 * roles get it through Settings → Flow → Review Roles.
+	 *
+	 * The auto-assign user is the documented exception: that field names one
+	 * specific person and promises any user works there, review role or not.
+	 */
+	public static function user_can_be_reviewer( int $user_id ): bool {
+		if ( $user_id <= 0 ) {
+			return false;
+		}
+		if ( user_can( $user_id, 'flow_review_posts' ) ) {
+			return true;
+		}
+		return Settings::get_auto_assign_reviewer_id() === $user_id;
 	}
 
 	public static function can_user_access_review( object $review, int $user_id ): bool {
 		return self::can_user_access_as_participant_or_open( $review, $user_id )
 			|| user_can( $user_id, 'flow_manage_reviews' );
+	}
+
+	/**
+	 * Reading comments follows the review page's own view rule, which lets the
+	 * post author in even when they are neither reviewer nor requester.
+	 */
+	public static function can_user_read_comments( object $review, int $user_id ): bool {
+		return self::can_user_access_review( $review, $user_id ) || self::is_post_author( $review, $user_id );
 	}
 
 	public static function can_user_access_as_participant_or_open( object $review, int $user_id ): bool {
@@ -421,6 +423,41 @@ class Review {
 	public static function review_has_supported_post_type( object $review ): bool {
 		$post_type = get_post_type( (int) $review->post_id );
 		return (bool) ( $post_type && Settings::is_post_type_supported( $post_type ) );
+	}
+
+	/**
+	 * Warm the post and user object caches for a set of review rows before they
+	 * are mapped to payloads, so `prepare_response_payload()` (and dashboard
+	 * item rendering) resolve `get_post` / `get_userdata` / `get_avatar_url`
+	 * from cache instead of one query per review. Pure cache priming — no
+	 * behaviour change.
+	 *
+	 * @param object[] $reviews
+	 */
+	public static function prime_review_list_caches( array $reviews ): void {
+		$post_ids = [];
+		$user_ids = [];
+		foreach ( $reviews as $review ) {
+			if ( ! is_object( $review ) ) {
+				continue;
+			}
+			$post_id = (int) ( $review->post_id ?? 0 );
+			if ( $post_id > 0 ) {
+				$post_ids[] = $post_id;
+			}
+			foreach ( [ 'reviewer_id', 'requester_id' ] as $key ) {
+				$user_id = (int) ( $review->{$key} ?? 0 );
+				if ( $user_id > 0 ) {
+					$user_ids[] = $user_id;
+				}
+			}
+		}
+		if ( ! empty( $post_ids ) && function_exists( '_prime_post_caches' ) ) {
+			_prime_post_caches( array_values( array_unique( $post_ids ) ), false, true );
+		}
+		if ( ! empty( $user_ids ) && function_exists( 'cache_users' ) ) {
+			cache_users( array_values( array_unique( $user_ids ) ) );
+		}
 	}
 
 	/**

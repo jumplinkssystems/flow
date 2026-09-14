@@ -6,7 +6,10 @@ import { __ } from '@wordpress/i18n';
 export const STATUS_LABELS = {
 	pending: __( 'Pending Review', 'jumplinks-editorial-workflow' ),
 	in_review: __( 'In Review', 'jumplinks-editorial-workflow' ),
-	changes_requested: __( 'Changes Requested', 'jumplinks-editorial-workflow' ),
+	changes_requested: __(
+		'Changes Requested',
+		'jumplinks-editorial-workflow'
+	),
 	approved: __( 'Approved', 'jumplinks-editorial-workflow' ),
 	open_review: __( 'Open Review', 'jumplinks-editorial-workflow' ),
 };

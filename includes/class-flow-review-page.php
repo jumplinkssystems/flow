@@ -180,36 +180,11 @@ class ReviewPage {
 			return;
 		}
 
-		$token    = self::read_request_text( 'flow_token' );
-		$token_ts = self::read_request_int( 'flow_token_ts' );
+		$review = self::authorize_preview_request( $review_id );
 
-		if ( ! Review::verify_preview_token( $review_id, $token, $token_ts ) ) {
-			wp_die( esc_html__( 'Invalid or expired review link.', 'jumplinks-editorial-workflow' ), 403 );
-		}
-
-		$review = DB::get_review( $review_id );
-		if ( ! $review ) {
-			wp_die( esc_html__( 'Review not found.', 'jumplinks-editorial-workflow' ), 404 );
-		}
-
-		if ( ! is_user_logged_in() ) {
-			$allow_anonymous = (bool) \apply_filters( 'flow_ew_allow_anonymous_review_access', false, $review );
-			if ( ! $allow_anonymous ) {
-				wp_safe_redirect(
-					wp_login_url(
-						Review::get_preview_url( $review_id, 0, (int) $review->post_id )
-					)
-				);
-				exit;
-			}
-		}
-
-		$current_user_id = get_current_user_id();
-
-		if ( ! self::user_can_view_review_preview( $review, $current_user_id ) ) {
-			wp_die( esc_html__( 'You do not have permission to view this review.', 'jumplinks-editorial-workflow' ), 403 );
-		}
-
+		self::send_frame_ancestors_headers();
+		// Per-review, per-session output: never store it in a page cache.
+		Page_Cache::mark_response_uncacheable();
 		remove_action( 'template_redirect', 'redirect_canonical' );
 
 		global $wp_query;
@@ -236,22 +211,7 @@ class ReviewPage {
 		// Remove the admin-bar bump CSS too (it stays even after show_admin_bar(false)).
 		remove_action( 'wp_head', '_admin_bar_bump_cb' );
 
-		$snapshot    = null;
-		$snapshot_id = (int) ( $review->revision_id ?? 0 );
-		if ( $snapshot_id ) {
-			$snapshot = wp_get_post_revision( $snapshot_id );
-		}
-
-		// Allow query-arg override (?flow_revision_id=N) so reviewers can point
-		// at a specific revision; useful when the bar links to "View latest".
-		$override_rev_id = self::read_request_int( 'flow_revision_id' );
-		if ( $override_rev_id && $override_rev_id !== $snapshot_id ) {
-			$candidate = wp_get_post_revision( $override_rev_id );
-			if ( $candidate && (int) $candidate->post_parent === (int) $review->post_id ) {
-				$snapshot    = $candidate;
-				$snapshot_id = $override_rev_id;
-			}
-		}
+		$snapshot = self::resolve_snapshot( $review );
 
 		if ( $is_embed ) {
 			if ( ! self::is_breakdance_managed_post( (int) $review->post_id ) ) {
@@ -280,6 +240,65 @@ class ReviewPage {
 		}
 
 		$this->preview_review_id = $is_embed ? 0 : $review_id;
+	}
+
+	/**
+	 * The review shell and its embed carry approve / comment actions behind
+	 * a cookie session, so only this site may frame them. The shell's own
+	 * iframe is same-origin and stays allowed.
+	 */
+	public static function send_frame_ancestors_headers(): void {
+		if ( headers_sent() ) {
+			return;
+		}
+		send_frame_options_header();
+		header( "Content-Security-Policy: frame-ancestors 'self'" );
+	}
+
+	/**
+	 * Validate the signed link, load the review, and enforce access. Dies or
+	 * redirects to login on failure, so callers only ever see a viewable review.
+	 */
+	private static function authorize_preview_request( int $review_id ): object {
+		$token    = self::read_request_text( 'flow_token' );
+		$token_ts = self::read_request_int( 'flow_token_ts' );
+		if ( ! Review::verify_preview_token( $review_id, $token, $token_ts ) ) {
+			wp_die( esc_html__( 'Invalid or expired review link.', 'jumplinks-editorial-workflow' ), 403 );
+		}
+
+		$review = DB::get_review( $review_id );
+		if ( ! $review ) {
+			wp_die( esc_html__( 'Review not found.', 'jumplinks-editorial-workflow' ), 404 );
+		}
+
+		if ( ! is_user_logged_in() && ! (bool) \apply_filters( 'flow_ew_allow_anonymous_review_access', false, $review ) ) {
+			wp_safe_redirect( wp_login_url( Review::get_preview_url( $review_id, 0, (int) $review->post_id ) ) );
+			exit;
+		}
+
+		if ( ! self::user_can_view_review_preview( $review, get_current_user_id() ) ) {
+			wp_die( esc_html__( 'You do not have permission to view this review.', 'jumplinks-editorial-workflow' ), 403 );
+		}
+		return $review;
+	}
+
+	/**
+	 * The revision to render: the review's stored snapshot, unless the link
+	 * points at another revision of the same post (`?flow_revision_id=N`, used
+	 * by the bar's "View latest").
+	 */
+	private static function resolve_snapshot( object $review ): ?\WP_Post {
+		$snapshot_id = (int) ( $review->revision_id ?? 0 );
+		$snapshot    = $snapshot_id ? wp_get_post_revision( $snapshot_id ) : null;
+
+		$override_rev_id = self::read_request_int( 'flow_revision_id' );
+		if ( $override_rev_id && $override_rev_id !== $snapshot_id ) {
+			$candidate = wp_get_post_revision( $override_rev_id );
+			if ( $candidate && (int) $candidate->post_parent === (int) $review->post_id ) {
+				return $candidate;
+			}
+		}
+		return $snapshot instanceof \WP_Post ? $snapshot : null;
 	}
 
 	private function setup_embed_mode( ?\WP_Post $snapshot, object $review ): void {
@@ -358,7 +377,7 @@ class ReviewPage {
 			'flow-ew-review-page',
 			FLOW_EW_PLUGIN_URL . 'build/review-page/style-index' . $css_suffix . '.css',
 			[ 'wp-components' ],
-			$asset['version']
+			Assets::style_version( FLOW_EW_PLUGIN_DIR . 'build/review-page/style-index' . $css_suffix . '.css', (string) $asset['version'] )
 		);
 		wp_add_inline_style( 'flow-ew-review-page', Assets::get_admin_theme_inline_css() );
 
@@ -495,233 +514,196 @@ class ReviewPage {
 	}
 
 	private function get_review_page_data( int $review_id ): array {
-		$debug_mode      = Settings::is_debug_mode();
 		$current_user_id = get_current_user_id();
-		$is_admin        = current_user_can( 'manage_options' );
 		$current_user    = wp_get_current_user();
 
 		$base = [
 			'restUrl'            => rest_url( 'flow/v1' ),
 			'nonce'              => wp_create_nonce( 'wp_rest' ),
-			'debugMode'          => $debug_mode,
-			'currentUserIsAdmin' => $is_admin,
+			'debugMode'          => Settings::is_debug_mode(),
+			'currentUserIsAdmin' => current_user_can( 'manage_options' ),
 			'currentUserId'      => $current_user_id,
+			// Seconds between comment sync polls; 0 turns polling off.
+			'syncInterval'       => max( 0, (int) apply_filters( 'flow_ew_comment_sync_interval', 15 ) ),
 		];
 
 		$review = $review_id ? DB::get_review( $review_id ) : null;
-
 		if ( ! $review ) {
-			return array_merge(
-				$base,
-				[
-					'reviewId'                => 0,
-					'status'                  => '',
-					'error'                   => __( 'Review not found.', 'jumplinks-editorial-workflow' ),
-					'postTitle'               => '',
-					'postTypeLabel'           => '',
-					'postContent'             => '',
-					'snapshotLabel'           => '',
-					'canAct'                  => false,
-					'currentUserIsPostAuthor' => false,
-					'currentUserCanResubmit'  => false,
-					'postEditUrl'             => '',
-				]
-			);
+			return self::error_payload( $base, __( 'Review not found.', 'jumplinks-editorial-workflow' ) );
 		}
-
-		$is_reviewer = $current_user_id > 0
-			&& (
-				(int) $review->reviewer_id === $current_user_id
-				|| (bool) \apply_filters( 'flow_ew_is_review_participant', false, $review, $current_user_id )
-			);
-		$post        = get_post( (int) $review->post_id );
-		$is_author   = ( $post instanceof \WP_Post ) && ( (int) $post->post_author === $current_user_id );
-
 		if ( ! self::user_can_view_review_preview( $review, $current_user_id ) ) {
-			return array_merge(
+			return self::error_payload(
 				$base,
-				[
-					'reviewId'                => 0,
-					'status'                  => '',
-					'error'                   => __( 'You do not have permission to view this review.', 'jumplinks-editorial-workflow' ),
-					'postTitle'               => '',
-					'postTypeLabel'           => '',
-					'postContent'             => '',
-					'snapshotLabel'           => '',
-					'canAct'                  => false,
-					'currentUserIsPostAuthor' => false,
-					'currentUserCanResubmit'  => false,
-					'reviewerId'              => (int) $review->reviewer_id,
-					'postEditUrl'             => '',
-				]
+				__( 'You do not have permission to view this review.', 'jumplinks-editorial-workflow' ),
+				(int) $review->reviewer_id
 			);
 		}
 
-		$post_content   = '';
-		$post_title     = '';
-		$snapshot_label = '';
-		$revision_id    = (int) ( $review->revision_id ?? 0 );
-		$revision       = $revision_id ? wp_get_post_revision( $revision_id ) : null;
-
-		if ( $revision ) {
-			$post_content   = do_blocks( $revision->post_content );
-			$post_title     = $revision->post_title;
-			$requester      = get_userdata( (int) $review->requester_id );
-			$snap_timestamp = strtotime( $revision->post_modified_gmt . ' UTC' );
-			$snap_date      = (string) wp_date(
-				get_option( 'date_format' ) . ' ' . get_option( 'time_format' ),
-				$snap_timestamp
-			);
-			$snapshot_label = sprintf(
-				/* translators: 1: date/time 2: author name */
-				__( 'Review submitted on %1$s by %2$s.', 'jumplinks-editorial-workflow' ),
-				$snap_date,
-				$requester ? $requester->display_name : __( 'Unknown', 'jumplinks-editorial-workflow' )
-			);
-		} else {
-			$post = get_post( (int) $review->post_id );
-			if ( $post ) {
-				$post_content = do_blocks( $post->post_content );
-				$post_title   = $post->post_title;
-			}
-			$requester = get_userdata( (int) $review->requester_id );
-			$review_ts = strtotime( (string) ( $review->updated_at ?? '' ) . ' UTC' );
-			if ( $review_ts > 0 ) {
-				$snap_date      = (string) wp_date(
-					get_option( 'date_format' ) . ' ' . get_option( 'time_format' ),
-					$review_ts
-				);
-				$snapshot_label = sprintf(
-					/* translators: 1: date/time 2: author name */
-					__( 'Review submitted on %1$s by %2$s.', 'jumplinks-editorial-workflow' ),
-					$snap_date,
-					$requester ? $requester->display_name : __( 'Unknown', 'jumplinks-editorial-workflow' )
-				);
-			}
-		}
-
-		$raw_comments = DB::get_comments_for_post( (int) $review->post_id, (int) $review->id );
-
-		$all_comments = array_map(
-			static function ( object $c ): array {
-				$author_id    = (int) $c->author_id;
-				$stored_name  = (string) ( $c->author_name ?? '' );
-				$stored_email = (string) ( $c->author_email ?? '' );
-				// Anonymous comments (author_id=0) use the stored name + email-
-				// derived avatar; logged-in commenters use their user record.
-				if ( $author_id > 0 ) {
-					$user            = get_userdata( $author_id );
-					$display_name    = $user ? $user->display_name : __( 'Reviewer', 'jumplinks-editorial-workflow' );
-					$avatar_identity = $author_id;
-				} else {
-					$display_name    = '' !== $stored_name ? $stored_name : __( 'Anonymous', 'jumplinks-editorial-workflow' );
-					$avatar_identity = '' !== $stored_email ? $stored_email : '';
-				}
-				$ts          = strtotime( $c->created_at . ' UTC' );
-				$anchor_text = $c->anchor_text ?? null;
-				return [
-					'id'            => (int) $c->id,
-					'html'          => $c->comment_text,
-					'author'        => $display_name,
-					'authorId'      => $author_id,
-					'avatarUrl'     => '' !== $avatar_identity
-						? (string) ( get_avatar_url( $avatar_identity, [ 'size' => 56 ] ) ?: '' )
-						: '',
-					'parentId'      => (int) ( $c->parent_id ?? 0 ),
-					'isResolved'    => (bool) ( $c->is_resolved ?? false ),
-					'anchorText'    => $anchor_text ?: null,
-					'blockClientId' => ( $c->block_client_id ?? null ) ?: null,
-					'date'          => (string) wp_date(
-						get_option( 'date_format' ) . ' ' . get_option( 'time_format' ),
-						$ts
-					),
-				];
-			},
-			$raw_comments
-		);
-
-		$inline_parent_ids = [];
-		$comments          = [];
-		$inline_comments   = [];
-
-		foreach ( $all_comments as $c ) {
-			if ( ! empty( $c['anchorText'] ) && 0 === $c['parentId'] ) {
-				$inline_parent_ids[ $c['id'] ] = true;
-				$inline_comments[]             = $c;
-			}
-		}
-
-		foreach ( $all_comments as $c ) {
-			if ( isset( $inline_parent_ids[ $c['id'] ] ) ) {
-				continue;
-			}
-			if ( $c['parentId'] > 0 && isset( $inline_parent_ids[ $c['parentId'] ] ) ) {
-				$inline_comments[] = $c;
-			} else {
-				$comments[] = $c;
-			}
-		}
-
-		$override_rev    = (int) get_query_var( 'flow_revision_id', 0 );
-		$effective_rev   = $override_rev ?: $revision_id;
-		$revision_status = null;
-		$latest_rev_url  = '';
-		if ( $effective_rev ) {
-			$revisions     = wp_get_post_revisions( (int) $review->post_id, [ 'numberposts' => 1 ] );
-			$latest_rev_id = ! empty( $revisions ) ? (int) reset( $revisions )->ID : 0;
-			if ( 0 === $latest_rev_id || $effective_rev === $latest_rev_id ) {
-				$revision_status = 'latest';
-			} else {
-				$revision_status = 'outdated';
-				$latest_rev_url  = add_query_arg(
-					'flow_revision_id',
-					$latest_rev_id,
-					Review::get_preview_url( (int) $review->id, 0, (int) $review->post_id )
-				);
-			}
-		} elseif ( get_post( (int) $review->post_id ) instanceof \WP_Post ) {
-			// No revision snapshot (e.g. product types without revisions) — preview shows current post.
-			$revision_status = 'latest';
-		}
+		$post          = get_post( (int) $review->post_id );
+		$is_author     = ( $post instanceof \WP_Post ) && ( (int) $post->post_author === $current_user_id );
+		$revision_id   = (int) ( $review->revision_id ?? 0 );
+		$snapshot      = self::snapshot_payload( $review, $revision_id );
+		$comment_lists = Comment_Presenter::list_for_review( $review );
+		$review_state  = self::review_state_payload( $review, self::viewing_revision_id( $review ) );
 
 		// Surface the actors + timestamps the Activity sidebar needs to
 		// build its v1 timeline (request, current decision, resubmits).
 		$requester_user = get_userdata( (int) $review->requester_id );
 		$reviewer_user  = get_userdata( (int) $review->reviewer_id );
 
-		$data = array_merge(
+		return array_merge(
 			$base,
 			[
 				'reviewId'                => (int) $review->id,
-				'status'                  => $review->status,
-				'displayStatus'           => Review::display_status( $review ),
-				'postTitle'               => $post_title,
+				'postTitle'               => $snapshot['title'],
 				'postTypeLabel'           => self::get_post_type_singular_label( (int) $review->post_id ),
-				'postContent'             => $post_content,
-				'snapshotLabel'           => $snapshot_label,
-				'canAct'                  => $is_reviewer && current_user_can( 'flow_review_posts' ),
+				'postContent'             => '',
+				'snapshotLabel'           => $snapshot['label'],
 				'wpLogoUrl'               => self::get_wp_logo_url(),
 				'postEditUrl'             => (string) ( get_edit_post_link( (int) $review->post_id, 'raw' ) ?: '' ),
 				'postUrl'                 => (string) get_permalink( (int) $review->post_id ),
 				'currentUserId'           => (int) $current_user->ID,
 				'currentUserName'         => ( '' !== $current_user->display_name ) ? $current_user->display_name : $current_user->user_login,
 				'currentUserIsPostAuthor' => $is_author,
-				'currentUserCanResubmit'  => $is_author,
-				'comments'                => $comments,
-				'inlineComments'          => $inline_comments,
+				'comments'                => $comment_lists['comments'],
+				'inlineComments'          => $comment_lists['inlineComments'],
+				'commentsVersion'         => $comment_lists['commentsVersion'],
 				'reviewerId'              => (int) $review->reviewer_id,
 				'reviewerName'            => $reviewer_user ? $reviewer_user->display_name : '',
 				'requesterId'             => (int) $review->requester_id,
 				'requesterName'           => $requester_user ? $requester_user->display_name : '',
 				'reviewCreatedAt'         => (string) ( $review->created_at ?? '' ),
-				'reviewUpdatedAt'         => (string) ( $review->updated_at ?? '' ),
-				'reviewIteration'         => (int) ( $review->iteration ?? 1 ),
-				'revisionStatus'          => $revision_status,
-				'latestRevisionUrl'       => $latest_rev_url,
+			],
+			$review_state
+		);
+	}
+
+	/**
+	 * Payload for a review page that cannot render: same keys the UI reads, empty.
+	 *
+	 * @param array<string,mixed> $base
+	 * @return array<string,mixed>
+	 */
+	private static function error_payload( array $base, string $message, int $reviewer_id = 0 ): array {
+		return array_merge(
+			$base,
+			[
+				'reviewId'                => 0,
+				'status'                  => '',
+				'error'                   => $message,
+				'postTitle'               => '',
+				'postTypeLabel'           => '',
+				'postContent'             => '',
+				'snapshotLabel'           => '',
+				'canAct'                  => false,
+				'currentUserIsPostAuthor' => false,
+				'currentUserCanResubmit'  => false,
+				'reviewerId'              => $reviewer_id,
+				'postEditUrl'             => '',
 			]
 		);
+	}
 
-		return $data;
+	/**
+	 * Content shown on the review page: the stored revision when there is one,
+	 * otherwise the live post.
+	 *
+	 * The content itself is rendered once, by the iframe; `postContent` in the
+	 * script data stays empty because the SPA never read it.
+	 *
+	 * @return array{title:string,label:string}
+	 */
+	private static function snapshot_payload( object $review, int $revision_id ): array {
+		$revision = $revision_id ? wp_get_post_revision( $revision_id ) : null;
+		if ( $revision ) {
+			return [
+				'title' => $revision->post_title,
+				'label' => self::snapshot_label( $review, strtotime( $revision->post_modified_gmt . ' UTC' ) ),
+			];
+		}
+		$post = get_post( (int) $review->post_id );
+		$ts   = strtotime( (string) ( $review->updated_at ?? '' ) . ' UTC' );
+		return [
+			'title' => $post ? $post->post_title : '',
+			'label' => $ts > 0 ? self::snapshot_label( $review, $ts ) : '',
+		];
+	}
+
+	private static function snapshot_label( object $review, $timestamp ): string {
+		$requester = get_userdata( (int) $review->requester_id );
+		$date      = (string) wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $timestamp ?: null );
+		return sprintf(
+			/* translators: 1: date/time 2: author name */
+			__( 'Review submitted on %1$s by %2$s.', 'jumplinks-editorial-workflow' ),
+			$date,
+			$requester ? $requester->display_name : __( 'Unknown', 'jumplinks-editorial-workflow' )
+		);
+	}
+
+
+	/**
+	 * Whether the previewed revision is still the newest one.
+	 *
+	 * @return array{0:string|null,1:string} [status, latest revision URL when outdated]
+	 */
+	/**
+	 * The fields that change as a review moves: status, what the viewer may do
+	 * about it, and whether the previewed revision is still current. The
+	 * bootstrap and the sync endpoint both build them here so they cannot drift.
+	 *
+	 * @return array<string,mixed>
+	 */
+	public static function review_state_payload( object $review, ?int $viewing_revision_id = null ): array {
+		$current_user_id = get_current_user_id();
+		$is_reviewer     = $current_user_id > 0
+			&& (
+				(int) $review->reviewer_id === $current_user_id
+				|| (bool) \apply_filters( 'flow_ew_is_review_participant', false, $review, $current_user_id )
+			);
+		$post            = get_post( (int) $review->post_id );
+		$is_author       = ( $post instanceof \WP_Post ) && ( (int) $post->post_author === $current_user_id );
+
+		$revision_id                          = null !== $viewing_revision_id
+			? $viewing_revision_id
+			: (int) ( $review->revision_id ?? 0 );
+		[ $revision_status, $latest_rev_url ] = self::revision_state( $review, $revision_id );
+
+		return [
+			'revisionId'             => $revision_id,
+			'status'                 => (string) ( $review->status ?? '' ),
+			'displayStatus'          => Review::display_status( $review ),
+			'canAct'                 => $is_reviewer && Review::user_can_be_reviewer( $current_user_id ),
+			'currentUserCanResubmit' => $is_author,
+			'reviewUpdatedAt'        => (string) ( $review->updated_at ?? '' ),
+			'reviewIteration'        => (int) ( $review->iteration ?? 1 ),
+			'revisionStatus'         => $revision_status,
+			'latestRevisionUrl'      => $latest_rev_url,
+		];
+	}
+
+	/** The revision this request is actually showing: the URL wins over the stored one. */
+	public static function viewing_revision_id( object $review ): int {
+		$from_url = (int) get_query_var( 'flow_revision_id', 0 );
+		return $from_url ?: (int) ( $review->revision_id ?? 0 );
+	}
+
+	private static function revision_state( object $review, int $effective_rev ): array {
+		if ( $effective_rev ) {
+			$revisions     = wp_get_post_revisions( (int) $review->post_id, [ 'numberposts' => 1 ] );
+			$latest_rev_id = ! empty( $revisions ) ? (int) reset( $revisions )->ID : 0;
+			if ( 0 === $latest_rev_id || $effective_rev === $latest_rev_id ) {
+				return [ 'latest', '' ];
+			}
+			return [
+				'outdated',
+				add_query_arg( 'flow_revision_id', $latest_rev_id, Review::get_preview_url( (int) $review->id, 0, (int) $review->post_id ) ),
+			];
+		}
+		if ( get_post( (int) $review->post_id ) instanceof \WP_Post ) {
+			// No revision snapshot (e.g. product types without revisions) — preview shows current post.
+			return [ 'latest', '' ];
+		}
+		return [ null, '' ];
 	}
 
 	private static function get_wp_logo_url(): string {

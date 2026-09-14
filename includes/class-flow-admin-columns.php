@@ -22,6 +22,27 @@ class Admin_Columns {
 		add_action( 'admin_enqueue_scripts', [ $this, 'enqueue_assets' ] );
 		add_action( 'restrict_manage_posts', [ $this, 'render_filter_dropdown' ] );
 		add_action( 'pre_get_posts', [ $this, 'apply_filter_to_query' ] );
+		add_filter( 'the_posts', [ $this, 'prime_active_reviews' ], 10, 2 );
+	}
+
+	/**
+	 * @param \WP_Post[] $posts
+	 * @param \WP_Query  $query
+	 * @return \WP_Post[]
+	 */
+	public function prime_active_reviews( $posts, $query ) {
+		$post_type = $query instanceof \WP_Query ? $query->get( 'post_type' ) : '';
+		if (
+			is_admin()
+			&& is_array( $posts )
+			&& [] !== $posts
+			&& is_string( $post_type )
+			&& $query->is_main_query()
+			&& Settings::is_post_type_supported( $post_type )
+		) {
+			DB::prime_active_reviews( wp_list_pluck( $posts, 'ID' ) );
+		}
+		return $posts;
 	}
 
 	public function register_hooks(): void {
@@ -191,7 +212,7 @@ class Admin_Columns {
 		wp_enqueue_style(
 			'flow-ew-admin-columns',
 			FLOW_EW_PLUGIN_URL . 'assets/css/admin-columns.css',
-			[],
+			[ Assets::status_tokens_handle() ],
 			$ver
 		);
 	}

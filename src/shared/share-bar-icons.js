@@ -8,11 +8,12 @@ const figmaCopyPath =
 	'M18 0H8C6.897 0 6 0.897 6 2V6H2C0.897 6 0 6.897 0 8V18C0 19.103 0.897 20 2 20H12C13.103 20 14 19.103 14 18V14H18C19.103 14 20 13.103 20 12V2C20 0.897 19.103 0 18 0ZM2 18V8H12L12.002 18H2ZM18 12H14V8C14 6.897 13.103 6 12 6H8V2H18V12Z';
 
 /** Figma 24px Icon/regular-arrow-up-right-stroke (Frame 38). */
-const figmaExternalPath = 'M9.71 9V0H0.71V2H6.3L0 8.29L1.42 9.71L7.71 3.41V9H9.71Z';
+const figmaExternalPath =
+	'M9.71 9V0H0.71V2H6.3L0 8.29L1.42 9.71L7.71 3.41V9H9.71Z';
 
 /**
  * @param {ShareBarIconName} name
- * @returns {string}
+ * @return {string}
  */
 export function shareBarIconHtml( name ) {
 	if ( name === 'copied' ) {
@@ -101,7 +102,11 @@ export function ShareBarIcon( { name } ) {
 			aria-hidden="true"
 			xmlns="http://www.w3.org/2000/svg"
 		>
-			<path fill="currentColor" d={ figmaCopyPath } transform="translate(2 2)" />
+			<path
+				fill="currentColor"
+				d={ figmaCopyPath }
+				transform="translate(2 2)"
+			/>
 		</svg>
 	);
 }

@@ -139,3 +139,9 @@
 	font-style: italic;
 	font-size: 13px;
 }
+
+.flow-ew-rating-prompt {
+	color: #646970;
+	font-size: 13px;
+	margin: 0 0 1em;
+}

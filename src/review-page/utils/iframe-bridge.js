@@ -25,7 +25,9 @@ export function resolveCommentContentRoot( doc, containedNode = null ) {
 			if ( containedNode !== null && ! el.contains( containedNode ) ) {
 				continue;
 			}
-			const len = ( el.textContent || '' ).replace( /\s+/g, ' ' ).trim().length;
+			const len = ( el.textContent || '' )
+				.replace( /\s+/g, ' ' )
+				.trim().length;
 			if ( len > bestLen ) {
 				bestLen = len;
 				best = el;
@@ -65,7 +67,9 @@ export function getActiveContentRoot() {
 	const iframeDoc = getIframeDoc();
 	if ( iframeDoc ) {
 		const root = resolveCommentContentRoot( iframeDoc );
-		if ( root ) return root;
+		if ( root ) {
+			return root;
+		}
 	}
 	return resolveCommentContentRoot( document );
 }
@@ -93,9 +97,13 @@ const POST_REGION_SELECTOR =
 	'.flow-preview-content, .entry-content, .wp-block-post-content, .product.type-product';
 
 export function resolveContentRootFor( doc, node ) {
-	if ( ! doc || ! node ) return null;
+	if ( ! doc || ! node ) {
+		return null;
+	}
 	const direct = resolveCommentContentRoot( doc, node );
-	if ( direct ) return direct;
+	if ( direct ) {
+		return direct;
+	}
 	// Selection is outside the post body. Accept it if it's still inside
 	// the post's wrapper — title, byline, categories, etc. — and anchor to
 	// `<body>` (rootType: 'body' on the descriptor). Reject otherwise so
@@ -105,7 +113,9 @@ export function resolveContentRootFor( doc, node ) {
 		return doc.body;
 	}
 	const hasAnyRoot = !! doc.querySelector( POST_REGION_SELECTOR );
-	if ( hasAnyRoot ) return null;
+	if ( hasAnyRoot ) {
+		return null;
+	}
 	return doc.body || null;
 }
 
@@ -120,9 +130,13 @@ export function resolveContentRootFor( doc, node ) {
  * sidebar-toggle handlers haven't run yet.
  */
 export function getIframeScale() {
-	if ( ! currentIframe ) return 1;
+	if ( ! currentIframe ) {
+		return 1;
+	}
 	const cssW = currentIframe.offsetWidth;
-	if ( ! cssW ) return 1;
+	if ( ! cssW ) {
+		return 1;
+	}
 	const visualW = currentIframe.getBoundingClientRect().width;
 	return visualW / cssW;
 }
@@ -206,7 +220,9 @@ html.flow-clickable-links a[href] {
 `;
 
 export function injectHighlightStyles( iframeDoc ) {
-	if ( ! iframeDoc?.head ) return;
+	if ( ! iframeDoc?.head ) {
+		return;
+	}
 	const style = iframeDoc.createElement( 'style' );
 	style.textContent = HIGHLIGHT_CSS;
 	iframeDoc.head.appendChild( style );

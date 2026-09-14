@@ -146,7 +146,9 @@ export function bindInviteLinkCopy() {
 	// touching the combobox, so without this the button would not appear until
 	// the next reviewer edit.
 	document.addEventListener( 'flow-ew:classic-render', function ( event ) {
-		syncInviteLinkCopy( event && event.detail ? event.detail.review : null );
+		syncInviteLinkCopy(
+			event && event.detail ? event.detail.review : null
+		);
 	} );
 
 	document.addEventListener( 'click', function ( event ) {
@@ -157,7 +159,9 @@ export function bindInviteLinkCopy() {
 		}
 		event.preventDefault();
 
-		const doneClass = button.classList.contains( 'flow-ew-reviewer-card__copy' )
+		const doneClass = button.classList.contains(
+			'flow-ew-reviewer-card__copy'
+		)
 			? 'flow-ew-reviewer-card__copy--done'
 			: 'flow-ew-reviewer-combobox__copy--done';
 

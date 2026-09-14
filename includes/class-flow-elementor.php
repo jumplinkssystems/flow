@@ -7,67 +7,33 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-class Elementor {
+class Elementor extends Builder_Integration {
 
 	public function boot(): void {
 		if ( ! defined( 'ELEMENTOR_VERSION' ) ) {
 			return;
 		}
-
 		add_action( 'elementor/editor/after_enqueue_scripts', [ $this, 'enqueue_assets' ] );
 		add_action( 'elementor/editor/footer', [ $this, 'render_panel' ] );
 	}
 
-	public function enqueue_assets(): void {
-		$post_id = $this->get_editor_post_id();
-		if ( ! $post_id ) {
-			return;
-		}
-
-		$post_type = (string) get_post_type( $post_id );
-		if ( '' === $post_type || ! Settings::is_post_type_supported( $post_type ) ) {
-			return;
-		}
-
-		Assets::enqueue_classic_editor_companion( $post_id );
-		Assets::enqueue_builder_bundle( 'elementor' );
+	protected function slug(): string {
+		return 'elementor';
 	}
 
-	public function render_panel(): void {
-		$post_id = $this->get_editor_post_id();
-		if ( ! $post_id ) {
-			return;
-		}
-
-		$post_type = (string) get_post_type( $post_id );
-		if ( '' === $post_type || ! Settings::is_post_type_supported( $post_type ) ) {
-			return;
-		}
-
-		$post = get_post( $post_id );
-		if ( ! $post instanceof \WP_Post ) {
-			return;
-		}
-
-		$review = DB::get_active_review( $post_id );
-		$status = $review ? (string) $review->status : '';
-
-		$template = (string) apply_filters(
-			'flow_ew_elementor_panel_template',
-			FLOW_EW_PLUGIN_DIR . 'templates/elementor/panel.php'
-		);
-		if ( is_readable( $template ) ) {
-			include $template;
-		}
+	protected function panel(): array {
+		$panel                 = parent::panel();
+		$panel['toggle_class'] = 'flow-ew-elementor-toggle flow-ew-elementor-toggle--fallback';
+		$panel['toggle_attrs'] = [];
+		return $panel;
 	}
 
-	private function get_editor_post_id(): int {
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Elementor editor; post ID only.
-		if ( ! isset( $_GET['post'] ) ) {
-			return 0;
-		}
+	/** Both hooks only fire inside the Elementor editor. */
+	protected function is_builder_request(): bool {
+		return true;
+	}
 
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		return absint( wp_unslash( $_GET['post'] ) );
+	protected function get_editor_post_id(): int {
+		return self::post_id_from_query( [ 'post' ] );
 	}
 }

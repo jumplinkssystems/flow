@@ -10,11 +10,13 @@
 
 __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _style_css__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./style.css */ "./src/bricks/style.css");
-/* harmony import */ var _shared_sync_reviewer_combobox_from_review__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../shared/sync-reviewer-combobox-from-review */ "./src/shared/sync-reviewer-combobox-from-review.js");
-/* harmony import */ var _shared_assign_invite_email__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../shared/assign-invite-email */ "./src/shared/assign-invite-email.js");
-/* harmony import */ var _shared_reviewer_email_entry__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../shared/reviewer-email-entry */ "./src/shared/reviewer-email-entry.js");
-/* harmony import */ var _shared_share_bar_css__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../shared/share-bar.css */ "./src/shared/share-bar.css");
-/* harmony import */ var _shared_publish_guard_ui__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../shared/publish-guard-ui */ "./src/shared/publish-guard-ui.js");
+/* harmony import */ var _shared_share_bar_css__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../shared/share-bar.css */ "./src/shared/share-bar.css");
+/* harmony import */ var _shared_sync_reviewer_combobox_from_review__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../shared/sync-reviewer-combobox-from-review */ "./src/shared/sync-reviewer-combobox-from-review.js");
+/* harmony import */ var _shared_publish_guard_ui__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../shared/publish-guard-ui */ "./src/shared/publish-guard-ui.js");
+/* harmony import */ var _shared_builder_drawer__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../shared/builder-drawer */ "./src/shared/builder-drawer.js");
+/* harmony import */ var _shared_builder_publish_guard__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../shared/builder-publish-guard */ "./src/shared/builder-publish-guard.js");
+/* harmony import */ var _shared_mount_retry__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ../shared/mount-retry */ "./src/shared/mount-retry.js");
+
 
 
 
@@ -26,24 +28,6 @@ __webpack_require__.r(__webpack_exports__);
   const toggle = document.getElementById('flow-ew-bricks-toggle');
   if (!drawer || !toggle) {
     return;
-  }
-  function debounce(fn, ms) {
-    let t;
-    return function () {
-      clearTimeout(t);
-      t = setTimeout(fn, ms);
-    };
-  }
-  function findPublishButton() {
-    const toolbar = document.getElementById('bricks-toolbar');
-    if (!toolbar) {
-      return null;
-    }
-    const marker = toolbar.querySelector('[data-name="publish"]');
-    if (marker) {
-      return marker.closest('li');
-    }
-    return null;
   }
   function findToolbarEndGroup() {
     const toolbar = document.getElementById('bricks-toolbar');
@@ -79,57 +63,33 @@ __webpack_require__.r(__webpack_exports__);
     if (toggle.parentElement !== host) {
       host.appendChild(toggle);
     }
-    const status = toggle.dataset.status || '';
-    host.setAttribute('data-status', status);
+    host.setAttribute('data-status', toggle.dataset.status || '');
     return true;
   }
-  const debouncedEnsure = debounce(ensureToolbarButton, 80);
-  const bodyObserver = new MutationObserver(debouncedEnsure);
-  bodyObserver.observe(document.body, {
-    childList: true,
-    subtree: true
+  (0,_shared_mount_retry__WEBPACK_IMPORTED_MODULE_6__.mountWithRetry)(ensureToolbarButton);
+  (0,_shared_builder_drawer__WEBPACK_IMPORTED_MODULE_4__.createBuilderDrawer)({
+    drawer,
+    toggle,
+    closeSelector: '.flow-ew-bricks-drawer__close',
+    hideDelay: 200
   });
-  let attempts = 0;
-  function tryEnsureLoop() {
-    const ok = ensureToolbarButton();
-    attempts++;
-    if (!ok && attempts < 240) {
-      requestAnimationFrame(tryEnsureLoop);
-    }
-  }
-  tryEnsureLoop();
-  function open() {
-    drawer.style.display = '';
-    drawer.classList.add('is-open');
-    toggle.classList.add('is-active');
-  }
-  function close() {
-    drawer.classList.remove('is-open');
-    toggle.classList.remove('is-active');
-    setTimeout(function () {
-      if (!drawer.classList.contains('is-open')) {
-        drawer.style.display = 'none';
-      }
-    }, 200);
-  }
-  toggle.addEventListener('click', function (e) {
-    e.preventDefault();
-    e.stopPropagation();
-    if (drawer.classList.contains('is-open')) {
-      close();
-    } else {
-      open();
-    }
+  const guard = (0,_shared_builder_publish_guard__WEBPACK_IMPORTED_MODULE_5__.createBuilderPublishGuard)(function (blocked) {
+    document.body.classList.toggle('flow-ew-bricks-publish-blocked', blocked);
+    (0,_shared_publish_guard_ui__WEBPACK_IMPORTED_MODULE_3__.syncPublishGuardTooltip)((0,_shared_publish_guard_ui__WEBPACK_IMPORTED_MODULE_3__.findBricksPublishControl)(), blocked);
   });
-  const closeBtn = drawer.querySelector('.flow-ew-bricks-drawer__close');
-  if (closeBtn) {
-    closeBtn.addEventListener('click', close);
-  }
-  document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape' && drawer.classList.contains('is-open')) {
-      close();
+  document.addEventListener('click', function (e) {
+    if (!guard.isBlocked()) {
+      return;
     }
-  });
+    const target = e.target;
+    if (!target || !target.closest) {
+      return;
+    }
+    if (target.closest('#bricks-toolbar [data-name="publish"]')) {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+    }
+  }, true);
   document.addEventListener('flow-ew:classic-render', function (e) {
     const review = e.detail && e.detail.review;
     const status = review && review.status || '';
@@ -138,273 +98,9 @@ __webpack_require__.r(__webpack_exports__);
     if (host && host.classList.contains('flow-ew-bricks-review')) {
       host.setAttribute('data-status', status);
     }
-    (0,_shared_sync_reviewer_combobox_from_review__WEBPACK_IMPORTED_MODULE_1__.syncReviewerComboboxFromReview)(review);
-    schedulePublishGuard(review);
+    (0,_shared_sync_reviewer_combobox_from_review__WEBPACK_IMPORTED_MODULE_2__.syncReviewerComboboxFromReview)(review);
+    guard.schedule(review);
   });
-  const ew = window.flowEW || {};
-  const reviewMandatory = !!ew.reviewMandatory;
-  const isPublished = !!ew.isPublished;
-  const reviewerMeta = Number(ew.reviewerMeta || 0);
-  let lastReview = ew.activeReview || null;
-  let publishGuardTimer;
-  function currentReviewerId(review) {
-    const fromReview = Number(review && review.reviewer_id || review && review.reviewer && review.reviewer.id || 0);
-    return fromReview > 0 ? fromReview : reviewerMeta;
-  }
-  function hasAssignedReviewer(review) {
-    if (currentReviewerId(review) > 0) {
-      return true;
-    }
-    const sid = Number(review && review.reviewer && review.reviewer.id || 0);
-    if (sid !== 0) {
-      return true;
-    }
-    if (review && review.invite_email || review && review.reviewer && review.reviewer.is_email) {
-      return true;
-    }
-    if (review && Array.isArray(review.email_invites) && review.email_invites.length > 0) {
-      return true;
-    }
-    return false;
-  }
-  function isPublishBlocked(review) {
-    if (!reviewMandatory) {
-      return false;
-    }
-    // Mandatory review gates the *first* publish only — updates to live
-    // posts shouldn't be locked behind a stale review.
-    if (isPublished) {
-      return false;
-    }
-    if (!review || review.status !== 'approved') {
-      return true;
-    }
-    return !hasAssignedReviewer(review);
-  }
-  let blockedState = false;
-  function applyPublishGuard(review) {
-    blockedState = isPublishBlocked(review);
-    document.body.classList.toggle('flow-ew-bricks-publish-blocked', blockedState);
-    (0,_shared_publish_guard_ui__WEBPACK_IMPORTED_MODULE_5__.syncPublishGuardTooltip)((0,_shared_publish_guard_ui__WEBPACK_IMPORTED_MODULE_5__.findBricksPublishControl)(), blockedState);
-  }
-  document.addEventListener('click', function (e) {
-    if (!blockedState) {
-      return;
-    }
-    const target = e.target;
-    if (!target || !target.closest) {
-      return;
-    }
-    const publishLi = target.closest('#bricks-toolbar [data-name="publish"]');
-    if (publishLi) {
-      e.preventDefault();
-      e.stopImmediatePropagation();
-    }
-  }, true);
-  function schedulePublishGuard(review) {
-    if (review !== undefined) {
-      lastReview = review;
-    }
-    clearTimeout(publishGuardTimer);
-    publishGuardTimer = setTimeout(function () {
-      applyPublishGuard(lastReview);
-    }, 80);
-  }
-  const guardObserver = new MutationObserver(function () {
-    schedulePublishGuard();
-  });
-  guardObserver.observe(document.body, {
-    childList: true,
-    subtree: true
-  });
-  schedulePublishGuard(lastReview);
-  const comboboxRoot = document.getElementById('flow-ew-reviewer-combobox');
-  if (comboboxRoot) {
-    initReviewerCombobox(comboboxRoot);
-  }
-  function initReviewerCombobox(root) {
-    const input = root.querySelector('.flow-ew-reviewer-combobox__input');
-    const list = root.querySelector('.flow-ew-reviewer-combobox__list');
-    const select = root.querySelector('#flow-ew-reviewer-select');
-    if (!input || !list || !select) {
-      return;
-    }
-    const options = Array.from(list.querySelectorAll('[role="option"]'));
-    let activeIndex = -1;
-    let emailEntryMode = false;
-    function hideAutocomplete() {
-      return (0,_shared_reviewer_email_entry__WEBPACK_IMPORTED_MODULE_3__.shouldHideReviewerAutocomplete)(select, input, emailEntryMode);
-    }
-    function setOpen(openList) {
-      if (openList && hideAutocomplete()) {
-        openList = false;
-      }
-      list.hidden = !openList;
-      input.setAttribute('aria-expanded', openList ? 'true' : 'false');
-    }
-    function filterOptions(q) {
-      (0,_shared_reviewer_email_entry__WEBPACK_IMPORTED_MODULE_3__.filterReviewerComboboxOptions)(options, q);
-    }
-    function visibleOptions() {
-      return options.filter(function (li) {
-        return !li.hidden && li.style.display !== 'none';
-      });
-    }
-    function chooseOption(li) {
-      if (!li || li.hidden) {
-        return;
-      }
-      const id = li.dataset.value;
-      const label = li.dataset.label || li.textContent.trim();
-      select.value = id;
-      setOpen(false);
-      activeIndex = -1;
-      if ((0,_shared_reviewer_email_entry__WEBPACK_IMPORTED_MODULE_3__.isEmailComboboxOption)(li)) {
-        const typed = (input.value || '').trim();
-        if ((0,_shared_assign_invite_email__WEBPACK_IMPORTED_MODULE_2__.isValidEmail)(typed)) {
-          emailEntryMode = true;
-          select.value = 'email';
-          setOpen(false);
-          activeIndex = -1;
-          (0,_shared_assign_invite_email__WEBPACK_IMPORTED_MODULE_2__.dispatchAssignInviteEmail)(typed);
-          return;
-        }
-        emailEntryMode = true;
-        input.readOnly = false;
-        input.value = '';
-        input.placeholder = (0,_shared_reviewer_email_entry__WEBPACK_IMPORTED_MODULE_3__.getEmailPlaceholder)();
-        select.dispatchEvent(new Event('change', {
-          bubbles: true
-        }));
-        input.focus();
-        return;
-      }
-      emailEntryMode = false;
-      input.value = label;
-      select.dispatchEvent(new Event('change', {
-        bubbles: true
-      }));
-    }
-    input.addEventListener('focus', function () {
-      if (input.disabled || input.readOnly) {
-        return;
-      }
-      if (hideAutocomplete()) {
-        setOpen(false);
-        return;
-      }
-      filterOptions(input.value);
-      setOpen(true);
-    });
-    input.addEventListener('input', function () {
-      if (input.disabled || input.readOnly) {
-        return;
-      }
-      const typed = (input.value || '').trim();
-      // Valid address → show Invite row (even after External Email).
-      if ((0,_shared_assign_invite_email__WEBPACK_IMPORTED_MODULE_2__.isValidEmail)(typed)) {
-        emailEntryMode = true;
-        select.value = 'email';
-        filterOptions(typed);
-        setOpen(true);
-        activeIndex = -1;
-        return;
-      }
-      if (emailEntryMode || select.value === 'email') {
-        if (!typed) {
-          emailEntryMode = false;
-          (0,_shared_reviewer_email_entry__WEBPACK_IMPORTED_MODULE_3__.exitReviewerEmailEntryMode)(select, input, options);
-          filterOptions('');
-          setOpen(true);
-          activeIndex = -1;
-          return;
-        }
-        emailEntryMode = true;
-        select.value = 'email';
-        setOpen(false);
-        activeIndex = -1;
-        return;
-      }
-      filterOptions(input.value);
-      setOpen(true);
-      activeIndex = -1;
-    });
-    list.addEventListener('mousedown', function (e) {
-      const li = e.target.closest('[role="option"]');
-      if (li && !li.hidden) {
-        e.preventDefault();
-        chooseOption(li);
-      }
-    });
-    document.addEventListener('click', function (e) {
-      if (!root.contains(e.target)) {
-        setOpen(false);
-        activeIndex = -1;
-      }
-    });
-    document.addEventListener('flow-ew:reviewer-field-reset', function () {
-      emailEntryMode = false;
-      (0,_shared_reviewer_email_entry__WEBPACK_IMPORTED_MODULE_3__.exitReviewerEmailEntryMode)(select, input, options);
-      filterOptions('');
-      setOpen(false);
-      activeIndex = -1;
-    });
-    input.addEventListener('keydown', function (e) {
-      if (input.disabled || input.readOnly) {
-        return;
-      }
-      const vis = visibleOptions();
-      if (e.key === 'ArrowDown') {
-        e.preventDefault();
-        if (hideAutocomplete()) {
-          setOpen(false);
-          return;
-        }
-        if (!list.hidden && vis.length) {
-          activeIndex = Math.min(activeIndex + 1, vis.length - 1);
-          vis[activeIndex].focus();
-        } else {
-          filterOptions(input.value);
-          setOpen(true);
-          activeIndex = 0;
-          if (vis[0]) {
-            vis[0].focus();
-          }
-        }
-      } else if (e.key === 'ArrowUp') {
-        e.preventDefault();
-        if (hideAutocomplete()) {
-          setOpen(false);
-          return;
-        }
-        if (!list.hidden && vis.length) {
-          activeIndex = Math.max(activeIndex - 1, 0);
-          vis[activeIndex].focus();
-        }
-      } else if (e.key === 'Enter') {
-        const focused = list.querySelector('[role="option"]:focus');
-        if (focused && !focused.hidden) {
-          e.preventDefault();
-          chooseOption(focused);
-          return;
-        }
-        const typed = (input.value || '').trim();
-        if ((0,_shared_assign_invite_email__WEBPACK_IMPORTED_MODULE_2__.isValidEmail)(typed)) {
-          e.preventDefault();
-          e.stopPropagation();
-          emailEntryMode = true;
-          select.value = 'email';
-          setOpen(false);
-          activeIndex = -1;
-          (0,_shared_assign_invite_email__WEBPACK_IMPORTED_MODULE_2__.dispatchAssignInviteEmail)(typed);
-        }
-      } else if (e.key === 'Escape') {
-        setOpen(false);
-        activeIndex = -1;
-        input.focus();
-      }
-    });
-  }
 })();
 
 /***/ },
@@ -447,6 +143,216 @@ function dispatchAssignInviteEmail(email) {
  */
 function isValidEmail(value) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || '').trim());
+}
+
+/***/ },
+
+/***/ "./src/shared/builder-drawer.js"
+/*!**************************************!*\
+  !*** ./src/shared/builder-drawer.js ***!
+  \**************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   createBuilderDrawer: () => (/* binding */ createBuilderDrawer)
+/* harmony export */ });
+/**
+ * Open/close state for a builder review drawer driven by a toolbar toggle.
+ *
+ * @param {{
+ *   drawer: HTMLElement,
+ *   toggle: HTMLElement,
+ *   closeSelector?: string,
+ *   activeClasses?: string[],
+ *   hideDelay?: number,
+ *   onBeforeOpen?: () => void,
+ *   onAfterOpen?: () => void,
+ *   outsideClose?: false | { ignore?: string },
+ * }} opts
+ */
+function createBuilderDrawer(opts) {
+  const {
+    drawer,
+    toggle,
+    closeSelector = '',
+    activeClasses = ['is-active'],
+    hideDelay = 200,
+    onBeforeOpen = null,
+    onAfterOpen = null,
+    outsideClose = false
+  } = opts;
+  function isOpen() {
+    return drawer.classList.contains('is-open');
+  }
+  function open() {
+    drawer.style.display = '';
+    if (onBeforeOpen) {
+      onBeforeOpen();
+    }
+    drawer.classList.add('is-open');
+    toggle.classList.add(...activeClasses);
+    if (onAfterOpen) {
+      onAfterOpen();
+    }
+  }
+  function close() {
+    drawer.classList.remove('is-open');
+    toggle.classList.remove(...activeClasses);
+    setTimeout(function () {
+      if (!isOpen()) {
+        drawer.style.display = 'none';
+      }
+    }, hideDelay);
+  }
+  function toggleDrawer() {
+    if (isOpen()) {
+      close();
+    } else {
+      open();
+    }
+  }
+  toggle.addEventListener('click', function (e) {
+    e.preventDefault();
+    e.stopPropagation();
+    toggleDrawer();
+  });
+  const closeBtn = closeSelector ? drawer.querySelector(closeSelector) : null;
+  if (closeBtn) {
+    closeBtn.addEventListener('click', close);
+  }
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && isOpen()) {
+      close();
+    }
+  });
+  if (outsideClose) {
+    document.addEventListener('mousedown', function (e) {
+      if (!isOpen()) {
+        return;
+      }
+      if (outsideClose.ignore && e.target.closest(outsideClose.ignore)) {
+        return;
+      }
+      if (drawer.contains(e.target) || toggle.contains(e.target)) {
+        return;
+      }
+      close();
+    });
+  }
+  return {
+    open,
+    close,
+    toggle: toggleDrawer,
+    isOpen
+  };
+}
+
+/***/ },
+
+/***/ "./src/shared/builder-publish-guard.js"
+/*!*********************************************!*\
+  !*** ./src/shared/builder-publish-guard.js ***!
+  \*********************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   createBuilderPublishGuard: () => (/* binding */ createBuilderPublishGuard)
+/* harmony export */ });
+/* harmony import */ var _is_publish_blocked__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./is-publish-blocked */ "./src/shared/is-publish-blocked.js");
+/* harmony import */ var _config__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./config */ "./src/shared/config.js");
+
+
+
+/**
+ * Debounced publish-guard state for builder toolbars. `apply( blocked )` is
+ * invoked after every scheduled recompute; builders decide how to lock their
+ * own publish control.
+ *
+ * @param {(blocked: boolean) => void} apply
+ * @param {{ delay?: number }} [opts]
+ */
+function createBuilderPublishGuard(apply, opts = {}) {
+  const {
+    delay = 80
+  } = opts;
+  const ew = (0,_config__WEBPACK_IMPORTED_MODULE_1__.getConfig)();
+  const reviewMandatory = !!ew.reviewMandatory;
+  const isPublished = !!ew.isPublished;
+  const reviewerMeta = Number(ew.reviewerMeta || 0);
+  let lastReview = ew.activeReview || null;
+  let blocked = false;
+  let timer;
+  function run() {
+    blocked = (0,_is_publish_blocked__WEBPACK_IMPORTED_MODULE_0__.isPublishBlocked)({
+      reviewMandatory,
+      isPublished,
+      review: lastReview,
+      reviewerMeta
+    });
+    apply(blocked);
+  }
+  function schedule(review) {
+    if (review !== undefined) {
+      lastReview = review;
+    }
+    clearTimeout(timer);
+    timer = setTimeout(run, delay);
+  }
+  new MutationObserver(function () {
+    schedule();
+  }).observe(document.body, {
+    childList: true,
+    subtree: true
+  });
+  schedule(lastReview);
+  return {
+    schedule,
+    isBlocked: () => blocked,
+    lastReview: () => lastReview
+  };
+}
+
+/***/ },
+
+/***/ "./src/shared/config.js"
+/*!******************************!*\
+  !*** ./src/shared/config.js ***!
+  \******************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   getConfig: () => (/* binding */ getConfig)
+/* harmony export */ });
+/**
+ * `window.flowEW` is printed by wp_localize_script after some bundles have
+ * already evaluated (the Free sidebar depends on the Pro editor bundle), so
+ * it must never be destructured at module scope. This accessor is null-safe.
+ */
+function getConfig() {
+  return typeof window !== 'undefined' && window.flowEW || {};
+}
+
+/***/ },
+
+/***/ "./src/shared/debounce.js"
+/*!********************************!*\
+  !*** ./src/shared/debounce.js ***!
+  \********************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   debounce: () => (/* binding */ debounce)
+/* harmony export */ });
+function debounce(fn, ms) {
+  let t;
+  return function () {
+    clearTimeout(t);
+    t = setTimeout(fn, ms);
+  };
 }
 
 /***/ },
@@ -631,6 +537,118 @@ function bindInviteLinkCopy() {
 
 /***/ },
 
+/***/ "./src/shared/is-publish-blocked.js"
+/*!******************************************!*\
+  !*** ./src/shared/is-publish-blocked.js ***!
+  \******************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   isPublishBlocked: () => (/* binding */ isPublishBlocked)
+/* harmony export */ });
+/**
+ * Mirrors PublishGuard / classic-editor publish blocking — show review
+ * notices only while this returns true.
+ *
+ * Email invitees keep `reviewer_id === 0` and use a negative synthetic
+ * `reviewer.id`; both count as an assigned reviewer once the review is approved.
+ *
+ * @param {{
+ *   reviewMandatory?: boolean,
+ *   isPublished?: boolean,
+ *   review?: object|null,
+ *   reviewerMeta?: number,
+ * }} args
+ */
+function isPublishBlocked({
+  reviewMandatory,
+  isPublished,
+  review,
+  reviewerMeta = 0
+}) {
+  if (!reviewMandatory || isPublished) {
+    return false;
+  }
+  if (review?.status !== 'approved') {
+    return true;
+  }
+  return !hasAssignedReviewer(review, reviewerMeta);
+}
+
+/**
+ * @param {object|null|undefined} review
+ * @param {number} reviewerMeta
+ */
+function hasAssignedReviewer(review, reviewerMeta = 0) {
+  const wpId = Number(review?.reviewer_id || 0);
+  if (wpId > 0) {
+    return true;
+  }
+
+  // Synthetic email ids are negative; still a real assignment.
+  const reviewerObjId = Number(review?.reviewer?.id || 0);
+  if (reviewerObjId !== 0) {
+    return true;
+  }
+  if (Number(reviewerMeta || 0) > 0) {
+    return true;
+  }
+  if (review?.invite_email || review?.reviewer?.is_email) {
+    return true;
+  }
+  if (Array.isArray(review?.email_invites) && review.email_invites.length > 0) {
+    return true;
+  }
+  return false;
+}
+
+/***/ },
+
+/***/ "./src/shared/mount-retry.js"
+/*!***********************************!*\
+  !*** ./src/shared/mount-retry.js ***!
+  \***********************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   mountWithRetry: () => (/* binding */ mountWithRetry)
+/* harmony export */ });
+/* harmony import */ var _debounce__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./debounce */ "./src/shared/debounce.js");
+
+
+/**
+ * Builders render their toolbars asynchronously. Run `ensure` on every DOM
+ * mutation (debounced) and in a rAF loop until it reports success.
+ *
+ * @param {() => boolean} ensure
+ * @param {{ attempts?: number, debounceMs?: number }} [opts]
+ * @return {MutationObserver}
+ */
+function mountWithRetry(ensure, opts = {}) {
+  const {
+    attempts = 240,
+    debounceMs = 80
+  } = opts;
+  const observer = new MutationObserver((0,_debounce__WEBPACK_IMPORTED_MODULE_0__.debounce)(ensure, debounceMs));
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true
+  });
+  let tries = 0;
+  (function loop() {
+    const ok = ensure();
+    tries++;
+    if (!ok && tries < attempts) {
+      requestAnimationFrame(loop);
+    }
+  })();
+  return observer;
+}
+
+/***/ },
+
 /***/ "./src/shared/publish-guard-ui.js"
 /*!****************************************!*\
   !*** ./src/shared/publish-guard-ui.js ***!
@@ -657,7 +675,7 @@ function getPublishGuardTooltip() {
 
 /**
  * @param {Element|null|undefined} el
- * @returns {Element|null}
+ * @return {Element|null}
  */
 function publishGuardTooltipTarget(el) {
   if (!el || !el.closest) {
@@ -747,7 +765,7 @@ function syncPublishGuardTooltip(el, blocked) {
   }
 }
 
-/** @returns {Element|null} */
+/** @return {Element|null} */
 function findBricksPublishControl() {
   return document.querySelector('#bricks-toolbar li:has([data-name="publish"])');
 }
@@ -868,10 +886,7 @@ function filterReviewerComboboxOptions(options, q, opts) {
   const emailOnly = !!(opts && opts.emailOnly);
   const externalLabel = getExternalEmailLabel();
   (options || []).forEach(function (li) {
-    const isEmail = isEmailComboboxOption(li);
-    const baseLabel = String(li.dataset.label || externalLabel).trim();
-    const labelLower = baseLabel.toLowerCase();
-    if (isEmail) {
+    if (isEmailComboboxOption(li)) {
       // No WP users — type the address directly; never a lone email row.
       if (emailOnly) {
         li.hidden = true;
@@ -903,6 +918,7 @@ function filterReviewerComboboxOptions(options, q, opts) {
       li.textContent = li.dataset.label || externalLabel;
       return;
     }
+    const labelLower = String(li.dataset.label || externalLabel).trim().toLowerCase();
     const show = !needle || labelLower.includes(needle);
     li.hidden = !show;
     li.style.display = show ? '' : 'none';
@@ -938,7 +954,7 @@ const figmaExternalPath = 'M9.71 9V0H0.71V2H6.3L0 8.29L1.42 9.71L7.71 3.41V9H9.7
 
 /**
  * @param {ShareBarIconName} name
- * @returns {string}
+ * @return {string}
  */
 function shareBarIconHtml(name) {
   if (name === 'copied') {

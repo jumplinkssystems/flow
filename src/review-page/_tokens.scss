@@ -3,6 +3,8 @@
 // Shared by bar.scss and sidebar.scss (both injected into Shadow DOM roots).
 // =============================================================================
 
+@forward '../shared/status-tokens';
+
 // ----- Layout ----------------------------------------------------------------
 $bar-height:    64px;
 $sidebar-width: 360px;
@@ -49,26 +51,7 @@ $color-border-input: #949494;
 $color-accent: var(--wp-admin-theme-color, #007cba);
 
 // ----- Status badge colours --------------------------------------------------
-// Keep in sync with src/shared/status-themes.js and assets/css/status-themes.css.
-$badge-open-text:   #1579a5;
-$badge-open-bg:     #dff4ff;
-$badge-open-border: #b6e6ff;
-
-$badge-approved-text:   #458037;
-$badge-approved-bg:     #e7f5e4;
-$badge-approved-border: #cae8c4;
-
-$badge-review-text:   #957500;
-$badge-review-bg:     #fcf0ce;
-$badge-review-border: #f2dda4;
-
-$badge-changes-text:   #c92122;
-$badge-changes-bg:     #ffebea;
-$badge-changes-border: #ffd1d0;
-
-$badge-pending-text:   #5e777b;
-$badge-pending-bg:     #e6f3f5;
-$badge-pending-border: #cde3e7;
+// $badge-* come from the generated ../shared/_status-tokens.scss (forwarded above).
 
 // ----- Notice / error colours ------------------------------------------------
 $notice-info-text:   #1579a5;

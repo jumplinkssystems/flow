@@ -1,0 +1,84 @@
+@import '../../assets/css/status-tokens.css';
+
+/* Review mode notices (mandatory review / no reviewers). Shared by the
+   Gutenberg sidebar and the classic/builder companion. */
+.flow-ew-review-notice[hidden] {
+	display: none;
+}
+
+.flow-ew-review-notice {
+	position: relative;
+	background: var(--flow-status-bg, #fcf0ce);
+	border: 0;
+	border-left: 3px solid var(--flow-status-border, #f2dda4);
+	border-radius: 0;
+	color: var(--flow-status-text, #957500);
+	font-size: 13px;
+	line-height: 1.4;
+	padding: 8px 28px 8px 12px;
+}
+
+.flow-ew-review-notice__dismiss {
+	position: absolute;
+	top: 2px;
+	right: 2px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 24px;
+	height: 24px;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	border-radius: 2px;
+	background: transparent;
+	color: inherit;
+	cursor: pointer;
+	opacity: 0.7;
+	line-height: 1;
+	font-size: 16px;
+}
+
+.flow-ew-review-notice__dismiss:hover,
+.flow-ew-review-notice__dismiss:focus {
+	opacity: 1;
+	background: rgba(0, 0, 0, 0.06);
+}
+
+.flow-ew-review-notice__dismiss .dashicon {
+	width: 16px;
+	height: 16px;
+	font-size: 16px;
+}
+
+.flow-ew-review-notice--in-review {
+	--flow-status-bg: var(--flow-status-in_review-bg);
+	--flow-status-text: var(--flow-status-in_review-text);
+	--flow-status-border: var(--flow-status-in_review-border);
+}
+
+.flow-ew-review-notice--changes-requested {
+	--flow-status-bg: var(--flow-status-changes_requested-bg);
+	--flow-status-text: var(--flow-status-changes_requested-text);
+	--flow-status-border: var(--flow-status-changes_requested-border);
+}
+
+.flow-ew-review-notice__title {
+	font-weight: 600;
+	margin: 0 0 2px;
+}
+
+.flow-ew-review-notice__desc {
+	font-weight: 400;
+	margin: 0;
+}
+
+.flow-ew-review-notice__link {
+	color: var(--wp-admin-theme-color, #2271b1);
+	text-decoration: underline;
+}
+
+.flow-ew-review-notice__link:hover,
+.flow-ew-review-notice__link:focus {
+	color: var(--wp-admin-theme-color-darker-10, #135e96);
+}

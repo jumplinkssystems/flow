@@ -2,11 +2,10 @@ import { useSelect } from '@wordpress/data';
 import { useEffect } from '@wordpress/element';
 import { STORE_NAME } from '../store';
 import { isPublishBlocked } from '../../shared/is-publish-blocked';
-import {
-	syncGutenbergPublishGuardTooltips,
-} from '../../shared/publish-guard-ui';
+import { syncGutenbergPublishGuardTooltips } from '../../shared/publish-guard-ui';
+import { getConfig } from '../../shared/config';
 
-const { flowEW } = window;
+const flowEW = getConfig();
 
 const BLOCKED_PUBLISH_CLICK_SELECTOR =
 	'.edit-post-header .editor-post-publish-panel__toggle, .edit-post-header .editor-post-publish-button';
@@ -34,7 +33,9 @@ function getPublishGuardStyles() {
 export default function PublishGuard() {
 	const review = useSelect( ( sel ) => sel( STORE_NAME ).getReview(), [] );
 	const isAlreadyPublished = useSelect(
-		( sel ) => sel( 'core/editor' ).getCurrentPostAttribute( 'status' ) === 'publish',
+		( sel ) =>
+			sel( 'core/editor' ).getCurrentPostAttribute( 'status' ) ===
+			'publish',
 		[]
 	);
 	const blocked = isPublishBlocked( {
@@ -78,14 +79,27 @@ export default function PublishGuard() {
 
 		document.addEventListener( 'click', onClick, true );
 
+		// The block editor mutates the DOM on nearly every keystroke; coalesce
+		// the tooltip re-sync into one run per idle frame instead of running
+		// two querySelectorAll scans on every mutation.
+		let syncFrame = 0;
 		const observer = new MutationObserver( () => {
-			syncGutenbergPublishGuardTooltips( true );
+			if ( syncFrame ) {
+				return;
+			}
+			syncFrame = window.requestAnimationFrame( () => {
+				syncFrame = 0;
+				syncGutenbergPublishGuardTooltips( true );
+			} );
 		} );
 		observer.observe( document.body, { childList: true, subtree: true } );
 
 		return () => {
 			document.removeEventListener( 'click', onClick, true );
 			observer.disconnect();
+			if ( syncFrame ) {
+				window.cancelAnimationFrame( syncFrame );
+			}
 			syncGutenbergPublishGuardTooltips( false );
 		};
 	}, [ blocked ] );

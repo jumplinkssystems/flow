@@ -10,15 +10,14 @@
  */
 import flowFetch, { pageData } from './api';
 import { ensureInviteCommentIdentity } from './invite-comment-identity';
+import { noteLocalWrite } from './comment-sync';
 
 function withInviteIdentity( payload ) {
 	if ( ! pageData?.isEmailInvitee ) {
 		return payload;
 	}
 	const email = String( pageData.inviteEmail || '' );
-	const name =
-		String( pageData.inviteDisplayName || '' ).trim() ||
-		email;
+	const name = String( pageData.inviteDisplayName || '' ).trim() || email;
 	return {
 		...payload,
 		authorEmail: email,
@@ -26,21 +25,37 @@ function withInviteIdentity( payload ) {
 	};
 }
 
+/** Bracket a write so a sync response that predates it is discarded. */
+async function write( request ) {
+	noteLocalWrite();
+	try {
+		return await request();
+	} finally {
+		noteLocalWrite();
+	}
+}
+
 export const defaultCommentApi = {
 	postComment: async ( payload ) => {
 		await ensureInviteCommentIdentity();
-		return flowFetch( `reviews/${ pageData.reviewId }/comments`, {
-			method: 'POST',
-			data: withInviteIdentity( payload ),
-		} );
+		return write( () =>
+			flowFetch( `reviews/${ pageData.reviewId }/comments`, {
+				method: 'POST',
+				data: withInviteIdentity( payload ),
+			} )
+		);
 	},
 	updateComment: ( id, data ) =>
-		flowFetch( `comments/${ id }`, {
-			method: 'PATCH',
-			data,
-		} ),
+		write( () =>
+			flowFetch( `comments/${ id }`, {
+				method: 'PATCH',
+				data,
+			} )
+		),
 	deleteComment: ( id ) =>
-		flowFetch( `comments/${ id }`, {
-			method: 'DELETE',
-		} ),
+		write( () =>
+			flowFetch( `comments/${ id }`, {
+				method: 'DELETE',
+			} )
+		),
 };

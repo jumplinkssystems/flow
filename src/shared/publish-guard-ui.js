@@ -12,7 +12,7 @@ export function getPublishGuardTooltip() {
 
 /**
  * @param {Element|null|undefined} el
- * @returns {Element|null}
+ * @return {Element|null}
  */
 export function publishGuardTooltipTarget( el ) {
 	if ( ! el || ! el.closest ) {
@@ -20,11 +20,7 @@ export function publishGuardTooltipTarget( el ) {
 	}
 
 	if ( el.id === 'publish' ) {
-		return (
-			el.closest( '#publishing-action' ) ||
-			el.parentElement ||
-			el
-		);
+		return el.closest( '#publishing-action' ) || el.parentElement || el;
 	}
 
 	const panelToggle = el.closest(
@@ -121,7 +117,7 @@ export function syncPublishGuardTooltip( el, blocked ) {
 	}
 }
 
-/** @returns {Element|null} */
+/** @return {Element|null} */
 export function findBricksPublishControl() {
 	return document.querySelector(
 		'#bricks-toolbar li:has([data-name="publish"])'

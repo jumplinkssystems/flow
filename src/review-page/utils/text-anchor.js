@@ -7,7 +7,9 @@ const HIGHLIGHT_CLASS = 'flow-inline-highlight';
 
 function getContentRoot() {
 	const root = getActiveContentRoot();
-	if ( root ) return root;
+	if ( root ) {
+		return root;
+	}
 	const iframeDoc = getIframeDoc();
 	return iframeDoc?.body || document.body;
 }
@@ -31,7 +33,9 @@ function getCssPath( node, root ) {
 			continue;
 		}
 		const parent = current.parentElement;
-		if ( ! parent ) break;
+		if ( ! parent ) {
+			break;
+		}
 
 		const siblings = Array.from( parent.children ).filter(
 			( s ) => s.tagName === current.tagName
@@ -50,7 +54,9 @@ function getCssPath( node, root ) {
 }
 
 function resolvePathToNode( path, root ) {
-	if ( ! path ) return null;
+	if ( ! path ) {
+		return null;
+	}
 	try {
 		return root.querySelector( path );
 	} catch {
@@ -60,11 +66,7 @@ function resolvePathToNode( path, root ) {
 
 function getTextNodeAtOffset( element, charOffset ) {
 	const doc = element.ownerDocument || document;
-	const walker = doc.createTreeWalker(
-		element,
-		NodeFilter.SHOW_TEXT,
-		null
-	);
+	const walker = doc.createTreeWalker( element, NodeFilter.SHOW_TEXT, null );
 	let remaining = charOffset;
 	let node = walker.nextNode();
 
@@ -77,18 +79,17 @@ function getTextNodeAtOffset( element, charOffset ) {
 	}
 
 	if ( element.lastChild && element.lastChild.nodeType === Node.TEXT_NODE ) {
-		return { node: element.lastChild, offset: element.lastChild.textContent.length };
+		return {
+			node: element.lastChild,
+			offset: element.lastChild.textContent.length,
+		};
 	}
 	return null;
 }
 
 function getCharOffset( element, textNode, nodeOffset ) {
 	const doc = element.ownerDocument || document;
-	const walker = doc.createTreeWalker(
-		element,
-		NodeFilter.SHOW_TEXT,
-		null
-	);
+	const walker = doc.createTreeWalker( element, NodeFilter.SHOW_TEXT, null );
 	let offset = 0;
 	let node = walker.nextNode();
 
@@ -104,7 +105,9 @@ function getCharOffset( element, textNode, nodeOffset ) {
 
 export function serializeRange( range ) {
 	const root = getContentRootForNode( range.startContainer );
-	if ( ! root || ! root.contains( range.startContainer ) ) return null;
+	if ( ! root || ! root.contains( range.startContainer ) ) {
+		return null;
+	}
 
 	const startEl =
 		range.startContainer.nodeType === Node.TEXT_NODE
@@ -118,7 +121,11 @@ export function serializeRange( range ) {
 	const doc = range.startContainer.ownerDocument || document;
 	return {
 		startPath: getCssPath( startEl, root ),
-		startOffset: getCharOffset( startEl, range.startContainer, range.startOffset ),
+		startOffset: getCharOffset(
+			startEl,
+			range.startContainer,
+			range.startOffset
+		),
 		endPath: getCssPath( endEl, root ),
 		endOffset: getCharOffset( endEl, range.endContainer, range.endOffset ),
 		text: range.toString(),
@@ -131,11 +138,17 @@ export function serializeRange( range ) {
 }
 
 export function serializeMediaAnchor( mediaEl, labelText = '' ) {
-	if ( ! mediaEl || mediaEl.nodeType !== Node.ELEMENT_NODE ) return null;
+	if ( ! mediaEl || mediaEl.nodeType !== Node.ELEMENT_NODE ) {
+		return null;
+	}
 	const tag = mediaEl.tagName || '';
-	if ( ! [ 'IMG', 'VIDEO', 'IFRAME' ].includes( tag ) ) return null;
+	if ( ! [ 'IMG', 'VIDEO', 'IFRAME' ].includes( tag ) ) {
+		return null;
+	}
 	const root = getContentRootForNode( mediaEl );
-	if ( ! root || ! root.contains( mediaEl ) ) return null;
+	if ( ! root || ! root.contains( mediaEl ) ) {
+		return null;
+	}
 
 	const text =
 		labelText ||
@@ -158,11 +171,15 @@ export function serializeMediaAnchor( mediaEl, labelText = '' ) {
 function tryDeserializeFromPaths( descriptor, root ) {
 	const startEl = resolvePathToNode( descriptor.startPath, root );
 	const endEl = resolvePathToNode( descriptor.endPath, root );
-	if ( ! startEl || ! endEl ) return null;
+	if ( ! startEl || ! endEl ) {
+		return null;
+	}
 
 	const start = getTextNodeAtOffset( startEl, descriptor.startOffset );
 	const end = getTextNodeAtOffset( endEl, descriptor.endOffset );
-	if ( ! start || ! end ) return null;
+	if ( ! start || ! end ) {
+		return null;
+	}
 
 	try {
 		const doc = root.ownerDocument || document;
@@ -189,7 +206,9 @@ function tryDeserializeFromPaths( descriptor, root ) {
  */
 function tryFuzzyTextSearch( descriptor, root ) {
 	const text = descriptor?.text;
-	if ( ! text ) return null;
+	if ( ! text ) {
+		return null;
+	}
 	const doc = root.ownerDocument || document;
 	const walker = doc.createTreeWalker( root, NodeFilter.SHOW_TEXT, null );
 	const needle = text.trim();
@@ -207,16 +226,21 @@ function tryFuzzyTextSearch( descriptor, root ) {
 		let searchFrom = 0;
 		while ( true ) {
 			const idx = content.indexOf( needle, searchFrom );
-			if ( idx === -1 ) break;
+			if ( idx === -1 ) {
+				break;
+			}
 			const absOffset = cumulative + idx;
-			const distance = target === null ? 0 : Math.abs( absOffset - target );
+			const distance =
+				target === null ? 0 : Math.abs( absOffset - target );
 			if ( distance < bestDistance ) {
 				const range = doc.createRange();
 				range.setStart( node, idx );
 				range.setEnd( node, idx + needle.length );
 				bestRange = range;
 				bestDistance = distance;
-				if ( distance === 0 ) return bestRange;
+				if ( distance === 0 ) {
+					return bestRange;
+				}
 			}
 			if ( target === null ) {
 				// No offset → first-match wins, original behaviour.
@@ -233,13 +257,19 @@ function tryFuzzyTextSearch( descriptor, root ) {
 const MEDIA_TYPES = [ 'image', 'video', 'embed' ];
 
 function selectorForMediaType( type ) {
-	if ( type === 'video' ) return 'video';
-	if ( type === 'embed' ) return 'iframe';
+	if ( type === 'video' ) {
+		return 'video';
+	}
+	if ( type === 'embed' ) {
+		return 'iframe';
+	}
 	return 'img';
 }
 
 function tryDeserializeMedia( descriptor, root ) {
-	if ( ! descriptor?.nodePath ) return null;
+	if ( ! descriptor?.nodePath ) {
+		return null;
+	}
 
 	const selector = selectorForMediaType( descriptor.type );
 	let media = resolvePathToNode( descriptor.nodePath, root );
@@ -249,7 +279,9 @@ function tryDeserializeMedia( descriptor, root ) {
 			( node ) => ( node.getAttribute( 'src' ) || '' ) === descriptor.src
 		);
 	}
-	if ( ! media ) return null;
+	if ( ! media ) {
+		return null;
+	}
 
 	const doc = root.ownerDocument || document;
 	const range = doc.createRange();
@@ -258,10 +290,14 @@ function tryDeserializeMedia( descriptor, root ) {
 }
 
 export function resolveMediaNode( descriptor, optionalRoot ) {
-	if ( ! MEDIA_TYPES.includes( descriptor?.type ) ) return null;
+	if ( ! MEDIA_TYPES.includes( descriptor?.type ) ) {
+		return null;
+	}
 	const root =
 		optionalRoot || getContentRootForDocument( getIframeDoc() || document );
-	if ( ! root ) return null;
+	if ( ! root ) {
+		return null;
+	}
 
 	const selector = selectorForMediaType( descriptor.type );
 	let media = resolvePathToNode( descriptor.nodePath, root );
@@ -288,20 +324,26 @@ export function deserializeRange( descriptor, optionalRoot ) {
 		const doc = root?.ownerDocument || getIframeDoc() || document;
 		root = doc?.body || root;
 	}
-	if ( ! root ) return null;
+	if ( ! root ) {
+		return null;
+	}
 
 	if ( isMedia ) {
 		return tryDeserializeMedia( descriptor, root );
 	}
 
 	const range = tryDeserializeFromPaths( descriptor, root );
-	if ( range && range.toString() === descriptor.text ) return range;
+	if ( range && range.toString() === descriptor.text ) {
+		return range;
+	}
 
 	return tryFuzzyTextSearch( descriptor, root );
 }
 
 export function wrapRange( range, commentId ) {
-	if ( ! range ) return null;
+	if ( ! range ) {
+		return null;
+	}
 
 	const doc = range.startContainer.ownerDocument || document;
 	const mark = doc.createElement( 'mark' );

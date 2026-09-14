@@ -38,17 +38,17 @@ class Email_Review_Cookie {
 	public static function sign( int $review_id, string $jti, int $token_version, int $ts ): string {
 		$payload = $review_id . '|' . $jti . '|' . $ts;
 		$sig     = self::compute_signature( $review_id, $jti, $token_version, $ts );
-		return self::base64url_encode( $payload . '|' . $sig );
+		return Signed_Cookie::base64url_encode( $payload . '|' . $sig );
 	}
 
 	/**
-	 * @return array{review_id:int,jti:string,ts:int}|null
+	 * @return array{review_id:int,jti:string,ts:int,row:object}|null
 	 */
 	public static function verify( string $cookie_value ): ?array {
 		if ( '' === $cookie_value ) {
 			return null;
 		}
-		$decoded = self::base64url_decode( $cookie_value );
+		$decoded = Signed_Cookie::base64url_decode( $cookie_value );
 		if ( '' === $decoded ) {
 			return null;
 		}
@@ -87,19 +87,24 @@ class Email_Review_Cookie {
 			'review_id' => $review_id,
 			'jti'       => $jti,
 			'ts'        => $ts,
+			'row'       => $row,
 		];
 	}
 
 	/**
-	 * @return array{review_id:int,jti:string,ts:int}|null
+	 * @return array{review_id:int,jti:string,ts:int,row:object}|null
 	 */
 	public static function verify_from_request(): ?array {
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-		$raw = isset( $_COOKIE[ self::COOKIE_NAME ] ) ? (string) wp_unslash( $_COOKIE[ self::COOKIE_NAME ] ) : '';
+		$raw = self::raw_from_request();
 		if ( '' === $raw ) {
 			return null;
 		}
 		return self::verify( $raw );
+	}
+
+	public static function raw_from_request(): string {
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- signed token; verify() checks signature and freshness before any field is used.
+		return isset( $_COOKIE[ self::COOKIE_NAME ] ) ? (string) wp_unslash( $_COOKIE[ self::COOKIE_NAME ] ) : '';
 	}
 
 	public static function verify_entry_token(
@@ -122,20 +127,7 @@ class Email_Review_Cookie {
 	public static function set( int $review_id, string $jti, int $token_version ): string {
 		$ts    = time();
 		$value = self::sign( $review_id, $jti, $token_version, $ts );
-		setcookie(
-			self::COOKIE_NAME,
-			$value,
-			[
-				'expires'  => $ts + self::SESSION_FRESHNESS_TTL,
-				'path'     => COOKIEPATH,
-				'domain'   => COOKIE_DOMAIN ?: '',
-				'secure'   => is_ssl(),
-				'httponly' => true,
-				'samesite' => 'Lax',
-			]
-		);
-		$_COOKIE[ self::COOKIE_NAME ] = $value;
-		return self::build_set_cookie_header( self::COOKIE_NAME, $value, $ts + self::SESSION_FRESHNESS_TTL );
+		return Signed_Cookie::write( self::COOKIE_NAME, $value, $ts + self::SESSION_FRESHNESS_TTL );
 	}
 
 	public static function refresh_session( int $review_id, string $jti, int $token_version ): string {
@@ -143,50 +135,6 @@ class Email_Review_Cookie {
 	}
 
 	public static function clear(): string {
-		$expires_ts = time() - HOUR_IN_SECONDS;
-		setcookie(
-			self::COOKIE_NAME,
-			'',
-			[
-				'expires'  => $expires_ts,
-				'path'     => COOKIEPATH,
-				'domain'   => COOKIE_DOMAIN ?: '',
-				'secure'   => is_ssl(),
-				'httponly' => true,
-				'samesite' => 'Lax',
-			]
-		);
-		unset( $_COOKIE[ self::COOKIE_NAME ] );
-		return self::build_set_cookie_header( self::COOKIE_NAME, '', $expires_ts );
-	}
-
-	private static function build_set_cookie_header( string $name, string $value, int $expires_ts ): string {
-		$parts = [
-			rawurlencode( $name ) . '=' . rawurlencode( $value ),
-			'expires=' . gmdate( 'D, d M Y H:i:s T', $expires_ts ),
-			'Max-Age=' . max( 0, $expires_ts - time() ),
-			'path=' . COOKIEPATH,
-		];
-		if ( COOKIE_DOMAIN ) {
-			$parts[] = 'domain=' . COOKIE_DOMAIN;
-		}
-		if ( is_ssl() ) {
-			$parts[] = 'secure';
-		}
-		$parts[] = 'HttpOnly';
-		$parts[] = 'SameSite=Lax';
-		return implode( '; ', $parts );
-	}
-
-	private static function base64url_encode( string $data ): string {
-		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
-		return rtrim( strtr( base64_encode( $data ), '+/', '-_' ), '=' );
-	}
-
-	private static function base64url_decode( string $data ): string {
-		$padded = str_pad( strtr( $data, '-_', '+/' ), strlen( $data ) % 4 === 0 ? strlen( $data ) : strlen( $data ) + ( 4 - strlen( $data ) % 4 ), '=', STR_PAD_RIGHT );
-		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode
-		$decoded = base64_decode( $padded, true );
-		return is_string( $decoded ) ? $decoded : '';
+		return Signed_Cookie::clear( self::COOKIE_NAME );
 	}
 }

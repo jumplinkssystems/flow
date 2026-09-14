@@ -9,6 +9,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class ClassicEditor {
 
+	const BUILDER_CONTEXTS = [ 'elementor', 'bricks', 'breakdance', 'oxygen', 'avada', 'beaver', 'divi' ];
+
 	public function boot(): void {
 		add_action( 'add_meta_boxes', [ $this, 'register_meta_box' ] );
 		add_action( 'admin_enqueue_scripts', [ $this, 'enqueue_assets' ] );
@@ -69,7 +71,7 @@ class ClassicEditor {
 		$review          = DB::get_active_review( $post_id );
 		$current_user_id = get_current_user_id();
 		$can_assign      = current_user_can( 'flow_assign_reviewer' );
-		$can_review      = current_user_can( 'flow_review_posts' );
+		$can_review      = Review::user_can_be_reviewer( $current_user_id );
 
 		$status      = $review ? (string) $review->status : '';
 		$reviewer_id = $review ? (int) $review->reviewer_id : 0;
@@ -103,10 +105,11 @@ class ClassicEditor {
 			} else {
 				$users        = get_users(
 					[
-						'role__in' => $reviewer_roles,
-						'exclude'  => [ $current_user_id ],
-						'fields'   => [ 'ID', 'display_name' ],
-						'number'   => 200,
+						'role__in'    => $reviewer_roles,
+						'exclude'     => [ $current_user_id ],
+						'fields'      => [ 'ID', 'display_name' ],
+						'number'      => 200,
+						'count_total' => false,
 					]
 				);
 				$no_reviewers = empty( $users );
@@ -127,21 +130,20 @@ class ClassicEditor {
 			$reviewer_name = $invite_name;
 		}
 
+		$pending_reviewer_name = '';
+		$pending_reviewer_id   = Auto_Assign_Reviewer::pending_reviewer_id( $post_id );
+		if ( $pending_reviewer_id > 0 ) {
+			$pending_user          = get_userdata( $pending_reviewer_id );
+			$pending_reviewer_name = $pending_user ? (string) $pending_user->display_name : '';
+		}
+
 		$root_class = 'flow-ew-classic';
-		if ( 'elementor' === $context ) {
-			$root_class .= ' flow-ew-classic--elementor flow-ew-classic--builder-dark';
-		} elseif ( 'bricks' === $context ) {
-			$root_class .= ' flow-ew-classic--bricks flow-ew-classic--builder-dark';
-		} elseif ( 'breakdance' === $context ) {
-			$root_class .= ' flow-ew-classic--breakdance flow-ew-classic--builder-dark';
-		} elseif ( 'oxygen' === $context ) {
-			$root_class .= ' flow-ew-classic--oxygen flow-ew-classic--builder-dark';
-		} elseif ( 'avada' === $context ) {
-			$root_class .= ' flow-ew-classic--avada flow-ew-classic--builder-dark';
-		} elseif ( 'beaver' === $context ) {
-			$root_class .= ' flow-ew-classic--beaver';
-		} elseif ( 'divi' === $context ) {
-			$root_class .= ' flow-ew-classic--divi flow-ew-classic--builder-dark';
+		if ( in_array( $context, self::BUILDER_CONTEXTS, true ) ) {
+			$root_class .= ' flow-ew-classic--' . $context;
+			// Beaver follows its own light/dark skin (see src/beaver/index.js).
+			if ( 'beaver' !== $context ) {
+				$root_class .= ' flow-ew-classic--builder-dark';
+			}
 		}
 
 		$current_post_id = $post_id;
@@ -182,36 +184,7 @@ class ClassicEditor {
 			return;
 		}
 
-		$asset_file = FLOW_EW_PLUGIN_DIR . 'build/classic-editor/index.asset.php';
-		if ( ! file_exists( $asset_file ) ) {
-			return;
-		}
-		$asset      = require $asset_file;
-		$js_suffix  = Assets::webpack_build_suffix( FLOW_EW_PLUGIN_DIR . 'build/classic-editor/index', 'js' );
-		$css_suffix = Assets::webpack_build_suffix( FLOW_EW_PLUGIN_DIR . 'build/classic-editor/style-index', 'css' );
-
-		Assets::ensure_react_jsx_runtime_registered();
-
-		wp_enqueue_script(
-			'flow-ew-classic-editor',
-			FLOW_EW_PLUGIN_URL . 'build/classic-editor/index' . $js_suffix . '.js',
-			$asset['dependencies'],
-			$asset['version'],
-			true
-		);
-
-		wp_enqueue_style(
-			'flow-ew-classic-editor',
-			FLOW_EW_PLUGIN_URL . 'build/classic-editor/style-index' . $css_suffix . '.css',
-			[],
-			$asset['version']
-		);
-
-		wp_localize_script(
-			'flow-ew-classic-editor',
-			'flowEW',
-			Plugin::get_editor_localization_data( $post_id )
-		);
+		Assets::enqueue_classic_editor_companion( $post_id );
 	}
 
 	private function is_block_editor(): bool {

@@ -12,7 +12,7 @@ import { isValidEmail } from './assign-invite-email';
 export { isValidEmail };
 
 export function isEmailComboboxOption( li ) {
-	return !!(
+	return !! (
 		li &&
 		( li.dataset.isEmail === '1' || li.dataset.value === 'email' )
 	);
@@ -80,15 +80,16 @@ export function formatInviteOptionLabel( email ) {
  * @param {boolean} [emailEntryMode]
  * @return {boolean}
  */
-export function shouldHideReviewerAutocomplete( select, input, emailEntryMode ) {
+export function shouldHideReviewerAutocomplete(
+	select,
+	input,
+	emailEntryMode
+) {
 	const typed = String( ( input && input.value ) || '' ).trim();
 	if ( isValidEmail( typed ) ) {
 		return false;
 	}
-	return !!(
-		emailEntryMode ||
-		( select && select.value === 'email' )
-	);
+	return !! ( emailEntryMode || ( select && select.value === 'email' ) );
 }
 
 /**
@@ -103,15 +104,11 @@ export function filterReviewerComboboxOptions( options, q, opts ) {
 	const needle = String( q || '' )
 		.toLowerCase()
 		.trim();
-	const emailOnly = !!( opts && opts.emailOnly );
+	const emailOnly = !! ( opts && opts.emailOnly );
 	const externalLabel = getExternalEmailLabel();
 
 	( options || [] ).forEach( function ( li ) {
-		const isEmail = isEmailComboboxOption( li );
-		const baseLabel = String( li.dataset.label || externalLabel ).trim();
-		const labelLower = baseLabel.toLowerCase();
-
-		if ( isEmail ) {
+		if ( isEmailComboboxOption( li ) ) {
 			// No WP users — type the address directly; never a lone email row.
 			if ( emailOnly ) {
 				li.hidden = true;
@@ -148,6 +145,9 @@ export function filterReviewerComboboxOptions( options, q, opts ) {
 			return;
 		}
 
+		const labelLower = String( li.dataset.label || externalLabel )
+			.trim()
+			.toLowerCase();
 		const show = ! needle || labelLower.includes( needle );
 		li.hidden = ! show;
 		li.style.display = show ? '' : 'none';

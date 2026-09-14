@@ -10,6 +10,7 @@
  * @var string               $status
  * @var int                  $reviewer_id
  * @var string               $reviewer_name
+ * @var string               $pending_reviewer_name
  * @var string               $preview_url
  * @var string               $invite_email
  * @var array<int,array{id:int|string,name:string,is_email?:bool}> $reviewers
@@ -146,6 +147,16 @@ if ( false !== strpos( $root_class, 'flow-ew-classic--beaver' ) ) {
 				</select>
 			</div>
 		</div>
+		<?php if ( '' !== $pending_reviewer_name ) : ?>
+			<p
+				class="flow-ew-classic__pending-reviewer"
+				data-flow-pending-reviewer
+				<?php echo ( $reviewer_id > 0 || '' !== $invite_email ) ? 'hidden' : ''; ?>
+			>
+				<span class="flow-ew-classic__pending-name"><?php echo esc_html( $pending_reviewer_name ); ?></span>
+				<span class="flow-ew-classic__pending-hint"><?php esc_html_e( 'Will be assigned when you save.', 'jumplinks-editorial-workflow' ); ?></span>
+			</p>
+		<?php endif; ?>
 	<?php elseif ( $reviewer_name ) : ?>
 		<div class="flow-ew-classic__field">
 			<span class="flow-ew-classic__label"><?php esc_html_e( 'Reviewer', 'jumplinks-editorial-workflow' ); ?></span>

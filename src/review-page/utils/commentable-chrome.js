@@ -26,10 +26,16 @@ export function installCommentableChrome( options = {} ) {
 	}
 
 	const doc = window.document;
-	if ( ! doc?.body ) return;
+	if ( ! doc?.body ) {
+		return;
+	}
 
-	if ( sessionStorage.getItem( NOTICE_DISMISSED_KEY ) === '1' ) return;
-	if ( doc.querySelector( '.' + NOTICE_CLASS ) ) return;
+	if ( sessionStorage.getItem( NOTICE_DISMISSED_KEY ) === '1' ) {
+		return;
+	}
+	if ( doc.querySelector( '.' + NOTICE_CLASS ) ) {
+		return;
+	}
 
 	const notice = doc.createElement( 'div' );
 	notice.className = NOTICE_CLASS + ' is-dismissible';

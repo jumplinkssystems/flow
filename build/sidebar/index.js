@@ -2,6 +2,92 @@
 /******/ 	"use strict";
 /******/ 	var __webpack_modules__ = ({
 
+/***/ "./src/shared/assign-invite-email.js"
+/*!*******************************************!*\
+  !*** ./src/shared/assign-invite-email.js ***!
+  \*******************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   dispatchAssignInviteEmail: () => (/* binding */ dispatchAssignInviteEmail),
+/* harmony export */   isValidEmail: () => (/* binding */ isValidEmail)
+/* harmony export */ });
+/**
+ * Ask the classic-editor companion to create/update a review with an external
+ * email invite. Builders that own their own combobox (Avada / Beaver / Divi /
+ * Oxygen / Breakdance) dispatch this instead of duplicating the REST call.
+ *
+ * @param {string} email
+ * @return {boolean} Whether a non-empty email was dispatched.
+ */
+function dispatchAssignInviteEmail(email) {
+  const trimmed = String(email || '').trim().toLowerCase();
+  if (!trimmed) {
+    return false;
+  }
+  document.dispatchEvent(new CustomEvent('flow-ew:assign-invite-email', {
+    detail: {
+      email: trimmed
+    }
+  }));
+  return true;
+}
+
+/**
+ * @param {string} value
+ * @return {boolean}
+ */
+function isValidEmail(value) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || '').trim());
+}
+
+/***/ },
+
+/***/ "./src/shared/config.js"
+/*!******************************!*\
+  !*** ./src/shared/config.js ***!
+  \******************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   getConfig: () => (/* binding */ getConfig)
+/* harmony export */ });
+/**
+ * `window.flowEW` is printed by wp_localize_script after some bundles have
+ * already evaluated (the Free sidebar depends on the Pro editor bundle), so
+ * it must never be destructured at module scope. This accessor is null-safe.
+ */
+function getConfig() {
+  return typeof window !== 'undefined' && window.flowEW || {};
+}
+
+/***/ },
+
+/***/ "./src/shared/invite-value.js"
+/*!************************************!*\
+  !*** ./src/shared/invite-value.js ***!
+  \************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   EMAIL_SENTINEL: () => (/* binding */ EMAIL_SENTINEL),
+/* harmony export */   INVITE_PREFIX: () => (/* binding */ INVITE_PREFIX),
+/* harmony export */   parseInviteValue: () => (/* binding */ parseInviteValue)
+/* harmony export */ });
+const EMAIL_SENTINEL = 'email';
+const INVITE_PREFIX = 'invite:';
+function parseInviteValue(val) {
+  if (typeof val !== 'string' || !val.startsWith(INVITE_PREFIX)) {
+    return '';
+  }
+  return val.slice(INVITE_PREFIX.length);
+}
+
+/***/ },
+
 /***/ "./src/shared/is-publish-blocked.js"
 /*!******************************************!*\
   !*** ./src/shared/is-publish-blocked.js ***!
@@ -134,7 +220,7 @@ function getPublishGuardTooltip() {
 
 /**
  * @param {Element|null|undefined} el
- * @returns {Element|null}
+ * @return {Element|null}
  */
 function publishGuardTooltipTarget(el) {
   if (!el || !el.closest) {
@@ -224,7 +310,7 @@ function syncPublishGuardTooltip(el, blocked) {
   }
 }
 
-/** @returns {Element|null} */
+/** @return {Element|null} */
 function findBricksPublishControl() {
   return document.querySelector('#bricks-toolbar li:has([data-name="publish"])');
 }
@@ -258,7 +344,7 @@ const figmaExternalPath = 'M9.71 9V0H0.71V2H6.3L0 8.29L1.42 9.71L7.71 3.41V9H9.7
 
 /**
  * @param {ShareBarIconName} name
- * @returns {string}
+ * @return {string}
  */
 function shareBarIconHtml(name) {
   if (name === 'copied') {
@@ -327,6 +413,7 @@ function ShareBarIcon({
 
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   hasAssignedReviewer: () => (/* binding */ hasAssignedReviewer),
 /* harmony export */   hasUnsentReviewers: () => (/* binding */ hasUnsentReviewers),
 /* harmony export */   shouldShowSendForReview: () => (/* binding */ shouldShowSendForReview)
 /* harmony export */ });
@@ -353,14 +440,40 @@ function hasUnsentReviewers(review) {
 }
 
 /**
- * Show the Send for review CTA when the review has never been sent, or when
- * newly assigned reviewers still need a send.
+ * Whether anyone is on the hook for this review: a WordPress user, an email
+ * invitee, or a Pro roster row. Turning on Open Review creates a review with
+ * nobody assigned, which is a valid state but has nothing to send.
+ *
+ * @param {object|null|undefined} review
+ * @return {boolean}
+ */
+function hasAssignedReviewer(review) {
+  if (!review) {
+    return false;
+  }
+  // Email invitees carry a negative synthetic id, so the id alone is not enough.
+  const reviewerId = Number(review.reviewer?.id ?? review.reviewer_id ?? 0);
+  if (reviewerId > 0) {
+    return true;
+  }
+  if (review.invite_email || review.reviewer?.is_email) {
+    return true;
+  }
+  if (Array.isArray(review.email_invites) && review.email_invites.length > 0) {
+    return true;
+  }
+  return Array.isArray(review.reviewers) && review.reviewers.length > 0;
+}
+
+/**
+ * Show the Send for review CTA when someone is assigned and the review has
+ * never been sent, or when newly assigned reviewers still need a send.
  *
  * @param {object|null|undefined} review
  * @return {boolean}
  */
 function shouldShowSendForReview(review) {
-  if (!review) {
+  if (!review || !hasAssignedReviewer(review)) {
     return false;
   }
   return review.status === 'pending' || hasUnsentReviewers(review);
@@ -410,40 +523,15 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   STATUS_COLORS: () => (/* binding */ STATUS_COLORS),
 /* harmony export */   STATUS_THEMES: () => (/* binding */ STATUS_THEMES),
+/* harmony export */   applyStatusTheme: () => (/* binding */ applyStatusTheme),
 /* harmony export */   statusTextColor: () => (/* binding */ statusTextColor),
 /* harmony export */   statusThemeStyle: () => (/* binding */ statusThemeStyle)
 /* harmony export */ });
-/**
- * Unified review status colors — single source of truth for JS surfaces.
- * Keep in sync with assets/css/status-themes.css and src/review-page/_tokens.scss.
- */
-const STATUS_THEMES = {
-  open_review: {
-    bg: '#dff4ff',
-    text: '#1579a5',
-    border: '#b6e6ff'
-  },
-  approved: {
-    bg: '#e7f5e4',
-    text: '#458037',
-    border: '#cae8c4'
-  },
-  in_review: {
-    bg: '#fcf0ce',
-    text: '#957500',
-    border: '#f2dda4'
-  },
-  changes_requested: {
-    bg: '#ffebea',
-    text: '#c92122',
-    border: '#ffd1d0'
-  },
-  pending: {
-    bg: '#e6f3f5',
-    text: '#5e777b',
-    border: '#cde3e7'
-  }
-};
+/* harmony import */ var _assets_status_palette_json__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../../assets/status-palette.json */ "./assets/status-palette.json");
+
+
+/** Review status colours; assets/status-palette.json is the single source. */
+const STATUS_THEMES = _assets_status_palette_json__WEBPACK_IMPORTED_MODULE_0__;
 
 /** @param {string|undefined|null} status */
 function statusThemeStyle(status) {
@@ -466,6 +554,21 @@ function statusTextColor(status) {
 
 /** Text colors only — backward compat for callers that only need the accent. */
 const STATUS_COLORS = Object.fromEntries(Object.entries(STATUS_THEMES).map(([key, theme]) => [key, theme.text]));
+const THEME_PROPS = ['--flow-status-bg', '--flow-status-text', '--flow-status-border', '--flow-badge-color'];
+
+/**
+ * Write (or clear) the status custom properties on an element.
+ *
+ * @param {HTMLElement}           el
+ * @param {string|undefined|null} status
+ */
+function applyStatusTheme(el, status) {
+  const themeStyle = statusThemeStyle(status);
+  THEME_PROPS.forEach(prop => el.style.removeProperty(prop));
+  Object.entries(themeStyle).forEach(([prop, value]) => {
+    el.style.setProperty(prop, value);
+  });
+}
 
 /***/ },
 
@@ -500,8 +603,9 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _RevisionShareBar__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ./RevisionShareBar */ "./src/sidebar/components/RevisionShareBar.js");
 /* harmony import */ var _OpenReviewControl__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! ./OpenReviewControl */ "./src/sidebar/components/OpenReviewControl.js");
 /* harmony import */ var _ReviewModeNotice__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(/*! ./ReviewModeNotice */ "./src/sidebar/components/ReviewModeNotice.js");
-/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__(/*! react/jsx-runtime */ "react/jsx-runtime");
-/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_14___default = /*#__PURE__*/__webpack_require__.n(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_14__);
+/* harmony import */ var _shared_config__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__(/*! ../../shared/config */ "./src/shared/config.js");
+/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_15__ = __webpack_require__(/*! react/jsx-runtime */ "react/jsx-runtime");
+/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_15___default = /*#__PURE__*/__webpack_require__.n(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_15__);
 
 
 
@@ -517,9 +621,8 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-const {
-  flowEW
-} = window;
+
+const flowEW = (0,_shared_config__WEBPACK_IMPORTED_MODULE_14__.getConfig)();
 const {
   restUrl,
   currentUserId,
@@ -565,14 +668,18 @@ function FlowReviewPanel() {
   const postAuthorId = (0,_wordpress_data__WEBPACK_IMPORTED_MODULE_0__.useSelect)(sel => sel('core/editor').getEditedPostAttribute('author'), []);
   const isPostAuthor = Number(postAuthorId) === Number(currentUserId);
   const approve = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_1__.useCallback)(async () => {
-    if (!review) return;
+    if (!review) {
+      return;
+    }
     setLoading(true);
     try {
       const data = await _wordpress_api_fetch__WEBPACK_IMPORTED_MODULE_5___default()({
         url: `${restUrl}/reviews/${review.id}/approve`,
         method: 'POST'
       });
-      if (data) setReview(data);
+      if (data) {
+        setReview(data);
+      }
       createSuccessNotice((0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_4__.__)('✔ Approval recorded.', 'jumplinks-editorial-workflow'), {
         type: 'snackbar',
         isDismissible: true
@@ -587,14 +694,18 @@ function FlowReviewPanel() {
   }, [review]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const requestChanges = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_1__.useCallback)(async () => {
-    if (!review) return;
+    if (!review) {
+      return;
+    }
     setLoading(true);
     try {
       const data = await _wordpress_api_fetch__WEBPACK_IMPORTED_MODULE_5___default()({
         url: `${restUrl}/reviews/${review.id}/request-changes`,
         method: 'POST'
       });
-      if (data) setReview(data);
+      if (data) {
+        setReview(data);
+      }
       createSuccessNotice((0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_4__.__)('✔ Changes requested.', 'jumplinks-editorial-workflow'), {
         type: 'snackbar',
         isDismissible: true
@@ -609,14 +720,18 @@ function FlowReviewPanel() {
   }, [review]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const revokeApproval = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_1__.useCallback)(async () => {
-    if (!review) return;
+    if (!review) {
+      return;
+    }
     setLoading(true);
     try {
       const data = await _wordpress_api_fetch__WEBPACK_IMPORTED_MODULE_5___default()({
         url: `${restUrl}/reviews/${review.id}/revoke-approval`,
         method: 'POST'
       });
-      if (data) setReview(data);
+      if (data) {
+        setReview(data);
+      }
       createSuccessNotice((0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_4__.__)('Approval revoked.', 'jumplinks-editorial-workflow'), {
         type: 'snackbar',
         isDismissible: true
@@ -631,14 +746,18 @@ function FlowReviewPanel() {
   }, [review]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const resubmit = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_1__.useCallback)(async () => {
-    if (!review) return;
+    if (!review) {
+      return;
+    }
     setLoading(true);
     try {
       const data = await _wordpress_api_fetch__WEBPACK_IMPORTED_MODULE_5___default()({
         url: `${restUrl}/reviews/${review.id}/resubmit`,
         method: 'POST'
       });
-      if (data) setReview(data);
+      if (data) {
+        setReview(data);
+      }
       createSuccessNotice((0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_4__.__)('✔ Resubmitted for review.', 'jumplinks-editorial-workflow'), {
         type: 'snackbar',
         isDismissible: true
@@ -653,7 +772,9 @@ function FlowReviewPanel() {
   }, [review]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const sendForReview = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_1__.useCallback)(async () => {
-    if (!review) return;
+    if (!review) {
+      return;
+    }
     setLoading(true);
     try {
       // Only downgrade unpublished drafts to "pending" \u2014 a live post that
@@ -689,6 +810,7 @@ function FlowReviewPanel() {
     setLoading,
     restUrl
   });
+  // Free's "Unlock multiple reviewers" upsell (assets/js/flow-ew-upsell-reviewer.js) renders here.
   const reviewerFieldExtras = (0,_wordpress_hooks__WEBPACK_IMPORTED_MODULE_6__.applyFilters)('flow_ew_reviewer_field_extras', null, {
     review,
     loading,
@@ -717,56 +839,56 @@ function FlowReviewPanel() {
     reviewerMeta: flowEW.reviewerMeta
   });
   const showReviewNotice = currentUserCan.assignReviewer && (noReviewers && !flowEW.reviewMandatory || publishBlocked);
-  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_14__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_14__.Fragment, {
-    children: [showReviewNotice && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_14__.jsx)(_ReviewModeNotice__WEBPACK_IMPORTED_MODULE_13__["default"], {
+  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_15__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_15__.Fragment, {
+    children: [showReviewNotice && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_15__.jsx)(_ReviewModeNotice__WEBPACK_IMPORTED_MODULE_13__["default"], {
       reviewMandatory: flowEW.reviewMandatory,
       publishBlocked: publishBlocked,
       noReviewers: noReviewers
-    }), currentUserCan.assignReviewer && flowEW.openReviewEnabled && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_14__.jsx)(_OpenReviewControl__WEBPACK_IMPORTED_MODULE_12__["default"], {
+    }), currentUserCan.assignReviewer && flowEW.openReviewEnabled && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_15__.jsx)(_OpenReviewControl__WEBPACK_IMPORTED_MODULE_12__["default"], {
       review: review,
       loading: loading,
       setReview: setReview,
       setLoading: setLoading,
       restUrl: restUrl,
       createErrorNotice: createErrorNotice
-    }), currentUserCan.assignReviewer && (reviewerFieldSlot || /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_14__.jsx)(_ReviewerField__WEBPACK_IMPORTED_MODULE_10__["default"], {})), reviewerFieldExtras, /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_14__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__.PanelRow, {
-      children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_14__.jsxs)("div", {
+    }), currentUserCan.assignReviewer && (reviewerFieldSlot || /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_15__.jsx)(_ReviewerField__WEBPACK_IMPORTED_MODULE_10__["default"], {})), reviewerFieldExtras, /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_15__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__.PanelRow, {
+      children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_15__.jsxs)("div", {
         className: "flow-ew-actions",
-        children: [isPendingSend && currentUserCan.assignReviewer && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_14__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_14__.Fragment, {
-          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_14__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__.Button, {
+        children: [isPendingSend && currentUserCan.assignReviewer && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_15__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_15__.Fragment, {
+          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_15__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__.Button, {
             variant: "primary",
             onClick: sendForReview,
             disabled: sendDisabled,
             isBusy: loading,
             className: "flow-ew-actions__btn",
             children: i18n.sendForReview
-          }), sendDisabled && sendDisabledHint && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_14__.jsx)("p", {
+          }), sendDisabled && sendDisabledHint && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_15__.jsx)("p", {
             className: "flow-ew-actions__hint",
             children: sendDisabledHint
           })]
-        }), isChangesRequested && isPostAuthor && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_14__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__.Button, {
+        }), isChangesRequested && isPostAuthor && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_15__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__.Button, {
           variant: "primary",
           onClick: resubmit,
           disabled: loading,
           isBusy: loading,
           className: "flow-ew-actions__btn",
           children: i18n.resubmit
-        }), isInReview && isReviewer && currentUserCan.reviewPosts && (myApproved ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_14__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__.Button, {
+        }), isInReview && isReviewer && currentUserCan.reviewPosts && (myApproved ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_15__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__.Button, {
           variant: "secondary",
           onClick: revokeApproval,
           disabled: loading,
           isBusy: loading,
           className: "flow-ew-actions__btn",
           children: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_4__.__)('Revoke Approval', 'jumplinks-editorial-workflow')
-        }) : /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_14__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_14__.Fragment, {
-          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_14__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__.Button, {
+        }) : /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_15__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_15__.Fragment, {
+          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_15__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__.Button, {
             variant: "primary",
             onClick: approve,
             disabled: loading,
             isBusy: loading,
             className: "flow-ew-actions__btn flow-ew-actions__btn--approve",
             children: i18n.approve
-          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_14__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__.Button, {
+          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_15__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__.Button, {
             variant: "secondary",
             isDestructive: true,
             onClick: requestChanges,
@@ -775,7 +897,7 @@ function FlowReviewPanel() {
             className: "flow-ew-actions__btn",
             children: i18n.requestChanges
           })]
-        })), review?.revision_preview_url && (review.status !== 'pending' || !!review.is_open) && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_14__.jsx)(_RevisionShareBar__WEBPACK_IMPORTED_MODULE_11__["default"], {
+        })), review?.revision_preview_url && (review.status !== 'pending' || !!review.is_open) && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_15__.jsx)(_RevisionShareBar__WEBPACK_IMPORTED_MODULE_11__["default"], {
           url: review.revision_preview_url
         })]
       })
@@ -812,8 +934,9 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _wordpress_api_fetch__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! @wordpress/api-fetch */ "@wordpress/api-fetch");
 /* harmony import */ var _wordpress_api_fetch__WEBPACK_IMPORTED_MODULE_7___default = /*#__PURE__*/__webpack_require__.n(_wordpress_api_fetch__WEBPACK_IMPORTED_MODULE_7__);
 /* harmony import */ var _store__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ../store */ "./src/sidebar/store.js");
-/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! react/jsx-runtime */ "react/jsx-runtime");
-/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9___default = /*#__PURE__*/__webpack_require__.n(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__);
+/* harmony import */ var _shared_config__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ../../shared/config */ "./src/shared/config.js");
+/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! react/jsx-runtime */ "react/jsx-runtime");
+/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_10___default = /*#__PURE__*/__webpack_require__.n(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_10__);
 
 
 
@@ -824,9 +947,8 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-const {
-  flowEW
-} = window;
+
+const flowEW = (0,_shared_config__WEBPACK_IMPORTED_MODULE_9__.getConfig)();
 const {
   restUrl,
   postId,
@@ -860,12 +982,16 @@ function FlowReviewerInfoPanel() {
     label: u.name
   })), [reviewers]);
   const filteredOptions = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_1__.useMemo)(() => {
-    if (!filterValue) return reviewerOptions;
+    if (!filterValue) {
+      return reviewerOptions;
+    }
     const lower = filterValue.toLowerCase();
     return reviewerOptions.filter(o => o.label.toLowerCase().includes(lower));
   }, [reviewerOptions, filterValue]);
   const handleSelect = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_1__.useCallback)(async (val, onClose) => {
-    if (!val) return;
+    if (!val) {
+      return;
+    }
     const newId = Number(val);
     if (newId === reviewerId) {
       onClose();
@@ -895,30 +1021,31 @@ function FlowReviewerInfoPanel() {
     } finally {
       setIsSaving(false);
     }
-  }, [reviewerId]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  if (!reviewerData) return null;
-  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsx)(_wordpress_editor__WEBPACK_IMPORTED_MODULE_4__.PluginPostStatusInfo, {
-    children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsx)("div", {
+  }, [reviewerId, createErrorNotice, createSuccessNotice, setReview]);
+  if (!reviewerData) {
+    return null;
+  }
+  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_10__.jsx)(_wordpress_editor__WEBPACK_IMPORTED_MODULE_4__.PluginPostStatusInfo, {
+    children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_10__.jsx)("div", {
       ref: setPopoverAnchor,
       style: {
         width: '100%'
       },
-      children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsxs)(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__.__experimentalHStack, {
+      children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_10__.jsxs)(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__.__experimentalHStack, {
         className: "editor-post-panel__row",
-        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsx)("div", {
+        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_10__.jsx)("div", {
           className: "editor-post-panel__row-label",
           children: i18n.reviewer
-        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsx)("div", {
+        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_10__.jsx)("div", {
           className: "editor-post-panel__row-control",
-          children: canAssign ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__.Dropdown, {
+          children: canAssign ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_10__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__.Dropdown, {
             popoverProps: popoverProps,
             contentClassName: "editor-post-author__panel-dialog",
             focusOnMount: true,
             renderToggle: ({
               isOpen,
               onToggle
-            }) => /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__.Button, {
+            }) => /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_10__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__.Button, {
               size: "compact",
               variant: "tertiary",
               className: "editor-post-author__panel-toggle",
@@ -928,16 +1055,16 @@ function FlowReviewerInfoPanel() {
             }),
             renderContent: ({
               onClose
-            }) => /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsxs)("div", {
+            }) => /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_10__.jsxs)("div", {
               className: "editor-post-author",
-              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsx)(_wordpress_block_editor__WEBPACK_IMPORTED_MODULE_3__.__experimentalInspectorPopoverHeader, {
+              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_10__.jsx)(_wordpress_block_editor__WEBPACK_IMPORTED_MODULE_3__.__experimentalInspectorPopoverHeader, {
                 title: i18n.reviewer,
                 onClose: onClose
-              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsxs)("div", {
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_10__.jsxs)("div", {
                 style: {
                   padding: '0 16px 16px'
                 },
-                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__.ComboboxControl, {
+                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_10__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__.ComboboxControl, {
                   __nextHasNoMarginBottom: true,
                   __next40pxDefaultSize: true,
                   label: i18n.selectReviewer,
@@ -948,10 +1075,10 @@ function FlowReviewerInfoPanel() {
                   onFilterValueChange: setFilterValue,
                   onChange: val => handleSelect(val, onClose),
                   disabled: isSaving
-                }), isSaving && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__.Spinner, {})]
+                }), isSaving && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_10__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__.Spinner, {})]
               })]
             })
-          }) : /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__.Button, {
+          }) : /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_10__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__.Button, {
             size: "compact",
             variant: "tertiary",
             className: "editor-post-author__panel-toggle",
@@ -987,8 +1114,9 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _wordpress_api_fetch__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! @wordpress/api-fetch */ "@wordpress/api-fetch");
 /* harmony import */ var _wordpress_api_fetch__WEBPACK_IMPORTED_MODULE_4___default = /*#__PURE__*/__webpack_require__.n(_wordpress_api_fetch__WEBPACK_IMPORTED_MODULE_4__);
 /* harmony import */ var _shared_share_bar_icons__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../../shared/share-bar-icons */ "./src/shared/share-bar-icons.js");
-/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! react/jsx-runtime */ "react/jsx-runtime");
-/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6___default = /*#__PURE__*/__webpack_require__.n(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__);
+/* harmony import */ var _shared_config__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ../../shared/config */ "./src/shared/config.js");
+/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! react/jsx-runtime */ "react/jsx-runtime");
+/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7___default = /*#__PURE__*/__webpack_require__.n(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__);
 
 
 
@@ -996,16 +1124,6 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-/**
- * Read lazily, never at module scope. The Free sidebar script declares the Pro
- * editor bundle as a dependency, so Pro evaluates before `wp_localize_script`
- * has printed `flowEW`. Destructuring it up here throws and takes every filter
- * the Pro bundle registers down with it.
- */
-
-function config() {
-  return typeof window !== 'undefined' && window.flowEW || {};
-}
 
 /**
  * Copies an external reviewer's magic link.
@@ -1020,6 +1138,7 @@ function config() {
  * @param {string} [props.email]  Which invite to copy. Omit for the single
  *                                Free invite; Pro passes one per reviewer.
  */
+
 function InviteLinkCopy({
   reviewId,
   email = ''
@@ -1035,7 +1154,7 @@ function InviteLinkCopy({
     const query = email ? `?email=${encodeURIComponent(email)}` : '';
     const {
       restUrl
-    } = config();
+    } = (0,_shared_config__WEBPACK_IMPORTED_MODULE_6__.getConfig)();
     _wordpress_api_fetch__WEBPACK_IMPORTED_MODULE_4___default()({
       url: `${restUrl}/reviews/${reviewId}/invite-link${query}`
     }).then(res => {
@@ -1060,16 +1179,16 @@ function InviteLinkCopy({
   }
   const {
     i18n
-  } = config();
+  } = (0,_shared_config__WEBPACK_IMPORTED_MODULE_6__.getConfig)();
   const label = copied ? i18n?.copied : i18n?.copyInviteLink || (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_3__.__)('Copy invite link', 'jumplinks-editorial-workflow');
-  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__.Button, {
+  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__.Button, {
     ref: ref,
     size: "compact",
     variant: "tertiary",
     label: label,
     showTooltip: true,
     className: `flow-ew-reviewer-card__copy${copied ? ' flow-ew-reviewer-card__copy--done' : ''}`,
-    children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(_shared_share_bar_icons__WEBPACK_IMPORTED_MODULE_5__.ShareBarIcon, {
+    children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)(_shared_share_bar_icons__WEBPACK_IMPORTED_MODULE_5__.ShareBarIcon, {
       name: copied ? 'copied' : 'copy'
     })
   });
@@ -1097,17 +1216,17 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _wordpress_api_fetch__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(_wordpress_api_fetch__WEBPACK_IMPORTED_MODULE_3__);
 /* harmony import */ var _wordpress_hooks__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! @wordpress/hooks */ "@wordpress/hooks");
 /* harmony import */ var _wordpress_hooks__WEBPACK_IMPORTED_MODULE_4___default = /*#__PURE__*/__webpack_require__.n(_wordpress_hooks__WEBPACK_IMPORTED_MODULE_4__);
-/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! react/jsx-runtime */ "react/jsx-runtime");
-/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5___default = /*#__PURE__*/__webpack_require__.n(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__);
+/* harmony import */ var _shared_config__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../../shared/config */ "./src/shared/config.js");
+/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! react/jsx-runtime */ "react/jsx-runtime");
+/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6___default = /*#__PURE__*/__webpack_require__.n(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__);
 
 
 
 
 
 
-const {
-  flowEW
-} = window;
+
+const flowEW = (0,_shared_config__WEBPACK_IMPORTED_MODULE_5__.getConfig)();
 const {
   postId
 } = flowEW;
@@ -1164,9 +1283,9 @@ function OpenReviewControl({
     restUrl,
     createErrorNotice
   }) : null;
-  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.Fragment, {
-    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_1__.PanelRow, {
-      children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_1__.CheckboxControl, {
+  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.Fragment, {
+    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_1__.PanelRow, {
+      children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_1__.CheckboxControl, {
         __nextHasNoMarginBottom: true,
         label: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_2__.__)('Open review', 'jumplinks-editorial-workflow'),
         help: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_2__.__)('All users with the link will be able to add comments.', 'jumplinks-editorial-workflow'),
@@ -1197,14 +1316,14 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _store__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../store */ "./src/sidebar/store.js");
 /* harmony import */ var _shared_is_publish_blocked__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../../shared/is-publish-blocked */ "./src/shared/is-publish-blocked.js");
 /* harmony import */ var _shared_publish_guard_ui__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../../shared/publish-guard-ui */ "./src/shared/publish-guard-ui.js");
+/* harmony import */ var _shared_config__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../../shared/config */ "./src/shared/config.js");
 
 
 
 
 
-const {
-  flowEW
-} = window;
+
+const flowEW = (0,_shared_config__WEBPACK_IMPORTED_MODULE_5__.getConfig)();
 const BLOCKED_PUBLISH_CLICK_SELECTOR = '.edit-post-header .editor-post-publish-panel__toggle, .edit-post-header .editor-post-publish-button';
 function getPublishGuardStyles() {
   return `
@@ -1262,8 +1381,19 @@ function PublishGuard() {
       }
     };
     document.addEventListener('click', onClick, true);
+
+    // The block editor mutates the DOM on nearly every keystroke; coalesce
+    // the tooltip re-sync into one run per idle frame instead of running
+    // two querySelectorAll scans on every mutation.
+    let syncFrame = 0;
     const observer = new MutationObserver(() => {
-      (0,_shared_publish_guard_ui__WEBPACK_IMPORTED_MODULE_4__.syncGutenbergPublishGuardTooltips)(true);
+      if (syncFrame) {
+        return;
+      }
+      syncFrame = window.requestAnimationFrame(() => {
+        syncFrame = 0;
+        (0,_shared_publish_guard_ui__WEBPACK_IMPORTED_MODULE_4__.syncGutenbergPublishGuardTooltips)(true);
+      });
     });
     observer.observe(document.body, {
       childList: true,
@@ -1272,6 +1402,9 @@ function PublishGuard() {
     return () => {
       document.removeEventListener('click', onClick, true);
       observer.disconnect();
+      if (syncFrame) {
+        window.cancelAnimationFrame(syncFrame);
+      }
       (0,_shared_publish_guard_ui__WEBPACK_IMPORTED_MODULE_4__.syncGutenbergPublishGuardTooltips)(false);
     };
   }, [blocked]);
@@ -1297,27 +1430,33 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _wordpress_i18n__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @wordpress/i18n */ "@wordpress/i18n");
 /* harmony import */ var _wordpress_i18n__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(_wordpress_i18n__WEBPACK_IMPORTED_MODULE_2__);
 /* harmony import */ var _shared_no_review_roles_notice__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../../shared/no-review-roles-notice */ "./src/shared/no-review-roles-notice.js");
-/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! react/jsx-runtime */ "react/jsx-runtime");
-/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4___default = /*#__PURE__*/__webpack_require__.n(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__);
+/* harmony import */ var _shared_config__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../../shared/config */ "./src/shared/config.js");
+/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! react/jsx-runtime */ "react/jsx-runtime");
+/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5___default = /*#__PURE__*/__webpack_require__.n(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__);
 
 
 
 
 
-const {
-  flowEW
-} = window;
+
+const flowEW = (0,_shared_config__WEBPACK_IMPORTED_MODULE_4__.getConfig)();
 function SettingsHint({
   settingsUrl,
   usersUrl
 }) {
-  const settingsLink = /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("a", {
+  const settingsLink =
+  /*#__PURE__*/
+  // eslint-disable-next-line jsx-a11y/anchor-has-content -- createInterpolateElement fills it.
+  (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("a", {
     href: settingsUrl,
     className: "flow-ew-review-notice__link",
     target: "_blank",
     rel: "noreferrer"
   });
-  const usersLink = /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("a", {
+  const usersLink =
+  /*#__PURE__*/
+  // eslint-disable-next-line jsx-a11y/anchor-has-content -- createInterpolateElement fills it.
+  (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("a", {
     href: usersUrl,
     className: "flow-ew-review-notice__link",
     target: "_blank",
@@ -1339,15 +1478,15 @@ function DismissableNotice({
   if (dismissed) {
     return null;
   }
-  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_1__.PanelRow, {
-    children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsxs)("div", {
+  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_1__.PanelRow, {
+    children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
       className: `flow-ew-review-notice flow-ew-review-notice--${variant}`,
       role: role,
       "data-flow-ew-dismiss": "no-review-roles",
       ...(publishGuardOnly ? {
         'data-flow-ew-publish-guard-only': '1'
       } : {}),
-      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_1__.Button, {
+      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_1__.Button, {
         className: "flow-ew-review-notice__dismiss",
         icon: "no-alt",
         label: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_2__.__)('Dismiss', 'jumplinks-editorial-workflow'),
@@ -1356,10 +1495,10 @@ function DismissableNotice({
           setDismissed(true);
         },
         isSmall: true
-      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("p", {
+      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("p", {
         className: "flow-ew-review-notice__title",
         children: title
-      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("p", {
+      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("p", {
         className: "flow-ew-review-notice__desc",
         children: children
       })]
@@ -1374,11 +1513,11 @@ function ReviewModeNotice({
   usersUrl = flowEW.usersUrl
 }) {
   if (noReviewers && !reviewMandatory) {
-    return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(DismissableNotice, {
+    return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(DismissableNotice, {
       variant: "in-review",
       role: "status",
       title: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_2__.__)('No Review Roles Assigned', 'jumplinks-editorial-workflow'),
-      children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(SettingsHint, {
+      children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(SettingsHint, {
         settingsUrl: settingsUrl,
         usersUrl: usersUrl
       })
@@ -1388,26 +1527,26 @@ function ReviewModeNotice({
     return null;
   }
   if (noReviewers) {
-    return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsxs)(DismissableNotice, {
+    return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)(DismissableNotice, {
       variant: "in-review",
       role: "status",
       publishGuardOnly: true,
       title: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_2__.__)('No Review Roles Assigned', 'jumplinks-editorial-workflow'),
-      children: [(0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_2__.__)('Post can go live only after approval by a reviewer.', 'jumplinks-editorial-workflow'), ' ', /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(SettingsHint, {
+      children: [(0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_2__.__)('Post can go live only after approval by a reviewer.', 'jumplinks-editorial-workflow'), ' ', /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(SettingsHint, {
         settingsUrl: settingsUrl,
         usersUrl: usersUrl
       })]
     });
   }
-  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_1__.PanelRow, {
-    children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsxs)("div", {
+  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_1__.PanelRow, {
+    children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
       className: "flow-ew-review-notice flow-ew-review-notice--in-review",
       role: "note",
       "data-flow-ew-publish-guard-only": "1",
-      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("p", {
+      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("p", {
         className: "flow-ew-review-notice__title",
         children: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_2__.__)('Review Mode set to Mandatory', 'jumplinks-editorial-workflow')
-      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("p", {
+      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("p", {
         className: "flow-ew-review-notice__desc",
         children: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_2__.__)('Post can go live only after approval by a reviewer.', 'jumplinks-editorial-workflow')
       })]
@@ -1441,8 +1580,11 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _wordpress_api_fetch__WEBPACK_IMPORTED_MODULE_5___default = /*#__PURE__*/__webpack_require__.n(_wordpress_api_fetch__WEBPACK_IMPORTED_MODULE_5__);
 /* harmony import */ var _InviteLinkCopy__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./InviteLinkCopy */ "./src/sidebar/components/InviteLinkCopy.js");
 /* harmony import */ var _store__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ../store */ "./src/sidebar/store.js");
-/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! react/jsx-runtime */ "react/jsx-runtime");
-/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_8___default = /*#__PURE__*/__webpack_require__.n(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_8__);
+/* harmony import */ var _shared_config__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ../../shared/config */ "./src/shared/config.js");
+/* harmony import */ var _shared_assign_invite_email__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ../../shared/assign-invite-email */ "./src/shared/assign-invite-email.js");
+/* harmony import */ var _shared_invite_value__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ../../shared/invite-value */ "./src/shared/invite-value.js");
+/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! react/jsx-runtime */ "react/jsx-runtime");
+/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_11___default = /*#__PURE__*/__webpack_require__.n(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_11__);
 
 
 
@@ -1452,36 +1594,21 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-const {
-  flowEW
-} = window;
+
+
+
+const flowEW = (0,_shared_config__WEBPACK_IMPORTED_MODULE_8__.getConfig)();
 const {
   restUrl,
   postId,
   currentUserCan,
-  i18n
+  i18n,
+  pendingReviewer
 } = flowEW;
-const EMAIL_SENTINEL = 'email';
-const INVITE_PREFIX = 'invite:';
 
 // Prefer the server-localized string: the plugin ships PHP catalogs but no
 // JS translation files, so a bare __() here would stay English.
 const invalidEmailMessage = () => i18n?.invalidEmail || (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_4__.__)('Please enter a valid email address.', 'jumplinks-editorial-workflow');
-function isValidEmail(value) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((value || '').trim());
-}
-function inviteValue(email) {
-  return INVITE_PREFIX + String(email || '').trim().toLowerCase();
-}
-function parseInviteValue(val) {
-  if (typeof val !== 'string' || !val.startsWith(INVITE_PREFIX)) {
-    return '';
-  }
-  return val.slice(INVITE_PREFIX.length);
-}
-function isInviteOptionValue(val) {
-  return val === EMAIL_SENTINEL || typeof val === 'string' && val.startsWith(INVITE_PREFIX);
-}
 
 /**
  * WordPress ComboboxControl ignores `filteredOptions` and only keeps options
@@ -1505,19 +1632,29 @@ function ReviewerField() {
   const inviteEmail = review?.invite_email || review?.reviewer?.email || '';
   const isEmailReviewer = !!(inviteEmail || review?.reviewer?.is_email);
   const reviewerId = review && !isEmailReviewer ? Number(review.reviewer?.id || review.reviewer_id || 0) : 0;
-  const reviewerData = isEmailReviewer ? {
-    name: review?.reviewer?.name || inviteEmail,
-    email: inviteEmail,
-    is_email: true,
-    avatar_url: review?.reviewer?.avatar_url || ''
-  } : reviewerId ? review.reviewer || reviewers.find(u => u.id === reviewerId) || null : null;
+  let reviewerData = null;
+  if (isEmailReviewer) {
+    reviewerData = {
+      name: review?.reviewer?.name || inviteEmail,
+      email: inviteEmail,
+      is_email: true,
+      avatar_url: review?.reviewer?.avatar_url || ''
+    };
+  } else if (reviewerId) {
+    reviewerData = review.reviewer || reviewers.find(u => u.id === reviewerId) || null;
+  }
   const hasReviewer = !!reviewerData;
   const canAssign = currentUserCan.assignReviewer;
+
+  // Auto-assign writes nothing until the first save, so an unsaved post shows
+  // who it will pick rather than an empty field.
+  const isUnsavedNewPost = (0,_wordpress_data__WEBPACK_IMPORTED_MODULE_0__.useSelect)(sel => 'auto-draft' === sel('core/editor')?.getCurrentPost?.()?.status, []);
+  const pendingReviewerData = !hasReviewer && isUnsavedNewPost && pendingReviewer ? pendingReviewer : null;
   const reviewId = review?.id || 0;
   const reviewStatus = review?.status || '';
   const canCopyInvite = canAssign && isEmailReviewer && reviewId > 0 && '' !== reviewStatus && 'pending' !== reviewStatus;
   const showCombobox = canAssign && (!hasReviewer || isEditing);
-  const userOptions = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_1__.useMemo)(() => reviewers.filter(u => String(u.id) !== EMAIL_SENTINEL && !u.is_email).map(u => ({
+  const userOptions = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_1__.useMemo)(() => reviewers.filter(u => String(u.id) !== _shared_invite_value__WEBPACK_IMPORTED_MODULE_10__.EMAIL_SENTINEL && !u.is_email).map(u => ({
     value: String(u.id),
     label: u.name
   })), [reviewers]);
@@ -1530,31 +1667,34 @@ function ReviewerField() {
     // Combobox is only used to pick a WP user or "External Email".
     // Email typing uses TextControl (no autocomplete while composing).
     return [{
-      value: EMAIL_SENTINEL,
+      value: _shared_invite_value__WEBPACK_IMPORTED_MODULE_10__.EMAIL_SENTINEL,
       label: externalEmailLabel
     }, ...userOptions];
   }, [userOptions, externalEmailLabel]);
   const renderSuggestion = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_1__.useCallback)(({
     item
   }) => {
-    if (item.value === EMAIL_SENTINEL) {
-      return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_8__.jsx)("strong", {
+    if (item.value === _shared_invite_value__WEBPACK_IMPORTED_MODULE_10__.EMAIL_SENTINEL) {
+      return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_11__.jsx)("strong", {
         children: item.label
       });
     }
     return item.label;
   }, []);
+
+  /* translators: %s: valid email address */
+  const inviteFallback = (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_4__.__)('Invite %s', 'jumplinks-editorial-workflow');
+  const inviteFormat = i18n?.inviteEmail || inviteFallback;
   const inviteSuggestionLabel = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_1__.useMemo)(() => {
     const trimmed = (filterValue || '').trim();
-    if (!isValidEmail(trimmed)) {
+    if (!(0,_shared_assign_invite_email__WEBPACK_IMPORTED_MODULE_9__.isValidEmail)(trimmed)) {
       return '';
     }
-    return (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_4__.sprintf)(/* translators: %s: valid email address */
-    i18n?.inviteEmail || (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_4__.__)('Invite %s', 'jumplinks-editorial-workflow'), trimmed);
-  }, [filterValue]);
+    return (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_4__.sprintf)(inviteFormat, trimmed);
+  }, [filterValue, inviteFormat]);
   const assignEmail = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_1__.useCallback)(async email => {
     const trimmed = (email || '').trim().toLowerCase();
-    if (!isValidEmail(trimmed)) {
+    if (!(0,_shared_assign_invite_email__WEBPACK_IMPORTED_MODULE_9__.isValidEmail)(trimmed)) {
       createErrorNotice(invalidEmailMessage(), {
         type: 'snackbar',
         isDismissible: true
@@ -1593,7 +1733,7 @@ function ReviewerField() {
     if (!typed) {
       return;
     }
-    if (isValidEmail(typed)) {
+    if ((0,_shared_assign_invite_email__WEBPACK_IMPORTED_MODULE_9__.isValidEmail)(typed)) {
       assignEmail(typed);
       return;
     }
@@ -1615,19 +1755,21 @@ function ReviewerField() {
     submitTypedEmail();
   }, [inEmailMode, filterValue, submitTypedEmail]);
   const handleSelect = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_1__.useCallback)(async val => {
-    if (!val) return;
-    const invite = parseInviteValue(val);
+    if (!val) {
+      return;
+    }
+    const invite = (0,_shared_invite_value__WEBPACK_IMPORTED_MODULE_10__.parseInviteValue)(val);
     if (invite) {
       await assignEmail(invite);
       return;
     }
-    if (val === EMAIL_SENTINEL) {
+    if (val === _shared_invite_value__WEBPACK_IMPORTED_MODULE_10__.EMAIL_SENTINEL) {
       const typed = (filterValue || '').trim();
       if (!typed) {
         setEmailMode(true);
         return;
       }
-      if (isValidEmail(typed)) {
+      if ((0,_shared_assign_invite_email__WEBPACK_IMPORTED_MODULE_9__.isValidEmail)(typed)) {
         await assignEmail(typed);
         return;
       }
@@ -1673,12 +1815,14 @@ function ReviewerField() {
   const handleFilterChange = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_1__.useCallback)(value => {
     setFilterValue(value);
     const trimmed = (value || '').trim();
-    if (trimmed.includes('@') || isValidEmail(trimmed)) {
+    if (trimmed.includes('@') || (0,_shared_assign_invite_email__WEBPACK_IMPORTED_MODULE_9__.isValidEmail)(trimmed)) {
       setEmailMode(true);
     }
   }, []);
   const handleRemove = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_1__.useCallback)(async () => {
-    if (!review) return;
+    if (!review) {
+      return;
+    }
     setIsSaving(true);
     try {
       const data = await _wordpress_api_fetch__WEBPACK_IMPORTED_MODULE_5___default()({
@@ -1701,18 +1845,18 @@ function ReviewerField() {
       setIsSaving(false);
     }
   }, [review, setReview, createSuccessNotice, createErrorNotice]);
-  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_8__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__.PanelRow, {
-    children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_8__.jsxs)("div", {
+  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_11__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__.PanelRow, {
+    children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_11__.jsxs)("div", {
       style: {
         width: '100%'
       },
-      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_8__.jsxs)(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__.__experimentalHStack, {
+      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_11__.jsxs)(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__.__experimentalHStack, {
         justify: "space-between",
         className: "flow-ew-label-row",
-        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_8__.jsx)("span", {
+        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_11__.jsx)("span", {
           className: "flow-ew-field-label",
           children: i18n.reviewer
-        }), canAssign && hasReviewer && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_8__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__.Button, {
+        }), canAssign && hasReviewer && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_11__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__.Button, {
           variant: "link",
           onClick: () => {
             setIsEditing(v => !v);
@@ -1722,24 +1866,24 @@ function ReviewerField() {
           className: "flow-ew-link-btn",
           children: isEditing ? i18n.cancelEdit : i18n.editReviewer
         })]
-      }), hasReviewer && !isEditing && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_8__.jsxs)("div", {
+      }), hasReviewer && !isEditing && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_11__.jsxs)("div", {
         className: "flow-ew-reviewer-card",
-        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_8__.jsxs)("div", {
+        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_11__.jsxs)("div", {
           className: "flow-ew-reviewer-card__main",
-          children: [reviewerData.avatar_url && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_8__.jsx)("img", {
+          children: [reviewerData.avatar_url && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_11__.jsx)("img", {
             src: reviewerData.avatar_url,
             alt: "",
             width: 24,
             height: 24,
             className: "flow-ew-avatar"
-          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_8__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__.__experimentalText, {
+          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_11__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__.__experimentalText, {
             size: "13",
             className: "flow-ew-truncate",
             children: reviewerData.name || reviewerData.email
           })]
-        }), canCopyInvite && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_8__.jsx)(_InviteLinkCopy__WEBPACK_IMPORTED_MODULE_6__["default"], {
+        }), canCopyInvite && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_11__.jsx)(_InviteLinkCopy__WEBPACK_IMPORTED_MODULE_6__["default"], {
           reviewId: reviewId
-        }), canAssign && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_8__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__.Button, {
+        }), canAssign && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_11__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__.Button, {
           icon: "no-alt",
           label: i18n.removeReviewer,
           isSmall: true,
@@ -1747,11 +1891,33 @@ function ReviewerField() {
           disabled: isSaving,
           className: "flow-ew-reviewer-card__remove"
         })]
-      }), showCombobox && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_8__.jsxs)("div", {
+      }), pendingReviewerData && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_11__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_11__.Fragment, {
+        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_11__.jsx)("div", {
+          className: "flow-ew-reviewer-card flow-ew-reviewer-card--pending",
+          children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_11__.jsxs)("div", {
+            className: "flow-ew-reviewer-card__main",
+            children: [pendingReviewerData.avatar_url && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_11__.jsx)("img", {
+              src: pendingReviewerData.avatar_url,
+              alt: "",
+              width: 24,
+              height: 24,
+              className: "flow-ew-avatar"
+            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_11__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__.__experimentalText, {
+              size: "13",
+              className: "flow-ew-truncate",
+              children: pendingReviewerData.name
+            })]
+          })
+        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_11__.jsx)("p", {
+          className: "flow-ew-reviewer-pending-hint",
+          children: i18n.pendingReviewerHint
+        })]
+      }), showCombobox && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_11__.jsxs)("div", {
         className: inEmailMode ? 'flow-ew-reviewer-combobox flow-ew-reviewer-combobox--email' : 'flow-ew-reviewer-combobox',
+        role: "presentation",
         onKeyDown: handleEmailKeyDown,
-        children: [inEmailMode ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_8__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_8__.Fragment, {
-          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_8__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__.TextControl, {
+        children: [inEmailMode ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_11__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_11__.Fragment, {
+          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_11__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__.TextControl, {
             className: "flow-ew-reviewer-combobox__control",
             hideLabelFromVision: true,
             label: i18n.selectReviewer,
@@ -1763,14 +1929,14 @@ function ReviewerField() {
             autoComplete: "email",
             __next40pxDefaultSize: true,
             __nextHasNoMarginBottom: true
-          }), inviteSuggestionLabel ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_8__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__.Button, {
+          }), inviteSuggestionLabel ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_11__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__.Button, {
             variant: "secondary",
             className: "flow-ew-reviewer-invite-suggestion",
             onClick: () => assignEmail(filterValue.trim()),
             disabled: isSaving,
             children: inviteSuggestionLabel
           }) : null]
-        }) : /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_8__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__.ComboboxControl, {
+        }) : /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_11__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__.ComboboxControl, {
           className: "flow-ew-reviewer-combobox__control",
           hideLabelFromVision: true,
           label: i18n.selectReviewer,
@@ -1783,9 +1949,9 @@ function ReviewerField() {
           disabled: isSaving,
           __next40pxDefaultSize: true,
           __nextHasNoMarginBottom: true
-        }), isSaving && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_8__.jsx)("div", {
+        }), isSaving && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_11__.jsx)("div", {
           className: "flow-ew-spinner-overlay",
-          children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_8__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__.Spinner, {})
+          children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_11__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__.Spinner, {})
         })]
       })]
     })
@@ -1811,16 +1977,16 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _wordpress_components__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @wordpress/components */ "@wordpress/components");
 /* harmony import */ var _wordpress_components__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__);
 /* harmony import */ var _shared_share_bar_icons__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../../shared/share-bar-icons */ "./src/shared/share-bar-icons.js");
-/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! react/jsx-runtime */ "react/jsx-runtime");
-/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4___default = /*#__PURE__*/__webpack_require__.n(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__);
+/* harmony import */ var _shared_config__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../../shared/config */ "./src/shared/config.js");
+/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! react/jsx-runtime */ "react/jsx-runtime");
+/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5___default = /*#__PURE__*/__webpack_require__.n(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__);
 
 
 
 
 
-const {
-  flowEW
-} = window;
+
+const flowEW = (0,_shared_config__WEBPACK_IMPORTED_MODULE_4__.getConfig)();
 const {
   i18n
 } = flowEW;
@@ -1832,40 +1998,40 @@ function RevisionShareBar({
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   });
-  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsxs)("div", {
+  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
     className: "flow-ew-share-bar",
-    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("p", {
+    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("p", {
       className: "flow-ew-field-label flow-ew-share-bar__label",
       children: i18n.snapshotLink
-    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsxs)("div", {
+    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
       className: "flow-ew-share-bar__row",
-      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("a", {
+      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("a", {
         href: url,
         target: "_blank",
         rel: "noreferrer",
         className: "flow-ew-share-bar__link",
         title: url,
-        children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("span", {
+        children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("span", {
           className: "flow-ew-share-bar__link-text",
           children: url
         })
-      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__.Button, {
+      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__.Button, {
         ref: ref,
         size: "compact",
         variant: "tertiary",
         label: copied ? i18n.copied : i18n.copyLink,
         showTooltip: true,
         className: `flow-ew-share-bar__copy ${copied ? 'flow-ew-share-bar__copy--done' : ''}`,
-        children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(_shared_share_bar_icons__WEBPACK_IMPORTED_MODULE_3__.ShareBarIcon, {
+        children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(_shared_share_bar_icons__WEBPACK_IMPORTED_MODULE_3__.ShareBarIcon, {
           name: copied ? 'copied' : 'copy'
         })
-      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("a", {
+      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("a", {
         href: url,
         target: "_blank",
         rel: "noreferrer",
         className: "flow-ew-share-bar__goto",
         "aria-label": i18n.goToReview || 'Go to review',
-        children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(_shared_share_bar_icons__WEBPACK_IMPORTED_MODULE_3__.ShareBarIcon, {
+        children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(_shared_share_bar_icons__WEBPACK_IMPORTED_MODULE_3__.ShareBarIcon, {
           name: "external"
         })
       })]
@@ -1883,26 +2049,24 @@ function RevisionShareBar({
 
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   STATUS_COLORS: () => (/* reexport safe */ _shared_status_themes__WEBPACK_IMPORTED_MODULE_1__.STATUS_COLORS),
-/* harmony export */   STATUS_LABELS: () => (/* reexport safe */ _shared_status_labels__WEBPACK_IMPORTED_MODULE_2__.STATUS_LABELS),
-/* harmony export */   STATUS_THEMES: () => (/* reexport safe */ _shared_status_themes__WEBPACK_IMPORTED_MODULE_1__.STATUS_THEMES),
+/* harmony export */   STATUS_COLORS: () => (/* reexport safe */ _shared_status_themes__WEBPACK_IMPORTED_MODULE_2__.STATUS_COLORS),
+/* harmony export */   STATUS_LABELS: () => (/* reexport safe */ _shared_status_labels__WEBPACK_IMPORTED_MODULE_3__.STATUS_LABELS),
+/* harmony export */   STATUS_THEMES: () => (/* reexport safe */ _shared_status_themes__WEBPACK_IMPORTED_MODULE_2__.STATUS_THEMES),
 /* harmony export */   STORE_NAME: () => (/* binding */ STORE_NAME),
-/* harmony export */   statusLabel: () => (/* reexport safe */ _shared_status_labels__WEBPACK_IMPORTED_MODULE_2__.statusLabel),
-/* harmony export */   statusTextColor: () => (/* reexport safe */ _shared_status_themes__WEBPACK_IMPORTED_MODULE_1__.statusTextColor),
-/* harmony export */   statusThemeStyle: () => (/* reexport safe */ _shared_status_themes__WEBPACK_IMPORTED_MODULE_1__.statusThemeStyle)
+/* harmony export */   statusLabel: () => (/* reexport safe */ _shared_status_labels__WEBPACK_IMPORTED_MODULE_3__.statusLabel),
+/* harmony export */   statusTextColor: () => (/* reexport safe */ _shared_status_themes__WEBPACK_IMPORTED_MODULE_2__.statusTextColor),
+/* harmony export */   statusThemeStyle: () => (/* reexport safe */ _shared_status_themes__WEBPACK_IMPORTED_MODULE_2__.statusThemeStyle)
 /* harmony export */ });
 /* harmony import */ var _wordpress_data__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @wordpress/data */ "@wordpress/data");
 /* harmony import */ var _wordpress_data__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_wordpress_data__WEBPACK_IMPORTED_MODULE_0__);
-/* harmony import */ var _shared_status_themes__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../shared/status-themes */ "./src/shared/status-themes.js");
-/* harmony import */ var _shared_status_labels__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../shared/status-labels */ "./src/shared/status-labels.js");
+/* harmony import */ var _shared_config__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../shared/config */ "./src/shared/config.js");
+/* harmony import */ var _shared_status_themes__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../shared/status-themes */ "./src/shared/status-themes.js");
+/* harmony import */ var _shared_status_labels__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../shared/status-labels */ "./src/shared/status-labels.js");
 
 
 
 
-
-const {
-  flowEW
-} = window;
+const flowEW = (0,_shared_config__WEBPACK_IMPORTED_MODULE_1__.getConfig)();
 const STORE_NAME = 'flow-ew/review';
 const DEFAULT_STATE = {
   reviewers: [],
@@ -2108,6 +2272,16 @@ module.exports = window["wp"]["notices"];
 
 module.exports = window["wp"]["plugins"];
 
+/***/ },
+
+/***/ "./assets/status-palette.json"
+/*!************************************!*\
+  !*** ./assets/status-palette.json ***!
+  \************************************/
+(module) {
+
+module.exports = /*#__PURE__*/JSON.parse('{"open_review":{"bg":"#dff4ff","text":"#1579a5","border":"#b6e6ff"},"approved":{"bg":"#e7f5e4","text":"#458037","border":"#cae8c4"},"in_review":{"bg":"#fcf0ce","text":"#957500","border":"#f2dda4"},"changes_requested":{"bg":"#ffebea","text":"#c92122","border":"#ffd1d0"},"pending":{"bg":"#e6f3f5","text":"#5e777b","border":"#cde3e7"}}');
+
 /***/ }
 
 /******/ 	});
@@ -2201,14 +2375,13 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _wordpress_element__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(_wordpress_element__WEBPACK_IMPORTED_MODULE_3__);
 /* harmony import */ var _wordpress_api_fetch__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! @wordpress/api-fetch */ "@wordpress/api-fetch");
 /* harmony import */ var _wordpress_api_fetch__WEBPACK_IMPORTED_MODULE_4___default = /*#__PURE__*/__webpack_require__.n(_wordpress_api_fetch__WEBPACK_IMPORTED_MODULE_4__);
-/* harmony import */ var _wordpress_hooks__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! @wordpress/hooks */ "@wordpress/hooks");
-/* harmony import */ var _wordpress_hooks__WEBPACK_IMPORTED_MODULE_5___default = /*#__PURE__*/__webpack_require__.n(_wordpress_hooks__WEBPACK_IMPORTED_MODULE_5__);
-/* harmony import */ var _store__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./store */ "./src/sidebar/store.js");
-/* harmony import */ var _components_FlowReviewPanel__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./components/FlowReviewPanel */ "./src/sidebar/components/FlowReviewPanel.js");
-/* harmony import */ var _components_PublishGuard__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./components/PublishGuard */ "./src/sidebar/components/PublishGuard.js");
-/* harmony import */ var _components_FlowReviewerInfoPanel__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ./components/FlowReviewerInfoPanel */ "./src/sidebar/components/FlowReviewerInfoPanel.js");
-/* harmony import */ var _shared_share_bar_css__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ../shared/share-bar.css */ "./src/shared/share-bar.css");
-/* harmony import */ var _index_css__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ./index.css */ "./src/sidebar/index.css");
+/* harmony import */ var _store__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./store */ "./src/sidebar/store.js");
+/* harmony import */ var _components_FlowReviewPanel__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./components/FlowReviewPanel */ "./src/sidebar/components/FlowReviewPanel.js");
+/* harmony import */ var _components_PublishGuard__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./components/PublishGuard */ "./src/sidebar/components/PublishGuard.js");
+/* harmony import */ var _components_FlowReviewerInfoPanel__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./components/FlowReviewerInfoPanel */ "./src/sidebar/components/FlowReviewerInfoPanel.js");
+/* harmony import */ var _shared_share_bar_css__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ../shared/share-bar.css */ "./src/shared/share-bar.css");
+/* harmony import */ var _index_css__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ./index.css */ "./src/sidebar/index.css");
+/* harmony import */ var _shared_config__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ../shared/config */ "./src/shared/config.js");
 /* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! react/jsx-runtime */ "react/jsx-runtime");
 /* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_12___default = /*#__PURE__*/__webpack_require__.n(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_12__);
 
@@ -2224,9 +2397,7 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-const {
-  flowEW
-} = window;
+const flowEW = (0,_shared_config__WEBPACK_IMPORTED_MODULE_11__.getConfig)();
 const {
   restUrl,
   nonce,
@@ -2256,7 +2427,7 @@ function FlowDataLoader() {
   const {
     setReviewers,
     setReview
-  } = (0,_wordpress_data__WEBPACK_IMPORTED_MODULE_2__.useDispatch)(_store__WEBPACK_IMPORTED_MODULE_6__.STORE_NAME);
+  } = (0,_wordpress_data__WEBPACK_IMPORTED_MODULE_2__.useDispatch)(_store__WEBPACK_IMPORTED_MODULE_5__.STORE_NAME);
   const loadReviewData = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_3__.useCallback)(() => {
     Promise.all([_wordpress_api_fetch__WEBPACK_IMPORTED_MODULE_4___default()({
       url: `${restUrl}/reviewers?post_id=${postId}`
@@ -2265,7 +2436,7 @@ function FlowDataLoader() {
     }).catch(() => undefined)]).then(([reviewerList, reviewPayload]) => {
       applyReviewPayload(reviewerList, reviewPayload, setReviewers, setReview);
     }).catch(() => {});
-  }, [postId, restUrl, setReview, setReviewers]);
+  }, [setReview, setReviewers]);
   (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_3__.useEffect)(() => {
     loadReviewData();
   }, [loadReviewData]);
@@ -2296,28 +2467,27 @@ function FlowDataLoader() {
   return null;
 }
 function FlowReviewRoot() {
-  const review = (0,_wordpress_data__WEBPACK_IMPORTED_MODULE_2__.useSelect)(sel => sel(_store__WEBPACK_IMPORTED_MODULE_6__.STORE_NAME).getReview(), []);
+  const review = (0,_wordpress_data__WEBPACK_IMPORTED_MODULE_2__.useSelect)(sel => sel(_store__WEBPACK_IMPORTED_MODULE_5__.STORE_NAME).getReview(), []);
   const displayStatus = review ? review.display_status || review.status : null;
-  const statusLabel = displayStatus ? _store__WEBPACK_IMPORTED_MODULE_6__.STATUS_LABELS[displayStatus] || null : null;
+  const statusLabel = displayStatus ? _store__WEBPACK_IMPORTED_MODULE_5__.STATUS_LABELS[displayStatus] || null : null;
   const panelTitle = statusLabel ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_12__.jsxs)("span", {
     className: "flow-ew-panel-title",
     children: [i18n.reviewPanelTitle, /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_12__.jsxs)("span", {
       className: "flow-ew-panel-title__badge",
-      style: (0,_store__WEBPACK_IMPORTED_MODULE_6__.statusThemeStyle)(displayStatus),
+      style: (0,_store__WEBPACK_IMPORTED_MODULE_5__.statusThemeStyle)(displayStatus),
       children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_12__.jsx)("span", {
         className: "flow-ew-badge__dot",
         "aria-hidden": "true"
       }), statusLabel]
     })]
   }) : i18n.reviewPanelTitle;
-  const queueBadge = (0,_wordpress_hooks__WEBPACK_IMPORTED_MODULE_5__.applyFilters)('flow_ew_sidebar_queue_badge', null);
   return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_12__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_12__.Fragment, {
-    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_12__.jsx)(FlowDataLoader, {}), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_12__.jsx)(_components_PublishGuard__WEBPACK_IMPORTED_MODULE_8__["default"], {}), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_12__.jsxs)(_wordpress_editor__WEBPACK_IMPORTED_MODULE_1__.PluginDocumentSettingPanel, {
+    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_12__.jsx)(FlowDataLoader, {}), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_12__.jsx)(_components_PublishGuard__WEBPACK_IMPORTED_MODULE_7__["default"], {}), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_12__.jsx)(_wordpress_editor__WEBPACK_IMPORTED_MODULE_1__.PluginDocumentSettingPanel, {
       name: "flow-ew-review",
       title: panelTitle,
       className: "flow-ew-review-panel",
       initialOpen: true,
-      children: [queueBadge, /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_12__.jsx)(_components_FlowReviewPanel__WEBPACK_IMPORTED_MODULE_7__["default"], {})]
+      children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_12__.jsx)(_components_FlowReviewPanel__WEBPACK_IMPORTED_MODULE_6__["default"], {})
     })]
   });
 }
@@ -2325,7 +2495,7 @@ function FlowReviewRoot() {
   render: FlowReviewRoot
 });
 (0,_wordpress_plugins__WEBPACK_IMPORTED_MODULE_0__.registerPlugin)('flow-ew-reviewer-info', {
-  render: _components_FlowReviewerInfoPanel__WEBPACK_IMPORTED_MODULE_9__["default"]
+  render: _components_FlowReviewerInfoPanel__WEBPACK_IMPORTED_MODULE_8__["default"]
 });
 })();
 

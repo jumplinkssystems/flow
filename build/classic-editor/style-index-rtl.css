@@ -1,189 +1,29 @@
 /*!**********************************************************************************************************************************************************************************!*\
   !*** css ./node_modules/css-loader/dist/cjs.js??ruleSet[1].rules[4].use[1]!./node_modules/postcss-loader/dist/cjs.js??ruleSet[1].rules[4].use[2]!./src/classic-editor/style.css ***!
   \**********************************************************************************************************************************************************************************/
-.flow-ew-classic {
-	position: relative;
+/* Generated from assets/status-palette.json by scripts/build-status-tokens.js. Do not edit. */
+:root {
+	--flow-status-open_review-bg: #dff4ff;
+	--flow-status-open_review-text: #1579a5;
+	--flow-status-open_review-border: #b6e6ff;
+	--flow-status-approved-bg: #e7f5e4;
+	--flow-status-approved-text: #458037;
+	--flow-status-approved-border: #cae8c4;
+	--flow-status-in_review-bg: #fcf0ce;
+	--flow-status-in_review-text: #957500;
+	--flow-status-in_review-border: #f2dda4;
+	--flow-status-changes_requested-bg: #ffebea;
+	--flow-status-changes_requested-text: #c92122;
+	--flow-status-changes_requested-border: #ffd1d0;
+	--flow-status-pending-bg: #e6f3f5;
+	--flow-status-pending-text: #5e777b;
+	--flow-status-pending-border: #cde3e7;
 }
-
-/* Status badge */
-
-.flow-ew-classic__status {
-	margin-bottom: 10px;
-}
-
-.flow-ew-classic__badge {
-	display: inline-flex;
-	align-items: center;
-	gap: 5px;
-	font-size: 12px;
-	font-weight: 600;
-	color: var(--flow-status-text, var(--flow-badge-color, #5e777b));
-	padding: 2px 8px;
-	border-radius: 999px;
-	background: var(--flow-status-bg, #e6f3f5);
-	border: 1px solid var(--flow-status-border, #cde3e7);
-}
-
-.flow-ew-classic__badge-dot {
-	width: 6px;
-	height: 6px;
-	border-radius: 50%;
-	background: currentColor;
-	display: inline-block;
-	flex-shrink: 0;
-}
-
-/* Approved notice */
-
-.flow-ew-classic__notice {
-	padding: 6px 10px;
-	border-radius: 3px;
-	font-size: 13px;
-	margin-bottom: 10px;
-}
-
-.flow-ew-classic__notice--success {
-	background: #ecfdf5;
-	color: #166534;
-	border: 1px solid #bbf7d0;
-}
-
-/* Field */
-
-.flow-ew-classic__field {
-	margin-bottom: 10px;
-}
-
-.flow-ew-classic__label {
-	display: block;
-	margin-bottom: 4px;
-}
-
-/* Classic Editor metabox only — WP post screen label styles override shared uppercase. */
-
-#flow-ew-classic.flow-ew-classic:not(.flow-ew-classic--elementor):not(.flow-ew-classic--bricks):not(.flow-ew-classic--breakdance):not(.flow-ew-classic--oxygen):not(.flow-ew-classic--avada):not(.flow-ew-classic--beaver) .flow-ew-classic__label,
-#flow-ew-classic.flow-ew-classic:not(.flow-ew-classic--elementor):not(.flow-ew-classic--bricks):not(.flow-ew-classic--breakdance):not(.flow-ew-classic--oxygen):not(.flow-ew-classic--avada):not(.flow-ew-classic--beaver) .flow-ew-classic__share-label,
-#flow-ew-classic.flow-ew-classic:not(.flow-ew-classic--elementor):not(.flow-ew-classic--bricks):not(.flow-ew-classic--breakdance):not(.flow-ew-classic--oxygen):not(.flow-ew-classic--avada):not(.flow-ew-classic--beaver) .flow-ew-pro-multi-reviewer__label {
-	text-transform: uppercase;
-	letter-spacing: 0.02em;
-}
-
-.flow-ew-classic__select {
-	width: 100%;
-}
-
-.flow-ew-classic__select-row {
-	align-items: center;
-	display: flex;
-	gap: 6px;
-}
-
-.flow-ew-classic__select-row .flow-ew-classic__select {
-	flex: 1 1 auto;
-	min-width: 0;
-}
-
-.flow-ew-classic__select-row .flow-ew-reviewer-combobox__clear {
-	align-items: center;
-	background: transparent;
-	border: 1px solid #c3c4c7;
-	border-radius: 3px;
-	color: #757575;
-	cursor: pointer;
-	display: inline-flex;
-	flex: 0 0 auto;
-	height: 28px;
-	justify-content: center;
-	padding: 0;
-	width: 28px;
-}
-
-.flow-ew-classic__select-row .flow-ew-reviewer-combobox__clear:hover,
-.flow-ew-classic__select-row .flow-ew-reviewer-combobox__clear:focus {
-	border-color: #1e1e1e;
-	color: #1e1e1e;
-	outline: none;
-}
-
-.flow-ew-classic__select-row .flow-ew-reviewer-combobox__clear[hidden] {
-	display: none;
-}
-
-.flow-ew-reviewer-combobox__copy {
-	align-items: center;
-	background: transparent;
-	border: 0;
-	color: #757575;
-	cursor: pointer;
-	display: flex;
-	height: 24px;
-	justify-content: center;
-	padding: 0;
-	pointer-events: auto;
-	position: absolute;
-	left: 30px;
-	top: 50%;
-	transform: translateY(-50%);
-	width: 24px;
-	z-index: 2;
-}
-
-.flow-ew-reviewer-combobox__copy:hover,
-.flow-ew-reviewer-combobox__copy:focus {
-	color: #1e1e1e;
-	outline: none;
-}
-
-.flow-ew-reviewer-combobox__copy--done {
-	color: #008a20;
-}
-
-/*
- * `.flow-ew-share-icon` defaults to 24px and the swapped-in icons carry no
- * width/height of their own, so both the initial icon and the copied state
- * have to be pinned here. !important matches the sizing pattern the other
- * share buttons already use against builder stylesheets.
- */
-
-.flow-ew-reviewer-combobox__copy .flow-ew-share-icon,
-.flow-ew-reviewer-combobox__copy svg {
-	display: block;
-	flex: 0 0 auto;
-	height: 14px !important;
-	min-height: 14px;
-	min-width: 14px;
-	width: 14px !important;
-}
-
-.flow-ew-reviewer-combobox__copy[hidden] {
-	display: none;
-}
-
-/* Keep the email clear of both icons while they are showing. */
-
-.flow-ew-reviewer-combobox__wrap:has(
-		.flow-ew-reviewer-combobox__copy:not( [hidden] )
-	)
-	.flow-ew-reviewer-combobox__input {
-	padding-left: 58px;
-}
-
-.flow-ew-classic__value {
-	display: block;
-	font-size: 13px;
-	color: #1e1e1e;
-}
-
-/* Open Review checkbox */
-
-#flow-ew-classic-open-slot {
-	margin-bottom: 10px;
-}
-
+/* Review mode notices (mandatory review / no reviewers). Shared by the
+   Gutenberg sidebar and the classic/builder companion. */
 .flow-ew-review-notice[hidden] {
 	display: none;
 }
-
 .flow-ew-review-notice {
 	position: relative;
 	background: var(--flow-status-bg, #fcf0ce);
@@ -193,10 +33,8 @@
 	color: var(--flow-status-text, #957500);
 	font-size: 13px;
 	line-height: 1.4;
-	margin-bottom: 10px;
 	padding: 8px 12px 8px 28px;
 }
-
 .flow-ew-review-notice__dismiss {
 	position: absolute;
 	top: 2px;
@@ -217,64 +55,209 @@
 	line-height: 1;
 	font-size: 16px;
 }
-
 .flow-ew-review-notice__dismiss:hover,
 .flow-ew-review-notice__dismiss:focus {
 	opacity: 1;
 	background: rgba(0, 0, 0, 0.06);
 }
-
+.flow-ew-review-notice__dismiss .dashicon {
+	width: 16px;
+	height: 16px;
+	font-size: 16px;
+}
 .flow-ew-review-notice--in-review {
-	--flow-status-bg: #fcf0ce;
-	--flow-status-text: #957500;
-	--flow-status-border: #f2dda4;
+	--flow-status-bg: var(--flow-status-in_review-bg);
+	--flow-status-text: var(--flow-status-in_review-text);
+	--flow-status-border: var(--flow-status-in_review-border);
 }
-
 .flow-ew-review-notice--changes-requested {
-	--flow-status-bg: #ffebea;
-	--flow-status-text: #c92122;
-	--flow-status-border: #ffd1d0;
+	--flow-status-bg: var(--flow-status-changes_requested-bg);
+	--flow-status-text: var(--flow-status-changes_requested-text);
+	--flow-status-border: var(--flow-status-changes_requested-border);
 }
-
 .flow-ew-review-notice__title {
 	font-weight: 600;
 	margin: 0 0 2px;
 }
-
 .flow-ew-review-notice__desc {
 	font-weight: 400;
 	margin: 0;
 }
-
 .flow-ew-review-notice__link {
 	color: var(--wp-admin-theme-color, #2271b1);
 	text-decoration: underline;
 }
-
 .flow-ew-review-notice__link:hover,
 .flow-ew-review-notice__link:focus {
 	color: var(--wp-admin-theme-color-darker-10, #135e96);
 }
-
+.flow-ew-classic {
+	position: relative;
+}
+/* Status badge */
+.flow-ew-classic__status {
+	margin-bottom: 10px;
+}
+.flow-ew-classic__badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	font-size: 12px;
+	font-weight: 600;
+	color: var(--flow-status-text, var(--flow-badge-color, #5e777b));
+	padding: 2px 8px;
+	border-radius: 999px;
+	background: var(--flow-status-bg, #e6f3f5);
+	border: 1px solid var(--flow-status-border, #cde3e7);
+}
+.flow-ew-classic__badge-dot {
+	width: 6px;
+	height: 6px;
+	border-radius: 50%;
+	background: currentColor;
+	display: inline-block;
+	flex-shrink: 0;
+}
+/* Approved notice */
+.flow-ew-classic__notice {
+	padding: 6px 10px;
+	border-radius: 3px;
+	font-size: 13px;
+	margin-bottom: 10px;
+}
+.flow-ew-classic__notice--success {
+	background: #ecfdf5;
+	color: #166534;
+	border: 1px solid #bbf7d0;
+}
+/* Field */
+.flow-ew-classic__field {
+	margin-bottom: 10px;
+}
+.flow-ew-classic__label {
+	display: block;
+	margin-bottom: 4px;
+}
+/* Classic Editor metabox only — WP post screen label styles override shared uppercase. */
+#flow-ew-classic.flow-ew-classic:not(.flow-ew-classic--elementor):not(.flow-ew-classic--bricks):not(.flow-ew-classic--breakdance):not(.flow-ew-classic--oxygen):not(.flow-ew-classic--avada):not(.flow-ew-classic--beaver) .flow-ew-classic__label,
+#flow-ew-classic.flow-ew-classic:not(.flow-ew-classic--elementor):not(.flow-ew-classic--bricks):not(.flow-ew-classic--breakdance):not(.flow-ew-classic--oxygen):not(.flow-ew-classic--avada):not(.flow-ew-classic--beaver) .flow-ew-classic__share-label,
+#flow-ew-classic.flow-ew-classic:not(.flow-ew-classic--elementor):not(.flow-ew-classic--bricks):not(.flow-ew-classic--breakdance):not(.flow-ew-classic--oxygen):not(.flow-ew-classic--avada):not(.flow-ew-classic--beaver) .flow-ew-pro-multi-reviewer__label {
+	text-transform: uppercase;
+	letter-spacing: 0.02em;
+}
+.flow-ew-classic__select {
+	width: 100%;
+}
+.flow-ew-classic__select-row {
+	align-items: center;
+	display: flex;
+	gap: 6px;
+}
+.flow-ew-classic__select-row .flow-ew-classic__select {
+	flex: 1 1 auto;
+	min-width: 0;
+}
+.flow-ew-classic__select-row .flow-ew-reviewer-combobox__clear {
+	align-items: center;
+	background: transparent;
+	border: 1px solid #c3c4c7;
+	border-radius: 3px;
+	color: #757575;
+	cursor: pointer;
+	display: inline-flex;
+	flex: 0 0 auto;
+	height: 28px;
+	justify-content: center;
+	padding: 0;
+	width: 28px;
+}
+.flow-ew-classic__select-row .flow-ew-reviewer-combobox__clear:hover,
+.flow-ew-classic__select-row .flow-ew-reviewer-combobox__clear:focus {
+	border-color: #1e1e1e;
+	color: #1e1e1e;
+	outline: none;
+}
+.flow-ew-classic__select-row .flow-ew-reviewer-combobox__clear[hidden] {
+	display: none;
+}
+.flow-ew-reviewer-combobox__copy {
+	align-items: center;
+	background: transparent;
+	border: 0;
+	color: #757575;
+	cursor: pointer;
+	display: flex;
+	height: 24px;
+	justify-content: center;
+	padding: 0;
+	pointer-events: auto;
+	position: absolute;
+	left: 30px;
+	top: 50%;
+	transform: translateY(-50%);
+	width: 24px;
+	z-index: 2;
+}
+.flow-ew-reviewer-combobox__copy:hover,
+.flow-ew-reviewer-combobox__copy:focus {
+	color: #1e1e1e;
+	outline: none;
+}
+.flow-ew-reviewer-combobox__copy--done {
+	color: #008a20;
+}
+/*
+ * `.flow-ew-share-icon` defaults to 24px and the swapped-in icons carry no
+ * width/height of their own, so both the initial icon and the copied state
+ * have to be pinned here. !important matches the sizing pattern the other
+ * share buttons already use against builder stylesheets.
+ */
+.flow-ew-reviewer-combobox__copy .flow-ew-share-icon,
+.flow-ew-reviewer-combobox__copy svg {
+	display: block;
+	flex: 0 0 auto;
+	height: 14px !important;
+	min-height: 14px;
+	min-width: 14px;
+	width: 14px !important;
+}
+.flow-ew-reviewer-combobox__copy[hidden] {
+	display: none;
+}
+/* Keep the email clear of both icons while they are showing. */
+.flow-ew-reviewer-combobox__wrap:has(
+		.flow-ew-reviewer-combobox__copy:not( [hidden] )
+	)
+	.flow-ew-reviewer-combobox__input {
+	padding-left: 58px;
+}
+.flow-ew-classic__value {
+	display: block;
+	font-size: 13px;
+	color: #1e1e1e;
+}
+/* Open Review checkbox */
+#flow-ew-classic-open-slot {
+	margin-bottom: 10px;
+}
+.flow-ew-review-notice {
+	margin-bottom: 10px;
+}
 /* Reviewer autocomplete combobox (default Classic Editor admin context).
    Drawer surfaces (Bricks / Elementor) override these with their own
    themed colors, but the layout (full-width input, absolute listbox,
    visually hidden native <select>) stays the same. */
-
 .flow-ew-reviewer-combobox {
 	position: relative;
 }
-
 .flow-ew-reviewer-combobox__wrap {
 	position: relative;
 	/* Absolute listbox hangs below the input; never clip it here. */
 	overflow: visible;
 }
-
 /* Side metaboxes stack in paint order — lift the open field + postbox so
    the listbox is not covered by Publish / later boxes, and allow overflow
    past .inside padding. */
-
 #flow-ew-review.postbox,
 #flow-ew-review.postbox .inside,
 #flow-ew-classic,
@@ -284,19 +267,16 @@
 .flow-ew-pro-multi-reviewer__add {
 	overflow: visible;
 }
-
 .flow-ew-classic__field--combobox {
 	position: relative;
 	z-index: 1;
 }
-
 .flow-ew-classic__field--combobox.is-list-open,
 .flow-ew-classic__field--combobox:has(
 	.flow-ew-reviewer-combobox__list:not([hidden])
 ) {
 	z-index: 30;
 }
-
 #flow-ew-review.postbox.is-combobox-open,
 #flow-ew-review.postbox:has(
 	.flow-ew-reviewer-combobox__list:not([hidden])
@@ -304,7 +284,6 @@
 	z-index: 100;
 	overflow: visible;
 }
-
 .flow-ew-reviewer-combobox__input {
 	width: 100%;
 	box-sizing: border-box;
@@ -318,32 +297,26 @@
 	font-family: inherit;
 	outline: none;
 }
-
 .flow-ew-reviewer-combobox__input:focus {
 	border-color: #2271b1;
 	box-shadow: 0 0 0 1px #2271b1;
 }
-
 .flow-ew-reviewer-combobox__input::-moz-placeholder {
 	color: #757575;
 }
-
 .flow-ew-reviewer-combobox__input::placeholder {
 	color: #757575;
 }
-
 .flow-ew-reviewer-combobox__input:disabled {
 	cursor: not-allowed;
 	opacity: 0.6;
 }
-
 .flow-ew-reviewer-combobox__input[readonly] {
 	cursor: default;
 	opacity: 1;
 	/* Let the clear (×) button receive clicks in the trailing padding. */
 	pointer-events: none;
 }
-
 .flow-ew-reviewer-combobox__clear {
 	align-items: center;
 	background: transparent;
@@ -362,17 +335,14 @@
 	width: 24px;
 	z-index: 2;
 }
-
 .flow-ew-reviewer-combobox__clear:hover,
 .flow-ew-reviewer-combobox__clear:focus {
 	color: #1e1e1e;
 	outline: none;
 }
-
 .flow-ew-reviewer-combobox__clear[hidden] {
 	display: none;
 }
-
 .flow-ew-reviewer-combobox__list {
 	position: absolute;
 	right: 0;
@@ -390,31 +360,25 @@
 	border-radius: 3px;
 	box-shadow: 0 6px 14px rgba(0, 0, 0, 0.15);
 }
-
 /* Builders often restyle `ul` and break the UA [hidden] { display:none }. */
-
 .flow-ew-reviewer-combobox__list[hidden] {
 	display: none !important;
 }
-
 .flow-ew-reviewer-combobox__option {
 	padding: 6px 12px;
 	cursor: pointer;
 	color: #1e1e1e;
 	font-size: 13px;
 }
-
 .flow-ew-reviewer-combobox__option:hover,
 .flow-ew-reviewer-combobox__option:focus {
 	background: #f0f0f1;
 	outline: none;
 }
-
 .flow-ew-reviewer-combobox__option[aria-selected="true"] {
 	background: rgba(34, 113, 177, 0.12);
 	color: #1e1e1e;
 }
-
 .flow-ew-reviewer-combobox__option--email {
 	margin-bottom: 4px;
 	border-bottom: 1px solid #dcdcde;
@@ -422,33 +386,26 @@
 	font-weight: 700;
 	color: #1d2327;
 }
-
 /* Invite {email} reuses the email option — drop the section separator. */
-
 .flow-ew-reviewer-combobox__option--email.flow-ew-reviewer-combobox__option--invite {
 	margin-bottom: 0;
 	border-bottom: none;
 	padding-bottom: 6px;
 }
-
 .flow-ew-reviewer-combobox__option--email::before {
 	content: none;
 }
-
 .flow-ew-reviewer-email-error {
 	margin: 6px 0 0;
 	font-size: 12px;
 	line-height: 1.4;
 	color: #b32d2e;
 }
-
 .flow-ew-reviewer-email-error[hidden] {
 	display: none;
 }
-
 /* Visually-hide the native <select> fallback — the combobox JS keeps it
    in sync as the source of truth for change events. */
-
 .flow-ew-reviewer-combobox__native {
 	position: absolute;
 	width: 1px;
@@ -460,97 +417,76 @@
 	white-space: nowrap;
 	border: 0;
 }
-
 #flow-ew-classic-open-slot:empty {
 	display: none;
 }
-
 .flow-ew-classic-open {
 	font-size: 13px;
 }
-
 .flow-ew-classic-open__row {
 	align-items: center;
 	cursor: pointer;
 	display: flex;
 	gap: 6px;
 }
-
 .flow-ew-classic-open__desc {
 	color: #757575;
 	font-size: 12px;
 	line-height: 1.4;
 	margin-top: 4px;
 }
-
 /* Extension slot — empty in Free, filled by add-ons (e.g. Pro's Open to public). */
-
 .flow-ew-open-review-extras:empty {
 	display: none;
 }
-
 .flow-ew-open-review-extras {
 	margin-top: 8px;
 }
-
 /* Keep Free upsell CTAs the same size regardless of builder link resets. */
-
 .flow-ew-upsell-open-review a,
 .flow-ew-upsell-reviewer a {
 	font-size: 13px;
 	font-weight: 600;
 	line-height: 1.4;
 }
-
 /* Actions */
-
 .flow-ew-classic__actions {
 	display: flex;
 	flex-direction: column;
 	gap: 6px;
 	margin-bottom: 10px;
 }
-
 .flow-ew-classic__actions:empty {
 	display: none;
 }
-
 .flow-ew-classic__btn {
 	width: 100%;
 	text-align: center;
 }
-
 .flow-ew-classic__btn--approve {
 	background: #43a047 !important;
 	border-color: #43a047 !important;
 	color: #fff !important;
 }
-
 .flow-ew-classic__btn--approve:hover {
 	background: #388e3c !important;
 	border-color: #388e3c !important;
 }
-
 .flow-ew-classic__btn--changes {
 	color: #d63638 !important;
 	border-color: #d63638 !important;
 }
-
 .flow-ew-classic__btn--changes:hover {
 	background: #fcf0f1 !important;
 }
-
 /* Share bar */
-
 .flow-ew-classic__share {
 	margin-bottom: 10px;
 }
-
 .flow-ew-classic__share-label {
 	display: block;
 	margin: 0 0 8px;
 }
-
 .flow-ew-classic__share-row {
 	display: flex;
 	align-items: stretch;
@@ -562,7 +498,6 @@
 	min-height: var(--flow-ew-share-row-height, 40px);
 	max-height: var(--flow-ew-share-row-height, 40px);
 }
-
 .flow-ew-classic__share-link {
 	flex: 1 1 0;
 	min-width: 0;
@@ -577,7 +512,6 @@
 	text-decoration: none;
 	overflow: hidden;
 }
-
 .flow-ew-classic__share-link-text {
 	display: block;
 	min-width: 0;
@@ -592,7 +526,6 @@
 	text-overflow: ellipsis;
 	white-space: nowrap;
 }
-
 .flow-ew-classic__share-copy {
 	flex-shrink: 0;
 	align-self: stretch;
@@ -610,11 +543,9 @@
 	color: var(--flow-ew-wp-charcoal-3, #40464c);
 	box-sizing: border-box;
 }
-
 .flow-ew-classic__share-copy--done {
 	color: #46b450;
 }
-
 .flow-ew-classic__share-goto {
 	flex-shrink: 0;
 	align-self: stretch;
@@ -633,19 +564,15 @@
 	width: var(--flow-ew-share-action-width, 40px);
 	box-sizing: border-box;
 }
-
 .flow-ew-classic__share-goto:hover,
 .flow-ew-classic__share-goto:focus {
 	background: var(--flow-ew-wp-nero, #1c2024);
 	color: #fff;
 }
-
 /* Classic Editor metabox only — WP .button styles skew icon sizing in the share bar. */
-
 #flow-ew-classic.flow-ew-classic:not(.flow-ew-classic--elementor):not(.flow-ew-classic--bricks):not(.flow-ew-classic--breakdance):not(.flow-ew-classic--oxygen):not(.flow-ew-classic--avada):not(.flow-ew-classic--beaver) .flow-ew-classic__share-row {
 	--flow-ew-share-icon-size: 24px;
 }
-
 #flow-ew-classic.flow-ew-classic:not(.flow-ew-classic--elementor):not(.flow-ew-classic--bricks):not(.flow-ew-classic--breakdance):not(.flow-ew-classic--oxygen):not(.flow-ew-classic--avada):not(.flow-ew-classic--beaver) .flow-ew-classic__share-copy.button,
 #flow-ew-classic.flow-ew-classic:not(.flow-ew-classic--elementor):not(.flow-ew-classic--bricks):not(.flow-ew-classic--breakdance):not(.flow-ew-classic--oxygen):not(.flow-ew-classic--avada):not(.flow-ew-classic--beaver) .flow-ew-classic__share-copy.button:hover,
 #flow-ew-classic.flow-ew-classic:not(.flow-ew-classic--elementor):not(.flow-ew-classic--bricks):not(.flow-ew-classic--breakdance):not(.flow-ew-classic--oxygen):not(.flow-ew-classic--avada):not(.flow-ew-classic--beaver) .flow-ew-classic__share-copy.button:focus {
@@ -658,7 +585,6 @@
 	background: transparent !important;
 	box-shadow: none !important;
 }
-
 #flow-ew-classic.flow-ew-classic:not(.flow-ew-classic--elementor):not(.flow-ew-classic--bricks):not(.flow-ew-classic--breakdance):not(.flow-ew-classic--oxygen):not(.flow-ew-classic--avada):not(.flow-ew-classic--beaver) .flow-ew-classic__share-copy .flow-ew-share-icon,
 #flow-ew-classic.flow-ew-classic:not(.flow-ew-classic--elementor):not(.flow-ew-classic--bricks):not(.flow-ew-classic--breakdance):not(.flow-ew-classic--oxygen):not(.flow-ew-classic--avada):not(.flow-ew-classic--beaver) .flow-ew-classic__share-copy svg {
 	width: var(--flow-ew-share-icon-size, 24px) !important;
@@ -668,12 +594,10 @@
 	flex-shrink: 0;
 	color: var(--flow-ew-wp-charcoal-3, #40464c);
 }
-
 #flow-ew-classic.flow-ew-classic:not(.flow-ew-classic--elementor):not(.flow-ew-classic--bricks):not(.flow-ew-classic--breakdance):not(.flow-ew-classic--oxygen):not(.flow-ew-classic--avada):not(.flow-ew-classic--beaver) .flow-ew-classic__share-copy--done.button,
 #flow-ew-classic.flow-ew-classic:not(.flow-ew-classic--elementor):not(.flow-ew-classic--bricks):not(.flow-ew-classic--breakdance):not(.flow-ew-classic--oxygen):not(.flow-ew-classic--avada):not(.flow-ew-classic--beaver) .flow-ew-classic__share-copy--done svg {
 	color: #46b450 !important;
 }
-
 #flow-ew-classic.flow-ew-classic:not(.flow-ew-classic--elementor):not(.flow-ew-classic--bricks):not(.flow-ew-classic--breakdance):not(.flow-ew-classic--oxygen):not(.flow-ew-classic--avada):not(.flow-ew-classic--beaver) .flow-ew-classic__share-goto .flow-ew-share-icon,
 #flow-ew-classic.flow-ew-classic:not(.flow-ew-classic--elementor):not(.flow-ew-classic--bricks):not(.flow-ew-classic--breakdance):not(.flow-ew-classic--oxygen):not(.flow-ew-classic--avada):not(.flow-ew-classic--beaver) .flow-ew-classic__share-goto svg {
 	width: var(--flow-ew-share-icon-size, 24px) !important;
@@ -681,10 +605,35 @@
 	min-width: var(--flow-ew-share-icon-size, 24px);
 	min-height: var(--flow-ew-share-icon-size, 24px);
 }
-
 /* Spinner */
-
 #flow-ew-classic-spinner {
 	float: none;
+}
+.flow-ew-sr-only {
+	border: 0;
+	clip-path: inset(50%);
+	height: 1px;
+	margin: -1px;
+	overflow: hidden;
+	padding: 0;
+	position: absolute;
+	white-space: nowrap;
+	width: 1px;
+}
+.flow-ew-classic__pending-reviewer {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	align-items: baseline;
+	margin: 6px 0 0;
+	font-size: 12px;
+	line-height: 16px;
+}
+.flow-ew-classic__pending-name {
+	font-weight: 600;
+}
+.flow-ew-classic__pending-hint {
+	font-style: italic;
+	opacity: 0.75;
 }
 

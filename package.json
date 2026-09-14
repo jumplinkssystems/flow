@@ -1,7 +1,7 @@
 {
   "name": "jumplinks-editorial-workflow",
-  "version": "2.4.3",
-  "description": "Jumplinks Flow - Editorial Review & Content Approval Workflow",
+  "version": "2.5.0",
+  "description": "Jumplinks Flow – Client Feedback & Editorial Workflow",
   "scripts": {
     "test:php": "php vendor/bin/phpunit -c phpunit.xml.dist",
     "test:seed": "bash scripts/test-e2e-seed.sh",
@@ -31,10 +31,11 @@
     "lando:stop": "bash scripts/lando-all.sh stop",
     "lando:restart": "bash scripts/lando-all.sh restart",
     "lando:rebuild": "bash scripts/lando-all.sh rebuild -y",
+    "build:tokens": "node scripts/build-status-tokens.js",
     "build:readable": "NODE_ENV=development webpack --config webpack.config.js",
     "build:minified": "NODE_ENV=production webpack --config webpack.config.js",
-    "build": "npm run build:readable && npm run build:minified",
-    "start": "wp-scripts start",
+    "build": "npm run build:tokens && npm run build:readable && npm run build:minified",
+    "start": "npm run build:tokens && wp-scripts start",
     "lint:js": "wp-scripts lint-js src/",
     "make-pot": "php scripts/make-pot.php",
     "make-pot-pro": "php scripts/make-pot.php --pro",

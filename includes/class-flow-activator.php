@@ -15,11 +15,22 @@ class Activator {
 		self::create_tables();
 		self::add_capabilities();
 		self::create_reviewer_role();
+		Settings::seed_default_options();
 		update_option( 'flow_ew_db_version', FLOW_EW_DB_VERSION );
 		set_transient( 'flow_ew_activation_redirect', 1, 30 * MINUTE_IN_SECONDS );
 	}
 
 	public static function deactivate(): void {
+		// In a Pro build, unschedule the Pro cron jobs (digest + webhook
+		// sweep/prune/run) so they don't keep firing after deactivation.
+		// Guarded by the directory check so the Free zip — which never ships
+		// `includes/pro/` — doesn't reference Pro classes.
+		if (
+			is_dir( FLOW_EW_PLUGIN_DIR . 'includes/pro' )
+			&& class_exists( \Flow\EditorialWorkflow\Pro\Pro_Activator::class )
+		) {
+			\Flow\EditorialWorkflow\Pro\Pro_Activator::deactivate();
+		}
 	}
 
 	public static function create_tables(): void {
@@ -46,9 +57,13 @@ class Activator {
 			created_at     DATETIME NOT NULL,
 			updated_at     DATETIME NOT NULL,
 			PRIMARY KEY  (id),
-			KEY post_id     (post_id),
-			KEY reviewer_id (reviewer_id),
-			KEY status      (status)
+			KEY post_id      (post_id),
+			KEY reviewer_id  (reviewer_id),
+			KEY requester_id (requester_id),
+			KEY status       (status),
+			KEY updated_at   (updated_at),
+			KEY post_active  (post_id, updated_at, id),
+			KEY status_recent (status, updated_at)
 		) {$charset_collate};";
 
 		$sql[] = "CREATE TABLE {$comments_table} (
@@ -66,9 +81,11 @@ class Activator {
 			created_at      DATETIME NOT NULL,
 			updated_at      DATETIME NOT NULL,
 			PRIMARY KEY  (id),
-			KEY review_id   (review_id),
-			KEY post_id     (post_id),
-			KEY is_resolved (is_resolved)
+			KEY review_id    (review_id),
+			KEY post_id      (post_id),
+			KEY is_resolved  (is_resolved),
+			KEY review_created (review_id, created_at),
+			KEY post_created (post_id, created_at)
 		) {$charset_collate};";
 
 		$sql[] = "CREATE TABLE {$invites_table} (

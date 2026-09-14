@@ -2,13 +2,13 @@
 	width: 11em;
 }
 
-/* Review status pills — palette matches src/shared/status-themes.js */
+/* Review status pills. Palette: assets/status-palette.json → assets/css/status-tokens.css. */
 .flow-ew-review-status {
 	align-items: center;
-	background: #e6f3f5;
-	border: 1px solid #cde3e7;
+	background: var(--flow-status-pending-bg);
+	border: 1px solid var(--flow-status-pending-border);
 	border-radius: 999px;
-	color: #5e777b;
+	color: var(--flow-status-pending-text);
 	display: inline-flex;
 	font-size: 11px;
 	font-weight: 600;
@@ -28,33 +28,33 @@
 }
 
 .flow-ew-review-status--open-review {
-	background: #dff4ff;
-	border-color: #b6e6ff;
-	color: #1579a5;
+	background: var(--flow-status-open_review-bg);
+	border-color: var(--flow-status-open_review-border);
+	color: var(--flow-status-open_review-text);
 }
 
 .flow-ew-review-status--approved {
-	background: #e7f5e4;
-	border-color: #cae8c4;
-	color: #458037;
+	background: var(--flow-status-approved-bg);
+	border-color: var(--flow-status-approved-border);
+	color: var(--flow-status-approved-text);
 }
 
 .flow-ew-review-status--in-review {
-	background: #fcf0ce;
-	border-color: #f2dda4;
-	color: #957500;
+	background: var(--flow-status-in_review-bg);
+	border-color: var(--flow-status-in_review-border);
+	color: var(--flow-status-in_review-text);
 }
 
 .flow-ew-review-status--changes-requested {
-	background: #ffebea;
-	border-color: #ffd1d0;
-	color: #c92122;
+	background: var(--flow-status-changes_requested-bg);
+	border-color: var(--flow-status-changes_requested-border);
+	color: var(--flow-status-changes_requested-text);
 }
 
 .flow-ew-review-status--pending {
-	background: #e6f3f5;
-	border-color: #cde3e7;
-	color: #5e777b;
+	background: var(--flow-status-pending-bg);
+	border-color: var(--flow-status-pending-border);
+	color: var(--flow-status-pending-text);
 }
 
 .flow-ew-review-status--none {

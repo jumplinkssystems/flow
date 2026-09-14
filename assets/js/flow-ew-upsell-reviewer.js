@@ -9,42 +9,15 @@
 ( function () {
 	'use strict';
 
-	var data = window.flowEwUpsellReviewer;
+	const data = window.flowEwUpsellReviewer;
 	if ( ! data || ! data.label ) {
 		return;
 	}
 
-	var LINK_STYLE = [
-		'display:inline-block',
-		'margin-top:14px',
-		'color:#018170',
-		'font-size:13px',
-		'font-weight:600',
-		'line-height:1.4',
-		'text-decoration:underline',
-		'cursor:pointer',
-	].join( ';' );
-
-	var BADGE_STYLE = [
-		'display:inline-block',
-		'padding:1px 6px',
-		'margin-right:4px',
-		'font-size:9px',
-		'font-weight:600',
-		'letter-spacing:0.04em',
-		'line-height:1.4',
-		'border-radius:8px',
-		'background:#d0f9ec',
-		'color:#09121e',
-		'vertical-align:1px',
-	].join( ';' );
-
-	var HELP_STYLE = [
-		'margin-top:4px',
-		'color:#757575',
-		'font-size:12px',
-		'line-height:1.4',
-	].join( ';' );
+	const lib = window.flowEwUpsellLib;
+	if ( ! lib ) {
+		return;
+	}
 
 	function reviewHasAssignedReviewer( review ) {
 		if ( ! review ) {
@@ -56,10 +29,16 @@
 		if ( review.reviewer && Number( review.reviewer.id || 0 ) > 0 ) {
 			return true;
 		}
-		if ( review.invite_email || ( review.reviewer && review.reviewer.is_email ) ) {
+		if (
+			review.invite_email ||
+			( review.reviewer && review.reviewer.is_email )
+		) {
 			return true;
 		}
-		if ( Array.isArray( review.email_invites ) && review.email_invites.length > 0 ) {
+		if (
+			Array.isArray( review.email_invites ) &&
+			review.email_invites.length > 0
+		) {
 			return true;
 		}
 		// Synthetic email reviewer ids are negative.
@@ -71,7 +50,7 @@
 
 	// Gutenberg
 	if ( window.wp && window.wp.hooks && window.wp.element ) {
-		var createElement = window.wp.element.createElement;
+		const createElement = window.wp.element.createElement;
 		window.wp.hooks.addFilter(
 			'flow_ew_reviewer_field_extras',
 			'flow-ew/upsell-reviewer',
@@ -84,58 +63,21 @@
 				}
 				// PanelBody already provides 16px horizontal indent; we
 				// only need vertical spacing here.
-				return createElement(
-					'div',
-					{ className: 'flow-ew-upsell-reviewer', style: { padding: '14px 0 0' } },
-					createElement(
-						'a',
-						{
-							href: data.href, target: '_blank', rel: 'noopener noreferrer',
-							style: { display: 'inline-block', marginTop: '0', color: '#018170', fontSize: '13px', fontWeight: 600, lineHeight: 1.4, textDecoration: 'underline', cursor: 'pointer' },
-						},
-						createElement(
-							'span',
-							{ style: { display: 'inline-block', padding: '1px 6px', marginRight: '4px', fontSize: '9px', fontWeight: 600, letterSpacing: '0.04em', lineHeight: 1.4, borderRadius: '8px', background: '#d0f9ec', color: '#09121e', verticalAlign: '1px' } },
-							'PRO'
-						),
-						data.label
-					),
-					data.helpText
-						? createElement(
-								'p',
-								{ style: { marginTop: '4px', color: '#757575', fontSize: '12px', lineHeight: 1.4 } },
-								data.helpText
-						  )
-						: null
-				);
+				return lib.gutenbergNode( createElement, data, {
+					className: 'flow-ew-upsell-reviewer',
+					linkMarginTop: '0',
+					wrapStyle: { padding: '14px 0 0' },
+				} );
 			}
 		);
 	}
 
 	function buildUpsellNode() {
-		var wrap = document.createElement( 'div' );
-		wrap.className = 'flow-ew-upsell-reviewer';
+		const wrap = lib.buildNode( data, {
+			className: 'flow-ew-upsell-reviewer',
+			linkMarginTop: '14px',
+		} );
 		wrap.setAttribute( 'data-flow-ew-upsell-reviewer', '1' );
-
-		var a = document.createElement( 'a' );
-		a.href = data.href;
-		a.target = '_blank';
-		a.rel = 'noopener noreferrer';
-		a.style.cssText = LINK_STYLE;
-
-		var badge = document.createElement( 'span' );
-		badge.style.cssText = BADGE_STYLE;
-		badge.textContent = 'PRO';
-		a.appendChild( badge );
-		a.appendChild( document.createTextNode( data.label ) );
-		wrap.appendChild( a );
-
-		if ( data.helpText ) {
-			var help = document.createElement( 'p' );
-			help.style.cssText = HELP_STYLE;
-			help.textContent = data.helpText;
-			wrap.appendChild( help );
-		}
 		return wrap;
 	}
 
@@ -143,14 +85,16 @@
 		if ( ! select ) {
 			return false;
 		}
-		var v = String( select.value || '' );
+		const v = String( select.value || '' );
 		if ( v === 'email' ) {
 			return true;
 		}
 		if ( Number( v ) > 0 ) {
 			return true;
 		}
-		var invite = ( select.getAttribute( 'data-invite-email' ) || '' ).trim();
+		const invite = (
+			select.getAttribute( 'data-invite-email' ) || ''
+		).trim();
 		return invite.length > 0;
 	}
 
@@ -163,7 +107,7 @@
 	}
 
 	function isBuilderManagedSelect( select ) {
-		return !!(
+		return !! (
 			select &&
 			select.closest &&
 			select.closest(
@@ -184,7 +128,7 @@
 	}
 
 	function syncReviewerUpsell() {
-		var select = document.getElementById( 'flow-ew-reviewer-select' );
+		const select = document.getElementById( 'flow-ew-reviewer-select' );
 		if ( ! select ) {
 			return;
 		}
@@ -192,14 +136,12 @@
 		if ( isBuilderManagedSelect( select ) ) {
 			return;
 		}
-		var root = findClassicRoot( select );
-		var existing = root.querySelector(
-			'[data-flow-ew-upsell-reviewer]'
-		);
-		var actions =
+		const root = findClassicRoot( select );
+		let existing = root.querySelector( '[data-flow-ew-upsell-reviewer]' );
+		const actions =
 			root.querySelector( '#flow-ew-classic-actions' ) ||
 			root.querySelector( '.flow-ew-classic__actions' );
-		var anchor =
+		const anchor =
 			root.querySelector( '#flow-ew-reviewer-combobox' ) ||
 			select.parentElement;
 
@@ -223,7 +165,10 @@
 	function init() {
 		syncReviewerUpsell();
 
-		document.addEventListener( 'flow-ew:classic-render', syncReviewerUpsell );
+		document.addEventListener(
+			'flow-ew:classic-render',
+			syncReviewerUpsell
+		);
 		document.addEventListener( 'change', function ( e ) {
 			if ( e.target && e.target.id === 'flow-ew-reviewer-select' ) {
 				syncReviewerUpsell();
@@ -231,8 +176,8 @@
 		} );
 
 		if ( typeof MutationObserver !== 'undefined' ) {
-			var mo = new MutationObserver( function ( muts ) {
-				for ( var i = 0; i < muts.length; i++ ) {
+			const mo = new MutationObserver( function ( muts ) {
+				for ( let i = 0; i < muts.length; i++ ) {
 					if ( muts[ i ].addedNodes && muts[ i ].addedNodes.length ) {
 						syncReviewerUpsell();
 						return;

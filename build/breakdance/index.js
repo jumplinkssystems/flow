@@ -10,10 +10,12 @@
 
 __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _style_css__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./style.css */ "./src/breakdance/style.css");
-/* harmony import */ var _shared_sync_reviewer_combobox_from_review__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../shared/sync-reviewer-combobox-from-review */ "./src/shared/sync-reviewer-combobox-from-review.js");
-/* harmony import */ var _shared_assign_invite_email__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../shared/assign-invite-email */ "./src/shared/assign-invite-email.js");
-/* harmony import */ var _shared_reviewer_email_entry__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../shared/reviewer-email-entry */ "./src/shared/reviewer-email-entry.js");
-/* harmony import */ var _shared_share_bar_css__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../shared/share-bar.css */ "./src/shared/share-bar.css");
+/* harmony import */ var _shared_share_bar_css__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../shared/share-bar.css */ "./src/shared/share-bar.css");
+/* harmony import */ var _shared_sync_reviewer_combobox_from_review__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../shared/sync-reviewer-combobox-from-review */ "./src/shared/sync-reviewer-combobox-from-review.js");
+/* harmony import */ var _shared_reviewer_combobox__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../shared/reviewer-combobox */ "./src/shared/reviewer-combobox.js");
+/* harmony import */ var _shared_builder_drawer__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../shared/builder-drawer */ "./src/shared/builder-drawer.js");
+/* harmony import */ var _shared_mount_retry__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../shared/mount-retry */ "./src/shared/mount-retry.js");
+
 
 
 
@@ -25,18 +27,8 @@ __webpack_require__.r(__webpack_exports__);
   if (!drawer || !toggle) {
     return;
   }
-  function debounce(fn, ms) {
-    let t;
-    return function () {
-      clearTimeout(t);
-      t = setTimeout(fn, ms);
-    };
-  }
-  function findSettingsSection() {
-    return document.querySelector('.top-bar-settings-and-structure-section');
-  }
   function ensureToolbarButton() {
-    const section = findSettingsSection();
+    const section = document.querySelector('.top-bar-settings-and-structure-section');
     if (!section) {
       return false;
     }
@@ -52,56 +44,16 @@ __webpack_require__.r(__webpack_exports__);
     if (toggle.parentElement !== host) {
       host.appendChild(toggle);
     }
-    const status = toggle.dataset.status || '';
-    host.setAttribute('data-status', status);
+    host.setAttribute('data-status', toggle.dataset.status || '');
     return true;
   }
-  const debouncedEnsure = debounce(ensureToolbarButton, 80);
-  const bodyObserver = new MutationObserver(debouncedEnsure);
-  bodyObserver.observe(document.body, {
-    childList: true,
-    subtree: true
-  });
-  let attempts = 0;
-  function tryEnsureLoop() {
-    const ok = ensureToolbarButton();
-    attempts++;
-    if (!ok && attempts < 240) {
-      requestAnimationFrame(tryEnsureLoop);
-    }
-  }
-  tryEnsureLoop();
-  function open() {
-    drawer.style.display = '';
-    drawer.classList.add('is-open');
-    toggle.classList.add('is-active', 'breakdance-toolbar-icon-button-active');
-  }
-  function close() {
-    drawer.classList.remove('is-open');
-    toggle.classList.remove('is-active', 'breakdance-toolbar-icon-button-active');
-    setTimeout(function () {
-      if (!drawer.classList.contains('is-open')) {
-        drawer.style.display = 'none';
-      }
-    }, 200);
-  }
-  toggle.addEventListener('click', function (e) {
-    e.preventDefault();
-    e.stopPropagation();
-    if (drawer.classList.contains('is-open')) {
-      close();
-    } else {
-      open();
-    }
-  });
-  const closeBtn = drawer.querySelector('.flow-ew-breakdance-drawer__close');
-  if (closeBtn) {
-    closeBtn.addEventListener('click', close);
-  }
-  document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape' && drawer.classList.contains('is-open')) {
-      close();
-    }
+  (0,_shared_mount_retry__WEBPACK_IMPORTED_MODULE_5__.mountWithRetry)(ensureToolbarButton);
+  (0,_shared_builder_drawer__WEBPACK_IMPORTED_MODULE_4__.createBuilderDrawer)({
+    drawer,
+    toggle,
+    closeSelector: '.flow-ew-breakdance-drawer__close',
+    activeClasses: ['is-active', 'breakdance-toolbar-icon-button-active'],
+    hideDelay: 200
   });
   document.addEventListener('flow-ew:classic-render', function (e) {
     const review = e.detail && e.detail.review;
@@ -111,203 +63,9 @@ __webpack_require__.r(__webpack_exports__);
     if (host && host.classList.contains('flow-ew-breakdance-review')) {
       host.setAttribute('data-status', status);
     }
-    (0,_shared_sync_reviewer_combobox_from_review__WEBPACK_IMPORTED_MODULE_1__.syncReviewerComboboxFromReview)(review);
-    const list = document.getElementById('flow-ew-reviewer-listbox');
-    const input = document.getElementById('flow-ew-reviewer-input');
-    if (list) {
-      list.hidden = true;
-    }
-    if (input) {
-      input.setAttribute('aria-expanded', 'false');
-    }
+    (0,_shared_sync_reviewer_combobox_from_review__WEBPACK_IMPORTED_MODULE_2__.syncReviewerComboboxFromReview)(review);
+    (0,_shared_reviewer_combobox__WEBPACK_IMPORTED_MODULE_3__.collapseReviewerListbox)();
   });
-  const comboboxRoot = document.getElementById('flow-ew-reviewer-combobox');
-  if (comboboxRoot) {
-    initReviewerCombobox(comboboxRoot);
-  }
-  function initReviewerCombobox(root) {
-    const input = root.querySelector('.flow-ew-reviewer-combobox__input');
-    const list = root.querySelector('.flow-ew-reviewer-combobox__list');
-    const select = root.querySelector('#flow-ew-reviewer-select');
-    if (!input || !list || !select) {
-      return;
-    }
-    const options = Array.from(list.querySelectorAll('[role="option"]'));
-    let activeIndex = -1;
-    let emailEntryMode = false;
-    function hideAutocomplete() {
-      return (0,_shared_reviewer_email_entry__WEBPACK_IMPORTED_MODULE_3__.shouldHideReviewerAutocomplete)(select, input, emailEntryMode);
-    }
-    function setOpen(openList) {
-      if (openList && (hideAutocomplete() || visibleOptions().length === 0)) {
-        openList = false;
-      }
-      list.hidden = !openList;
-      input.setAttribute('aria-expanded', openList ? 'true' : 'false');
-    }
-    function filterOptions(q) {
-      (0,_shared_reviewer_email_entry__WEBPACK_IMPORTED_MODULE_3__.filterReviewerComboboxOptions)(options, q);
-    }
-    function visibleOptions() {
-      return options.filter(function (li) {
-        return !li.hidden && li.style.display !== 'none';
-      });
-    }
-    function chooseOption(li) {
-      if (!li || li.hidden) {
-        return;
-      }
-      const id = li.dataset.value;
-      const label = li.dataset.label || li.textContent.trim();
-      select.value = id;
-      setOpen(false);
-      activeIndex = -1;
-      if ((0,_shared_reviewer_email_entry__WEBPACK_IMPORTED_MODULE_3__.isEmailComboboxOption)(li)) {
-        const typed = (input.value || '').trim();
-        if ((0,_shared_assign_invite_email__WEBPACK_IMPORTED_MODULE_2__.isValidEmail)(typed)) {
-          emailEntryMode = true;
-          select.value = 'email';
-          setOpen(false);
-          activeIndex = -1;
-          (0,_shared_assign_invite_email__WEBPACK_IMPORTED_MODULE_2__.dispatchAssignInviteEmail)(typed);
-          return;
-        }
-        emailEntryMode = true;
-        input.readOnly = false;
-        input.value = '';
-        input.placeholder = (0,_shared_reviewer_email_entry__WEBPACK_IMPORTED_MODULE_3__.getEmailPlaceholder)();
-        select.dispatchEvent(new Event('change', {
-          bubbles: true
-        }));
-        input.focus();
-        return;
-      }
-      emailEntryMode = false;
-      input.value = label;
-      select.dispatchEvent(new Event('change', {
-        bubbles: true
-      }));
-    }
-    input.addEventListener('focus', function () {
-      if (input.disabled || input.readOnly) {
-        return;
-      }
-      if (hideAutocomplete()) {
-        setOpen(false);
-        return;
-      }
-      filterOptions(input.value);
-      setOpen(true);
-    });
-    input.addEventListener('input', function () {
-      if (input.disabled || input.readOnly) {
-        return;
-      }
-      const typed = (input.value || '').trim();
-      // Valid address → show Invite row (even after External Email).
-      if ((0,_shared_assign_invite_email__WEBPACK_IMPORTED_MODULE_2__.isValidEmail)(typed)) {
-        emailEntryMode = true;
-        select.value = 'email';
-        filterOptions(typed);
-        setOpen(true);
-        activeIndex = -1;
-        return;
-      }
-      if (emailEntryMode || select.value === 'email') {
-        if (!typed) {
-          emailEntryMode = false;
-          (0,_shared_reviewer_email_entry__WEBPACK_IMPORTED_MODULE_3__.exitReviewerEmailEntryMode)(select, input, options);
-          filterOptions('');
-          setOpen(true);
-          activeIndex = -1;
-          return;
-        }
-        emailEntryMode = true;
-        select.value = 'email';
-        setOpen(false);
-        activeIndex = -1;
-        return;
-      }
-      filterOptions(input.value);
-      setOpen(true);
-      activeIndex = -1;
-    });
-    list.addEventListener('mousedown', function (e) {
-      const li = e.target.closest('[role="option"]');
-      if (li && !li.hidden) {
-        e.preventDefault();
-        chooseOption(li);
-      }
-    });
-    document.addEventListener('click', function (e) {
-      if (!root.contains(e.target)) {
-        setOpen(false);
-        activeIndex = -1;
-      }
-    });
-    document.addEventListener('flow-ew:reviewer-field-reset', function () {
-      emailEntryMode = false;
-      (0,_shared_reviewer_email_entry__WEBPACK_IMPORTED_MODULE_3__.exitReviewerEmailEntryMode)(select, input, options);
-      filterOptions('');
-      setOpen(false);
-      activeIndex = -1;
-    });
-    input.addEventListener('keydown', function (e) {
-      if (input.disabled || input.readOnly) {
-        return;
-      }
-      const vis = visibleOptions();
-      if (e.key === 'ArrowDown') {
-        e.preventDefault();
-        if (hideAutocomplete()) {
-          setOpen(false);
-          return;
-        }
-        if (!list.hidden && vis.length) {
-          activeIndex = Math.min(activeIndex + 1, vis.length - 1);
-          vis[activeIndex].focus();
-        } else {
-          filterOptions(input.value);
-          setOpen(true);
-          activeIndex = 0;
-          if (vis[0]) {
-            vis[0].focus();
-          }
-        }
-      } else if (e.key === 'ArrowUp') {
-        e.preventDefault();
-        if (hideAutocomplete()) {
-          setOpen(false);
-          return;
-        }
-        if (!list.hidden && vis.length) {
-          activeIndex = Math.max(activeIndex - 1, 0);
-          vis[activeIndex].focus();
-        }
-      } else if (e.key === 'Enter') {
-        const focused = list.querySelector('[role="option"]:focus');
-        if (focused && !focused.hidden) {
-          e.preventDefault();
-          chooseOption(focused);
-          return;
-        }
-        const typed = (input.value || '').trim();
-        if ((0,_shared_assign_invite_email__WEBPACK_IMPORTED_MODULE_2__.isValidEmail)(typed)) {
-          e.preventDefault();
-          e.stopPropagation();
-          emailEntryMode = true;
-          select.value = 'email';
-          setOpen(false);
-          activeIndex = -1;
-          (0,_shared_assign_invite_email__WEBPACK_IMPORTED_MODULE_2__.dispatchAssignInviteEmail)(typed);
-        }
-      } else if (e.key === 'Escape') {
-        setOpen(false);
-        activeIndex = -1;
-        input.focus();
-      }
-    });
-  }
 })();
 
 /***/ },
@@ -350,6 +108,129 @@ function dispatchAssignInviteEmail(email) {
  */
 function isValidEmail(value) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || '').trim());
+}
+
+/***/ },
+
+/***/ "./src/shared/builder-drawer.js"
+/*!**************************************!*\
+  !*** ./src/shared/builder-drawer.js ***!
+  \**************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   createBuilderDrawer: () => (/* binding */ createBuilderDrawer)
+/* harmony export */ });
+/**
+ * Open/close state for a builder review drawer driven by a toolbar toggle.
+ *
+ * @param {{
+ *   drawer: HTMLElement,
+ *   toggle: HTMLElement,
+ *   closeSelector?: string,
+ *   activeClasses?: string[],
+ *   hideDelay?: number,
+ *   onBeforeOpen?: () => void,
+ *   onAfterOpen?: () => void,
+ *   outsideClose?: false | { ignore?: string },
+ * }} opts
+ */
+function createBuilderDrawer(opts) {
+  const {
+    drawer,
+    toggle,
+    closeSelector = '',
+    activeClasses = ['is-active'],
+    hideDelay = 200,
+    onBeforeOpen = null,
+    onAfterOpen = null,
+    outsideClose = false
+  } = opts;
+  function isOpen() {
+    return drawer.classList.contains('is-open');
+  }
+  function open() {
+    drawer.style.display = '';
+    if (onBeforeOpen) {
+      onBeforeOpen();
+    }
+    drawer.classList.add('is-open');
+    toggle.classList.add(...activeClasses);
+    if (onAfterOpen) {
+      onAfterOpen();
+    }
+  }
+  function close() {
+    drawer.classList.remove('is-open');
+    toggle.classList.remove(...activeClasses);
+    setTimeout(function () {
+      if (!isOpen()) {
+        drawer.style.display = 'none';
+      }
+    }, hideDelay);
+  }
+  function toggleDrawer() {
+    if (isOpen()) {
+      close();
+    } else {
+      open();
+    }
+  }
+  toggle.addEventListener('click', function (e) {
+    e.preventDefault();
+    e.stopPropagation();
+    toggleDrawer();
+  });
+  const closeBtn = closeSelector ? drawer.querySelector(closeSelector) : null;
+  if (closeBtn) {
+    closeBtn.addEventListener('click', close);
+  }
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && isOpen()) {
+      close();
+    }
+  });
+  if (outsideClose) {
+    document.addEventListener('mousedown', function (e) {
+      if (!isOpen()) {
+        return;
+      }
+      if (outsideClose.ignore && e.target.closest(outsideClose.ignore)) {
+        return;
+      }
+      if (drawer.contains(e.target) || toggle.contains(e.target)) {
+        return;
+      }
+      close();
+    });
+  }
+  return {
+    open,
+    close,
+    toggle: toggleDrawer,
+    isOpen
+  };
+}
+
+/***/ },
+
+/***/ "./src/shared/debounce.js"
+/*!********************************!*\
+  !*** ./src/shared/debounce.js ***!
+  \********************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   debounce: () => (/* binding */ debounce)
+/* harmony export */ });
+function debounce(fn, ms) {
+  let t;
+  return function () {
+    clearTimeout(t);
+    t = setTimeout(fn, ms);
+  };
 }
 
 /***/ },
@@ -534,6 +415,419 @@ function bindInviteLinkCopy() {
 
 /***/ },
 
+/***/ "./src/shared/mount-retry.js"
+/*!***********************************!*\
+  !*** ./src/shared/mount-retry.js ***!
+  \***********************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   mountWithRetry: () => (/* binding */ mountWithRetry)
+/* harmony export */ });
+/* harmony import */ var _debounce__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./debounce */ "./src/shared/debounce.js");
+
+
+/**
+ * Builders render their toolbars asynchronously. Run `ensure` on every DOM
+ * mutation (debounced) and in a rAF loop until it reports success.
+ *
+ * @param {() => boolean} ensure
+ * @param {{ attempts?: number, debounceMs?: number }} [opts]
+ * @return {MutationObserver}
+ */
+function mountWithRetry(ensure, opts = {}) {
+  const {
+    attempts = 240,
+    debounceMs = 80
+  } = opts;
+  const observer = new MutationObserver((0,_debounce__WEBPACK_IMPORTED_MODULE_0__.debounce)(ensure, debounceMs));
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true
+  });
+  let tries = 0;
+  (function loop() {
+    const ok = ensure();
+    tries++;
+    if (!ok && tries < attempts) {
+      requestAnimationFrame(loop);
+    }
+  })();
+  return observer;
+}
+
+/***/ },
+
+/***/ "./src/shared/reviewer-combobox.js"
+/*!*****************************************!*\
+  !*** ./src/shared/reviewer-combobox.js ***!
+  \*****************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   collapseReviewerListbox: () => (/* binding */ collapseReviewerListbox),
+/* harmony export */   initReviewerCombobox: () => (/* binding */ initReviewerCombobox)
+/* harmony export */ });
+/* harmony import */ var _assign_invite_email__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./assign-invite-email */ "./src/shared/assign-invite-email.js");
+/* harmony import */ var _reviewer_email_entry__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./reviewer-email-entry */ "./src/shared/reviewer-email-entry.js");
+
+
+
+/**
+ * Close the reviewer listbox without touching its state (used by builders
+ * after a re-render).
+ *
+ * @param {ParentNode} [scope=document]
+ */
+function collapseReviewerListbox(scope) {
+  const root = scope || document;
+  const list = root.querySelector('#flow-ew-reviewer-listbox');
+  const input = root.querySelector('#flow-ew-reviewer-input');
+  if (list) {
+    list.hidden = true;
+  }
+  if (input) {
+    input.setAttribute('aria-expanded', 'false');
+  }
+}
+
+/**
+ * The Free reviewer combobox (classic editor and every builder drawer).
+ *
+ * Dispatches `flow-ew:combobox-open-change` ({ open }) and
+ * `flow-ew:combobox-choose` ({ id, isEmail }) on `root` so builders that
+ * restyle the list (Avada) can react without owning the state.
+ *
+ * @param {HTMLElement} root
+ * @param {{
+ *   assignInviteEmail?: (email: string) => void,
+ *   showEmailError?: (() => void)|null,
+ *   clearEmailError?: () => void,
+ *   existingInviteEmail?: () => string,
+ *   assignOnBlur?: boolean,
+ * }} [opts]
+ * @return {{ setEmailEntryMode: (v: boolean) => void, isEmailEntryMode: () => boolean, reset: () => void }|null}
+ */
+function initReviewerCombobox(root, opts = {}) {
+  const {
+    assignInviteEmail = _assign_invite_email__WEBPACK_IMPORTED_MODULE_0__.dispatchAssignInviteEmail,
+    showEmailError = null,
+    clearEmailError = () => {},
+    existingInviteEmail = () => '',
+    assignOnBlur = false
+  } = opts;
+  if (!root || root.dataset.flowEwComboboxReady === '1') {
+    return null;
+  }
+  const input = root.querySelector('.flow-ew-reviewer-combobox__input');
+  const list = root.querySelector('.flow-ew-reviewer-combobox__list');
+  const select = root.querySelector('#flow-ew-reviewer-select');
+  if (!input || !list || !select) {
+    return null;
+  }
+  root.dataset.flowEwComboboxReady = '1';
+  const options = Array.from(list.querySelectorAll('[role="option"]'));
+  let activeIndex = -1;
+  let emailEntryMode = false;
+  function emit(name, detail) {
+    root.dispatchEvent(new CustomEvent(name, {
+      detail
+    }));
+  }
+  function onlyEmailAvailable() {
+    // No WP users left to pick — type an email directly.
+    return !options.some(function (li) {
+      return !(0,_reviewer_email_entry__WEBPACK_IMPORTED_MODULE_1__.isEmailComboboxOption)(li);
+    });
+  }
+  function inEmailMode() {
+    return emailEntryMode || select.value === 'email' || onlyEmailAvailable();
+  }
+  if (onlyEmailAvailable()) {
+    emailEntryMode = true;
+    select.value = 'email';
+    input.placeholder = (0,_reviewer_email_entry__WEBPACK_IMPORTED_MODULE_1__.getEmailPlaceholder)();
+  }
+  function filterOptions(q) {
+    (0,_reviewer_email_entry__WEBPACK_IMPORTED_MODULE_1__.filterReviewerComboboxOptions)(options, q, {
+      emailOnly: onlyEmailAvailable()
+    });
+  }
+  function visibleOptions() {
+    return options.filter(function (li) {
+      return !li.hidden && li.style.display !== 'none';
+    });
+  }
+  function setOpen(openList) {
+    // Never leave an empty bordered listbox under the field. A valid typed
+    // address may still open the list so the "Invite" row can show.
+    const typed = (input.value || '').trim();
+    if (openList && (0,_assign_invite_email__WEBPACK_IMPORTED_MODULE_0__.isValidEmail)(typed)) {
+      filterOptions(typed);
+      if (visibleOptions().length === 0) {
+        openList = false;
+      }
+    } else if (openList && (emailEntryMode || select.value === 'email' || visibleOptions().length === 0)) {
+      openList = false;
+    }
+    list.hidden = !openList;
+    input.setAttribute('aria-expanded', openList ? 'true' : 'false');
+    const field = root.closest('.flow-ew-classic__field');
+    if (field) {
+      field.classList.toggle('is-list-open', openList);
+    }
+    const postbox = root.closest('#flow-ew-review.postbox');
+    if (postbox) {
+      postbox.classList.toggle('is-combobox-open', openList);
+    }
+    emit('flow-ew:combobox-open-change', {
+      open: openList
+    });
+  }
+  function chooseOption(li) {
+    if (!li || li.hidden) {
+      return;
+    }
+    const id = li.dataset.value;
+    const label = li.dataset.label || li.textContent.trim();
+    const isEmail = (0,_reviewer_email_entry__WEBPACK_IMPORTED_MODULE_1__.isEmailComboboxOption)(li);
+    select.value = id;
+    if (isEmail) {
+      const typed = (input.value || '').trim();
+      if ((0,_assign_invite_email__WEBPACK_IMPORTED_MODULE_0__.isValidEmail)(typed)) {
+        emailEntryMode = true;
+        setOpen(false);
+        activeIndex = -1;
+        assignInviteEmail(typed);
+        return;
+      }
+      input.value = '';
+      input.placeholder = (0,_reviewer_email_entry__WEBPACK_IMPORTED_MODULE_1__.getEmailPlaceholder)();
+      setOpen(false);
+      activeIndex = -1;
+      emailEntryMode = true;
+      select.dispatchEvent(new Event('change', {
+        bubbles: true
+      }));
+      input.focus();
+      return;
+    }
+    emailEntryMode = false;
+    input.value = label;
+    setOpen(false);
+    activeIndex = -1;
+    select.dispatchEvent(new Event('change', {
+      bubbles: true
+    }));
+    emit('flow-ew:combobox-choose', {
+      id,
+      isEmail: false
+    });
+  }
+  function submitTypedEmail(event) {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+    const typed = (input.value || '').trim();
+    if ((0,_assign_invite_email__WEBPACK_IMPORTED_MODULE_0__.isValidEmail)(typed)) {
+      emailEntryMode = true;
+      select.value = 'email';
+      assignInviteEmail(typed);
+      return;
+    }
+    if (typed) {
+      emailEntryMode = true;
+      select.value = 'email';
+      if (showEmailError) {
+        showEmailError();
+      }
+    }
+  }
+  input.addEventListener('focus', function () {
+    if (input.disabled || input.readOnly) {
+      return;
+    }
+    if (inEmailMode()) {
+      setOpen(false);
+      return;
+    }
+    filterOptions(input.value);
+    setOpen(true);
+  });
+  input.addEventListener('input', function () {
+    if (input.disabled || input.readOnly) {
+      return;
+    }
+    const typed = (input.value || '').trim();
+    // Valid address → show the Invite row (even after External Email).
+    if ((0,_assign_invite_email__WEBPACK_IMPORTED_MODULE_0__.isValidEmail)(typed)) {
+      emailEntryMode = true;
+      select.value = 'email';
+      filterOptions(typed);
+      setOpen(true);
+      activeIndex = -1;
+      clearEmailError();
+      return;
+    }
+    // Keep the list closed while the address is still incomplete.
+    if (inEmailMode()) {
+      if (!typed && !onlyEmailAvailable()) {
+        emailEntryMode = false;
+        (0,_reviewer_email_entry__WEBPACK_IMPORTED_MODULE_1__.exitReviewerEmailEntryMode)(select, input, options);
+        filterOptions('');
+        setOpen(true);
+        activeIndex = -1;
+        clearEmailError();
+        return;
+      }
+      emailEntryMode = true;
+      select.value = 'email';
+      setOpen(false);
+      activeIndex = -1;
+      if (!typed) {
+        clearEmailError();
+      }
+      return;
+    }
+    filterOptions(input.value);
+    setOpen(true);
+    activeIndex = -1;
+  });
+  if (assignOnBlur) {
+    input.addEventListener('blur', function () {
+      // Assigned field is read-only — never re-invite on click-away.
+      if (input.disabled || input.readOnly) {
+        return;
+      }
+      if (!emailEntryMode && select.value !== 'email') {
+        return;
+      }
+      window.setTimeout(function () {
+        if (input.ownerDocument.activeElement === input) {
+          return;
+        }
+        if (input.readOnly || input.disabled) {
+          return;
+        }
+        const typed = (input.value || '').trim().toLowerCase();
+        if (!typed) {
+          emailEntryMode = false;
+          (0,_reviewer_email_entry__WEBPACK_IMPORTED_MODULE_1__.exitReviewerEmailEntryMode)(select, input, options);
+          clearEmailError();
+          return;
+        }
+        if (!(0,_assign_invite_email__WEBPACK_IMPORTED_MODULE_0__.isValidEmail)(typed)) {
+          // Invalid addresses only surface an error on Enter.
+          return;
+        }
+        const existing = String(existingInviteEmail() || '').trim().toLowerCase();
+        if (existing && existing === typed) {
+          return;
+        }
+        assignInviteEmail(typed);
+      }, 150);
+    });
+  }
+  list.addEventListener('mousedown', function (e) {
+    const li = e.target.closest('[role="option"]');
+    if (li && !li.hidden) {
+      e.preventDefault();
+      chooseOption(li);
+    }
+  });
+  document.addEventListener('click', function (e) {
+    if (!root.contains(e.target)) {
+      setOpen(false);
+      activeIndex = -1;
+    }
+  });
+  function reset() {
+    emailEntryMode = false;
+    (0,_reviewer_email_entry__WEBPACK_IMPORTED_MODULE_1__.exitReviewerEmailEntryMode)(select, input, options);
+    filterOptions('');
+    setOpen(false);
+    activeIndex = -1;
+  }
+  document.addEventListener('flow-ew:reviewer-field-reset', reset);
+  input.addEventListener('keydown', function (e) {
+    if (input.disabled || input.readOnly) {
+      return;
+    }
+    const typed = (input.value || '').trim();
+    const treatAsEmail = inEmailMode() || (0,_assign_invite_email__WEBPACK_IMPORTED_MODULE_0__.isValidEmail)(typed) || typed.includes('@');
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (treatAsEmail) {
+        setOpen(false);
+        return;
+      }
+      const vis = visibleOptions();
+      if (!list.hidden && vis.length) {
+        activeIndex = Math.min(activeIndex + 1, vis.length - 1);
+        vis[activeIndex].focus();
+        return;
+      }
+      filterOptions(input.value);
+      const next = visibleOptions();
+      if (!next.length) {
+        return;
+      }
+      setOpen(true);
+      activeIndex = 0;
+      next[0].focus();
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      const vis = visibleOptions();
+      if (!list.hidden && vis.length) {
+        activeIndex = Math.max(activeIndex - 1, 0);
+        vis[activeIndex].focus();
+      }
+    } else if (e.key === 'Enter') {
+      if (treatAsEmail) {
+        submitTypedEmail(e);
+        return;
+      }
+      const focused = list.querySelector('[role="option"]:focus');
+      if (focused && !focused.hidden) {
+        e.preventDefault();
+        e.stopPropagation();
+        chooseOption(focused);
+      }
+    } else if (e.key === 'Escape') {
+      setOpen(false);
+      activeIndex = -1;
+      input.focus();
+    }
+  });
+
+  // The classic post form submits on Enter in text inputs — block that while
+  // the reviewer field is in email-entry mode.
+  input.addEventListener('keypress', function (e) {
+    if (e.key !== 'Enter' && e.keyCode !== 13) {
+      return;
+    }
+    const typed = (input.value || '').trim();
+    if (inEmailMode() || (0,_assign_invite_email__WEBPACK_IMPORTED_MODULE_0__.isValidEmail)(typed) || typed.includes('@')) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  });
+  return {
+    setEmailEntryMode(value) {
+      emailEntryMode = !!value;
+    },
+    isEmailEntryMode() {
+      return emailEntryMode;
+    },
+    reset
+  };
+}
+
+/***/ },
+
 /***/ "./src/shared/reviewer-email-entry.js"
 /*!********************************************!*\
   !*** ./src/shared/reviewer-email-entry.js ***!
@@ -648,10 +942,7 @@ function filterReviewerComboboxOptions(options, q, opts) {
   const emailOnly = !!(opts && opts.emailOnly);
   const externalLabel = getExternalEmailLabel();
   (options || []).forEach(function (li) {
-    const isEmail = isEmailComboboxOption(li);
-    const baseLabel = String(li.dataset.label || externalLabel).trim();
-    const labelLower = baseLabel.toLowerCase();
-    if (isEmail) {
+    if (isEmailComboboxOption(li)) {
       // No WP users — type the address directly; never a lone email row.
       if (emailOnly) {
         li.hidden = true;
@@ -683,6 +974,7 @@ function filterReviewerComboboxOptions(options, q, opts) {
       li.textContent = li.dataset.label || externalLabel;
       return;
     }
+    const labelLower = String(li.dataset.label || externalLabel).trim().toLowerCase();
     const show = !needle || labelLower.includes(needle);
     li.hidden = !show;
     li.style.display = show ? '' : 'none';
@@ -718,7 +1010,7 @@ const figmaExternalPath = 'M9.71 9V0H0.71V2H6.3L0 8.29L1.42 9.71L7.71 3.41V9H9.7
 
 /**
  * @param {ShareBarIconName} name
- * @returns {string}
+ * @return {string}
  */
 function shareBarIconHtml(name) {
   if (name === 'copied') {

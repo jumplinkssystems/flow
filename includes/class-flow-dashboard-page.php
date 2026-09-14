@@ -112,7 +112,7 @@ class Dashboard_Page {
 		wp_enqueue_style(
 			'flow-ew-status-themes',
 			FLOW_EW_PLUGIN_URL . 'assets/css/status-themes.css',
-			[],
+			[ Assets::status_tokens_handle() ],
 			$themes_ver
 		);
 		wp_enqueue_style(
@@ -133,56 +133,24 @@ class Dashboard_Page {
 		if ( ! is_user_logged_in() ) {
 			return;
 		}
-		$user_id = get_current_user_id();
-
-		$in_flight_statuses = [
-			Review::STATUS_PENDING,
-			Review::STATUS_IN_REVIEW,
-			Review::STATUS_CHANGES_REQUESTED,
-		];
-
-		$my_request_statuses = array_merge(
-			$in_flight_statuses,
-			[ Review::STATUS_APPROVED ]
-		);
-
-		$assigned     = self::fetch_assigned_to_me( $user_id, $in_flight_statuses );
-		$my_requests  = self::fetch_my_requests( $user_id, $my_request_statuses );
-		$open_reviews = self::fetch_open_reviews( $user_id );
-		$has_any      = ! empty( $assigned ) || ! empty( $my_requests ) || ! empty( $open_reviews );
-
+		$user_id  = get_current_user_id();
+		$sections = self::sections( $user_id );
+		$all_rows = [];
+		foreach ( $sections as $section ) {
+			foreach ( (array) $section['reviews'] as $row ) {
+				$all_rows[] = $row;
+			}
+		}
+		Review::prime_review_list_caches( $all_rows );
 		$has_any = (bool) apply_filters(
 			'flow_ew_dashboard_has_any_reviews',
-			$has_any,
+			array_sum( array_map( 'count', array_column( $sections, 'reviews' ) ) ) > 0,
 			$user_id
 		);
-
 		?>
 		<div class="wrap flow-ew-dashboard-page">
 			<h1 class="wp-heading-inline"><?php esc_html_e( 'Flow Dashboard', 'jumplinks-editorial-workflow' ); ?></h1>
-
-			<p class="flow-ew-rating-prompt" style="color:#646970;font-size:13px;margin:0 0 1em;">
-				<?php
-				/* translators: %s: link to the WordPress.org review form. */
-				$prompt_template = __( 'Enjoying Flow? Please consider leaving a %s to help others discover it.', 'jumplinks-editorial-workflow' );
-				$review_link     = sprintf(
-					'<a href="%s" target="_blank" rel="noopener">%s</a>',
-					esc_url( 'https://wordpress.org/support/plugin/jumplinks-editorial-workflow/reviews/#new-post' ),
-					esc_html__( 'review on WordPress.org', 'jumplinks-editorial-workflow' )
-				);
-				echo wp_kses(
-					sprintf( $prompt_template, $review_link ),
-					[
-						'a' => [
-							'href'   => [],
-							'target' => [],
-							'rel'    => [],
-						],
-					]
-				);
-				?>
-			</p>
-
+			<?php self::render_rating_prompt(); ?>
 			<?php
 			if ( ! $has_any ) {
 				printf(
@@ -190,44 +158,24 @@ class Dashboard_Page {
 					esc_html__( 'Nothing is waiting on you, and you haven’t sent anything for review yet.', 'jumplinks-editorial-workflow' )
 				);
 			} else {
-				self::render_section(
-					'assigned',
-					__( 'Assigned to me', 'jumplinks-editorial-workflow' ),
-					__( 'Content waiting for my feedback.', 'jumplinks-editorial-workflow' ),
-					$assigned,
-					false,
-					'author'
-				);
-				/** This filter is documented below. */
-				do_action( 'flow_ew_dashboard_after_section', 'assigned', $user_id );
-
-				self::render_section(
-					'my-requests',
-					__( 'My review requests', 'jumplinks-editorial-workflow' ),
-					__( 'Content waiting for review from colleagues.', 'jumplinks-editorial-workflow' ),
-					$my_requests,
-					true,
-					'reviewers'
-				);
-				/** This filter is documented below. */
-				do_action( 'flow_ew_dashboard_after_section', 'my-requests', $user_id );
-
-				self::render_section(
-					'open-reviews',
-					__( 'Open reviews', 'jumplinks-editorial-workflow' ),
-					__( 'Any user can add comments on this content.', 'jumplinks-editorial-workflow' ),
-					$open_reviews,
-					false,
-					'author'
-				);
-				/**
-				 * Per-section slot for add-ons to interleave their own sections at specific
-				 * positions on the dashboard. `$section` is the slug of the section that just
-				 * rendered (`assigned`, `my-requests`, `open-reviews`). Listeners should print
-				 * HTML matching the existing `flow-ew-dash-section` / `flow-ew-dash-list`
-				 * markup so the visual register stays uniform.
-				 */
-				do_action( 'flow_ew_dashboard_after_section', 'open-reviews', $user_id );
+				foreach ( $sections as $section ) {
+					self::render_section(
+						$section['slug'],
+						$section['heading'],
+						$section['description'],
+						$section['reviews'],
+						$section['edit_link'],
+						$section['extra_info']
+					);
+					/**
+					 * Per-section slot for add-ons to interleave their own sections at specific
+					 * positions on the dashboard. `$section` is the slug of the section that just
+					 * rendered (`assigned`, `my-requests`, `open-reviews`). Listeners should print
+					 * HTML matching the existing `flow-ew-dash-section` / `flow-ew-dash-list`
+					 * markup so the visual register stays uniform.
+					 */
+					do_action( 'flow_ew_dashboard_after_section', $section['slug'], $user_id );
+				}
 			}
 
 			/**
@@ -239,6 +187,68 @@ class Dashboard_Page {
 			do_action( 'flow_ew_dashboard_after_sections', $user_id );
 			?>
 		</div>
+		<?php
+	}
+
+	/**
+	 * The three per-post sections, in display order, with their rows loaded.
+	 *
+	 * @return array<int,array{slug:string,heading:string,description:string,reviews:array<int,object>,edit_link:bool,extra_info:string}>
+	 */
+	private static function sections( int $user_id ): array {
+		$in_flight = [ Review::STATUS_PENDING, Review::STATUS_IN_REVIEW, Review::STATUS_CHANGES_REQUESTED ];
+		return [
+			[
+				'slug'        => 'assigned',
+				'heading'     => __( 'Assigned to me', 'jumplinks-editorial-workflow' ),
+				'description' => __( 'Content waiting for my feedback.', 'jumplinks-editorial-workflow' ),
+				'reviews'     => self::fetch_assigned_to_me( $user_id, $in_flight ),
+				'edit_link'   => false,
+				'extra_info'  => 'author',
+			],
+			[
+				'slug'        => 'my-requests',
+				'heading'     => __( 'My review requests', 'jumplinks-editorial-workflow' ),
+				'description' => __( 'Content waiting for review from colleagues.', 'jumplinks-editorial-workflow' ),
+				'reviews'     => self::fetch_my_requests( $user_id, array_merge( $in_flight, [ Review::STATUS_APPROVED ] ) ),
+				'edit_link'   => true,
+				'extra_info'  => 'reviewers',
+			],
+			[
+				'slug'        => 'open-reviews',
+				'heading'     => __( 'Open reviews', 'jumplinks-editorial-workflow' ),
+				'description' => __( 'Any user can add comments on this content.', 'jumplinks-editorial-workflow' ),
+				'reviews'     => self::fetch_open_reviews( $user_id ),
+				'edit_link'   => false,
+				'extra_info'  => 'author',
+			],
+		];
+	}
+
+	/** The "leave a review on WordPress.org" line shown atop Flow's admin pages. */
+	public static function render_rating_prompt(): void {
+		?>
+		<p class="flow-ew-rating-prompt">
+			<?php
+			/* translators: %s: link to the WordPress.org review form. */
+			$prompt_template = __( 'Enjoying Flow? Please consider leaving a %s to help others discover it.', 'jumplinks-editorial-workflow' );
+			$review_link     = sprintf(
+				'<a href="%s" target="_blank" rel="noopener">%s</a>',
+				esc_url( 'https://wordpress.org/support/plugin/jumplinks-editorial-workflow/reviews/#new-post' ),
+				esc_html__( 'review on WordPress.org', 'jumplinks-editorial-workflow' )
+			);
+			echo wp_kses(
+				sprintf( $prompt_template, $review_link ),
+				[
+					'a' => [
+						'href'   => [],
+						'target' => [],
+						'rel'    => [],
+					],
+				]
+			);
+			?>
+		</p>
 		<?php
 	}
 
@@ -394,11 +404,19 @@ class Dashboard_Page {
 	 * or Pro multi-reviewer). Drives the admin-menu badge and is cheap enough to
 	 * call on every admin page render — same query the dashboard already runs.
 	 */
+	/** @var array<int,int> Request-scoped memo, keyed by user id. */
+	private static array $assigned_count_cache = [];
+
 	public static function count_assigned_to_me( int $user_id ): int {
 		if ( $user_id <= 0 ) {
 			return 0;
 		}
-		return count(
+		// The admin menu badge and the admin-notice both call this on every
+		// wp-admin page; compute the row set once per request.
+		if ( isset( self::$assigned_count_cache[ $user_id ] ) ) {
+			return self::$assigned_count_cache[ $user_id ];
+		}
+		$count = count(
 			self::fetch_assigned_to_me(
 				$user_id,
 				[
@@ -408,6 +426,9 @@ class Dashboard_Page {
 				]
 			)
 		);
+
+		self::$assigned_count_cache[ $user_id ] = $count;
+		return $count;
 	}
 
 	private static function fetch_assigned_to_me( int $user_id, array $statuses ): array {
@@ -524,111 +545,67 @@ class Dashboard_Page {
 	}
 
 	/**
-	 * Caller must filter out empty `$reviews` before calling — the section
-	 * is unconditionally rendered with header + count.
-	 *
-	 * @param array<int,object> $reviews
-	 * @param bool              $show_edit_link Whether each row should expose
-	 *                                          an Edit link (only the "My
-	 *                                          review requests" section does
-	 *                                          — the viewer is the author).
-	 */
-	/**
 	 * @param array<int,object> $reviews
 	 * @param bool              $show_edit_link Whether each row exposes an Edit link.
 	 * @param string            $extra_info     One of '' | 'author' | 'reviewers'. Appended to the meta line.
 	 */
 	private static function render_section( string $slug, string $heading, string $description, array $reviews, bool $show_edit_link = false, string $extra_info = '' ): void {
-		if ( empty( $reviews ) ) {
-			return;
-		}
-		printf(
-			'<div class="flow-ew-dash-section flow-ew-dash-section--%s flow-ew-dashboard-page__section">',
-			esc_attr( $slug )
-		);
-		printf(
-			'<h2 class="flow-ew-dash-section__title">%s<span class="flow-ew-dash-section__count">%d</span></h2>',
-			esc_html( $heading ),
-			(int) count( $reviews )
-		);
-		printf(
-			'<p class="flow-ew-dashboard-page__section-desc">%s</p>',
-			esc_html( $description )
-		);
-		echo '<ul class="flow-ew-dash-list">';
+		$items = [];
 		foreach ( $reviews as $review ) {
-			self::render_item( $review, $show_edit_link, $extra_info );
+			$item = self::item_data( $review, $show_edit_link, $extra_info );
+			if ( null !== $item ) {
+				$items[] = $item;
+			}
 		}
-		echo '</ul>';
-		echo '</div>';
+		Dashboard_List_Renderer::section(
+			$slug,
+			$heading,
+			$items,
+			[
+				'page'        => true,
+				'description' => $description,
+			]
+		);
 	}
 
-	private static function render_item( object $review, bool $show_edit_link = false, string $extra_info = '' ): void {
+	/**
+	 * @return array<string,mixed>|null Null when the post is gone.
+	 */
+	private static function item_data( object $review, bool $show_edit_link, string $extra_info ): ?array {
 		$post = get_post( (int) $review->post_id );
 		if ( ! $post instanceof \WP_Post ) {
-			return;
+			return null;
 		}
 
 		$rev_id = Review::get_effective_preview_revision_id(
 			(int) $review->post_id,
 			(int) ( $review->revision_id ?? 0 )
 		);
-		$url    = Review::get_preview_url( (int) $review->id, $rev_id, (int) $review->post_id );
+		$status = (string) Review::display_status( $review );
 
-		$updated_ts = strtotime( (string) ( $review->updated_at ?? '' ) . ' UTC' );
-		$relative   = $updated_ts
-			/* translators: %s: human-readable time difference, e.g. "2 hours". */
-			? sprintf( __( '%s ago', 'jumplinks-editorial-workflow' ), human_time_diff( $updated_ts, time() ) )
-			: '';
-
-		$post_type_obj   = get_post_type_object( $post->post_type );
-		$post_type_label = ( $post_type_obj && isset( $post_type_obj->labels->singular_name ) )
-			? $post_type_obj->labels->singular_name
-			: $post->post_type;
-
-		$status_key   = (string) Review::display_status( $review );
-		$status_label = Review::status_label( $status_key );
-
-		// Edit link is opt-in per section (only "My review requests"
-		$edit_url = ( $show_edit_link && current_user_can( 'edit_post', (int) $review->post_id ) )
-			? get_edit_post_link( (int) $review->post_id, '' )
-			: '';
-
-		$extra_meta_html = self::compute_extra_meta_html( $extra_info, $review, $post );
-
-		$meta_parts = [ esc_html( $post_type_label ) ];
-		if ( '' !== $extra_meta_html ) {
-			$meta_parts[] = $extra_meta_html;
+		$meta  = [ esc_html( Dashboard_List_Renderer::post_type_label( $post ) ) ];
+		$extra = self::compute_extra_meta_html( $extra_info, $review, $post );
+		if ( '' !== $extra ) {
+			$meta[] = $extra;
 		}
+		$relative = Dashboard_List_Renderer::relative_time( $review->updated_at ?? null );
 		if ( '' !== $relative ) {
-			$meta_parts[] = esc_html( $relative );
+			$meta[] = esc_html( $relative );
 		}
 
-		echo '<li class="flow-ew-dash-item">';
-		echo '<div class="flow-ew-dash-item__main">';
-		printf(
-			'<a class="flow-ew-dash-item__title" href="%s">%s</a>',
-			esc_url( $url ),
-			esc_html( '' !== $post->post_title ? $post->post_title : __( '(no title)', 'jumplinks-editorial-workflow' ) )
-		);
-		if ( $edit_url ) {
-			printf(
-				'<a class="flow-ew-dashboard-page__edit" href="%s">%s</a>',
-				esc_url( $edit_url ),
-				esc_html__( 'Edit', 'jumplinks-editorial-workflow' )
-			);
-		}
-		echo '<span class="flow-ew-dash-item__meta">';
-		// Parts are pre-escaped; the separator is a static HTML entity.
-		echo implode( ' &middot; ', $meta_parts ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-		echo '</span>';
-		echo '</div>';
-		printf(
-			'<span class="flow-ew-dashboard-page__status flow-ew-dashboard-page__status--%s"><span class="flow-ew-status-pill__dot" aria-hidden="true"></span>%s</span>',
-			esc_attr( $status_key ),
-			esc_html( $status_label )
-		);
-		echo '</li>';
+		// Edit link is opt-in per section (only "My review requests").
+		$edit_url = ( $show_edit_link && current_user_can( 'edit_post', (int) $review->post_id ) )
+			? (string) get_edit_post_link( (int) $review->post_id, '' )
+			: '';
+
+		return [
+			'title'        => Dashboard_List_Renderer::post_title( $post ),
+			'url'          => Review::get_preview_url( (int) $review->id, $rev_id, (int) $review->post_id ),
+			'meta'         => $meta,
+			'edit_url'     => $edit_url,
+			'status_key'   => $status,
+			'status_label' => Review::status_label( $status ),
+		];
 	}
 
 	/**
@@ -666,16 +643,7 @@ class Dashboard_Page {
 					$names[] = esc_html( $user->display_name );
 				}
 			}
-			if ( empty( $names ) ) {
-				return '';
-			}
-			$label = _n(
-				'Reviewer:',
-				'Reviewers:',
-				count( $names ),
-				'jumplinks-editorial-workflow'
-			);
-			return esc_html( $label ) . ' ' . implode( ', ', $names );
+			return Dashboard_List_Renderer::reviewers_meta( $names );
 		}
 		return '';
 	}
@@ -687,7 +655,12 @@ class Dashboard_Page {
 	 * because masks key off the alpha channel.
 	 */
 	private static function get_menu_icon_data_uri(): string {
+		static $uri = null;
+		if ( null !== $uri ) {
+			return $uri;
+		}
 		$svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white"><path d="M15.56,7.62c.65-.11,1.07-.19,1.07-.19.19-.03.37-.14.49-.32l1.53-2.17c.25-.36.16-.86-.21-1.11-.13-.09-.28-.13-.43-.13-.25,0-.5.12-.66.35l-1.3,1.95-1.22.21c-.25.04-.32.37-.1.51.6.4.8.83.83.88Z"/><path d="M6.01,11.32c.24,0,.48-.11.66-.37l1.28-2.01c.26-.04.67-.11,1.16-.2l.07-.41c.04-.26.11-.51.2-.73.08-.2-.1-.41-.31-.38l-1.7.29c-.19.03-.37.14-.49.31,0,.01-1.54,2.22-1.55,2.23-.42.64.12,1.27.68,1.27Z"/><path d="M9.73,17.56l-2.21,1.63c-1.02-.82-3.25-2.6-3.25-2.6-.18-.13-.35-.19-.52-.19-.68,0-1.19.92-.52,1.49l3.75,3c.15.12.34.19.52.19.18,0,.35-.06.5-.17l3.24-2.47c.2-.15.12-.46-.13-.5-.04,0-.09-.01-.13-.02-.47-.08-.89-.2-1.25-.37Z"/><path d="M20.77,15.85s-3.8-2.94-3.8-2.94c-.13-.1-.3-.16-.46-.16s-.31.05-.45.15l-.88.65h0s-.14.85-.25,1.49c-.04.25.25.42.45.27l1.11-.85c.99.82,3.26,2.7,3.27,2.71.17.12.35.18.51.18.68,0,1.18-.93.5-1.49Z"/><path d="M15.1,9.4c.05-.31.06-.63-.01-.94-.03-.12-.07-.24-.12-.36-.06-.12-.13-.23-.22-.34-.34-.42-.94-.76-1.91-.93-.28-.05-.55-.07-.81-.07-1.06,0-1.9.44-2.11,1.69l-.25,1.51c.43-.3.97-.46,1.61-.49l.06-.36.04-.22c.01-.06.02-.12.04-.17.11-.33.37-.49.8-.49.12,0,.26.01.41.04.21.03.38.08.52.15.17.08.3.19.38.32.09.15.11.32.08.53l-.1.59-.06.38-.06.38h0s-.19,1.12-.19,1.12c-.03.19-.1.34-.21.44-.08.08-.2.14-.33.18-.1.02-.2.04-.32.04h0c-.14,0-.31-.02-.45-.05s-.31.07-.33.23l-.18,1.09c.17.04.74.12.74.12.13.01.26.02.38.02,0,0,.24,0,.38-.02,1.02-.11,1.51-.68,1.72-1.34h0c.04-.13.07-.27.09-.4l.1-.59h0s.1-.59.1-.59l.25-1.47Z"/><path d="M12.67,5.46l.41.07.41.07c.34.06.62.02.84-.12.21-.14.35-.36.4-.68l.08-.5.08-.5c.05-.31,0-.57-.16-.77-.16-.2-.41-.33-.75-.39l-.41-.07-.41-.07c-.72-.12-1.13.15-1.24.8l-.08.5-.08.5c-.11.65.19,1.04.91,1.16Z"/><path d="M13.28,14.48c-.18.04-.37.06-.56.07l-.07.39-.03.2c-.03.19-.1.33-.21.44,0,0,0,0,0,0,0,0,0,0,0,0-.04.04-.08.07-.13.1h0c-.13.07-.3.11-.51.11-.08,0-.16,0-.25-.02-.04,0-.09-.01-.13-.02-.13-.02-.25-.05-.36-.08-.5-.16-.69-.45-.62-.91l.41-2.48c.03-.19.1-.34.2-.44.08-.09.19-.15.33-.19.09-.02.19-.03.31-.03h.03c.14,0,.31.02.46.05s.3-.07.33-.23l.18-1.09c-.12-.03-.25-.06-.39-.08-.12-.02-.23-.04-.35-.05,0,0,0,0,0,0-.13-.01-.25-.02-.38-.02-.03,0-.05,0-.08,0-.1,0-.2,0-.3.01-.83.07-1.48.46-1.74,1.36h0c-.03.1-.05.2-.07.31l-.47,2.81c-.16.95.17,1.57.79,1.97.11.07.23.14.36.2.13.06.27.11.42.16.21.06.43.11.66.15.29.05.56.07.8.07.61,0,1.05-.14,1.38-.37.03-.02.06-.04.08-.06h0c.42-.34.62-.82.71-1.32l.25-1.48c-.3.22-.65.37-1.05.45h0Z"/></svg>';
-		return 'data:image/svg+xml;base64,' . base64_encode( $svg ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- encoding inline SVG for use in a data URI; no obfuscation intent.
+		$uri = 'data:image/svg+xml;base64,' . base64_encode( $svg ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- encoding inline SVG for use in a data URI; no obfuscation intent.
+		return $uri;
 	}
 }

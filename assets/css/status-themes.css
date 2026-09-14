@@ -1,43 +1,40 @@
-/**
- * Flow Editorial Workflow — unified review status colors.
- * Keep in sync with src/shared/status-themes.js and src/review-page/_tokens.scss.
- */
+/* Review status pills. Palette: assets/status-palette.json → assets/css/status-tokens.css. */
 
 /* ----- Modifier tokens (status slug → palette) ----------------------------- */
 
 .flow-ew-dashboard-page__status--open_review,
 .flow-ew-pro-reviewer-row__status--open_review {
-	--flow-status-bg: #dff4ff;
-	--flow-status-text: #1579a5;
-	--flow-status-border: #b6e6ff;
+	--flow-status-bg: var(--flow-status-open_review-bg);
+	--flow-status-text: var(--flow-status-open_review-text);
+	--flow-status-border: var(--flow-status-open_review-border);
 }
 
 .flow-ew-dashboard-page__status--approved,
 .flow-ew-pro-reviewer-row__status--approved {
-	--flow-status-bg: #e7f5e4;
-	--flow-status-text: #458037;
-	--flow-status-border: #cae8c4;
+	--flow-status-bg: var(--flow-status-approved-bg);
+	--flow-status-text: var(--flow-status-approved-text);
+	--flow-status-border: var(--flow-status-approved-border);
 }
 
 .flow-ew-dashboard-page__status--in_review,
 .flow-ew-pro-reviewer-row__status--in_review {
-	--flow-status-bg: #fcf0ce;
-	--flow-status-text: #957500;
-	--flow-status-border: #f2dda4;
+	--flow-status-bg: var(--flow-status-in_review-bg);
+	--flow-status-text: var(--flow-status-in_review-text);
+	--flow-status-border: var(--flow-status-in_review-border);
 }
 
 .flow-ew-dashboard-page__status--changes_requested,
 .flow-ew-pro-reviewer-row__status--changes_requested {
-	--flow-status-bg: #ffebea;
-	--flow-status-text: #c92122;
-	--flow-status-border: #ffd1d0;
+	--flow-status-bg: var(--flow-status-changes_requested-bg);
+	--flow-status-text: var(--flow-status-changes_requested-text);
+	--flow-status-border: var(--flow-status-changes_requested-border);
 }
 
 .flow-ew-dashboard-page__status--pending,
 .flow-ew-pro-reviewer-row__status--pending {
-	--flow-status-bg: #e6f3f5;
-	--flow-status-text: #5e777b;
-	--flow-status-border: #cde3e7;
+	--flow-status-bg: var(--flow-status-pending-bg);
+	--flow-status-text: var(--flow-status-pending-text);
+	--flow-status-border: var(--flow-status-pending-border);
 }
 
 /* ----- Shared status pill layout ------------------------------------------- */

@@ -7,76 +7,30 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-class Bricks {
+class Bricks extends Builder_Integration {
 
 	public function boot(): void {
 		add_action( 'wp_enqueue_scripts', [ $this, 'enqueue_assets' ], 100 );
 		add_action( 'wp_footer', [ $this, 'render_panel' ], 1 );
 	}
 
-	public function enqueue_assets(): void {
-		if ( ! defined( 'BRICKS_VERSION' ) ) {
-			return;
-		}
-		if ( ! function_exists( 'bricks_is_builder_main' ) || ! bricks_is_builder_main() ) {
-			return;
-		}
-
-		$post_id = $this->get_editor_post_id();
-		if ( ! $post_id ) {
-			return;
-		}
-
-		$post_type = (string) get_post_type( $post_id );
-		if ( '' === $post_type || ! Settings::is_post_type_supported( $post_type ) ) {
-			return;
-		}
-
-		Assets::enqueue_classic_editor_companion( $post_id );
-		Assets::enqueue_builder_bundle( 'bricks' );
+	protected function slug(): string {
+		return 'bricks';
 	}
 
-	public function render_panel(): void {
-		if ( ! defined( 'BRICKS_VERSION' ) ) {
-			return;
-		}
-		if ( ! function_exists( 'bricks_is_builder_main' ) || ! bricks_is_builder_main() ) {
-			return;
-		}
-
-		$post_id = $this->get_editor_post_id();
-		if ( ! $post_id ) {
-			return;
-		}
-
-		$post_type = (string) get_post_type( $post_id );
-		if ( '' === $post_type || ! Settings::is_post_type_supported( $post_type ) ) {
-			return;
-		}
-
-		$post = get_post( $post_id );
-		if ( ! $post instanceof \WP_Post ) {
-			return;
-		}
-
-		$review = DB::get_active_review( $post_id );
-		$status = $review ? (string) $review->status : '';
-
-		$template = (string) apply_filters(
-			'flow_ew_bricks_panel_template',
-			FLOW_EW_PLUGIN_DIR . 'templates/bricks/panel.php'
-		);
-		if ( is_readable( $template ) ) {
-			include $template;
-		}
+	protected function panel(): array {
+		$panel          = parent::panel();
+		$panel['close'] = 'bricks';
+		return $panel;
 	}
 
-	private function get_editor_post_id(): int {
-		$id = (int) get_queried_object_id();
-		if ( $id > 0 ) {
-			return $id;
-		}
-		$id = (int) get_the_ID();
-		return $id > 0 ? $id : 0;
+	protected function is_builder_request(): bool {
+		return defined( 'BRICKS_VERSION' )
+			&& function_exists( 'bricks_is_builder_main' )
+			&& bricks_is_builder_main();
+	}
+
+	protected function get_editor_post_id(): int {
+		return self::queried_post_id();
 	}
 }

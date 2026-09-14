@@ -1,3 +1,4 @@
+import { escHtml } from './escape';
 import { isPublishBlocked } from './is-publish-blocked';
 import {
 	dismissNoReviewRolesNotice,
@@ -5,12 +6,6 @@ import {
 	NO_REVIEW_ROLES_DISMISS_VALUE,
 } from './no-review-roles-notice';
 import { resolveClassicRoot } from './resolve-classic-root';
-
-function escHtml( str ) {
-	const d = document.createElement( 'div' );
-	d.textContent = str;
-	return d.innerHTML;
-}
 
 function collectClassicRoots() {
 	const roots = [];
@@ -132,8 +127,7 @@ function buildNoticeSpec( flowEW, review, publishBlocked ) {
 		variant: 'in-review',
 		role: 'note',
 		publishGuardOnly: true,
-		title:
-			i18n.reviewMandatoryTitle || 'Review Mode set to Mandatory',
+		title: i18n.reviewMandatoryTitle || 'Review Mode set to Mandatory',
 		descHtml:
 			i18n.reviewMandatoryDesc ||
 			i18n.publishGuardTooltip ||
@@ -177,11 +171,19 @@ function insertNotice( root, notice ) {
 /**
  * Ensure review mode notices exist in builder/classic panels (SSR fallback).
  */
-export function ensureReviewNotices( { review, reviewMandatory, reviewerMeta, isPublished, currentUserCan } ) {
+export function ensureReviewNotices( {
+	review,
+	reviewMandatory,
+	reviewerMeta,
+	isPublished,
+	currentUserCan,
+} ) {
 	const flowEW = window.flowEW;
 	if ( ! flowEW || ! currentUserCan?.assignReviewer ) {
 		document
-			.querySelectorAll( '.flow-ew-review-notice[data-flow-ew-js-notice="1"]' )
+			.querySelectorAll(
+				'.flow-ew-review-notice[data-flow-ew-js-notice="1"]'
+			)
 			.forEach( ( el ) => el.remove() );
 		syncReviewNoticeVisibility( {
 			reviewMandatory,

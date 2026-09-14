@@ -9,6 +9,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class DB {
 
+	/** @var array<int,object|null> Active review per post, request-scoped. */
+	private static array $active_cache = [];
+
+	/** @var array<int,object|null> Review row per id, request-scoped. */
+	private static array $review_cache = [];
+
 	public static function reviews_table(): string {
 		global $wpdb;
 		return $wpdb->prefix . 'flow_reviews';
@@ -20,14 +26,65 @@ class DB {
 	}
 
 	public static function get_active_review( int $post_id ) {
+		if ( array_key_exists( $post_id, self::$active_cache ) ) {
+			return self::$active_cache[ $post_id ];
+		}
 		global $wpdb;
 		$table = esc_sql( self::reviews_table() );
-		return $wpdb->get_row( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		$row   = $wpdb->get_row( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
 			$wpdb->prepare(
 				"SELECT * FROM {$table} WHERE post_id = %d ORDER BY updated_at DESC, id DESC LIMIT 1", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table from plugin prefix + literal name.
 				$post_id
 			)
 		);
+
+		self::$active_cache[ $post_id ] = $row ?: null;
+		return self::$active_cache[ $post_id ];
+	}
+
+	/**
+	 * Load the active review for many posts in one query so a list table does
+	 * not issue one lookup per row.
+	 *
+	 * @param int[] $post_ids
+	 */
+	public static function prime_active_reviews( array $post_ids ): void {
+		$ids = [];
+		foreach ( $post_ids as $post_id ) {
+			$post_id = (int) $post_id;
+			if ( $post_id > 0 && ! array_key_exists( $post_id, self::$active_cache ) ) {
+				$ids[ $post_id ] = $post_id;
+			}
+		}
+		if ( [] === $ids ) {
+			return;
+		}
+		global $wpdb;
+		$table        = esc_sql( self::reviews_table() );
+		$placeholders = implode( ',', array_fill( 0, count( $ids ), '%d' ) );
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table literal; placeholders are %d.
+		$sql  = "SELECT r1.* FROM {$table} r1
+			WHERE r1.post_id IN ({$placeholders})
+			AND r1.id = (
+				SELECT id FROM {$table} r2
+				WHERE r2.post_id = r1.post_id
+				ORDER BY r2.updated_at DESC, r2.id DESC
+				LIMIT 1
+			)";
+		$rows = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+			$wpdb->prepare( $sql, array_values( $ids ) ) // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		);
+		foreach ( $ids as $post_id ) {
+			self::$active_cache[ $post_id ] = null;
+		}
+		foreach ( (array) $rows as $row ) {
+			self::$active_cache[ (int) $row->post_id ] = $row;
+		}
+	}
+
+	public static function flush_active_review_cache(): void {
+		self::$active_cache = [];
+		self::$review_cache = [];
 	}
 
 	/**
@@ -86,14 +143,20 @@ class DB {
 	}
 
 	public static function get_review( int $id ) {
+		if ( array_key_exists( $id, self::$review_cache ) ) {
+			return self::$review_cache[ $id ];
+		}
 		global $wpdb;
 		$table = esc_sql( self::reviews_table() );
-		return $wpdb->get_row( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		$row   = $wpdb->get_row( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
 			$wpdb->prepare(
 				"SELECT * FROM {$table} WHERE id = %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table from plugin prefix + literal name.
 				$id
 			)
 		);
+
+		self::$review_cache[ $id ] = $row ?: null;
+		return self::$review_cache[ $id ];
 	}
 
 	public static function get_review_by_revision_id( int $revision_id ) {
@@ -124,6 +187,7 @@ class DB {
 			),
 			[ '%s', '%d', '%s', '%s', '%d', '%d', '%d', '%d' ]
 		);
+		self::flush_active_review_cache();
 		return ( 0 !== $wpdb->insert_id ) ? $wpdb->insert_id : false;
 	}
 
@@ -134,6 +198,7 @@ class DB {
 			[ 'id' => $id ],
 			[ '%d' ]
 		);
+		self::flush_active_review_cache();
 		return false !== $result;
 	}
 
@@ -156,6 +221,7 @@ class DB {
 		// Comments first so we don't leave dangling rows pointing at deleted reviews.
 		$wpdb->delete( $comments_table, [ 'post_id' => $post_id ], [ '%d' ] ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		$count = (int) $wpdb->delete( $reviews_table, [ 'post_id' => $post_id ], [ '%d' ] ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		self::flush_active_review_cache();
 		return $count;
 	}
 
@@ -167,7 +233,32 @@ class DB {
 			$data,
 			[ 'id' => $id ]
 		);
+		self::flush_active_review_cache();
 		return false !== $result;
+	}
+
+	/**
+	 * Cheap change marker for a review's comments. `total` is what catches a
+	 * hard delete — there are no tombstones, so a timestamp alone cannot see
+	 * one; `max_id` catches a delete and an insert landing in the same window.
+	 *
+	 * @return array{total:int,max_id:int,max_updated:string}
+	 */
+	public static function get_comments_state( int $post_id, int $review_id ): array {
+		global $wpdb;
+		$comments_table = esc_sql( self::comments_table() );
+		$row            = $wpdb->get_row( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+			$wpdb->prepare(
+				"SELECT COUNT(*) AS total, COALESCE(MAX(id),0) AS max_id, COALESCE(MAX(updated_at),'') AS max_updated FROM {$comments_table} WHERE post_id = %d AND review_id = %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table from plugin prefix + literal name.
+				$post_id,
+				$review_id
+			)
+		);
+		return [
+			'total'       => $row ? (int) $row->total : 0,
+			'max_id'      => $row ? (int) $row->max_id : 0,
+			'max_updated' => $row ? (string) $row->max_updated : '',
+		];
 	}
 
 	public static function get_comments_for_post( int $post_id, ?int $review_id = null ): array {
@@ -190,6 +281,58 @@ class DB {
 			)
 		);
 		return ( false !== $rows ) ? $rows : [];
+	}
+
+	/**
+	 * Anonymous comments (author_id = 0) left under an email address, for
+	 * privacy export/erase.
+	 *
+	 * @return object[]
+	 */
+	public static function get_comments_by_author_email( string $email ): array {
+		global $wpdb;
+		$email = strtolower( trim( $email ) );
+		if ( '' === $email ) {
+			return [];
+		}
+		$table = esc_sql( self::comments_table() );
+		$rows  = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+			$wpdb->prepare(
+				"SELECT * FROM {$table} WHERE author_id = 0 AND author_email = %s ORDER BY id ASC", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table from plugin prefix + literal name.
+				$email
+			)
+		);
+		return is_array( $rows ) ? $rows : [];
+	}
+
+	/**
+	 * Strip the name and address from anonymous comments left under an email
+	 * address; the comment text stays, as WordPress core does for its own
+	 * comments.
+	 *
+	 * @return int Rows changed.
+	 */
+	public static function anonymize_comments_by_author_email( string $email ): int {
+		global $wpdb;
+		$email = strtolower( trim( $email ) );
+		if ( '' === $email ) {
+			return 0;
+		}
+		$changed = $wpdb->update( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+			self::comments_table(),
+			[
+				'author_name'  => '',
+				'author_email' => '',
+				'updated_at'   => current_time( 'mysql', true ),
+			],
+			[
+				'author_id'    => 0,
+				'author_email' => $email,
+			],
+			[ '%s', '%s', '%s' ],
+			[ '%d', '%s' ]
+		);
+		return (int) $changed;
 	}
 
 	public static function get_comment( int $id ) {

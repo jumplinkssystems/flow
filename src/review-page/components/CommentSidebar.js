@@ -2,6 +2,7 @@ import {
 	useState,
 	useCallback,
 	useEffect,
+	useLayoutEffect,
 	useRef,
 	useMemo,
 } from '@wordpress/element';
@@ -10,6 +11,7 @@ import { closeSmall } from '@wordpress/icons';
 import { __, sprintf } from '@wordpress/i18n';
 import { applyFilters } from '@wordpress/hooks';
 import { pageData } from '../utils/api';
+import { mergeCommentLists } from '../utils/comment-sync';
 import { defaultCommentApi } from '../utils/comment-api';
 import {
 	countResolvedCommentThreads,
@@ -45,7 +47,7 @@ function readStoredActiveTab() {
 }
 
 /**
- * @param {object} [props]
+ * @param {Object} [props]
  * @param {import('../utils/comment-api').CommentApi} [props.api]
  * @param {boolean} [props.showEditor]
  * @param {'active'|'resolved'} [props.threadFilter]
@@ -59,7 +61,6 @@ function GeneralCommentsPanel( {
 	comments,
 	setComments,
 } ) {
-
 	const { confirm, confirmDialog } = useConfirmDialog();
 
 	const tree = useMemo( () => buildCommentTree( comments ), [ comments ] );
@@ -72,88 +73,108 @@ function GeneralCommentsPanel( {
 		return { activeThreads: active, resolvedThreads: resolved };
 	}, [ tree ] );
 
-	const appendComment = useCallback( ( comment ) => {
-		setComments( ( prev ) =>
-			prev.some( ( c ) => c.id === comment.id )
-				? prev
-				: [ ...prev, comment ]
-		);
-	}, [] );
+	const appendComment = useCallback(
+		( comment ) => {
+			setComments( ( prev ) =>
+				prev.some( ( c ) => c.id === comment.id )
+					? prev
+					: [ ...prev, comment ]
+			);
+		},
+		[ setComments ]
+	);
 
-	const handleSubmit = useCallback( async ( html ) => {
-		const comment = await api.postComment( { html } );
-		appendComment( comment );
-		window.dispatchEvent(
-			new CustomEvent( 'flow:author-resubmit-activity', {
-				detail: {
-					userId: pageData.currentUserId,
-					kind: 'comment_added',
-				},
-			} )
-		);
-	}, [ api, appendComment ] );
-
-	const handleReply = useCallback( async ( parentId, html ) => {
-		const comment = await api.postComment( { html, parentId } );
-		appendComment( comment );
-		window.dispatchEvent(
-			new CustomEvent( 'flow:author-resubmit-activity', {
-				detail: {
-					userId: pageData.currentUserId,
-					kind: 'comment_added',
-				},
-			} )
-		);
-	}, [ api, appendComment ] );
-
-	const handleEdit = useCallback( async ( id, html ) => {
-		await api.updateComment( id, { html } );
-		let syncInline = false;
-		setComments( ( prev ) => {
-			const cur = prev.find( ( c ) => c.id === id );
-			syncInline = !! ( cur?.blockClientId || cur?.anchorText );
-			return prev.map( ( c ) => ( c.id === id ? { ...c, html } : c ) );
-		} );
-		if ( syncInline ) {
+	const handleSubmit = useCallback(
+		async ( html ) => {
+			const comment = await api.postComment( { html } );
+			appendComment( comment );
 			window.dispatchEvent(
-				new CustomEvent( 'flow:inline-comment-updated', {
-					detail: { id, html },
+				new CustomEvent( 'flow:author-resubmit-activity', {
+					detail: {
+						userId: pageData.currentUserId,
+						kind: 'comment_added',
+					},
 				} )
 			);
-		}
-	}, [ api ] );
+		},
+		[ api, appendComment ]
+	);
 
-	const handleResolve = useCallback( async ( id ) => {
-		await api.updateComment( id, { resolved: true } );
-		let syncInline = false;
-		setComments( ( prev ) => {
-			const cur = prev.find( ( c ) => c.id === id );
-			syncInline = !! ( cur?.blockClientId || cur?.anchorText );
-			return prev.map( ( c ) =>
-				c.id === id ? { ...c, isResolved: true } : c
-			);
-		} );
-		if ( syncInline ) {
+	const handleReply = useCallback(
+		async ( parentId, html ) => {
+			const comment = await api.postComment( { html, parentId } );
+			appendComment( comment );
 			window.dispatchEvent(
-				new CustomEvent( 'flow:highlight-resolve', {
-					detail: { commentId: id },
+				new CustomEvent( 'flow:author-resubmit-activity', {
+					detail: {
+						userId: pageData.currentUserId,
+						kind: 'comment_added',
+					},
 				} )
 			);
+		},
+		[ api, appendComment ]
+	);
+
+	const handleEdit = useCallback(
+		async ( id, html ) => {
+			await api.updateComment( id, { html } );
+			let syncInline = false;
+			setComments( ( prev ) => {
+				const cur = prev.find( ( c ) => c.id === id );
+				syncInline = !! ( cur?.blockClientId || cur?.anchorText );
+				return prev.map( ( c ) =>
+					c.id === id ? { ...c, html } : c
+				);
+			} );
+			if ( syncInline ) {
+				window.dispatchEvent(
+					new CustomEvent( 'flow:inline-comment-updated', {
+						detail: { id, html },
+					} )
+				);
+			}
+		},
+		[ api, setComments ]
+	);
+
+	const handleResolve = useCallback(
+		async ( id ) => {
+			await api.updateComment( id, { resolved: true } );
+			let syncInline = false;
+			setComments( ( prev ) => {
+				const cur = prev.find( ( c ) => c.id === id );
+				syncInline = !! ( cur?.blockClientId || cur?.anchorText );
+				return prev.map( ( c ) =>
+					c.id === id ? { ...c, isResolved: true } : c
+				);
+			} );
+			if ( syncInline ) {
+				window.dispatchEvent(
+					new CustomEvent( 'flow:highlight-resolve', {
+						detail: { commentId: id },
+					} )
+				);
+				window.dispatchEvent(
+					new CustomEvent( 'flow:inline-comment-resolved', {
+						detail: {
+							commentId: id,
+							userId: pageData.currentUserId,
+						},
+					} )
+				);
+			}
 			window.dispatchEvent(
-				new CustomEvent( 'flow:inline-comment-resolved', {
-					detail: { commentId: id, userId: pageData.currentUserId },
+				new CustomEvent( 'flow:author-resubmit-activity', {
+					detail: {
+						userId: pageData.currentUserId,
+						kind: 'comment_resolved',
+					},
 				} )
 			);
-		}
-		window.dispatchEvent(
-			new CustomEvent( 'flow:author-resubmit-activity', {
-				detail: {
-					userId: pageData.currentUserId,
-					kind: 'comment_resolved',
-				},
-			} )
-		);
-	}, [ api ] );
+		},
+		[ api, setComments ]
+	);
 
 	const handleDelete = useCallback(
 		async ( id ) => {
@@ -208,7 +229,7 @@ function GeneralCommentsPanel( {
 				);
 			}
 		},
-		[ comments, api, confirm ]
+		[ comments, api, confirm, setComments ]
 	);
 
 	const threads =
@@ -223,7 +244,10 @@ function GeneralCommentsPanel( {
 						null,
 						{}
 					) }
-					<CommentEditor onSubmit={ handleSubmit } clearDraftOnCancel />
+					<CommentEditor
+						onSubmit={ handleSubmit }
+						clearDraftOnCancel
+					/>
 				</div>
 			) }
 			{ threads.length > 0 && (
@@ -245,13 +269,23 @@ function GeneralCommentsPanel( {
 	);
 }
 
+function tabCountLabel( tabName, count ) {
+	/* translators: %d: number of unresolved comment threads */
+	const unresolved = __(
+		'Unresolved comment threads: %d',
+		'jumplinks-editorial-workflow'
+	);
+	/* translators: %d: number of resolved comment threads */
+	const resolved = __(
+		'Resolved comment threads: %d',
+		'jumplinks-editorial-workflow'
+	);
+	const format = tabName === 'comments' ? unresolved : resolved;
+	return sprintf( format, count );
+}
+
 /**
- * @param {object} [props]
- * @param {'review'|'site-review'} [props.mode]
- *   `'review'` (default): per-post chrome. Renders the Comments + Resolved
- *   tabs.
- *   `'site-review'`: same tab layout but the decision-action footer is
- *   suppressed (Send Feedback / Exit Review live in the bar instead).
+ * @param {Object} [props]
  * @param {{
  *   postComment: Function,
  *   updateComment: Function,
@@ -268,7 +302,6 @@ function GeneralCommentsPanel( {
  *   the reviewer reads when the chrome opens.
  */
 export default function CommentSidebar( {
-	mode = 'review',
 	api = defaultCommentApi,
 	reviewIntro = null,
 } = {} ) {
@@ -280,6 +313,7 @@ export default function CommentSidebar( {
 		() => pageData.inlineComments || []
 	);
 	const pendingInlineResolvedRef = useRef( new Set() );
+	const scrollRef = useRef( null );
 	const [ activeTab, setActiveTab ] = useState( readStoredActiveTab );
 	const [ reviewUnresolved, setReviewUnresolved ] = useState( () =>
 		countUnresolvedCommentThreads( pageData.comments || [] )
@@ -322,7 +356,8 @@ export default function CommentSidebar( {
 			new CustomEvent( 'flow:comment-count', {
 				detail: {
 					total: generalComments.length,
-					unresolved: countUnresolvedCommentThreads( generalComments ),
+					unresolved:
+						countUnresolvedCommentThreads( generalComments ),
 					resolved: countResolvedCommentThreads( generalComments ),
 				},
 			} )
@@ -378,9 +413,7 @@ export default function CommentSidebar( {
 				}
 				pendingInlineResolvedRef.current.delete( cid );
 				return prev.map( ( c ) =>
-					Number( c.id ) === cid
-						? { ...c, isResolved: true }
-						: c
+					Number( c.id ) === cid ? { ...c, isResolved: true } : c
 				);
 			} );
 		};
@@ -388,22 +421,37 @@ export default function CommentSidebar( {
 			const next = e.detail?.comments;
 			if ( Array.isArray( next ) ) {
 				pendingInlineResolvedRef.current.clear();
-				setInlineComments( next );
+				setInlineComments( ( prev ) =>
+					mergeCommentLists( prev, next )
+				);
+			}
+		};
+		const onGeneralReset = ( e ) => {
+			const next = e.detail?.comments;
+			if ( Array.isArray( next ) ) {
+				setGeneralComments( ( prev ) =>
+					mergeCommentLists( prev, next )
+				);
 			}
 		};
 		window.addEventListener( 'flow:inline-comment-added', onAdded );
 		window.addEventListener( 'flow:inline-comment-resolved', onResolved );
 		window.addEventListener( 'flow:inline-comments-reset', onReset );
+		window.addEventListener(
+			'flow:general-comments-reset',
+			onGeneralReset
+		);
 		return () => {
+			window.removeEventListener(
+				'flow:general-comments-reset',
+				onGeneralReset
+			);
 			window.removeEventListener( 'flow:inline-comment-added', onAdded );
 			window.removeEventListener(
 				'flow:inline-comment-resolved',
 				onResolved
 			);
-			window.removeEventListener(
-				'flow:inline-comments-reset',
-				onReset
-			);
+			window.removeEventListener( 'flow:inline-comments-reset', onReset );
 		};
 	}, [] );
 
@@ -520,20 +568,7 @@ export default function CommentSidebar( {
 						{ count > 0 ? (
 							<span
 								className={ `flow-sidebar__tab-count ${ countClass }` }
-								aria-label={ sprintf(
-									tab.name === 'comments'
-										? /* translators: %d: number of unresolved comment threads */
-										  __(
-												'Unresolved comment threads: %d',
-												'jumplinks-editorial-workflow'
-										  )
-										: /* translators: %d: number of resolved comment threads */
-										  __(
-												'Resolved comment threads: %d',
-												'jumplinks-editorial-workflow'
-										  ),
-									count
-								) }
+								aria-label={ tabCountLabel( tab.name, count ) }
 							>
 								{ count }
 							</span>
@@ -543,6 +578,21 @@ export default function CommentSidebar( {
 			} ) }
 		</div>
 	);
+
+	// Threads render newest-first, so a comment arriving from another reviewer
+	// is inserted above the viewport and would otherwise shove the list down.
+	const prevScrollHeightRef = useRef( 0 );
+	useLayoutEffect( () => {
+		const el = scrollRef.current;
+		if ( ! el ) {
+			return;
+		}
+		const previous = prevScrollHeightRef.current;
+		prevScrollHeightRef.current = el.scrollHeight;
+		if ( previous && el.scrollTop > 0 && el.scrollHeight !== previous ) {
+			el.scrollTop += el.scrollHeight - previous;
+		}
+	}, [ generalComments, inlineComments ] );
 
 	return (
 		<div className="flow-sidebar" ref={ hostRef }>
@@ -557,7 +607,11 @@ export default function CommentSidebar( {
 					/>
 				</div>
 				<div className="flow-sidebar__tab-panel">
-					<div className="flow-sidebar__tab-scroll" role="tabpanel">
+					<div
+						className="flow-sidebar__tab-scroll"
+						role="tabpanel"
+						ref={ scrollRef }
+					>
 						<div
 							className="flow-sidebar__tab-content"
 							style={

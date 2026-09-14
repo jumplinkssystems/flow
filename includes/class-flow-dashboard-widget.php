@@ -78,6 +78,8 @@ class Dashboard_Widget {
 			return;
 		}
 
+		Review::prime_review_list_caches( array_merge( $in_review, $changes_requested, $open_reviews ) );
+
 		self::render_section( 'in-review', __( 'In Review', 'jumplinks-editorial-workflow' ), $in_review );
 		self::render_section( 'changes-requested', __( 'Changes Requested', 'jumplinks-editorial-workflow' ), $changes_requested );
 		self::render_section( 'open-review', __( 'Open Review', 'jumplinks-editorial-workflow' ), $open_reviews );
@@ -190,87 +192,62 @@ class Dashboard_Widget {
 	private static function render_section( string $slug, string $heading, array $reviews ): void {
 		$reviews = array_slice( $reviews, 0, self::MAX_ITEMS_PER_CAT );
 
-		if ( empty( $reviews ) ) {
-			return;
+		$items = [];
+		foreach ( $reviews as $index => $review ) {
+			$item = self::item_data( $review );
+			if ( null !== $item ) {
+				$item['hidden'] = $index >= self::INITIAL_VISIBLE;
+				$items[]        = $item;
+			}
 		}
-		$total        = count( $reviews );
-		$has_overflow = $total > self::INITIAL_VISIBLE;
 
-		printf(
-			'<div class="flow-ew-dash-section flow-ew-dash-section--%s">',
-			esc_attr( $slug )
-		);
-		printf(
-			'<h3 class="flow-ew-dash-section__title">%s<span class="flow-ew-dash-section__count">%d</span></h3>',
-			esc_html( $heading ),
-			(int) $total
-		);
-		echo '<ul class="flow-ew-dash-list">';
-		$index = 0;
-		foreach ( $reviews as $review ) {
-			$hidden = $index >= self::INITIAL_VISIBLE;
-			self::render_item( $review, $hidden );
-			++$index;
-		}
-		echo '</ul>';
-
-		if ( $has_overflow ) {
+		$after = '';
+		if ( count( $items ) > self::INITIAL_VISIBLE ) {
 			$more_label = sprintf(
 				/* translators: %d: number of additional reviews. */
 				__( 'View %d more', 'jumplinks-editorial-workflow' ),
-				$total - self::INITIAL_VISIBLE
+				count( $items ) - self::INITIAL_VISIBLE
 			);
-			$less_label = __( 'View less', 'jumplinks-editorial-workflow' );
-			printf(
+			$after = sprintf(
 				'<button type="button" class="flow-ew-dash-toggle" data-more-label="%s" data-less-label="%s">%s</button>',
 				esc_attr( $more_label ),
-				esc_attr( $less_label ),
+				esc_attr( __( 'View less', 'jumplinks-editorial-workflow' ) ),
 				esc_html( $more_label )
 			);
 		}
 
-		echo '</div>';
+		Dashboard_List_Renderer::section(
+			$slug,
+			$heading,
+			$items,
+			[
+				'heading_tag' => 'h3',
+				'after_html'  => $after,
+			]
+		);
 	}
 
-	private static function render_item( object $review, bool $hidden ): void {
+	/**
+	 * @return array<string,mixed>|null Null when the post is gone.
+	 */
+	private static function item_data( object $review ): ?array {
 		$post = get_post( (int) $review->post_id );
 		if ( ! $post instanceof \WP_Post ) {
-			return;
+			return null;
 		}
-
-		$rev_id = Review::get_effective_preview_revision_id(
+		$rev_id   = Review::get_effective_preview_revision_id(
 			(int) $review->post_id,
 			(int) ( $review->revision_id ?? 0 )
 		);
-		$url    = Review::get_preview_url( (int) $review->id, $rev_id, (int) $review->post_id );
-
-		$updated_ts = strtotime( (string) ( $review->updated_at ?? '' ) . ' UTC' );
-		$relative   = $updated_ts
-			/* translators: %s: human-readable time difference, e.g. "2 hours". */
-			? sprintf( __( '%s ago', 'jumplinks-editorial-workflow' ), human_time_diff( $updated_ts, time() ) )
-			: '';
-
-		$post_type_obj   = get_post_type_object( $post->post_type );
-		$post_type_label = ( $post_type_obj && isset( $post_type_obj->labels->singular_name ) )
-			? $post_type_obj->labels->singular_name
-			: $post->post_type;
-
-		$item_class = 'flow-ew-dash-item' . ( $hidden ? ' flow-ew-dash-item--hidden' : '' );
-
-		printf( '<li class="%s">', esc_attr( $item_class ) );
-		echo '<div class="flow-ew-dash-item__main">';
-		printf(
-			'<a class="flow-ew-dash-item__title" href="%s">%s</a>',
-			esc_url( $url ),
-			esc_html( '' !== $post->post_title ? $post->post_title : __( '(no title)', 'jumplinks-editorial-workflow' ) )
-		);
-		echo '<span class="flow-ew-dash-item__meta">';
-		echo esc_html( $post_type_label );
+		$meta     = [ esc_html( Dashboard_List_Renderer::post_type_label( $post ) ) ];
+		$relative = Dashboard_List_Renderer::relative_time( $review->updated_at ?? null );
 		if ( '' !== $relative ) {
-			echo ' &middot; ' . esc_html( $relative );
+			$meta[] = esc_html( $relative );
 		}
-		echo '</span>';
-		echo '</div>';
-		echo '</li>';
+		return [
+			'title' => Dashboard_List_Renderer::post_title( $post ),
+			'url'   => Review::get_preview_url( (int) $review->id, $rev_id, (int) $review->post_id ),
+			'meta'  => $meta,
+		];
 	}
 }

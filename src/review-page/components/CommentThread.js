@@ -3,6 +3,10 @@ import { Button } from '@wordpress/components';
 import commentReplyIcon from '../icons/comment-reply';
 import { __, sprintf } from '@wordpress/i18n';
 import CommentCard from './CommentCard';
+import {
+	markCommentBusy,
+	releaseCommentBusy,
+} from '../utils/local-edit-registry';
 import CommentEditor from './CommentEditor';
 const COLLAPSED_REPLY_LIMIT = 1;
 
@@ -16,6 +20,13 @@ export default function CommentThread( {
 } ) {
 	const replies = thread.replies || [];
 	const [ replyingTo, setReplyingTo ] = useState( null );
+	useEffect( () => {
+		if ( ! replyingTo ) {
+			return undefined;
+		}
+		markCommentBusy( replyingTo );
+		return () => releaseCommentBusy( replyingTo );
+	}, [ replyingTo ] );
 	const [ threadExpanded, setThreadExpanded ] = useState( false );
 	const replyEditorRef = useRef( null );
 
@@ -33,7 +44,9 @@ export default function CommentThread( {
 
 	const visibleReplies = threadExpanded
 		? replies
-		: replies.slice( Math.max( 0, replies.length - COLLAPSED_REPLY_LIMIT ) );
+		: replies.slice(
+				Math.max( 0, replies.length - COLLAPSED_REPLY_LIMIT )
+		  );
 	const hiddenCount = Math.max( 0, replies.length - COLLAPSED_REPLY_LIMIT );
 
 	useEffect( () => {
@@ -44,9 +57,13 @@ export default function CommentThread( {
 		// Wait for the editor to render and then bring action buttons into view.
 		requestAnimationFrame( () => {
 			requestAnimationFrame( () => {
-				const submitRow = replyEditorRef.current?.querySelector( '.flow-comment-editor__submit-row' );
+				const submitRow = replyEditorRef.current?.querySelector(
+					'.flow-comment-editor__submit-row'
+				);
 				const target = submitRow || replyEditorRef.current;
-				const scroller = target.closest( '.components-tab-panel__tab-content' );
+				const scroller = target.closest(
+					'.components-tab-panel__tab-content'
+				);
 
 				if ( ! scroller ) {
 					target.scrollIntoView( {
@@ -73,7 +90,11 @@ export default function CommentThread( {
 	}, [ replyingTo ] );
 
 	return (
-		<div className={ `flow-comment-thread${ thread.isResolved ? ' flow-comment-thread--resolved' : '' }` }>
+		<div
+			className={ `flow-comment-thread${
+				thread.isResolved ? ' flow-comment-thread--resolved' : ''
+			}` }
+		>
 			<CommentCard
 				comment={ thread }
 				onEdit={ onEdit }
@@ -97,7 +118,10 @@ export default function CommentThread( {
 						>
 							{ sprintf(
 								/* translators: %d: number of hidden replies */
-								__( '%d more replies', 'jumplinks-editorial-workflow' ),
+								__(
+									'%d more replies',
+									'jumplinks-editorial-workflow'
+								),
 								hiddenCount
 							) }
 						</button>
@@ -129,12 +153,18 @@ export default function CommentThread( {
 			) }
 
 			{ replyingTo && (
-				<div className="flow-comment-thread__reply-editor" ref={ replyEditorRef }>
+				<div
+					className="flow-comment-thread__reply-editor"
+					ref={ replyEditorRef }
+				>
 					<CommentEditor
 						autoFocus
 						onSubmit={ handleReplySubmit }
 						onCancel={ () => setReplyingTo( null ) }
-						submitLabel={ __( 'Reply', 'jumplinks-editorial-workflow' ) }
+						submitLabel={ __(
+							'Reply',
+							'jumplinks-editorial-workflow'
+						) }
 					/>
 				</div>
 			) }

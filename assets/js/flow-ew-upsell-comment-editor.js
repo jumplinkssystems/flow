@@ -6,7 +6,7 @@
 ( function () {
 	'use strict';
 
-	var data = window.flowEwUpsellCommentEditor;
+	const data = window.flowEwUpsellCommentEditor;
 	if ( ! data || ! data.label ) {
 		return;
 	}
@@ -15,9 +15,9 @@
 		return;
 	}
 
-	var createElement = window.wp.element.createElement;
+	const createElement = window.wp.element.createElement;
 
-	var BADGE_STYLE = {
+	const BADGE_STYLE = {
 		display: 'inline-block',
 		padding: '1px 6px',
 		marginRight: '6px',
@@ -31,7 +31,7 @@
 		verticalAlign: '1px',
 	};
 
-	var LINK_STYLE = {
+	const LINK_STYLE = {
 		display: 'inline-block',
 		color: '#018170',
 		fontWeight: 600,
@@ -39,7 +39,7 @@
 		cursor: 'pointer',
 	};
 
-	var HELP_STYLE = {
+	const HELP_STYLE = {
 		marginTop: '4px',
 		marginBottom: 0,
 		color: '#757575',
@@ -47,7 +47,7 @@
 		lineHeight: 1.4,
 	};
 
-	var WRAP_STYLE = {
+	const WRAP_STYLE = {
 		marginBottom: '12px',
 	};
 
@@ -60,10 +60,18 @@
 			}
 			return createElement(
 				'div',
-				{ className: 'flow-ew-upsell-comment-editor', style: WRAP_STYLE },
+				{
+					className: 'flow-ew-upsell-comment-editor',
+					style: WRAP_STYLE,
+				},
 				createElement(
 					'a',
-					{ href: data.href, target: '_blank', rel: 'noopener noreferrer', style: LINK_STYLE },
+					{
+						href: data.href,
+						target: '_blank',
+						rel: 'noopener noreferrer',
+						style: LINK_STYLE,
+					},
 					createElement( 'span', { style: BADGE_STYLE }, 'PRO' ),
 					data.label
 				),

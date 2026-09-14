@@ -76,9 +76,7 @@ export function resolveClassicReviewerSlot() {
 		if ( ! document.getElementById( id ) ) {
 			continue;
 		}
-		const inDrawer = slots.find(
-			( el ) => el && el.closest( '#' + id )
-		);
+		const inDrawer = slots.find( ( el ) => el && el.closest( '#' + id ) );
 		if ( inDrawer ) {
 			return inDrawer;
 		}

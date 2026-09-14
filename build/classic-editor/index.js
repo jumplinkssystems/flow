@@ -2,6 +2,60 @@
 /******/ 	"use strict";
 /******/ 	var __webpack_modules__ = ({
 
+/***/ "./src/classic-editor/api.js"
+/*!***********************************!*\
+  !*** ./src/classic-editor/api.js ***!
+  \***********************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   createRestClient: () => (/* binding */ createRestClient)
+/* harmony export */ });
+/**
+ * Minimal REST client for the classic companion (no @wordpress/api-fetch in
+ * this bundle). `api` resolves to parsed JSON regardless of status; `apiPost`
+ * rejects with the parsed error body on non-2xx and yields null on 204.
+ */
+function createRestClient({
+  restUrl,
+  nonce
+}) {
+  const headers = {
+    'Content-Type': 'application/json',
+    'X-WP-Nonce': nonce
+  };
+  function api(path, method) {
+    return fetch(restUrl + path, {
+      method: method || 'POST',
+      credentials: 'same-origin',
+      headers
+    }).then(r => r.json());
+  }
+  function apiPost(path, body) {
+    return fetch(restUrl + path, {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers,
+      body: body ? JSON.stringify(body) : undefined
+    }).then(r => {
+      if (!r.ok) {
+        return r.json().then(e => Promise.reject(e));
+      }
+      if (r.status === 204) {
+        return null;
+      }
+      return r.json();
+    });
+  }
+  return {
+    api,
+    apiPost
+  };
+}
+
+/***/ },
+
 /***/ "./src/classic-editor/index.js"
 /*!*************************************!*\
   !*** ./src/classic-editor/index.js ***!
@@ -13,14 +67,22 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _shared_share_bar_css__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../shared/share-bar.css */ "./src/shared/share-bar.css");
 /* harmony import */ var _open_review__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./open-review */ "./src/classic-editor/open-review.js");
 /* harmony import */ var _shared_status_themes__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../shared/status-themes */ "./src/shared/status-themes.js");
-/* harmony import */ var _shared_is_publish_blocked__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../shared/is-publish-blocked */ "./src/shared/is-publish-blocked.js");
-/* harmony import */ var _shared_publish_guard_ui__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../shared/publish-guard-ui */ "./src/shared/publish-guard-ui.js");
-/* harmony import */ var _shared_share_bar_icons__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ../shared/share-bar-icons */ "./src/shared/share-bar-icons.js");
-/* harmony import */ var _shared_resolve_classic_root__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ../shared/resolve-classic-root */ "./src/shared/resolve-classic-root.js");
-/* harmony import */ var _shared_review_notice_dom__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ../shared/review-notice-dom */ "./src/shared/review-notice-dom.js");
-/* harmony import */ var _shared_should_show_send_for_review__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ../shared/should-show-send-for-review */ "./src/shared/should-show-send-for-review.js");
-/* harmony import */ var _shared_sync_reviewer_combobox_from_review__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ../shared/sync-reviewer-combobox-from-review */ "./src/shared/sync-reviewer-combobox-from-review.js");
-/* harmony import */ var _shared_reviewer_email_entry__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ../shared/reviewer-email-entry */ "./src/shared/reviewer-email-entry.js");
+/* harmony import */ var _shared_escape__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../shared/escape */ "./src/shared/escape.js");
+/* harmony import */ var _api__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./api */ "./src/classic-editor/api.js");
+/* harmony import */ var _shared_is_publish_blocked__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ../shared/is-publish-blocked */ "./src/shared/is-publish-blocked.js");
+/* harmony import */ var _shared_publish_guard_ui__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ../shared/publish-guard-ui */ "./src/shared/publish-guard-ui.js");
+/* harmony import */ var _shared_share_bar_icons__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ../shared/share-bar-icons */ "./src/shared/share-bar-icons.js");
+/* harmony import */ var _shared_resolve_classic_root__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ../shared/resolve-classic-root */ "./src/shared/resolve-classic-root.js");
+/* harmony import */ var _shared_assign_invite_email__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ../shared/assign-invite-email */ "./src/shared/assign-invite-email.js");
+/* harmony import */ var _shared_review_notice_dom__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ../shared/review-notice-dom */ "./src/shared/review-notice-dom.js");
+/* harmony import */ var _shared_should_show_send_for_review__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! ../shared/should-show-send-for-review */ "./src/shared/should-show-send-for-review.js");
+/* harmony import */ var _shared_sync_reviewer_combobox_from_review__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(/*! ../shared/sync-reviewer-combobox-from-review */ "./src/shared/sync-reviewer-combobox-from-review.js");
+/* harmony import */ var _shared_reviewer_email_entry__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__(/*! ../shared/reviewer-email-entry */ "./src/shared/reviewer-email-entry.js");
+/* harmony import */ var _shared_reviewer_combobox__WEBPACK_IMPORTED_MODULE_15__ = __webpack_require__(/*! ../shared/reviewer-combobox */ "./src/shared/reviewer-combobox.js");
+
+
+
+
 
 
 
@@ -40,8 +102,8 @@ __webpack_require__.r(__webpack_exports__);
   if (!flowEW) {
     return;
   }
-  const root = (0,_shared_resolve_classic_root__WEBPACK_IMPORTED_MODULE_7__.resolveClassicRoot)();
-  if (!root) {
+  const classicRoot = (0,_shared_resolve_classic_root__WEBPACK_IMPORTED_MODULE_9__.resolveClassicRoot)();
+  if (!classicRoot) {
     // Elementor footer panel can appear after companion scripts; wait longer.
     if (attempt < 600) {
       requestAnimationFrame(function () {
@@ -50,10 +112,10 @@ __webpack_require__.r(__webpack_exports__);
     }
     return;
   }
-  if (root.dataset.flowEwClassicReady === '1') {
+  if (classicRoot.dataset.flowEwClassicReady === '1') {
     return;
   }
-  root.dataset.flowEwClassicReady = '1';
+  classicRoot.dataset.flowEwClassicReady = '1';
   (function runClassicEditor(root) {
     const {
       restUrl,
@@ -73,8 +135,6 @@ __webpack_require__.r(__webpack_exports__);
       approved: i18n.statusApproved,
       open_review: i18n.statusOpenReview
     };
-    // Palette lives in src/shared/status-themes.js — keep CSS/SCSS mirrors in sync.
-
     let review = activeReview;
     let loading = false;
     const $ = (sel, ctx) => (ctx || document).querySelector(sel);
@@ -83,35 +143,13 @@ __webpack_require__.r(__webpack_exports__);
     if (submitBox && reviewBox && submitBox.nextElementSibling !== reviewBox) {
       submitBox.insertAdjacentElement('afterend', reviewBox);
     }
-    function api(path, method) {
-      return fetch(restUrl + path, {
-        method: method || 'POST',
-        credentials: 'same-origin',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-WP-Nonce': nonce
-        }
-      }).then(r => r.json());
-    }
-    function apiPost(path, body) {
-      return fetch(restUrl + path, {
-        method: 'POST',
-        credentials: 'same-origin',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-WP-Nonce': nonce
-        },
-        body: body ? JSON.stringify(body) : undefined
-      }).then(r => {
-        if (!r.ok) {
-          return r.json().then(e => Promise.reject(e));
-        }
-        if (r.status === 204) {
-          return null;
-        }
-        return r.json();
-      });
-    }
+    const {
+      api,
+      apiPost
+    } = (0,_api__WEBPACK_IMPORTED_MODULE_5__.createRestClient)({
+      restUrl,
+      nonce
+    });
     function setLoading(val) {
       loading = val;
       const spinner = $('#flow-ew-classic-spinner');
@@ -122,11 +160,6 @@ __webpack_require__.r(__webpack_exports__);
         el.disabled = val;
       });
     }
-    function currentReviewerId() {
-      const fromReview = Number(review?.reviewer_id || review?.reviewer && review.reviewer.id || 0);
-      const fromMeta = Number(reviewerMeta || 0);
-      return fromReview > 0 ? fromReview : fromMeta;
-    }
     function isAlreadyPublished() {
       if (flowEW && flowEW.isPublished) {
         return true;
@@ -135,7 +168,7 @@ __webpack_require__.r(__webpack_exports__);
       return !!(orig && orig.value === 'publish');
     }
     function isPublishBlockedLocal() {
-      return (0,_shared_is_publish_blocked__WEBPACK_IMPORTED_MODULE_4__.isPublishBlocked)({
+      return (0,_shared_is_publish_blocked__WEBPACK_IMPORTED_MODULE_6__.isPublishBlocked)({
         reviewMandatory,
         isPublished: isAlreadyPublished(),
         review,
@@ -152,39 +185,15 @@ __webpack_require__.r(__webpack_exports__);
       };
     }
     function refreshReviewNotices() {
-      (0,_shared_review_notice_dom__WEBPACK_IMPORTED_MODULE_8__.ensureReviewNotices)(noticeState());
+      (0,_shared_review_notice_dom__WEBPACK_IMPORTED_MODULE_11__.ensureReviewNotices)(noticeState());
     }
     function syncReviewNoticeVisibilityLocal() {
-      (0,_shared_review_notice_dom__WEBPACK_IMPORTED_MODULE_8__.syncReviewNoticeVisibility)(noticeState());
-    }
-    function getElementorEditorRoots() {
-      return [document.getElementById('elementor-editor-wrapper-v2'), document.getElementById('elementor-editor-wrapper')].filter(Boolean);
-    }
-    function findElementorPublishButtons() {
-      const seen = new Set();
-      const list = [];
-      const roots = getElementorEditorRoots();
-      for (let r = 0; r < roots.length; r++) {
-        const buttons = roots[r].querySelectorAll('button.MuiButton-root');
-        for (let i = 0; i < buttons.length; i++) {
-          const b = buttons[i];
-          if (seen.has(b)) {
-            continue;
-          }
-          const label = b.textContent.replace(/\s+/g, ' ').trim();
-          if (/^(Publish|Submit)$/i.test(label)) {
-            seen.add(b);
-            list.push(b);
-          }
-        }
-      }
-      return list;
+      (0,_shared_review_notice_dom__WEBPACK_IMPORTED_MODULE_11__.syncReviewNoticeVisibility)(noticeState());
     }
     function setPublishGuardStyles(el, blocked) {
-      (0,_shared_publish_guard_ui__WEBPACK_IMPORTED_MODULE_5__.applyPublishGuardControl)(el, blocked);
+      (0,_shared_publish_guard_ui__WEBPACK_IMPORTED_MODULE_7__.applyPublishGuardControl)(el, blocked);
     }
     let publishGuardDebounce;
-    let publishGuardObserver;
     function updatePublishGuard() {
       const blocked = isPublishBlockedLocal();
       refreshReviewNotices();
@@ -193,47 +202,12 @@ __webpack_require__.r(__webpack_exports__);
       if (publishBtn) {
         setPublishGuardStyles(publishBtn, blocked);
       }
-      findElementorPublishButtons().forEach(b => setPublishGuardStyles(b, blocked));
     }
     function schedulePublishGuard() {
       clearTimeout(publishGuardDebounce);
       publishGuardDebounce = setTimeout(updatePublishGuard, 80);
     }
-    function setupElementorPublishGuardObserver() {
-      if (publishGuardObserver) {
-        return;
-      }
-      const roots = getElementorEditorRoots();
-      if (!roots.length) {
-        return;
-      }
-      publishGuardObserver = new MutationObserver(schedulePublishGuard);
-      for (let i = 0; i < roots.length; i++) {
-        publishGuardObserver.observe(roots[i], {
-          childList: true,
-          subtree: true
-        });
-      }
-    }
-    let publishGuardAttachAttempts = 0;
-    function tryAttachElementorPublishGuardObserver() {
-      setupElementorPublishGuardObserver();
-      publishGuardAttachAttempts++;
-      if (!publishGuardObserver && publishGuardAttachAttempts < 200) {
-        requestAnimationFrame(tryAttachElementorPublishGuardObserver);
-      }
-    }
-    tryAttachElementorPublishGuardObserver();
     window.addEventListener('resize', schedulePublishGuard);
-    function applyStatusTheme(el, status) {
-      const themeStyle = (0,_shared_status_themes__WEBPACK_IMPORTED_MODULE_3__.statusThemeStyle)(status);
-      ['--flow-status-bg', '--flow-status-text', '--flow-status-border', '--flow-badge-color'].forEach(prop => {
-        el.style.removeProperty(prop);
-      });
-      Object.entries(themeStyle).forEach(([prop, value]) => {
-        el.style.setProperty(prop, value);
-      });
-    }
     function renderBadge() {
       const display = review && (review.display_status || review.status);
       const label = display ? STATUS_LABELS[display] || '' : '';
@@ -242,9 +216,9 @@ __webpack_require__.r(__webpack_exports__);
       const drawerSlot = drawerRoot ? drawerRoot.querySelector('.flow-ew-drawer-status') : $('.flow-ew-drawer-status');
       if (drawerSlot) {
         if (visible) {
-          applyStatusTheme(drawerSlot, display);
+          (0,_shared_status_themes__WEBPACK_IMPORTED_MODULE_3__.applyStatusTheme)(drawerSlot, display);
           drawerSlot.setAttribute('data-status', display);
-          drawerSlot.innerHTML = '<span class="flow-ew-classic__badge-dot"></span>' + escHtml(label);
+          drawerSlot.innerHTML = '<span class="flow-ew-classic__badge-dot"></span>' + (0,_shared_escape__WEBPACK_IMPORTED_MODULE_4__.escHtml)(label);
           drawerSlot.removeAttribute('hidden');
         } else {
           drawerSlot.removeAttribute('data-status');
@@ -280,7 +254,7 @@ __webpack_require__.r(__webpack_exports__);
       const isReviewer = reviewerId === currentUserId;
       const hasPending = !!review.has_pending_reviewers;
       const hasInvite = !!(review.invite_email || review.reviewer && review.reviewer.is_email || Array.isArray(review.email_invites) && review.email_invites.length > 0);
-      if ((0,_shared_should_show_send_for_review__WEBPACK_IMPORTED_MODULE_9__.shouldShowSendForReview)(review) && currentUserCan.assignReviewer) {
+      if ((0,_shared_should_show_send_for_review__WEBPACK_IMPORTED_MODULE_12__.shouldShowSendForReview)(review) && currentUserCan.assignReviewer) {
         container.appendChild(makeButton(i18n.sendForReview, 'send', 'button-primary', !reviewerId && !hasInvite));
       }
       if (status === 'changes_requested' && !hasPending && currentUserId === Number(flowEW.postAuthorId || 0)) {
@@ -329,9 +303,20 @@ __webpack_require__.r(__webpack_exports__);
       const div = document.createElement('div');
       div.className = 'flow-ew-classic__share';
       div.id = 'flow-ew-share';
-      div.innerHTML = '<span class="flow-ew-classic__share-label">' + escHtml(i18n.snapshotLink) + '</span>' + '<span class="flow-ew-classic__share-row">' + '<a href="' + escAttr(url) + '" target="_blank" rel="noreferrer" class="flow-ew-classic__share-link" title="' + escAttr(url) + '"><span class="flow-ew-classic__share-link-text">' + escHtml(url) + '</span></a>' + '<button type="button" class="button flow-ew-classic__share-copy" data-url="' + escAttr(url) + '">' + (0,_shared_share_bar_icons__WEBPACK_IMPORTED_MODULE_6__.shareBarIconHtml)('copy') + '</button>' + '<a href="' + escAttr(url) + '" target="_blank" rel="noreferrer" class="flow-ew-classic__share-goto" aria-label="' + escAttr(i18n.goToReview || 'Go to review') + '">' + (0,_shared_share_bar_icons__WEBPACK_IMPORTED_MODULE_6__.shareBarIconHtml)('external') + '</a>' + '</span>';
+      div.innerHTML = '<span class="flow-ew-classic__share-label">' + (0,_shared_escape__WEBPACK_IMPORTED_MODULE_4__.escHtml)(i18n.snapshotLink) + '</span>' + '<span class="flow-ew-classic__share-row">' + '<a href="' + (0,_shared_escape__WEBPACK_IMPORTED_MODULE_4__.escAttr)(url) + '" target="_blank" rel="noreferrer" class="flow-ew-classic__share-link" title="' + (0,_shared_escape__WEBPACK_IMPORTED_MODULE_4__.escAttr)(url) + '"><span class="flow-ew-classic__share-link-text">' + (0,_shared_escape__WEBPACK_IMPORTED_MODULE_4__.escHtml)(url) + '</span></a>' + '<button type="button" class="button flow-ew-classic__share-copy" data-url="' + (0,_shared_escape__WEBPACK_IMPORTED_MODULE_4__.escAttr)(url) + '">' + (0,_shared_share_bar_icons__WEBPACK_IMPORTED_MODULE_8__.shareBarIconHtml)('copy') + '</button>' + '<a href="' + (0,_shared_escape__WEBPACK_IMPORTED_MODULE_4__.escAttr)(url) + '" target="_blank" rel="noreferrer" class="flow-ew-classic__share-goto" aria-label="' + (0,_shared_escape__WEBPACK_IMPORTED_MODULE_4__.escAttr)(i18n.goToReview || 'Go to review') + '">' + (0,_shared_share_bar_icons__WEBPACK_IMPORTED_MODULE_8__.shareBarIconHtml)('external') + '</a>' + '</span>';
       const spinner = $('#flow-ew-classic-spinner');
       root.insertBefore(div, spinner);
+    }
+
+    // The auto-assign hint only holds while nobody is assigned yet.
+    function renderPendingReviewer() {
+      const node = root.querySelector('[data-flow-pending-reviewer]');
+      if (!node) {
+        return;
+      }
+      const reviewer = review && review.reviewer || null;
+      const assigned = !!(review && (Number(review.reviewer_id || reviewer && reviewer.id || 0) > 0 || review.invite_email || reviewer && reviewer.is_email));
+      node.hidden = assigned;
     }
     function fullRender() {
       renderBadge();
@@ -340,6 +325,7 @@ __webpack_require__.r(__webpack_exports__);
       renderShareBar();
       updatePublishGuard();
       updateSendEnabled();
+      renderPendingReviewer();
       flowEW.activeReview = review;
       document.dispatchEvent(new CustomEvent('flow-ew:classic-render', {
         detail: {
@@ -354,7 +340,7 @@ __webpack_require__.r(__webpack_exports__);
       fullRender();
     });
     function syncClearBtn() {
-      (0,_shared_sync_reviewer_combobox_from_review__WEBPACK_IMPORTED_MODULE_10__.syncReviewerComboboxFromReview)(review, root);
+      (0,_shared_sync_reviewer_combobox_from_review__WEBPACK_IMPORTED_MODULE_13__.syncReviewerComboboxFromReview)(review, root);
     }
     function clearAssignedReviewer() {
       if (loading) {
@@ -369,7 +355,9 @@ __webpack_require__.r(__webpack_exports__);
       setLoading(true);
       apiPost('/reviews/' + review.id + '/cancel').then(data => {
         review = data || null;
-        emailEntryMode = false;
+        if (combobox) {
+          combobox.setEmailEntryMode(false);
+        }
         if (reviewerSelect) {
           reviewerSelect.value = '';
           delete reviewerSelect.dataset.inviteEmail;
@@ -380,9 +368,9 @@ __webpack_require__.r(__webpack_exports__);
         if (input) {
           input.value = '';
           input.readOnly = false;
-          input.placeholder = (0,_shared_reviewer_email_entry__WEBPACK_IMPORTED_MODULE_11__.getReviewerPlaceholder)();
+          input.placeholder = (0,_shared_reviewer_email_entry__WEBPACK_IMPORTED_MODULE_14__.getReviewerPlaceholder)();
         }
-        (0,_shared_reviewer_email_entry__WEBPACK_IMPORTED_MODULE_11__.exitReviewerEmailEntryMode)(reviewerSelect, input, opts);
+        (0,_shared_reviewer_email_entry__WEBPACK_IMPORTED_MODULE_14__.exitReviewerEmailEntryMode)(reviewerSelect, input, opts);
         if (input) {
           input.dataset.flowLocked = '0';
         }
@@ -410,10 +398,7 @@ __webpack_require__.r(__webpack_exports__);
       e.stopPropagation();
       clearAssignedReviewer();
     }, true);
-    let emailEntryMode = false;
-    function isValidEmail(value) {
-      return (0,_shared_reviewer_email_entry__WEBPACK_IMPORTED_MODULE_11__.isValidEmail)(value);
-    }
+    let combobox = null;
     function invalidEmailMessage() {
       return i18n && i18n.invalidEmail || 'Please enter a valid email address.';
     }
@@ -424,9 +409,9 @@ __webpack_require__.r(__webpack_exports__);
         el = document.createElement('p');
         el.className = 'flow-ew-reviewer-email-error';
         el.setAttribute('role', 'alert');
-        const combobox = root.querySelector('#flow-ew-reviewer-combobox');
-        if (combobox && combobox.parentNode) {
-          combobox.parentNode.insertBefore(el, combobox.nextSibling);
+        const comboboxEl = root.querySelector('#flow-ew-reviewer-combobox');
+        if (comboboxEl && comboboxEl.parentNode) {
+          comboboxEl.parentNode.insertBefore(el, comboboxEl.nextSibling);
         } else {
           slot.appendChild(el);
         }
@@ -443,13 +428,15 @@ __webpack_require__.r(__webpack_exports__);
     }
     function assignInviteEmail(email) {
       const trimmed = (email || '').trim().toLowerCase();
-      if (!isValidEmail(trimmed)) {
+      if (!(0,_shared_assign_invite_email__WEBPACK_IMPORTED_MODULE_10__.isValidEmail)(trimmed)) {
         showEmailError();
         return;
       }
       const existingInvite = String(review && (review.invite_email || review.reviewer && review.reviewer.email || '') || '').trim().toLowerCase();
       if (existingInvite && existingInvite === trimmed) {
-        emailEntryMode = false;
+        if (combobox) {
+          combobox.setEmailEntryMode(false);
+        }
         syncClearBtn();
         return;
       }
@@ -460,7 +447,9 @@ __webpack_require__.r(__webpack_exports__);
         invite_email: trimmed
       }).then(data => {
         review = data;
-        emailEntryMode = false;
+        if (combobox) {
+          combobox.setEmailEntryMode(false);
+        }
         fullRender();
         syncClearBtn();
         const input = root.querySelector('#flow-ew-reviewer-input');
@@ -496,7 +485,9 @@ __webpack_require__.r(__webpack_exports__);
           return;
         }
         if (raw === 'email') {
-          emailEntryMode = true;
+          if (combobox) {
+            combobox.setEmailEntryMode(true);
+          }
           if (input) {
             input.value = '';
             input.placeholder = i18n && i18n.emailPlaceholder || 'name@example.com';
@@ -504,7 +495,9 @@ __webpack_require__.r(__webpack_exports__);
           }
           return;
         }
-        emailEntryMode = false;
+        if (combobox) {
+          combobox.setEmailEntryMode(false);
+        }
         const newId = Number(raw);
         if (!newId) {
           return;
@@ -527,286 +520,17 @@ __webpack_require__.r(__webpack_exports__);
       });
     }
     const comboboxRoot = root.querySelector('#flow-ew-reviewer-combobox');
-    if (comboboxRoot && !document.getElementById('flow-ew-avada-drawer') && !document.getElementById('flow-ew-beaver-drawer') && !document.getElementById('flow-ew-divi-drawer') && !document.getElementById('flow-ew-oxygen-drawer') && !document.getElementById('flow-ew-breakdance-drawer') && !document.getElementById('flow-ew-bricks-drawer')) {
-      initReviewerCombobox(comboboxRoot);
-    }
-    function initReviewerCombobox(root) {
-      const input = root.querySelector('.flow-ew-reviewer-combobox__input');
-      const list = root.querySelector('.flow-ew-reviewer-combobox__list');
-      const sel = root.querySelector('#flow-ew-reviewer-select');
-      if (!input || !list || !sel) {
-        return;
-      }
-      const options = Array.from(list.querySelectorAll('[role="option"]'));
-      let activeIndex = -1;
-      function isEmailOption(li) {
-        return li && (li.dataset.isEmail === '1' || li.dataset.value === 'email');
-      }
-      function onlyEmailAvailable() {
-        // No WP users left to pick — type an email directly (even if the
-        // External Email option is missing from the native <select>).
-        return !options.some(function (li) {
-          return !isEmailOption(li);
-        });
-      }
-
-      // No WP reviewers in the list — go straight to typing an email.
-      if (onlyEmailAvailable()) {
-        emailEntryMode = true;
-        sel.value = 'email';
-        input.placeholder = i18n && i18n.emailPlaceholder || 'name@example.com';
-      }
-      function setOpen(openList) {
-        // Never leave an empty bordered listbox under the field (e.g. after
-        // an email assign filters out every option).
-        // Allow the list when the typed value is a valid email so "Invite"
-        // can appear — even after External Email was selected.
-        const typed = (input.value || '').trim();
-        if (openList && isValidEmail(typed)) {
-          filterOptions(typed);
-          if (visibleOptions().length === 0) {
-            openList = false;
-          }
-        } else if (openList && (emailEntryMode || sel.value === 'email' || visibleOptions().length === 0)) {
-          openList = false;
-        }
-        list.hidden = !openList;
-        input.setAttribute('aria-expanded', openList ? 'true' : 'false');
-        const field = root.closest('.flow-ew-classic__field');
-        if (field) {
-          field.classList.toggle('is-list-open', openList);
-        }
-        const postbox = root.closest('#flow-ew-review.postbox');
-        if (postbox) {
-          postbox.classList.toggle('is-combobox-open', openList);
-        }
-      }
-      function filterOptions(q) {
-        (0,_shared_reviewer_email_entry__WEBPACK_IMPORTED_MODULE_11__.filterReviewerComboboxOptions)(options, q, {
-          emailOnly: onlyEmailAvailable()
-        });
-      }
-      function visibleOptions() {
-        return options.filter(function (li) {
-          return !li.hidden && li.style.display !== 'none';
-        });
-      }
-      function chooseOption(li) {
-        if (!li || li.hidden) {
-          return;
-        }
-        const id = li.dataset.value;
-        const label = li.dataset.label || li.textContent.trim();
-        const isEmail = (0,_shared_reviewer_email_entry__WEBPACK_IMPORTED_MODULE_11__.isEmailComboboxOption)(li);
-        sel.value = id;
-        if (isEmail) {
-          const typed = (input.value || '').trim();
-          if (isValidEmail(typed)) {
-            emailEntryMode = true;
-            setOpen(false);
-            activeIndex = -1;
-            assignInviteEmail(typed);
-            return;
-          }
-          input.value = '';
-          input.placeholder = i18n && i18n.emailPlaceholder || 'name@example.com';
-          setOpen(false);
-          activeIndex = -1;
-          emailEntryMode = true;
-          sel.dispatchEvent(new Event('change', {
-            bubbles: true
-          }));
-          input.focus();
-          return;
-        }
-        emailEntryMode = false;
-        input.value = label;
-        setOpen(false);
-        activeIndex = -1;
-        sel.dispatchEvent(new Event('change', {
-          bubbles: true
-        }));
-      }
-      input.addEventListener('focus', function () {
-        if (input.disabled || input.readOnly) return;
-        if (emailEntryMode || sel.value === 'email' || onlyEmailAvailable()) {
-          setOpen(false);
-          return;
-        }
-        filterOptions(input.value);
-        setOpen(true);
-      });
-      input.addEventListener('input', function () {
-        if (input.disabled || input.readOnly) return;
-        const typed = (input.value || '').trim();
-        // Valid address → show Invite row (even after External Email).
-        if (isValidEmail(typed)) {
-          emailEntryMode = true;
-          sel.value = 'email';
-          filterOptions(typed);
-          setOpen(true);
-          activeIndex = -1;
-          clearEmailError();
-          return;
-        }
-        // After choosing External Email (or email-only), keep list closed
-        // while the address is still incomplete.
-        if (emailEntryMode || sel.value === 'email' || onlyEmailAvailable()) {
-          if (!typed && !onlyEmailAvailable()) {
-            emailEntryMode = false;
-            (0,_shared_reviewer_email_entry__WEBPACK_IMPORTED_MODULE_11__.exitReviewerEmailEntryMode)(sel, input, options);
-            filterOptions('');
-            setOpen(true);
-            activeIndex = -1;
-            clearEmailError();
-            return;
-          }
-          emailEntryMode = true;
-          sel.value = 'email';
-          setOpen(false);
-          activeIndex = -1;
-          if (!typed) {
-            clearEmailError();
-          }
-          return;
-        }
-        filterOptions(input.value);
-        setOpen(true);
-        activeIndex = -1;
-      });
-      input.addEventListener('blur', function () {
-        // Assigned field is read-only — never re-invite on click-away
-        // (that was resetting status to pending → Send for review again).
-        if (input.disabled || input.readOnly) {
-          return;
-        }
-        if (!emailEntryMode && sel.value !== 'email') {
-          return;
-        }
-        window.setTimeout(function () {
-          if (document.activeElement === input) {
-            return;
-          }
-          if (input.readOnly || input.disabled) {
-            return;
-          }
-          const typed = (input.value || '').trim().toLowerCase();
-          if (!typed) {
-            emailEntryMode = false;
-            (0,_shared_reviewer_email_entry__WEBPACK_IMPORTED_MODULE_11__.exitReviewerEmailEntryMode)(sel, input, options);
-            clearEmailError();
-            return;
-          }
-          if (!isValidEmail(typed)) {
-            // Invalid addresses only surface an error on Enter.
-            return;
-          }
-          const existingInvite = String(review && (review.invite_email || review.reviewer && review.reviewer.email || '') || '').trim().toLowerCase();
-          if (existingInvite && existingInvite === typed) {
-            return;
-          }
-          assignInviteEmail(typed);
-        }, 150);
-      });
-      list.addEventListener('mousedown', function (e) {
-        const li = e.target.closest('[role="option"]');
-        if (li && !li.hidden) {
-          e.preventDefault();
-          chooseOption(li);
-        }
-      });
-      document.addEventListener('click', function (e) {
-        if (!root.contains(e.target)) {
-          setOpen(false);
-          activeIndex = -1;
-        }
-      });
-      document.addEventListener('flow-ew:reviewer-field-reset', function () {
-        emailEntryMode = false;
-        (0,_shared_reviewer_email_entry__WEBPACK_IMPORTED_MODULE_11__.exitReviewerEmailEntryMode)(sel, input, options);
-        filterOptions('');
-        setOpen(false);
-        activeIndex = -1;
-      });
-      function submitTypedEmail(event) {
-        if (event) {
-          event.preventDefault();
-          event.stopPropagation();
-        }
-        const typed = (input.value || '').trim();
-        if (isValidEmail(typed)) {
-          emailEntryMode = true;
-          sel.value = 'email';
-          assignInviteEmail(typed);
-          return;
-        }
-        if (typed) {
-          emailEntryMode = true;
-          sel.value = 'email';
-          showEmailError();
-        }
-      }
-      input.addEventListener('keydown', function (e) {
-        if (input.disabled || input.readOnly) return;
-        const vis = visibleOptions();
-        const typed = (input.value || '').trim();
-        const treatAsEmail = emailEntryMode || sel.value === 'email' || onlyEmailAvailable() || isValidEmail(typed) || typed.includes('@');
-        if (e.key === 'ArrowDown') {
-          e.preventDefault();
-          if (treatAsEmail) {
-            setOpen(false);
-            return;
-          }
-          if (!list.hidden && vis.length) {
-            activeIndex = Math.min(activeIndex + 1, vis.length - 1);
-            vis[activeIndex].focus();
-          } else {
-            filterOptions(input.value);
-            const next = visibleOptions();
-            if (!next.length) {
-              return;
-            }
-            setOpen(true);
-            activeIndex = 0;
-            if (next[0]) next[0].focus();
-          }
-        } else if (e.key === 'ArrowUp') {
-          e.preventDefault();
-          if (!list.hidden && vis.length) {
-            activeIndex = Math.max(activeIndex - 1, 0);
-            vis[activeIndex].focus();
-          }
-        } else if (e.key === 'Enter') {
-          if (treatAsEmail) {
-            submitTypedEmail(e);
-            return;
-          }
-          const focused = list.querySelector('[role="option"]:focus');
-          if (focused && !focused.hidden) {
-            e.preventDefault();
-            e.stopPropagation();
-            chooseOption(focused);
-          }
-        } else if (e.key === 'Escape') {
-          setOpen(false);
-          activeIndex = -1;
-          input.focus();
-        }
-      });
-
-      // Classic post form submits on Enter in text inputs — block that while
-      // the reviewer field is in email-entry mode.
-      input.addEventListener('keypress', function (e) {
-        if (e.key !== 'Enter' && e.keyCode !== 13) {
-          return;
-        }
-        const typed = (input.value || '').trim();
-        if (emailEntryMode || sel.value === 'email' || onlyEmailAvailable() || isValidEmail(typed) || typed.includes('@')) {
-          e.preventDefault();
-          e.stopPropagation();
-        }
-      });
-    }
+    const isBuilderContext = /flow-ew-classic--(elementor|bricks|breakdance|oxygen|avada|beaver|divi)/.test(root.className || '');
+    combobox = comboboxRoot ? (0,_shared_reviewer_combobox__WEBPACK_IMPORTED_MODULE_15__.initReviewerCombobox)(comboboxRoot, {
+      assignInviteEmail,
+      showEmailError,
+      clearEmailError,
+      existingInviteEmail() {
+        return String(review && (review.invite_email || review.reviewer && review.reviewer.email) || '');
+      },
+      // Builders confirm an address with Enter or the Invite row.
+      assignOnBlur: !isBuilderContext
+    }) : null;
     function updateSendEnabled() {
       const sendBtn = root.querySelector('[data-action="send"]');
       if (!sendBtn) {
@@ -893,10 +617,10 @@ __webpack_require__.r(__webpack_exports__);
         return;
       }
       navigator.clipboard.writeText(url).then(() => {
-        copyBtn.innerHTML = (0,_shared_share_bar_icons__WEBPACK_IMPORTED_MODULE_6__.shareBarIconHtml)('copied');
+        copyBtn.innerHTML = (0,_shared_share_bar_icons__WEBPACK_IMPORTED_MODULE_8__.shareBarIconHtml)('copied');
         copyBtn.classList.add('flow-ew-classic__share-copy--done');
         setTimeout(() => {
-          copyBtn.innerHTML = (0,_shared_share_bar_icons__WEBPACK_IMPORTED_MODULE_6__.shareBarIconHtml)('copy');
+          copyBtn.innerHTML = (0,_shared_share_bar_icons__WEBPACK_IMPORTED_MODULE_8__.shareBarIconHtml)('copy');
           copyBtn.classList.remove('flow-ew-classic__share-copy--done');
         }, 2000);
       });
@@ -927,15 +651,7 @@ __webpack_require__.r(__webpack_exports__);
     // Normalize PHP-rendered markup (actions/share/button classes) on first boot.
     fullRender();
     syncClearBtn();
-    function escHtml(str) {
-      const d = document.createElement('div');
-      d.textContent = str;
-      return d.innerHTML;
-    }
-    function escAttr(str) {
-      return str.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    }
-  })(root);
+  })(classicRoot);
 })(0);
 
 /***/ },
@@ -963,8 +679,8 @@ __webpack_require__.r(__webpack_exports__);
   if (!flowEW) {
     return;
   }
-  const slot = (0,_shared_resolve_classic_root__WEBPACK_IMPORTED_MODULE_0__.resolveClassicOpenSlot)();
-  if (!slot) {
+  const openSlot = (0,_shared_resolve_classic_root__WEBPACK_IMPORTED_MODULE_0__.resolveClassicOpenSlot)();
+  if (!openSlot) {
     if (attempt < 150) {
       requestAnimationFrame(function () {
         bootOpenReview(attempt + 1);
@@ -972,10 +688,10 @@ __webpack_require__.r(__webpack_exports__);
     }
     return;
   }
-  if (slot.dataset.flowEwOpenReviewReady === '1') {
+  if (openSlot.dataset.flowEwOpenReviewReady === '1') {
     return;
   }
-  slot.dataset.flowEwOpenReviewReady = '1';
+  openSlot.dataset.flowEwOpenReviewReady = '1';
   (function runOpenReview(slot) {
     if (!flowEW.currentUserCan?.assignReviewer) {
       return;
@@ -1069,7 +785,7 @@ __webpack_require__.r(__webpack_exports__);
     document.addEventListener('flow-ew:classic-render', function (e) {
       sync(e.detail && e.detail.review || null);
     });
-  })(slot);
+  })(openSlot);
 })(0);
 
 /***/ },
@@ -1112,6 +828,28 @@ function dispatchAssignInviteEmail(email) {
  */
 function isValidEmail(value) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || '').trim());
+}
+
+/***/ },
+
+/***/ "./src/shared/escape.js"
+/*!******************************!*\
+  !*** ./src/shared/escape.js ***!
+  \******************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   escAttr: () => (/* binding */ escAttr),
+/* harmony export */   escHtml: () => (/* binding */ escHtml)
+/* harmony export */ });
+function escHtml(str) {
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+function escAttr(str) {
+  return String(str).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
 /***/ },
@@ -1428,7 +1166,7 @@ function getPublishGuardTooltip() {
 
 /**
  * @param {Element|null|undefined} el
- * @returns {Element|null}
+ * @return {Element|null}
  */
 function publishGuardTooltipTarget(el) {
   if (!el || !el.closest) {
@@ -1518,7 +1256,7 @@ function syncPublishGuardTooltip(el, blocked) {
   }
 }
 
-/** @returns {Element|null} */
+/** @return {Element|null} */
 function findBricksPublishControl() {
   return document.querySelector('#bricks-toolbar li:has([data-name="publish"])');
 }
@@ -1614,20 +1352,17 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   ensureReviewNotices: () => (/* binding */ ensureReviewNotices),
 /* harmony export */   syncReviewNoticeVisibility: () => (/* binding */ syncReviewNoticeVisibility)
 /* harmony export */ });
-/* harmony import */ var _is_publish_blocked__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./is-publish-blocked */ "./src/shared/is-publish-blocked.js");
-/* harmony import */ var _no_review_roles_notice__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./no-review-roles-notice */ "./src/shared/no-review-roles-notice.js");
-/* harmony import */ var _resolve_classic_root__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./resolve-classic-root */ "./src/shared/resolve-classic-root.js");
+/* harmony import */ var _escape__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./escape */ "./src/shared/escape.js");
+/* harmony import */ var _is_publish_blocked__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./is-publish-blocked */ "./src/shared/is-publish-blocked.js");
+/* harmony import */ var _no_review_roles_notice__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./no-review-roles-notice */ "./src/shared/no-review-roles-notice.js");
+/* harmony import */ var _resolve_classic_root__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./resolve-classic-root */ "./src/shared/resolve-classic-root.js");
 
 
 
-function escHtml(str) {
-  const d = document.createElement('div');
-  d.textContent = str;
-  return d.innerHTML;
-}
+
 function collectClassicRoots() {
   const roots = [];
-  const primary = (0,_resolve_classic_root__WEBPACK_IMPORTED_MODULE_2__.resolveClassicRoot)();
+  const primary = (0,_resolve_classic_root__WEBPACK_IMPORTED_MODULE_3__.resolveClassicRoot)();
   if (primary) {
     roots.push(primary);
   }
@@ -1639,7 +1374,7 @@ function collectClassicRoots() {
   return roots;
 }
 function isRolesDismissNotice(el) {
-  return el?.dataset?.flowEwDismiss === _no_review_roles_notice__WEBPACK_IMPORTED_MODULE_1__.NO_REVIEW_ROLES_DISMISS_VALUE;
+  return el?.dataset?.flowEwDismiss === _no_review_roles_notice__WEBPACK_IMPORTED_MODULE_2__.NO_REVIEW_ROLES_DISMISS_VALUE;
 }
 function wireDismissButton(notice) {
   if (!notice || !isRolesDismissNotice(notice)) {
@@ -1660,8 +1395,8 @@ function wireDismissButton(notice) {
   }
   btn.addEventListener('click', event => {
     event.preventDefault();
-    (0,_no_review_roles_notice__WEBPACK_IMPORTED_MODULE_1__.dismissNoReviewRolesNotice)();
-    document.querySelectorAll(`.flow-ew-review-notice[data-flow-ew-dismiss="${_no_review_roles_notice__WEBPACK_IMPORTED_MODULE_1__.NO_REVIEW_ROLES_DISMISS_VALUE}"]`).forEach(el => {
+    (0,_no_review_roles_notice__WEBPACK_IMPORTED_MODULE_2__.dismissNoReviewRolesNotice)();
+    document.querySelectorAll(`.flow-ew-review-notice[data-flow-ew-dismiss="${_no_review_roles_notice__WEBPACK_IMPORTED_MODULE_2__.NO_REVIEW_ROLES_DISMISS_VALUE}"]`).forEach(el => {
       el.hidden = true;
     });
   });
@@ -1671,8 +1406,8 @@ function wireDismissButton(notice) {
  * Toggle publish-guard notices. Works on PHP-rendered and JS-fallback notices.
  */
 function syncReviewNoticeVisibility(args) {
-  const blocked = (0,_is_publish_blocked__WEBPACK_IMPORTED_MODULE_0__.isPublishBlocked)(args);
-  const rolesDismissed = (0,_no_review_roles_notice__WEBPACK_IMPORTED_MODULE_1__.isNoReviewRolesNoticeDismissed)();
+  const blocked = (0,_is_publish_blocked__WEBPACK_IMPORTED_MODULE_1__.isPublishBlocked)(args);
+  const rolesDismissed = (0,_no_review_roles_notice__WEBPACK_IMPORTED_MODULE_2__.isNoReviewRolesNoticeDismissed)();
   document.querySelectorAll('.flow-ew-review-notice').forEach(el => {
     if (isRolesDismissNotice(el) && rolesDismissed) {
       el.hidden = true;
@@ -1689,7 +1424,7 @@ function buildNoticeSpec(flowEW, review, publishBlocked) {
   const i18n = flowEW.i18n || {};
   const noReviewers = !!flowEW.noReviewers;
   const reviewMandatory = !!flowEW.reviewMandatory;
-  const rolesDismissed = (0,_no_review_roles_notice__WEBPACK_IMPORTED_MODULE_1__.isNoReviewRolesNoticeDismissed)();
+  const rolesDismissed = (0,_no_review_roles_notice__WEBPACK_IMPORTED_MODULE_2__.isNoReviewRolesNoticeDismissed)();
   if (noReviewers && !reviewMandatory) {
     if (rolesDismissed) {
       return null;
@@ -1740,9 +1475,9 @@ function renderNoticeElement(spec) {
     div.dataset.flowEwPublishGuardOnly = '1';
   }
   if (spec.dismissableRoles) {
-    div.dataset.flowEwDismiss = _no_review_roles_notice__WEBPACK_IMPORTED_MODULE_1__.NO_REVIEW_ROLES_DISMISS_VALUE;
+    div.dataset.flowEwDismiss = _no_review_roles_notice__WEBPACK_IMPORTED_MODULE_2__.NO_REVIEW_ROLES_DISMISS_VALUE;
   }
-  div.innerHTML = '<p class="flow-ew-review-notice__title">' + escHtml(spec.title) + '</p>' + '<p class="flow-ew-review-notice__desc">' + spec.descHtml + '</p>';
+  div.innerHTML = '<p class="flow-ew-review-notice__title">' + (0,_escape__WEBPACK_IMPORTED_MODULE_0__.escHtml)(spec.title) + '</p>' + '<p class="flow-ew-review-notice__desc">' + spec.descHtml + '</p>';
   wireDismissButton(div);
   return div;
 }
@@ -1777,7 +1512,7 @@ function ensureReviewNotices({
     });
     return;
   }
-  const publishBlocked = (0,_is_publish_blocked__WEBPACK_IMPORTED_MODULE_0__.isPublishBlocked)({
+  const publishBlocked = (0,_is_publish_blocked__WEBPACK_IMPORTED_MODULE_1__.isPublishBlocked)({
     reviewMandatory,
     isPublished,
     review,
@@ -1815,6 +1550,375 @@ function ensureReviewNotices({
     review,
     reviewerMeta
   });
+}
+
+/***/ },
+
+/***/ "./src/shared/reviewer-combobox.js"
+/*!*****************************************!*\
+  !*** ./src/shared/reviewer-combobox.js ***!
+  \*****************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   collapseReviewerListbox: () => (/* binding */ collapseReviewerListbox),
+/* harmony export */   initReviewerCombobox: () => (/* binding */ initReviewerCombobox)
+/* harmony export */ });
+/* harmony import */ var _assign_invite_email__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./assign-invite-email */ "./src/shared/assign-invite-email.js");
+/* harmony import */ var _reviewer_email_entry__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./reviewer-email-entry */ "./src/shared/reviewer-email-entry.js");
+
+
+
+/**
+ * Close the reviewer listbox without touching its state (used by builders
+ * after a re-render).
+ *
+ * @param {ParentNode} [scope=document]
+ */
+function collapseReviewerListbox(scope) {
+  const root = scope || document;
+  const list = root.querySelector('#flow-ew-reviewer-listbox');
+  const input = root.querySelector('#flow-ew-reviewer-input');
+  if (list) {
+    list.hidden = true;
+  }
+  if (input) {
+    input.setAttribute('aria-expanded', 'false');
+  }
+}
+
+/**
+ * The Free reviewer combobox (classic editor and every builder drawer).
+ *
+ * Dispatches `flow-ew:combobox-open-change` ({ open }) and
+ * `flow-ew:combobox-choose` ({ id, isEmail }) on `root` so builders that
+ * restyle the list (Avada) can react without owning the state.
+ *
+ * @param {HTMLElement} root
+ * @param {{
+ *   assignInviteEmail?: (email: string) => void,
+ *   showEmailError?: (() => void)|null,
+ *   clearEmailError?: () => void,
+ *   existingInviteEmail?: () => string,
+ *   assignOnBlur?: boolean,
+ * }} [opts]
+ * @return {{ setEmailEntryMode: (v: boolean) => void, isEmailEntryMode: () => boolean, reset: () => void }|null}
+ */
+function initReviewerCombobox(root, opts = {}) {
+  const {
+    assignInviteEmail = _assign_invite_email__WEBPACK_IMPORTED_MODULE_0__.dispatchAssignInviteEmail,
+    showEmailError = null,
+    clearEmailError = () => {},
+    existingInviteEmail = () => '',
+    assignOnBlur = false
+  } = opts;
+  if (!root || root.dataset.flowEwComboboxReady === '1') {
+    return null;
+  }
+  const input = root.querySelector('.flow-ew-reviewer-combobox__input');
+  const list = root.querySelector('.flow-ew-reviewer-combobox__list');
+  const select = root.querySelector('#flow-ew-reviewer-select');
+  if (!input || !list || !select) {
+    return null;
+  }
+  root.dataset.flowEwComboboxReady = '1';
+  const options = Array.from(list.querySelectorAll('[role="option"]'));
+  let activeIndex = -1;
+  let emailEntryMode = false;
+  function emit(name, detail) {
+    root.dispatchEvent(new CustomEvent(name, {
+      detail
+    }));
+  }
+  function onlyEmailAvailable() {
+    // No WP users left to pick — type an email directly.
+    return !options.some(function (li) {
+      return !(0,_reviewer_email_entry__WEBPACK_IMPORTED_MODULE_1__.isEmailComboboxOption)(li);
+    });
+  }
+  function inEmailMode() {
+    return emailEntryMode || select.value === 'email' || onlyEmailAvailable();
+  }
+  if (onlyEmailAvailable()) {
+    emailEntryMode = true;
+    select.value = 'email';
+    input.placeholder = (0,_reviewer_email_entry__WEBPACK_IMPORTED_MODULE_1__.getEmailPlaceholder)();
+  }
+  function filterOptions(q) {
+    (0,_reviewer_email_entry__WEBPACK_IMPORTED_MODULE_1__.filterReviewerComboboxOptions)(options, q, {
+      emailOnly: onlyEmailAvailable()
+    });
+  }
+  function visibleOptions() {
+    return options.filter(function (li) {
+      return !li.hidden && li.style.display !== 'none';
+    });
+  }
+  function setOpen(openList) {
+    // Never leave an empty bordered listbox under the field. A valid typed
+    // address may still open the list so the "Invite" row can show.
+    const typed = (input.value || '').trim();
+    if (openList && (0,_assign_invite_email__WEBPACK_IMPORTED_MODULE_0__.isValidEmail)(typed)) {
+      filterOptions(typed);
+      if (visibleOptions().length === 0) {
+        openList = false;
+      }
+    } else if (openList && (emailEntryMode || select.value === 'email' || visibleOptions().length === 0)) {
+      openList = false;
+    }
+    list.hidden = !openList;
+    input.setAttribute('aria-expanded', openList ? 'true' : 'false');
+    const field = root.closest('.flow-ew-classic__field');
+    if (field) {
+      field.classList.toggle('is-list-open', openList);
+    }
+    const postbox = root.closest('#flow-ew-review.postbox');
+    if (postbox) {
+      postbox.classList.toggle('is-combobox-open', openList);
+    }
+    emit('flow-ew:combobox-open-change', {
+      open: openList
+    });
+  }
+  function chooseOption(li) {
+    if (!li || li.hidden) {
+      return;
+    }
+    const id = li.dataset.value;
+    const label = li.dataset.label || li.textContent.trim();
+    const isEmail = (0,_reviewer_email_entry__WEBPACK_IMPORTED_MODULE_1__.isEmailComboboxOption)(li);
+    select.value = id;
+    if (isEmail) {
+      const typed = (input.value || '').trim();
+      if ((0,_assign_invite_email__WEBPACK_IMPORTED_MODULE_0__.isValidEmail)(typed)) {
+        emailEntryMode = true;
+        setOpen(false);
+        activeIndex = -1;
+        assignInviteEmail(typed);
+        return;
+      }
+      input.value = '';
+      input.placeholder = (0,_reviewer_email_entry__WEBPACK_IMPORTED_MODULE_1__.getEmailPlaceholder)();
+      setOpen(false);
+      activeIndex = -1;
+      emailEntryMode = true;
+      select.dispatchEvent(new Event('change', {
+        bubbles: true
+      }));
+      input.focus();
+      return;
+    }
+    emailEntryMode = false;
+    input.value = label;
+    setOpen(false);
+    activeIndex = -1;
+    select.dispatchEvent(new Event('change', {
+      bubbles: true
+    }));
+    emit('flow-ew:combobox-choose', {
+      id,
+      isEmail: false
+    });
+  }
+  function submitTypedEmail(event) {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+    const typed = (input.value || '').trim();
+    if ((0,_assign_invite_email__WEBPACK_IMPORTED_MODULE_0__.isValidEmail)(typed)) {
+      emailEntryMode = true;
+      select.value = 'email';
+      assignInviteEmail(typed);
+      return;
+    }
+    if (typed) {
+      emailEntryMode = true;
+      select.value = 'email';
+      if (showEmailError) {
+        showEmailError();
+      }
+    }
+  }
+  input.addEventListener('focus', function () {
+    if (input.disabled || input.readOnly) {
+      return;
+    }
+    if (inEmailMode()) {
+      setOpen(false);
+      return;
+    }
+    filterOptions(input.value);
+    setOpen(true);
+  });
+  input.addEventListener('input', function () {
+    if (input.disabled || input.readOnly) {
+      return;
+    }
+    const typed = (input.value || '').trim();
+    // Valid address → show the Invite row (even after External Email).
+    if ((0,_assign_invite_email__WEBPACK_IMPORTED_MODULE_0__.isValidEmail)(typed)) {
+      emailEntryMode = true;
+      select.value = 'email';
+      filterOptions(typed);
+      setOpen(true);
+      activeIndex = -1;
+      clearEmailError();
+      return;
+    }
+    // Keep the list closed while the address is still incomplete.
+    if (inEmailMode()) {
+      if (!typed && !onlyEmailAvailable()) {
+        emailEntryMode = false;
+        (0,_reviewer_email_entry__WEBPACK_IMPORTED_MODULE_1__.exitReviewerEmailEntryMode)(select, input, options);
+        filterOptions('');
+        setOpen(true);
+        activeIndex = -1;
+        clearEmailError();
+        return;
+      }
+      emailEntryMode = true;
+      select.value = 'email';
+      setOpen(false);
+      activeIndex = -1;
+      if (!typed) {
+        clearEmailError();
+      }
+      return;
+    }
+    filterOptions(input.value);
+    setOpen(true);
+    activeIndex = -1;
+  });
+  if (assignOnBlur) {
+    input.addEventListener('blur', function () {
+      // Assigned field is read-only — never re-invite on click-away.
+      if (input.disabled || input.readOnly) {
+        return;
+      }
+      if (!emailEntryMode && select.value !== 'email') {
+        return;
+      }
+      window.setTimeout(function () {
+        if (input.ownerDocument.activeElement === input) {
+          return;
+        }
+        if (input.readOnly || input.disabled) {
+          return;
+        }
+        const typed = (input.value || '').trim().toLowerCase();
+        if (!typed) {
+          emailEntryMode = false;
+          (0,_reviewer_email_entry__WEBPACK_IMPORTED_MODULE_1__.exitReviewerEmailEntryMode)(select, input, options);
+          clearEmailError();
+          return;
+        }
+        if (!(0,_assign_invite_email__WEBPACK_IMPORTED_MODULE_0__.isValidEmail)(typed)) {
+          // Invalid addresses only surface an error on Enter.
+          return;
+        }
+        const existing = String(existingInviteEmail() || '').trim().toLowerCase();
+        if (existing && existing === typed) {
+          return;
+        }
+        assignInviteEmail(typed);
+      }, 150);
+    });
+  }
+  list.addEventListener('mousedown', function (e) {
+    const li = e.target.closest('[role="option"]');
+    if (li && !li.hidden) {
+      e.preventDefault();
+      chooseOption(li);
+    }
+  });
+  document.addEventListener('click', function (e) {
+    if (!root.contains(e.target)) {
+      setOpen(false);
+      activeIndex = -1;
+    }
+  });
+  function reset() {
+    emailEntryMode = false;
+    (0,_reviewer_email_entry__WEBPACK_IMPORTED_MODULE_1__.exitReviewerEmailEntryMode)(select, input, options);
+    filterOptions('');
+    setOpen(false);
+    activeIndex = -1;
+  }
+  document.addEventListener('flow-ew:reviewer-field-reset', reset);
+  input.addEventListener('keydown', function (e) {
+    if (input.disabled || input.readOnly) {
+      return;
+    }
+    const typed = (input.value || '').trim();
+    const treatAsEmail = inEmailMode() || (0,_assign_invite_email__WEBPACK_IMPORTED_MODULE_0__.isValidEmail)(typed) || typed.includes('@');
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (treatAsEmail) {
+        setOpen(false);
+        return;
+      }
+      const vis = visibleOptions();
+      if (!list.hidden && vis.length) {
+        activeIndex = Math.min(activeIndex + 1, vis.length - 1);
+        vis[activeIndex].focus();
+        return;
+      }
+      filterOptions(input.value);
+      const next = visibleOptions();
+      if (!next.length) {
+        return;
+      }
+      setOpen(true);
+      activeIndex = 0;
+      next[0].focus();
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      const vis = visibleOptions();
+      if (!list.hidden && vis.length) {
+        activeIndex = Math.max(activeIndex - 1, 0);
+        vis[activeIndex].focus();
+      }
+    } else if (e.key === 'Enter') {
+      if (treatAsEmail) {
+        submitTypedEmail(e);
+        return;
+      }
+      const focused = list.querySelector('[role="option"]:focus');
+      if (focused && !focused.hidden) {
+        e.preventDefault();
+        e.stopPropagation();
+        chooseOption(focused);
+      }
+    } else if (e.key === 'Escape') {
+      setOpen(false);
+      activeIndex = -1;
+      input.focus();
+    }
+  });
+
+  // The classic post form submits on Enter in text inputs — block that while
+  // the reviewer field is in email-entry mode.
+  input.addEventListener('keypress', function (e) {
+    if (e.key !== 'Enter' && e.keyCode !== 13) {
+      return;
+    }
+    const typed = (input.value || '').trim();
+    if (inEmailMode() || (0,_assign_invite_email__WEBPACK_IMPORTED_MODULE_0__.isValidEmail)(typed) || typed.includes('@')) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  });
+  return {
+    setEmailEntryMode(value) {
+      emailEntryMode = !!value;
+    },
+    isEmailEntryMode() {
+      return emailEntryMode;
+    },
+    reset
+  };
 }
 
 /***/ },
@@ -1933,10 +2037,7 @@ function filterReviewerComboboxOptions(options, q, opts) {
   const emailOnly = !!(opts && opts.emailOnly);
   const externalLabel = getExternalEmailLabel();
   (options || []).forEach(function (li) {
-    const isEmail = isEmailComboboxOption(li);
-    const baseLabel = String(li.dataset.label || externalLabel).trim();
-    const labelLower = baseLabel.toLowerCase();
-    if (isEmail) {
+    if (isEmailComboboxOption(li)) {
       // No WP users — type the address directly; never a lone email row.
       if (emailOnly) {
         li.hidden = true;
@@ -1968,6 +2069,7 @@ function filterReviewerComboboxOptions(options, q, opts) {
       li.textContent = li.dataset.label || externalLabel;
       return;
     }
+    const labelLower = String(li.dataset.label || externalLabel).trim().toLowerCase();
     const show = !needle || labelLower.includes(needle);
     li.hidden = !show;
     li.style.display = show ? '' : 'none';
@@ -2003,7 +2105,7 @@ const figmaExternalPath = 'M9.71 9V0H0.71V2H6.3L0 8.29L1.42 9.71L7.71 3.41V9H9.7
 
 /**
  * @param {ShareBarIconName} name
- * @returns {string}
+ * @return {string}
  */
 function shareBarIconHtml(name) {
   if (name === 'copied') {
@@ -2072,6 +2174,7 @@ function ShareBarIcon({
 
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   hasAssignedReviewer: () => (/* binding */ hasAssignedReviewer),
 /* harmony export */   hasUnsentReviewers: () => (/* binding */ hasUnsentReviewers),
 /* harmony export */   shouldShowSendForReview: () => (/* binding */ shouldShowSendForReview)
 /* harmony export */ });
@@ -2098,14 +2201,40 @@ function hasUnsentReviewers(review) {
 }
 
 /**
- * Show the Send for review CTA when the review has never been sent, or when
- * newly assigned reviewers still need a send.
+ * Whether anyone is on the hook for this review: a WordPress user, an email
+ * invitee, or a Pro roster row. Turning on Open Review creates a review with
+ * nobody assigned, which is a valid state but has nothing to send.
+ *
+ * @param {object|null|undefined} review
+ * @return {boolean}
+ */
+function hasAssignedReviewer(review) {
+  if (!review) {
+    return false;
+  }
+  // Email invitees carry a negative synthetic id, so the id alone is not enough.
+  const reviewerId = Number(review.reviewer?.id ?? review.reviewer_id ?? 0);
+  if (reviewerId > 0) {
+    return true;
+  }
+  if (review.invite_email || review.reviewer?.is_email) {
+    return true;
+  }
+  if (Array.isArray(review.email_invites) && review.email_invites.length > 0) {
+    return true;
+  }
+  return Array.isArray(review.reviewers) && review.reviewers.length > 0;
+}
+
+/**
+ * Show the Send for review CTA when someone is assigned and the review has
+ * never been sent, or when newly assigned reviewers still need a send.
  *
  * @param {object|null|undefined} review
  * @return {boolean}
  */
 function shouldShowSendForReview(review) {
-  if (!review) {
+  if (!review || !hasAssignedReviewer(review)) {
     return false;
   }
   return review.status === 'pending' || hasUnsentReviewers(review);
@@ -2123,40 +2252,15 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   STATUS_COLORS: () => (/* binding */ STATUS_COLORS),
 /* harmony export */   STATUS_THEMES: () => (/* binding */ STATUS_THEMES),
+/* harmony export */   applyStatusTheme: () => (/* binding */ applyStatusTheme),
 /* harmony export */   statusTextColor: () => (/* binding */ statusTextColor),
 /* harmony export */   statusThemeStyle: () => (/* binding */ statusThemeStyle)
 /* harmony export */ });
-/**
- * Unified review status colors — single source of truth for JS surfaces.
- * Keep in sync with assets/css/status-themes.css and src/review-page/_tokens.scss.
- */
-const STATUS_THEMES = {
-  open_review: {
-    bg: '#dff4ff',
-    text: '#1579a5',
-    border: '#b6e6ff'
-  },
-  approved: {
-    bg: '#e7f5e4',
-    text: '#458037',
-    border: '#cae8c4'
-  },
-  in_review: {
-    bg: '#fcf0ce',
-    text: '#957500',
-    border: '#f2dda4'
-  },
-  changes_requested: {
-    bg: '#ffebea',
-    text: '#c92122',
-    border: '#ffd1d0'
-  },
-  pending: {
-    bg: '#e6f3f5',
-    text: '#5e777b',
-    border: '#cde3e7'
-  }
-};
+/* harmony import */ var _assets_status_palette_json__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../../assets/status-palette.json */ "./assets/status-palette.json");
+
+
+/** Review status colours; assets/status-palette.json is the single source. */
+const STATUS_THEMES = _assets_status_palette_json__WEBPACK_IMPORTED_MODULE_0__;
 
 /** @param {string|undefined|null} status */
 function statusThemeStyle(status) {
@@ -2179,6 +2283,21 @@ function statusTextColor(status) {
 
 /** Text colors only — backward compat for callers that only need the accent. */
 const STATUS_COLORS = Object.fromEntries(Object.entries(STATUS_THEMES).map(([key, theme]) => [key, theme.text]));
+const THEME_PROPS = ['--flow-status-bg', '--flow-status-text', '--flow-status-border', '--flow-badge-color'];
+
+/**
+ * Write (or clear) the status custom properties on an element.
+ *
+ * @param {HTMLElement}           el
+ * @param {string|undefined|null} status
+ */
+function applyStatusTheme(el, status) {
+  const themeStyle = statusThemeStyle(status);
+  THEME_PROPS.forEach(prop => el.style.removeProperty(prop));
+  Object.entries(themeStyle).forEach(([prop, value]) => {
+    el.style.setProperty(prop, value);
+  });
+}
 
 /***/ },
 
@@ -2324,6 +2443,16 @@ __webpack_require__.r(__webpack_exports__);
 (module) {
 
 module.exports = window["ReactJSXRuntime"];
+
+/***/ },
+
+/***/ "./assets/status-palette.json"
+/*!************************************!*\
+  !*** ./assets/status-palette.json ***!
+  \************************************/
+(module) {
+
+module.exports = /*#__PURE__*/JSON.parse('{"open_review":{"bg":"#dff4ff","text":"#1579a5","border":"#b6e6ff"},"approved":{"bg":"#e7f5e4","text":"#458037","border":"#cae8c4"},"in_review":{"bg":"#fcf0ce","text":"#957500","border":"#f2dda4"},"changes_requested":{"bg":"#ffebea","text":"#c92122","border":"#ffd1d0"},"pending":{"bg":"#e6f3f5","text":"#5e777b","border":"#cde3e7"}}');
 
 /***/ }
 

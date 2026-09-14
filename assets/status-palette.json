@@ -1,0 +1,7 @@
+{
+	"open_review": { "bg": "#dff4ff", "text": "#1579a5", "border": "#b6e6ff" },
+	"approved": { "bg": "#e7f5e4", "text": "#458037", "border": "#cae8c4" },
+	"in_review": { "bg": "#fcf0ce", "text": "#957500", "border": "#f2dda4" },
+	"changes_requested": { "bg": "#ffebea", "text": "#c92122", "border": "#ffd1d0" },
+	"pending": { "bg": "#e6f3f5", "text": "#5e777b", "border": "#cde3e7" }
+}

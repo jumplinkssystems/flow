@@ -188,10 +188,7 @@ function injectOverlayStyles( doc ) {
 }
 
 // IDs of iframes the plugin itself injects — never wrap these.
-const SKIP_IDS = new Set( [
-	'flow-template-frame',
-	'wp-auth-check-frame',
-] );
+const SKIP_IDS = new Set( [ 'flow-template-frame', 'wp-auth-check-frame' ] );
 
 const HINT_DEFAULT = 'Click to comment';
 const HINT_HAS_COMMENT = 'View comment';
@@ -200,7 +197,8 @@ const HIGHLIGHT_CLASS = 'flow-inline-highlight-media';
 // Iframe sources we recognise as video players. Matched against the iframe
 // `src` to decide whether to render a Play affordance — generic iframes
 // (forms, embeds, gists, etc.) get the comment-only overlay as before.
-const VIDEO_IFRAME_HOST_RE = /(?:youtube\.com|youtu\.be|youtube-nocookie\.com|vimeo\.com|player\.vimeo\.com|dailymotion\.com|wistia\.com|wistia\.net|fast\.wistia\.net|twitch\.tv|player\.twitch\.tv|video\.wordpress\.com|videopress\.com|loom\.com|brightcove\.net|tiktok\.com|fb\.watch|facebook\.com\/plugins\/video)/i;
+const VIDEO_IFRAME_HOST_RE =
+	/(?:youtube\.com|youtu\.be|youtube-nocookie\.com|vimeo\.com|player\.vimeo\.com|dailymotion\.com|wistia\.com|wistia\.net|fast\.wistia\.net|twitch\.tv|player\.twitch\.tv|video\.wordpress\.com|videopress\.com|loom\.com|brightcove\.net|tiktok\.com|fb\.watch|facebook\.com\/plugins\/video)/i;
 
 function isVideoMedia( media ) {
 	if ( media.tagName === 'VIDEO' ) {
@@ -236,8 +234,7 @@ function isSiteReviewMode() {
 	return (
 		typeof window !== 'undefined' &&
 		!! (
-			window.flowSiteReview &&
-			typeof window.flowSiteReview === 'object'
+			window.flowSiteReview && typeof window.flowSiteReview === 'object'
 		)
 	);
 }
@@ -273,7 +270,7 @@ function buildLinkPill( doc, href, target ) {
 		// the iframe in place (the site-review chrome picks up the new
 		// page via `flow:iframe-ready`).
 		if ( '_blank' === target ) {
-			win.open( href, '_blank' );
+			win.open( href, '_blank', 'noopener,noreferrer' );
 		} else {
 			win.location.assign( href );
 		}
@@ -317,7 +314,10 @@ function createOverlay( doc, opts = {} ) {
 	const overlay = doc.createElement( 'span' );
 	overlay.className = 'flow-embed-overlay';
 	overlay.setAttribute( 'role', 'button' );
-	overlay.setAttribute( 'aria-label', 'Click to leave a comment on this embed' );
+	overlay.setAttribute(
+		'aria-label',
+		'Click to leave a comment on this embed'
+	);
 	overlay.tabIndex = 0;
 
 	const hint = doc.createElement( 'span' );
@@ -355,7 +355,10 @@ function createOverlay( doc, opts = {} ) {
 		const pin = doc.createElement( 'span' );
 		pin.className = 'flow-embed-overlay__comment-pin';
 		pin.setAttribute( 'role', 'button' );
-		pin.setAttribute( 'aria-label', 'Click to leave a comment on this video' );
+		pin.setAttribute(
+			'aria-label',
+			'Click to leave a comment on this video'
+		);
 		pin.tabIndex = 0;
 		pin.innerHTML = COMMENT_SVG;
 		pin.addEventListener( 'keydown', ( e ) => {
@@ -499,9 +502,7 @@ function wrapMedia( media ) {
 	// chrome the link guard intercepts navigation globally, so this is
 	// strictly a site-review concern.
 	const linkAncestor =
-		tag === 'IMG' && isSiteReviewMode()
-			? media.closest( 'a[href]' )
-			: null;
+		tag === 'IMG' && isSiteReviewMode() ? media.closest( 'a[href]' ) : null;
 	const linkHref = linkAncestor
 		? ( linkAncestor.getAttribute( 'href' ) || '' ).trim()
 		: '';
@@ -531,7 +532,9 @@ function wrapMedia( media ) {
 		media.addEventListener(
 			'load',
 			() => {
-				if ( overlay.querySelector( '.flow-embed-overlay__link-pill' ) ) {
+				if (
+					overlay.querySelector( '.flow-embed-overlay__link-pill' )
+				) {
 					return;
 				}
 				const a = media.closest( 'a[href]' );
@@ -650,8 +653,8 @@ function attachFloatingOverlay( media, overlay, parent, view ) {
 		const pcs = view.getComputedStyle( parent );
 		const bl = parseFloat( pcs.borderLeftWidth ) || 0;
 		const bt = parseFloat( pcs.borderTopWidth ) || 0;
-		overlay.style.left = ( mr.left - pr.left - bl ) + 'px';
-		overlay.style.top = ( mr.top - pr.top - bt ) + 'px';
+		overlay.style.left = mr.left - pr.left - bl + 'px';
+		overlay.style.top = mr.top - pr.top - bt + 'px';
 		overlay.style.width = mr.width + 'px';
 		overlay.style.height = mr.height + 'px';
 	};
@@ -715,7 +718,9 @@ export function attachToDoc( doc ) {
 	observer = new MutationObserver( ( mutations ) => {
 		for ( const m of mutations ) {
 			for ( const node of m.addedNodes ) {
-				if ( node.nodeType !== 1 ) continue;
+				if ( node.nodeType !== 1 ) {
+					continue;
+				}
 				const tag = node.tagName;
 				if ( tag === 'IFRAME' || tag === 'IMG' || tag === 'VIDEO' ) {
 					wrapMedia( node );
@@ -756,7 +761,9 @@ export function initEmbedOverlays() {
 	// ReviewBar creates asynchronously. Hook the ready event to scan it.
 	const onIframeReady = ( e ) => {
 		const iframe = e?.detail?.iframe;
-		if ( ! iframe ) return;
+		if ( ! iframe ) {
+			return;
+		}
 		// Defer until contentDocument is fully populated.
 		const handle = () => attachToDoc( iframe.contentDocument );
 		if (
@@ -782,11 +789,7 @@ export function initEmbedOverlays() {
 			observer = null;
 		}
 		if ( lateLoadHandler && lateLoadRoot ) {
-			lateLoadRoot.removeEventListener(
-				'load',
-				lateLoadHandler,
-				true
-			);
+			lateLoadRoot.removeEventListener( 'load', lateLoadHandler, true );
 			lateLoadHandler = null;
 			lateLoadRoot = null;
 		}

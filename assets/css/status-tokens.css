@@ -1,0 +1,18 @@
+/* Generated from assets/status-palette.json by scripts/build-status-tokens.js. Do not edit. */
+:root {
+	--flow-status-open_review-bg: #dff4ff;
+	--flow-status-open_review-text: #1579a5;
+	--flow-status-open_review-border: #b6e6ff;
+	--flow-status-approved-bg: #e7f5e4;
+	--flow-status-approved-text: #458037;
+	--flow-status-approved-border: #cae8c4;
+	--flow-status-in_review-bg: #fcf0ce;
+	--flow-status-in_review-text: #957500;
+	--flow-status-in_review-border: #f2dda4;
+	--flow-status-changes_requested-bg: #ffebea;
+	--flow-status-changes_requested-text: #c92122;
+	--flow-status-changes_requested-border: #ffd1d0;
+	--flow-status-pending-bg: #e6f3f5;
+	--flow-status-pending-text: #5e777b;
+	--flow-status-pending-border: #cde3e7;
+}

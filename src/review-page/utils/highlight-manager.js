@@ -42,9 +42,7 @@ function onHighlightClick( e ) {
 		);
 		const sibling =
 			overlay?.flowMedia ||
-			overlay?.parentElement?.querySelector?.(
-				'img, video, iframe'
-			) ||
+			overlay?.parentElement?.querySelector?.( 'img, video, iframe' ) ||
 			null;
 		if ( sibling?.classList?.contains( MEDIA_HIGHLIGHT_CLASS ) ) {
 			mark = sibling;
@@ -181,12 +179,7 @@ function handleResolve( e ) {
 	);
 }
 
-function handleRemove( e ) {
-	const { commentId } = e.detail || {};
-	if ( ! commentId ) {
-		return;
-	}
-
+function removeHighlightForComment( commentId ) {
 	clearHighlight( commentId );
 	queryHighlights( `.${ MEDIA_HIGHLIGHT_CLASS }` ).forEach( ( media ) => {
 		if ( ! hasCommentId( media, commentId ) ) {
@@ -201,6 +194,14 @@ function handleRemove( e ) {
 			);
 		}
 	} );
+}
+
+function handleRemove( e ) {
+	const { commentId } = e.detail || {};
+	if ( ! commentId ) {
+		return;
+	}
+	removeHighlightForComment( commentId );
 }
 
 function handleScrollTo( e ) {
@@ -223,6 +224,38 @@ function handleScrollTo( e ) {
 	setTimeout( () => found.mark.classList.remove( ACTIVE_CLASS ), 2000 );
 }
 
+/**
+ * Ids of every comment that already has a mark in the document — text marks
+ * carry one id, media marks a space-separated list. One pass over the DOM per
+ * rewrap replaces the two `querySelector` calls the old loop made per comment,
+ * which mattered on long, heavily annotated pages whose theme JS mutates
+ * the DOM continuously.
+ */
+function collectAnchoredCommentIds( contentRoot, doc ) {
+	const ids = new Set();
+	const scopes = [ contentRoot ];
+	if ( doc.body && doc.body !== contentRoot ) {
+		scopes.push( doc.body );
+	}
+	for ( const scope of scopes ) {
+		scope
+			.querySelectorAll( `.${ HIGHLIGHT_CLASS }[data-comment-id]` )
+			.forEach( ( el ) => ids.add( String( el.dataset.commentId ) ) );
+		scope
+			.querySelectorAll( `.${ MEDIA_HIGHLIGHT_CLASS }[data-comment-ids]` )
+			.forEach( ( el ) => {
+				( el.dataset.commentIds || '' )
+					.split( ' ' )
+					.forEach( ( id ) => {
+						if ( id ) {
+							ids.add( id );
+						}
+					} );
+			} );
+	}
+	return ids;
+}
+
 function wrapCommentsInRoot( contentRoot, comments ) {
 	if ( ! contentRoot ) {
 		return;
@@ -231,17 +264,13 @@ function wrapCommentsInRoot( contentRoot, comments ) {
 	const roots = ( comments || [] ).filter(
 		( c ) => ! c.parentId && c.blockClientId
 	);
+	if ( ! roots.length ) {
+		return;
+	}
+	const anchored = collectAnchoredCommentIds( contentRoot, doc );
 
 	for ( const c of roots ) {
-		if (
-			contentRoot.querySelector(
-				`.${ HIGHLIGHT_CLASS }[data-comment-id="${ c.id }"]`
-			) ||
-			( doc.body &&
-				doc.body.querySelector(
-					`.${ HIGHLIGHT_CLASS }[data-comment-id="${ c.id }"]`
-				) )
-		) {
+		if ( anchored.has( String( c.id ) ) ) {
 			continue;
 		}
 		try {
@@ -287,10 +316,12 @@ function wrapCommentsInRoot( contentRoot, comments ) {
  *
  * @param {Document} doc
  * @param {{ skipLinkGuard?: boolean, withNotice?: boolean }} [options]
- * @returns {() => void} Cleanup function that detaches everything attached here.
+ * @return {() => void} Cleanup function that detaches everything attached here.
  */
 function attachManagerToDoc( doc, options = {} ) {
-	if ( ! doc ) return () => {};
+	if ( ! doc ) {
+		return () => {};
+	}
 	const { skipLinkGuard = false, withNotice = true } = options;
 
 	injectHighlightStyles( doc );
@@ -306,7 +337,9 @@ function attachManagerToDoc( doc, options = {} ) {
 	const clickRoot = doc.body || doc.documentElement;
 	if ( ! wrapRoot || ! clickRoot ) {
 		return () => {
-			if ( linkGuardCleanup ) linkGuardCleanup();
+			if ( linkGuardCleanup ) {
+				linkGuardCleanup();
+			}
 		};
 	}
 
@@ -334,7 +367,9 @@ function attachManagerToDoc( doc, options = {} ) {
 		clearTimeout( rewrapTimer );
 		mo.disconnect();
 		clickRoot.removeEventListener( 'click', onHighlightClick );
-		if ( linkGuardCleanup ) linkGuardCleanup();
+		if ( linkGuardCleanup ) {
+			linkGuardCleanup();
+		}
 	};
 }
 
@@ -371,9 +406,14 @@ function handleIframeRemoved() {
 
 function handleCommentAdded( e ) {
 	const { comment } = e.detail || {};
-	if ( comment ) {
-		allComments = [ ...allComments, comment ];
+	if ( ! comment ) {
+		return;
 	}
+	const id = Number( comment.id );
+	if ( allComments.some( ( c ) => Number( c.id ) === id ) ) {
+		return;
+	}
+	allComments = [ ...allComments, comment ];
 }
 
 function handleCommentResolved( e ) {
@@ -409,7 +449,7 @@ function handleCommentDeleted( e ) {
 
 /**
  * @param {Array} inlineComments
- * @param {object} [options]
+ * @param {Object} [options]
  * @param {'review'|'site-review'} [options.mode]
  *   `'review'` (default): per-post chrome — `preview-link-guard` is
  *   installed inside the iframe so reviewers can't navigate away from
@@ -421,7 +461,8 @@ function handleCommentDeleted( e ) {
  */
 export function initHighlights( inlineComments, options = {} ) {
 	allComments = [ ...( inlineComments || [] ) ];
-	highlightManagerMode = options.mode === 'site-review' ? 'site-review' : 'review';
+	highlightManagerMode =
+		options.mode === 'site-review' ? 'site-review' : 'review';
 
 	window.addEventListener( 'flow:highlight-add', handleAdd );
 	window.addEventListener( 'flow:highlight-resolve', handleResolve );
@@ -442,26 +483,44 @@ export function initHighlights( inlineComments, options = {} ) {
 		'flow:inline-comment-deleted',
 		handleCommentDeleted
 	);
-	window.addEventListener( 'flow:inline-comments-reset', handleCommentsReset );
+	window.addEventListener(
+		'flow:inline-comments-reset',
+		handleCommentsReset
+	);
 }
 
 function handleCommentsReset( e ) {
 	const next = e.detail?.comments;
-	if ( ! Array.isArray( next ) ) return;
+	if ( ! Array.isArray( next ) ) {
+		return;
+	}
 	allComments = [ ...next ];
 	const doc = getIframeDoc();
-	if ( ! doc ) return;
+	if ( ! doc ) {
+		return;
+	}
 	const wrapRoot = resolveCommentContentRoot( doc ) || doc.body;
-	if ( ! wrapRoot ) return;
-	const existing = wrapRoot.querySelectorAll(
-		`.${ HIGHLIGHT_CLASS }[data-comment-id], .${ MEDIA_HIGHLIGHT_CLASS }[data-comment-id]`
-	);
-	const liveIds = new Set( allComments.map( ( c ) => Number( c.id ) ) );
-	existing.forEach( ( el ) => {
-		const id = Number( el.getAttribute( 'data-comment-id' ) );
+	if ( ! wrapRoot ) {
+		return;
+	}
+	const liveIds = new Set( allComments.map( ( c ) => String( c.id ) ) );
+	// collectAnchoredCommentIds understands both the text marks and the
+	// space-separated media list, which a raw `data-comment-id` query misses.
+	collectAnchoredCommentIds( wrapRoot, doc ).forEach( ( id ) => {
 		if ( ! liveIds.has( id ) ) {
-			clearHighlight( el );
+			removeHighlightForComment( id );
 		}
 	} );
 	wrapCommentsInRoot( wrapRoot, allComments );
+
+	// wrapCommentsInRoot skips ids that are already anchored, so a comment
+	// someone else resolved would otherwise keep its unresolved styling.
+	allComments.forEach( ( c ) => {
+		if ( c.parentId ) {
+			return;
+		}
+		queryHighlightedByCommentId( c.id ).forEach( ( mark ) =>
+			mark.classList.toggle( RESOLVED_CLASS, !! c.isResolved )
+		);
+	} );
 }

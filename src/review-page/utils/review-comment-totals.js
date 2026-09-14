@@ -57,14 +57,23 @@ export function useReviewCommentTotals( onInlineCommentAdded ) {
 					: Number( d ) || 0;
 			setGeneralCount( total );
 		};
+		// Counting off the authoritative total rather than incrementing: a sync
+		// carrying someone else's comments would otherwise inflate this for good.
+		const onInlineStats = ( e ) => {
+			setInlineCount( Number( e.detail?.total ) || 0 );
+		};
 		const onInlineAdded = ( e ) => {
-			setInlineCount( ( prev ) => prev + 1 );
 			onInlineRef.current?.( e );
 		};
 		window.addEventListener( 'flow:comment-count', onCount );
+		window.addEventListener( 'flow:inline-comment-stats', onInlineStats );
 		window.addEventListener( 'flow:inline-comment-added', onInlineAdded );
 		return () => {
 			window.removeEventListener( 'flow:comment-count', onCount );
+			window.removeEventListener(
+				'flow:inline-comment-stats',
+				onInlineStats
+			);
 			window.removeEventListener(
 				'flow:inline-comment-added',
 				onInlineAdded

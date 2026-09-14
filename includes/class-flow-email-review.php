@@ -72,6 +72,9 @@ class Email_Review {
 		if ( '' === $email || ! is_email( $email ) ) {
 			throw new \InvalidArgumentException( esc_html__( 'Please enter a valid email address.', 'jumplinks-editorial-workflow' ) );
 		}
+		if ( self::is_self_invite( $post_id, $requester_id, $email ) ) {
+			throw new \InvalidArgumentException( esc_html__( 'You cannot invite your own email address as a reviewer.', 'jumplinks-editorial-workflow' ) );
+		}
 
 		// Same invite already on the active review — no-op. Re-POSTing used to
 		// call Review::request(..., 0) and reset status to pending.
@@ -99,23 +102,65 @@ class Email_Review {
 	}
 
 	/**
+	 * Addresses that can never be invited on a post: the requester's and the
+	 * post author's own account emails. Inviting yourself would let one person
+	 * request and approve under mandatory review.
+	 *
+	 * @return string[] Normalized emails.
+	 */
+	public static function self_invite_emails( int $post_id, int $requester_id ): array {
+		$user_ids = [ $requester_id ];
+		$post     = get_post( $post_id );
+		if ( $post instanceof \WP_Post ) {
+			$user_ids[] = (int) $post->post_author;
+		}
+		$out = [];
+		foreach ( array_unique( $user_ids ) as $user_id ) {
+			if ( $user_id <= 0 ) {
+				continue;
+			}
+			$user = get_userdata( $user_id );
+			if ( $user && ! empty( $user->user_email ) ) {
+				$out[] = Email_Review_Invites_DB::normalize_email( (string) $user->user_email );
+			}
+		}
+		return array_values( array_unique( $out ) );
+	}
+
+	public static function is_self_invite( int $post_id, int $requester_id, string $email ): bool {
+		$email = Email_Review_Invites_DB::normalize_email( $email );
+		return '' !== $email && in_array( $email, self::self_invite_emails( $post_id, $requester_id ), true );
+	}
+
+	/** @var array<string,object|null> Verified invite per review id and cookie value; the review page asks 4 to 6 times per request. */
+	private static array $invite_memo = [];
+
+	/** @var array<int,true> */
+	private static array $session_refreshed = [];
+
+	/**
 	 * Current invite row for this request when the session cookie matches the review.
 	 */
 	public static function current_invite_for_review( int $review_id ): ?object {
+		$raw = Email_Review_Cookie::raw_from_request();
+		if ( '' === $raw ) {
+			return null;
+		}
+		$key = $review_id . ':' . $raw;
+		if ( array_key_exists( $key, self::$invite_memo ) ) {
+			return self::$invite_memo[ $key ];
+		}
+
 		$session = Email_Review_Cookie::verify_from_request();
-		if ( ! $session || (int) $session['review_id'] !== $review_id ) {
-			return null;
+		$row     = $session && (int) $session['review_id'] === $review_id ? $session['row'] : null;
+
+		self::$invite_memo[ $key ] = $row;
+		if ( $row && ! isset( self::$session_refreshed[ $review_id ] ) ) {
+			// Slide the freshness window once per request; re-issuing on every call sent duplicate Set-Cookie headers.
+			self::$session_refreshed[ $review_id ] = true;
+			Email_Review_Cookie::refresh_session( $review_id, (string) $row->cookie_jti, (int) $row->token_version );
+			self::$invite_memo[ $review_id . ':' . Email_Review_Cookie::raw_from_request() ] = $row;
 		}
-		$row = Email_Review_Invites_DB::get_by_jti( (string) $session['jti'] );
-		if ( ! $row || (int) $row->review_id !== $review_id ) {
-			return null;
-		}
-		// Slide the session freshness window while the invitee is active.
-		Email_Review_Cookie::refresh_session(
-			$review_id,
-			(string) $row->cookie_jti,
-			(int) $row->token_version
-		);
 		return $row;
 	}
 
@@ -166,6 +211,9 @@ class Email_Review {
 			return true;
 		}
 		if ( 'POST' === $method && preg_match( '#/reviews/\d+/invite-identity$#', $route ) ) {
+			return true;
+		}
+		if ( 'GET' === $method && preg_match( '#/reviews/\d+/comments/sync$#', $route ) ) {
 			return true;
 		}
 		if ( 'GET' === $method && preg_match( '#/reviews/\d+/mentionable-users$#', $route ) ) {
@@ -408,7 +456,7 @@ class Email_Review {
 					$site
 				);
 			}
-			wp_mail( $email, $subject, $message );
+			Mailer::queue( $email, $subject, $message );
 		}
 	}
 }

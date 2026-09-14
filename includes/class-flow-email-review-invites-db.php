@@ -13,16 +13,17 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Free enforces at most one invite per review at the assign layer;
  * Pro may store many rows and roll them into multi-reviewer status.
  */
-class Email_Review_Invites_DB {
+class Email_Review_Invites_DB extends Table_Gateway {
 
 	const STATUS_PENDING           = 'pending';
 	const STATUS_IN_REVIEW         = 'in_review';
 	const STATUS_APPROVED          = 'approved';
 	const STATUS_CHANGES_REQUESTED = 'changes_requested';
 
-	public static function table(): string {
-		global $wpdb;
-		return $wpdb->prefix . 'flow_review_invites';
+	const INT_COLUMNS = [ 'review_id', 'token_version' ];
+
+	protected static function table_suffix(): string {
+		return 'flow_review_invites';
 	}
 
 	public static function normalize_email( string $email ): string {
@@ -48,21 +49,6 @@ class Email_Review_Invites_DB {
 		} catch ( \Exception $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			return wp_generate_password( 32, false, false );
 		}
-	}
-
-	public static function get( int $id ): ?object {
-		global $wpdb;
-		if ( $id <= 0 ) {
-			return null;
-		}
-		$table = self::table();
-		$row   = $wpdb->get_row( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
-			$wpdb->prepare(
-				"SELECT * FROM {$table} WHERE id = %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,PluginCheck.Security.DirectDB.UnescapedDBParameter
-				$id
-			)
-		);
-		return $row ?: null;
 	}
 
 	public static function get_by_jti( string $jti ): ?object {
@@ -106,7 +92,7 @@ class Email_Review_Invites_DB {
 		if ( $review_id <= 0 ) {
 			return [];
 		}
-		$table = $wpdb->prefix . 'flow_review_invites';
+		$table = self::table();
 		$rows  = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
 			$wpdb->prepare(
 				"SELECT * FROM {$table} WHERE review_id = %d ORDER BY id ASC", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,PluginCheck.Security.DirectDB.UnescapedDBParameter
@@ -114,6 +100,38 @@ class Email_Review_Invites_DB {
 			)
 		);
 		return is_array( $rows ) ? $rows : [];
+	}
+
+	/**
+	 * Every invite row for an address, across reviews (privacy export/erase).
+	 *
+	 * @return object[]
+	 */
+	public static function get_all_for_email( string $email ): array {
+		global $wpdb;
+		$email = self::normalize_email( $email );
+		if ( '' === $email ) {
+			return [];
+		}
+		$table = self::table();
+		$rows  = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+			$wpdb->prepare(
+				"SELECT * FROM {$table} WHERE email = %s ORDER BY id ASC", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,PluginCheck.Security.DirectDB.UnescapedDBParameter
+				$email
+			)
+		);
+		return is_array( $rows ) ? $rows : [];
+	}
+
+	/** @return int Rows deleted. */
+	public static function delete_all_for_email( string $email ): int {
+		global $wpdb;
+		$email = self::normalize_email( $email );
+		if ( '' === $email ) {
+			return 0;
+		}
+		$deleted = $wpdb->delete( self::table(), [ 'email' => $email ], [ '%s' ] ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		return (int) $deleted;
 	}
 
 	public static function count_for_review( int $review_id ): int {
@@ -166,34 +184,6 @@ class Email_Review_Invites_DB {
 		return self::get( (int) $wpdb->insert_id );
 	}
 
-	/**
-	 * @param array<string,mixed> $data
-	 */
-	public static function update( int $id, array $data ): bool {
-		global $wpdb;
-		if ( $id <= 0 || empty( $data ) ) {
-			return false;
-		}
-		$data['updated_at'] = current_time( 'mysql', true );
-		$formats            = [];
-		foreach ( $data as $key => $value ) {
-			unset( $value );
-			if ( in_array( $key, [ 'review_id', 'token_version' ], true ) ) {
-				$formats[] = '%d';
-			} else {
-				$formats[] = '%s';
-			}
-		}
-		$result = $wpdb->update( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
-			self::table(),
-			$data,
-			[ 'id' => $id ],
-			$formats,
-			[ '%d' ]
-		);
-		return false !== $result;
-	}
-
 	public static function update_display_name( int $invite_id, string $name ): void {
 		if ( $invite_id <= 0 ) {
 			return;
@@ -216,11 +206,7 @@ class Email_Review_Invites_DB {
 	}
 
 	public static function delete_for_review( int $review_id ): void {
-		global $wpdb;
-		if ( $review_id <= 0 ) {
-			return;
-		}
-		$wpdb->delete( self::table(), [ 'review_id' => $review_id ], [ '%d' ] ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		self::delete_by( 'review_id', $review_id );
 	}
 
 	/**

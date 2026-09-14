@@ -11,11 +11,13 @@
 __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _style_css__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./style.css */ "./src/beaver/style.css");
 /* harmony import */ var _shared_sync_reviewer_combobox_from_review__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../shared/sync-reviewer-combobox-from-review */ "./src/shared/sync-reviewer-combobox-from-review.js");
-/* harmony import */ var _shared_assign_invite_email__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../shared/assign-invite-email */ "./src/shared/assign-invite-email.js");
-/* harmony import */ var _shared_sync_builder_reviewer_upsell__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../shared/sync-builder-reviewer-upsell */ "./src/shared/sync-builder-reviewer-upsell.js");
-/* harmony import */ var _shared_reviewer_email_entry__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../shared/reviewer-email-entry */ "./src/shared/reviewer-email-entry.js");
-/* harmony import */ var _shared_share_bar_css__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../shared/share-bar.css */ "./src/shared/share-bar.css");
-/* harmony import */ var _shared_publish_guard_ui__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ../shared/publish-guard-ui */ "./src/shared/publish-guard-ui.js");
+/* harmony import */ var _shared_share_bar_css__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../shared/share-bar.css */ "./src/shared/share-bar.css");
+/* harmony import */ var _shared_publish_guard_ui__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../shared/publish-guard-ui */ "./src/shared/publish-guard-ui.js");
+/* harmony import */ var _shared_debounce__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../shared/debounce */ "./src/shared/debounce.js");
+/* harmony import */ var _shared_mount_retry__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../shared/mount-retry */ "./src/shared/mount-retry.js");
+/* harmony import */ var _shared_builder_publish_guard__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ../shared/builder-publish-guard */ "./src/shared/builder-publish-guard.js");
+/* harmony import */ var _shared_builder_upsell__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ../shared/builder-upsell */ "./src/shared/builder-upsell.js");
+
 
 
 
@@ -115,13 +117,6 @@ __webpack_require__.r(__webpack_exports__);
     arrow.style.left = Math.max(12, arrowX) + 'px';
     arrow.style.right = 'auto';
   }
-  function debounce(fn, ms) {
-    let t;
-    return function () {
-      clearTimeout(t);
-      t = setTimeout(fn, ms);
-    };
-  }
   function findBarActions() {
     return document.querySelector('.fl-builder-bar-actions');
   }
@@ -217,21 +212,7 @@ __webpack_require__.r(__webpack_exports__);
     alignPanelArrow();
     return true;
   }
-  const debouncedEnsure = debounce(ensureToolbarButton, 80);
-  const bodyObserver = new MutationObserver(debouncedEnsure);
-  bodyObserver.observe(document.body, {
-    childList: true,
-    subtree: true
-  });
-  let attempts = 0;
-  function tryEnsureLoop() {
-    const ok = ensureToolbarButton();
-    attempts++;
-    if (!ok && attempts < 240) {
-      requestAnimationFrame(tryEnsureLoop);
-    }
-  }
-  tryEnsureLoop();
+  (0,_shared_mount_retry__WEBPACK_IMPORTED_MODULE_5__.mountWithRetry)(ensureToolbarButton);
   function open() {
     const panel = getDrawer();
     if (!panel) {
@@ -278,7 +259,7 @@ __webpack_require__.r(__webpack_exports__);
   if (window.FLBuilder && typeof window.FLBuilder.addHook === 'function') {
     window.FLBuilder.addHook('willShowContentPanel', close);
   }
-  window.addEventListener('resize', debounce(function () {
+  window.addEventListener('resize', (0,_shared_debounce__WEBPACK_IMPORTED_MODULE_4__.debounce)(function () {
     if (isDrawerOpen()) {
       alignPanelArrow();
     }
@@ -310,61 +291,12 @@ __webpack_require__.r(__webpack_exports__);
     }
     close();
   });
-  const ew = window.flowEW || {};
-  const reviewMandatory = !!ew.reviewMandatory;
-  const isPublished = !!ew.isPublished;
-  const reviewerMeta = Number(ew.reviewerMeta || 0);
-  let lastReview = ew.activeReview || null;
-  let publishGuardTimer;
-  let blockedState = false;
-  function currentReviewerId(review) {
-    const fromReview = Number(review && review.reviewer_id || review && review.reviewer && review.reviewer.id || 0);
-    return fromReview > 0 ? fromReview : reviewerMeta;
-  }
-  function hasAssignedReviewer(review) {
-    if (currentReviewerId(review) > 0) {
-      return true;
-    }
-    const sid = Number(review && review.reviewer && review.reviewer.id || 0);
-    if (sid !== 0) {
-      return true;
-    }
-    if (review && review.invite_email || review && review.reviewer && review.reviewer.is_email) {
-      return true;
-    }
-    if (review && Array.isArray(review.email_invites) && review.email_invites.length > 0) {
-      return true;
-    }
-    return false;
-  }
-  function isPublishBlocked(review) {
-    if (!reviewMandatory) {
-      return false;
-    }
-    if (isPublished) {
-      return false;
-    }
-    if (!review || review.status !== 'approved') {
-      return true;
-    }
-    return !hasAssignedReviewer(review);
-  }
-  function applyPublishGuard(review) {
-    blockedState = isPublishBlocked(review);
-    document.body.classList.toggle('flow-ew-beaver-publish-blocked', blockedState);
-    (0,_shared_publish_guard_ui__WEBPACK_IMPORTED_MODULE_6__.syncPublishGuardTooltip)(findPublishActionButton(), blockedState);
-  }
-  function schedulePublishGuard(review) {
-    if (review !== undefined) {
-      lastReview = review;
-    }
-    clearTimeout(publishGuardTimer);
-    publishGuardTimer = setTimeout(function () {
-      applyPublishGuard(lastReview);
-    }, 80);
-  }
+  const guard = (0,_shared_builder_publish_guard__WEBPACK_IMPORTED_MODULE_6__.createBuilderPublishGuard)(function (blocked) {
+    document.body.classList.toggle('flow-ew-beaver-publish-blocked', blocked);
+    (0,_shared_publish_guard_ui__WEBPACK_IMPORTED_MODULE_3__.syncPublishGuardTooltip)(findPublishActionButton(), blocked);
+  });
   document.addEventListener('click', function (e) {
-    if (!blockedState) {
+    if (!guard.isBlocked()) {
       return;
     }
     const target = e.target;
@@ -379,306 +311,24 @@ __webpack_require__.r(__webpack_exports__);
       e.stopImmediatePropagation();
     }
   }, true);
-  const guardObserver = new MutationObserver(function () {
-    schedulePublishGuard();
-  });
-  guardObserver.observe(document.body, {
-    childList: true,
-    subtree: true
-  });
-  schedulePublishGuard(lastReview);
-  function buildUpsellNode(data, className, linkMarginTop) {
-    const wrap = document.createElement('div');
-    wrap.className = className;
-    wrap.setAttribute('data-flow-ew-beaver-upsell', '1');
-    const link = document.createElement('a');
-    link.href = data.href || '#';
-    link.style.marginTop = linkMarginTop;
-    const badge = document.createElement('span');
-    badge.className = 'flow-ew-upsell-badge';
-    badge.textContent = 'PRO';
-    link.appendChild(badge);
-    link.appendChild(document.createTextNode(data.label));
-    wrap.appendChild(link);
-    if (data.helpText) {
-      const help = document.createElement('p');
-      help.className = 'flow-ew-upsell-help';
-      help.textContent = data.helpText;
-      wrap.appendChild(help);
-    }
-    return wrap;
-  }
-  function getFallbackUpsellData(type) {
-    const panel = getDrawer();
-    if (!panel || panel.dataset.flowEwUpsellEnabled !== '1') {
-      return null;
-    }
-    const href = panel.dataset.flowEwUpsellHref || '';
-    if (!href) {
-      return null;
-    }
-    if (type === 'open') {
-      const label = panel.dataset.flowEwUpsellOpenLabel || '';
-      if (!label) {
-        return null;
-      }
-      return {
-        href,
-        label,
-        helpText: panel.dataset.flowEwUpsellOpenHelp || ''
-      };
-    }
-    const label = panel.dataset.flowEwUpsellReviewerLabel || '';
-    if (!label) {
-      return null;
-    }
-    return {
-      href,
-      label,
-      helpText: panel.dataset.flowEwUpsellReviewerHelp || ''
-    };
-  }
-  function syncFreeUpsells(review) {
-    const panel = getDrawer();
-    if (!panel) {
-      return;
-    }
-    const openData = window.flowEwUpsell || getFallbackUpsellData('open');
-    if (openData && openData.label) {
-      panel.querySelectorAll('.flow-ew-open-review-extras').forEach(function (slot) {
-        let node = slot.querySelector('.flow-ew-upsell-open-review');
-        if (!node) {
-          node = buildUpsellNode(openData, 'flow-ew-upsell-open-review', '6px');
-          slot.appendChild(node);
-        }
-        const open = !!(review && review.is_open);
-        node.style.display = open ? '' : 'none';
-      });
-    }
-    const reviewerData = window.flowEwUpsellReviewer || getFallbackUpsellData('reviewer');
-    if (reviewerData && reviewerData.label) {
-      (0,_shared_sync_builder_reviewer_upsell__WEBPACK_IMPORTED_MODULE_3__.syncBuilderReviewerUpsell)({
-        root: panel,
-        review,
-        data: reviewerData,
-        className: 'flow-ew-upsell-reviewer',
-        markerAttr: 'data-flow-ew-beaver-upsell-reviewer',
-        buildNode: function (data, className) {
-          const node = buildUpsellNode(data, className, '14px');
-          node.setAttribute('data-flow-ew-beaver-upsell-reviewer', '1');
-          return node;
-        }
-      });
-      const reviewerSelect = panel.querySelector('#flow-ew-reviewer-select');
-      if (reviewerSelect && !reviewerSelect.dataset.flowBeaverUpsellBound) {
-        reviewerSelect.dataset.flowBeaverUpsellBound = '1';
-        reviewerSelect.addEventListener('change', function () {
-          syncFreeUpsells(window.flowEW && window.flowEW.activeReview || review);
-        });
-      }
-    }
-  }
   document.addEventListener('flow-ew:classic-render', function (e) {
     const review = e.detail && e.detail.review;
     const status = review && review.status || '';
     syncToggleStatus(status);
     (0,_shared_sync_reviewer_combobox_from_review__WEBPACK_IMPORTED_MODULE_1__.syncReviewerComboboxFromReview)(review);
     syncBeaverDarkSkin();
-    schedulePublishGuard(review);
-    syncFreeUpsells(review);
+    guard.schedule(review);
+    (0,_shared_builder_upsell__WEBPACK_IMPORTED_MODULE_7__.syncFreeUpsells)({
+      root: getDrawer(),
+      review,
+      builder: 'beaver'
+    });
   });
-  const comboboxRoot = document.getElementById('flow-ew-reviewer-combobox');
-  if (comboboxRoot) {
-    initReviewerCombobox(comboboxRoot);
-  }
-  syncFreeUpsells(lastReview);
-  function initReviewerCombobox(root) {
-    if (root.dataset.flowEwComboboxReady === '1') {
-      return;
-    }
-    root.dataset.flowEwComboboxReady = '1';
-    const input = root.querySelector('.flow-ew-reviewer-combobox__input');
-    const list = root.querySelector('.flow-ew-reviewer-combobox__list');
-    const select = root.querySelector('#flow-ew-reviewer-select');
-    if (!input || !list || !select) {
-      return;
-    }
-    const options = Array.from(list.querySelectorAll('[role="option"]'));
-    let activeIndex = -1;
-    let emailEntryMode = false;
-    function hideAutocomplete() {
-      return (0,_shared_reviewer_email_entry__WEBPACK_IMPORTED_MODULE_4__.shouldHideReviewerAutocomplete)(select, input, emailEntryMode);
-    }
-    function setOpen(openList) {
-      if (openList && hideAutocomplete()) {
-        openList = false;
-      }
-      list.hidden = !openList;
-      input.setAttribute('aria-expanded', openList ? 'true' : 'false');
-    }
-    function filterOptions(q) {
-      (0,_shared_reviewer_email_entry__WEBPACK_IMPORTED_MODULE_4__.filterReviewerComboboxOptions)(options, q);
-    }
-    function visibleOptions() {
-      return options.filter(function (li) {
-        return !li.hidden && li.style.display !== 'none';
-      });
-    }
-    function chooseOption(li) {
-      if (!li || li.hidden) {
-        return;
-      }
-      const id = li.dataset.value;
-      const label = li.dataset.label || li.textContent.trim();
-      select.value = id;
-      setOpen(false);
-      activeIndex = -1;
-      if ((0,_shared_reviewer_email_entry__WEBPACK_IMPORTED_MODULE_4__.isEmailComboboxOption)(li)) {
-        const typed = (input.value || '').trim();
-        if ((0,_shared_assign_invite_email__WEBPACK_IMPORTED_MODULE_2__.isValidEmail)(typed)) {
-          emailEntryMode = true;
-          select.value = 'email';
-          setOpen(false);
-          activeIndex = -1;
-          (0,_shared_assign_invite_email__WEBPACK_IMPORTED_MODULE_2__.dispatchAssignInviteEmail)(typed);
-          return;
-        }
-        emailEntryMode = true;
-        input.readOnly = false;
-        input.value = '';
-        input.placeholder = (0,_shared_reviewer_email_entry__WEBPACK_IMPORTED_MODULE_4__.getEmailPlaceholder)();
-        select.dispatchEvent(new Event('change', {
-          bubbles: true
-        }));
-        input.focus();
-        return;
-      }
-      emailEntryMode = false;
-      input.value = label;
-      select.dispatchEvent(new Event('change', {
-        bubbles: true
-      }));
-    }
-    input.addEventListener('focus', function () {
-      if (input.disabled || input.readOnly) {
-        return;
-      }
-      if (hideAutocomplete()) {
-        setOpen(false);
-        return;
-      }
-      filterOptions(input.value);
-      setOpen(true);
-    });
-    input.addEventListener('input', function () {
-      if (input.disabled || input.readOnly) {
-        return;
-      }
-      const typed = (input.value || '').trim();
-      // Valid address → show Invite row (even after External Email).
-      if ((0,_shared_assign_invite_email__WEBPACK_IMPORTED_MODULE_2__.isValidEmail)(typed)) {
-        emailEntryMode = true;
-        select.value = 'email';
-        filterOptions(typed);
-        setOpen(true);
-        activeIndex = -1;
-        return;
-      }
-      if (emailEntryMode || select.value === 'email') {
-        if (!typed) {
-          emailEntryMode = false;
-          (0,_shared_reviewer_email_entry__WEBPACK_IMPORTED_MODULE_4__.exitReviewerEmailEntryMode)(select, input, options);
-          filterOptions('');
-          setOpen(true);
-          activeIndex = -1;
-          return;
-        }
-        emailEntryMode = true;
-        select.value = 'email';
-        setOpen(false);
-        activeIndex = -1;
-        return;
-      }
-      filterOptions(input.value);
-      setOpen(true);
-      activeIndex = -1;
-    });
-    list.addEventListener('mousedown', function (e) {
-      const li = e.target.closest('[role="option"]');
-      if (li && !li.hidden) {
-        e.preventDefault();
-        chooseOption(li);
-      }
-    });
-    document.addEventListener('click', function (e) {
-      if (!root.contains(e.target)) {
-        setOpen(false);
-        activeIndex = -1;
-      }
-    });
-    document.addEventListener('flow-ew:reviewer-field-reset', function () {
-      emailEntryMode = false;
-      (0,_shared_reviewer_email_entry__WEBPACK_IMPORTED_MODULE_4__.exitReviewerEmailEntryMode)(select, input, options);
-      filterOptions('');
-      setOpen(false);
-      activeIndex = -1;
-    });
-    input.addEventListener('keydown', function (e) {
-      if (input.disabled || input.readOnly) {
-        return;
-      }
-      const vis = visibleOptions();
-      if (e.key === 'ArrowDown') {
-        e.preventDefault();
-        if (hideAutocomplete()) {
-          setOpen(false);
-          return;
-        }
-        if (!list.hidden && vis.length) {
-          activeIndex = Math.min(activeIndex + 1, vis.length - 1);
-          vis[activeIndex].focus();
-        } else {
-          filterOptions(input.value);
-          setOpen(true);
-          activeIndex = 0;
-          if (vis[0]) {
-            vis[0].focus();
-          }
-        }
-      } else if (e.key === 'ArrowUp') {
-        e.preventDefault();
-        if (hideAutocomplete()) {
-          setOpen(false);
-          return;
-        }
-        if (!list.hidden && vis.length) {
-          activeIndex = Math.max(activeIndex - 1, 0);
-          vis[activeIndex].focus();
-        }
-      } else if (e.key === 'Enter') {
-        const focused = list.querySelector('[role="option"]:focus');
-        if (focused && !focused.hidden) {
-          e.preventDefault();
-          chooseOption(focused);
-          return;
-        }
-        const typed = (input.value || '').trim();
-        if ((0,_shared_assign_invite_email__WEBPACK_IMPORTED_MODULE_2__.isValidEmail)(typed)) {
-          e.preventDefault();
-          e.stopPropagation();
-          emailEntryMode = true;
-          select.value = 'email';
-          setOpen(false);
-          activeIndex = -1;
-          (0,_shared_assign_invite_email__WEBPACK_IMPORTED_MODULE_2__.dispatchAssignInviteEmail)(typed);
-        }
-      } else if (e.key === 'Escape') {
-        setOpen(false);
-        activeIndex = -1;
-        input.focus();
-      }
-    });
-  }
+  (0,_shared_builder_upsell__WEBPACK_IMPORTED_MODULE_7__.syncFreeUpsells)({
+    root: getDrawer(),
+    review: guard.lastReview(),
+    builder: 'beaver'
+  });
 })(0);
 
 /***/ },
@@ -721,6 +371,318 @@ function dispatchAssignInviteEmail(email) {
  */
 function isValidEmail(value) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || '').trim());
+}
+
+/***/ },
+
+/***/ "./src/shared/builder-publish-guard.js"
+/*!*********************************************!*\
+  !*** ./src/shared/builder-publish-guard.js ***!
+  \*********************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   createBuilderPublishGuard: () => (/* binding */ createBuilderPublishGuard)
+/* harmony export */ });
+/* harmony import */ var _is_publish_blocked__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./is-publish-blocked */ "./src/shared/is-publish-blocked.js");
+/* harmony import */ var _config__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./config */ "./src/shared/config.js");
+
+
+
+/**
+ * Debounced publish-guard state for builder toolbars. `apply( blocked )` is
+ * invoked after every scheduled recompute; builders decide how to lock their
+ * own publish control.
+ *
+ * @param {(blocked: boolean) => void} apply
+ * @param {{ delay?: number }} [opts]
+ */
+function createBuilderPublishGuard(apply, opts = {}) {
+  const {
+    delay = 80
+  } = opts;
+  const ew = (0,_config__WEBPACK_IMPORTED_MODULE_1__.getConfig)();
+  const reviewMandatory = !!ew.reviewMandatory;
+  const isPublished = !!ew.isPublished;
+  const reviewerMeta = Number(ew.reviewerMeta || 0);
+  let lastReview = ew.activeReview || null;
+  let blocked = false;
+  let timer;
+  function run() {
+    blocked = (0,_is_publish_blocked__WEBPACK_IMPORTED_MODULE_0__.isPublishBlocked)({
+      reviewMandatory,
+      isPublished,
+      review: lastReview,
+      reviewerMeta
+    });
+    apply(blocked);
+  }
+  function schedule(review) {
+    if (review !== undefined) {
+      lastReview = review;
+    }
+    clearTimeout(timer);
+    timer = setTimeout(run, delay);
+  }
+  new MutationObserver(function () {
+    schedule();
+  }).observe(document.body, {
+    childList: true,
+    subtree: true
+  });
+  schedule(lastReview);
+  return {
+    schedule,
+    isBlocked: () => blocked,
+    lastReview: () => lastReview
+  };
+}
+
+/***/ },
+
+/***/ "./src/shared/builder-upsell.js"
+/*!**************************************!*\
+  !*** ./src/shared/builder-upsell.js ***!
+  \**************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   buildUpsellNode: () => (/* binding */ buildUpsellNode),
+/* harmony export */   getFallbackUpsellData: () => (/* binding */ getFallbackUpsellData),
+/* harmony export */   syncFreeUpsells: () => (/* binding */ syncFreeUpsells)
+/* harmony export */ });
+/* harmony import */ var _sync_builder_reviewer_upsell__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./sync-builder-reviewer-upsell */ "./src/shared/sync-builder-reviewer-upsell.js");
+/* harmony import */ var _config__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./config */ "./src/shared/config.js");
+
+
+const INLINE_LINK = {
+  display: 'inline-block',
+  padding: '0',
+  height: 'auto',
+  background: 'transparent',
+  color: '#018170',
+  'font-size': '13px',
+  'font-weight': '600',
+  'line-height': '1.4',
+  'text-decoration': 'underline',
+  cursor: 'pointer',
+  'text-transform': 'none',
+  'letter-spacing': 'normal'
+};
+const INLINE_BADGE = {
+  display: 'inline-block',
+  padding: '1px 6px',
+  'margin-right': '4px',
+  'font-size': '9px',
+  'font-weight': '600',
+  'letter-spacing': '0.04em',
+  'line-height': '1.4',
+  'border-radius': '8px',
+  background: '#d0f9ec',
+  color: '#09121e',
+  'vertical-align': '1px',
+  'text-transform': 'uppercase'
+};
+const INLINE_HELP = {
+  'margin-top': '4px',
+  'margin-bottom': '0',
+  color: '#9aa4ad',
+  'font-size': '12px',
+  'font-weight': '400',
+  'line-height': '1.4',
+  'text-transform': 'none',
+  'letter-spacing': 'normal'
+};
+function important(el, styles) {
+  Object.keys(styles).forEach(function (prop) {
+    el.style.setProperty(prop, styles[prop], 'important');
+  });
+}
+
+/**
+ * @param {{ href: string, label: string, helpText?: string }} data
+ * @param {{ className: string, builder: string, type: string, linkMarginTop: string, inline?: boolean }} opts
+ *   `inline` writes !important styles for builders (Avada) whose CSS otherwise
+ *   restyles every link and paragraph inside the drawer.
+ */
+function buildUpsellNode(data, opts) {
+  const {
+    className,
+    builder,
+    type,
+    linkMarginTop,
+    inline = false
+  } = opts;
+  const wrap = document.createElement('div');
+  wrap.className = className;
+  wrap.setAttribute('data-flow-ew-' + builder + '-upsell', '1');
+  wrap.setAttribute('data-flow-ew-' + builder + '-upsell-' + type, '1');
+  const link = document.createElement('a');
+  link.href = data.href || '#';
+  link.style.marginTop = linkMarginTop;
+  const badge = document.createElement('span');
+  badge.className = 'flow-ew-upsell-badge';
+  badge.textContent = 'PRO';
+  link.appendChild(badge);
+  link.appendChild(document.createTextNode(data.label));
+  wrap.appendChild(link);
+  let help = null;
+  if (data.helpText) {
+    help = document.createElement('p');
+    help.className = 'flow-ew-upsell-help';
+    help.textContent = data.helpText;
+    wrap.appendChild(help);
+  }
+  if (inline) {
+    important(wrap, {
+      'font-size': '13px',
+      'line-height': '1.4',
+      padding: '0'
+    });
+    important(link, INLINE_LINK);
+    link.style.setProperty('margin-top', linkMarginTop, 'important');
+    important(badge, INLINE_BADGE);
+    if (help) {
+      important(help, INLINE_HELP);
+    }
+  }
+  return wrap;
+}
+
+/**
+ * Upsell copy is printed as data attributes on the drawer by the panel template.
+ *
+ * @param {HTMLElement|null} panel
+ * @param {'open'|'reviewer'} type
+ */
+function getFallbackUpsellData(panel, type) {
+  if (!panel || panel.dataset.flowEwUpsellEnabled !== '1') {
+    return null;
+  }
+  const href = panel.dataset.flowEwUpsellHref || '';
+  if (!href) {
+    return null;
+  }
+  const label = type === 'open' ? panel.dataset.flowEwUpsellOpenLabel || '' : panel.dataset.flowEwUpsellReviewerLabel || '';
+  if (!label) {
+    return null;
+  }
+  return {
+    href,
+    label,
+    helpText: type === 'open' ? panel.dataset.flowEwUpsellOpenHelp || '' : panel.dataset.flowEwUpsellReviewerHelp || ''
+  };
+}
+
+/**
+ * Keep the Free "Unlock public reviews" / "Unlock multiple reviewers" nodes in
+ * sync with the current review inside a builder drawer.
+ *
+ * @param {{ root: HTMLElement|null, review: object|null|undefined, builder: string, inline?: boolean }} opts
+ */
+function syncFreeUpsells(opts) {
+  const {
+    root,
+    review,
+    builder,
+    inline = false
+  } = opts;
+  if (!root) {
+    return;
+  }
+  const openData = window.flowEwUpsell || getFallbackUpsellData(root, 'open');
+  if (openData && openData.label) {
+    root.querySelectorAll('.flow-ew-open-review-extras').forEach(function (slot) {
+      let node = slot.querySelector('.flow-ew-upsell-open-review');
+      if (!node) {
+        node = buildUpsellNode(openData, {
+          className: 'flow-ew-upsell-open-review',
+          builder,
+          type: 'open',
+          linkMarginTop: '6px',
+          inline
+        });
+        slot.appendChild(node);
+      }
+      const isOpen = !!(review && review.is_open);
+      node.style.display = isOpen ? '' : 'none';
+    });
+  }
+  const reviewerData = window.flowEwUpsellReviewer || getFallbackUpsellData(root, 'reviewer');
+  if (!reviewerData || !reviewerData.label) {
+    return;
+  }
+  (0,_sync_builder_reviewer_upsell__WEBPACK_IMPORTED_MODULE_0__.syncBuilderReviewerUpsell)({
+    root,
+    review,
+    data: reviewerData,
+    className: 'flow-ew-upsell-reviewer',
+    markerAttr: 'data-flow-ew-' + builder + '-upsell-reviewer',
+    buildNode(data, className) {
+      return buildUpsellNode(data, {
+        className,
+        builder,
+        type: 'reviewer',
+        linkMarginTop: '14px',
+        inline
+      });
+    }
+  });
+  const reviewerSelect = root.querySelector('#flow-ew-reviewer-select');
+  if (reviewerSelect && !reviewerSelect.dataset.flowEwUpsellBound) {
+    reviewerSelect.dataset.flowEwUpsellBound = '1';
+    reviewerSelect.addEventListener('change', function () {
+      syncFreeUpsells({
+        root,
+        review: (0,_config__WEBPACK_IMPORTED_MODULE_1__.getConfig)().activeReview || review,
+        builder,
+        inline
+      });
+    });
+  }
+}
+
+/***/ },
+
+/***/ "./src/shared/config.js"
+/*!******************************!*\
+  !*** ./src/shared/config.js ***!
+  \******************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   getConfig: () => (/* binding */ getConfig)
+/* harmony export */ });
+/**
+ * `window.flowEW` is printed by wp_localize_script after some bundles have
+ * already evaluated (the Free sidebar depends on the Pro editor bundle), so
+ * it must never be destructured at module scope. This accessor is null-safe.
+ */
+function getConfig() {
+  return typeof window !== 'undefined' && window.flowEW || {};
+}
+
+/***/ },
+
+/***/ "./src/shared/debounce.js"
+/*!********************************!*\
+  !*** ./src/shared/debounce.js ***!
+  \********************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   debounce: () => (/* binding */ debounce)
+/* harmony export */ });
+function debounce(fn, ms) {
+  let t;
+  return function () {
+    clearTimeout(t);
+    t = setTimeout(fn, ms);
+  };
 }
 
 /***/ },
@@ -905,6 +867,118 @@ function bindInviteLinkCopy() {
 
 /***/ },
 
+/***/ "./src/shared/is-publish-blocked.js"
+/*!******************************************!*\
+  !*** ./src/shared/is-publish-blocked.js ***!
+  \******************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   isPublishBlocked: () => (/* binding */ isPublishBlocked)
+/* harmony export */ });
+/**
+ * Mirrors PublishGuard / classic-editor publish blocking — show review
+ * notices only while this returns true.
+ *
+ * Email invitees keep `reviewer_id === 0` and use a negative synthetic
+ * `reviewer.id`; both count as an assigned reviewer once the review is approved.
+ *
+ * @param {{
+ *   reviewMandatory?: boolean,
+ *   isPublished?: boolean,
+ *   review?: object|null,
+ *   reviewerMeta?: number,
+ * }} args
+ */
+function isPublishBlocked({
+  reviewMandatory,
+  isPublished,
+  review,
+  reviewerMeta = 0
+}) {
+  if (!reviewMandatory || isPublished) {
+    return false;
+  }
+  if (review?.status !== 'approved') {
+    return true;
+  }
+  return !hasAssignedReviewer(review, reviewerMeta);
+}
+
+/**
+ * @param {object|null|undefined} review
+ * @param {number} reviewerMeta
+ */
+function hasAssignedReviewer(review, reviewerMeta = 0) {
+  const wpId = Number(review?.reviewer_id || 0);
+  if (wpId > 0) {
+    return true;
+  }
+
+  // Synthetic email ids are negative; still a real assignment.
+  const reviewerObjId = Number(review?.reviewer?.id || 0);
+  if (reviewerObjId !== 0) {
+    return true;
+  }
+  if (Number(reviewerMeta || 0) > 0) {
+    return true;
+  }
+  if (review?.invite_email || review?.reviewer?.is_email) {
+    return true;
+  }
+  if (Array.isArray(review?.email_invites) && review.email_invites.length > 0) {
+    return true;
+  }
+  return false;
+}
+
+/***/ },
+
+/***/ "./src/shared/mount-retry.js"
+/*!***********************************!*\
+  !*** ./src/shared/mount-retry.js ***!
+  \***********************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   mountWithRetry: () => (/* binding */ mountWithRetry)
+/* harmony export */ });
+/* harmony import */ var _debounce__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./debounce */ "./src/shared/debounce.js");
+
+
+/**
+ * Builders render their toolbars asynchronously. Run `ensure` on every DOM
+ * mutation (debounced) and in a rAF loop until it reports success.
+ *
+ * @param {() => boolean} ensure
+ * @param {{ attempts?: number, debounceMs?: number }} [opts]
+ * @return {MutationObserver}
+ */
+function mountWithRetry(ensure, opts = {}) {
+  const {
+    attempts = 240,
+    debounceMs = 80
+  } = opts;
+  const observer = new MutationObserver((0,_debounce__WEBPACK_IMPORTED_MODULE_0__.debounce)(ensure, debounceMs));
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true
+  });
+  let tries = 0;
+  (function loop() {
+    const ok = ensure();
+    tries++;
+    if (!ok && tries < attempts) {
+      requestAnimationFrame(loop);
+    }
+  })();
+  return observer;
+}
+
+/***/ },
+
 /***/ "./src/shared/publish-guard-ui.js"
 /*!****************************************!*\
   !*** ./src/shared/publish-guard-ui.js ***!
@@ -931,7 +1005,7 @@ function getPublishGuardTooltip() {
 
 /**
  * @param {Element|null|undefined} el
- * @returns {Element|null}
+ * @return {Element|null}
  */
 function publishGuardTooltipTarget(el) {
   if (!el || !el.closest) {
@@ -1021,7 +1095,7 @@ function syncPublishGuardTooltip(el, blocked) {
   }
 }
 
-/** @returns {Element|null} */
+/** @return {Element|null} */
 function findBricksPublishControl() {
   return document.querySelector('#bricks-toolbar li:has([data-name="publish"])');
 }
@@ -1142,10 +1216,7 @@ function filterReviewerComboboxOptions(options, q, opts) {
   const emailOnly = !!(opts && opts.emailOnly);
   const externalLabel = getExternalEmailLabel();
   (options || []).forEach(function (li) {
-    const isEmail = isEmailComboboxOption(li);
-    const baseLabel = String(li.dataset.label || externalLabel).trim();
-    const labelLower = baseLabel.toLowerCase();
-    if (isEmail) {
+    if (isEmailComboboxOption(li)) {
       // No WP users — type the address directly; never a lone email row.
       if (emailOnly) {
         li.hidden = true;
@@ -1177,6 +1248,7 @@ function filterReviewerComboboxOptions(options, q, opts) {
       li.textContent = li.dataset.label || externalLabel;
       return;
     }
+    const labelLower = String(li.dataset.label || externalLabel).trim().toLowerCase();
     const show = !needle || labelLower.includes(needle);
     li.hidden = !show;
     li.style.display = show ? '' : 'none';
@@ -1212,7 +1284,7 @@ const figmaExternalPath = 'M9.71 9V0H0.71V2H6.3L0 8.29L1.42 9.71L7.71 3.41V9H9.7
 
 /**
  * @param {ShareBarIconName} name
- * @returns {string}
+ * @return {string}
  */
 function shareBarIconHtml(name) {
   if (name === 'copied') {
@@ -1288,7 +1360,7 @@ __webpack_require__.r(__webpack_exports__);
  * Always dedupes to a single node so classic-render / MutationObserver races
  * cannot stack copies.
  *
- * @param {object} opts
+ * @param {Object} opts
  * @param {ParentNode} opts.root Drawer/panel root.
  * @param {object|null|undefined} opts.review
  * @param {object|null|undefined} opts.data { href, label, helpText }

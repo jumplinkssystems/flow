@@ -1,34 +1,7 @@
-/**
- * Unified review status colors — single source of truth for JS surfaces.
- * Keep in sync with assets/css/status-themes.css and src/review-page/_tokens.scss.
- */
-export const STATUS_THEMES = {
-	open_review: {
-		bg: '#dff4ff',
-		text: '#1579a5',
-		border: '#b6e6ff',
-	},
-	approved: {
-		bg: '#e7f5e4',
-		text: '#458037',
-		border: '#cae8c4',
-	},
-	in_review: {
-		bg: '#fcf0ce',
-		text: '#957500',
-		border: '#f2dda4',
-	},
-	changes_requested: {
-		bg: '#ffebea',
-		text: '#c92122',
-		border: '#ffd1d0',
-	},
-	pending: {
-		bg: '#e6f3f5',
-		text: '#5e777b',
-		border: '#cde3e7',
-	},
-};
+import STATUS_PALETTE from '../../assets/status-palette.json';
+
+/** Review status colours; assets/status-palette.json is the single source. */
+export const STATUS_THEMES = STATUS_PALETTE;
 
 /** @param {string|undefined|null} status */
 export function statusThemeStyle( status ) {
@@ -51,5 +24,29 @@ export function statusTextColor( status ) {
 
 /** Text colors only — backward compat for callers that only need the accent. */
 export const STATUS_COLORS = Object.fromEntries(
-	Object.entries( STATUS_THEMES ).map( ( [ key, theme ] ) => [ key, theme.text ] )
+	Object.entries( STATUS_THEMES ).map( ( [ key, theme ] ) => [
+		key,
+		theme.text,
+	] )
 );
+
+const THEME_PROPS = [
+	'--flow-status-bg',
+	'--flow-status-text',
+	'--flow-status-border',
+	'--flow-badge-color',
+];
+
+/**
+ * Write (or clear) the status custom properties on an element.
+ *
+ * @param {HTMLElement}           el
+ * @param {string|undefined|null} status
+ */
+export function applyStatusTheme( el, status ) {
+	const themeStyle = statusThemeStyle( status );
+	THEME_PROPS.forEach( ( prop ) => el.style.removeProperty( prop ) );
+	Object.entries( themeStyle ).forEach( ( [ prop, value ] ) => {
+		el.style.setProperty( prop, value );
+	} );
+}

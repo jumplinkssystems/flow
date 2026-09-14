@@ -1,4 +1,10 @@
-import { createRoot, useState, useEffect, useMemo, Fragment } from '@wordpress/element';
+import {
+	createRoot,
+	useState,
+	useEffect,
+	useMemo,
+	Fragment,
+} from '@wordpress/element';
 import {
 	Button,
 	Modal,
@@ -30,7 +36,9 @@ function ModeStep( { value, onChange } ) {
 			<p className="flow-ew-wizard__step-desc">{ i18n.modeDesc }</p>
 
 			<label
-				className={ `flow-ew-wizard__option ${ value === false ? 'is-selected' : '' }` }
+				className={ `flow-ew-wizard__option ${
+					value === false ? 'is-selected' : ''
+				}` }
 			>
 				<input
 					type="radio"
@@ -47,7 +55,9 @@ function ModeStep( { value, onChange } ) {
 			</label>
 
 			<label
-				className={ `flow-ew-wizard__option ${ value === true ? 'is-selected' : '' }` }
+				className={ `flow-ew-wizard__option ${
+					value === true ? 'is-selected' : ''
+				}` }
 			>
 				<input
 					type="radio"
@@ -68,19 +78,20 @@ function ModeStep( { value, onChange } ) {
 }
 
 function SelectAllToggle( { all, value, onChange } ) {
-	const allChecked = all.length > 0 && all.every( ( s ) => value.includes( s ) );
+	const allChecked =
+		all.length > 0 && all.every( ( s ) => value.includes( s ) );
 	function handle( e ) {
 		e.preventDefault();
 		onChange( allChecked ? [] : all.slice() );
 	}
 	return (
-		<a
-			href="#"
+		<button
+			type="button"
 			className="flow-ew-wizard__select-all"
 			onClick={ handle }
 		>
 			{ allChecked ? i18n.deselectAll : i18n.selectAll }
-		</a>
+		</button>
 	);
 }
 
@@ -89,7 +100,9 @@ function PostTypesStep( { value, onChange } ) {
 	if ( list.length === 0 ) {
 		return (
 			<div className="flow-ew-wizard__step">
-				<h2 className="flow-ew-wizard__step-title">{ i18n.typesTitle }</h2>
+				<h2 className="flow-ew-wizard__step-title">
+					{ i18n.typesTitle }
+				</h2>
 				<p className="flow-ew-wizard__step-desc">{ i18n.typesEmpty }</p>
 			</div>
 		);
@@ -97,8 +110,11 @@ function PostTypesStep( { value, onChange } ) {
 
 	function toggle( slug, on ) {
 		const next = new Set( value );
-		if ( on ) next.add( slug );
-		else next.delete( slug );
+		if ( on ) {
+			next.add( slug );
+		} else {
+			next.delete( slug );
+		}
 		onChange( Array.from( next ) );
 	}
 
@@ -131,8 +147,11 @@ function RolesStep( { value, onChange } ) {
 
 	function toggle( slug, on ) {
 		const next = new Set( value );
-		if ( on ) next.add( slug );
-		else next.delete( slug );
+		if ( on ) {
+			next.add( slug );
+		} else {
+			next.delete( slug );
+		}
 		onChange( Array.from( next ) );
 	}
 
@@ -194,7 +213,9 @@ function Wizard( { onClose } ) {
 
 	function back() {
 		setError( '' );
-		if ( ! isFirst ) setStep( step - 1 );
+		if ( ! isFirst ) {
+			setStep( step - 1 );
+		}
 	}
 
 	async function save() {
@@ -293,15 +314,12 @@ function Wizard( { onClose } ) {
 						onClick={ next }
 						disabled={ saving }
 					>
-						{ saving ? (
+						{ saving && (
 							<>
 								<Spinner /> { i18n.saving }
 							</>
-						) : isLast ? (
-							i18n.finish
-						) : (
-							i18n.next
 						) }
+						{ ! saving && ( isLast ? i18n.finish : i18n.next ) }
 					</Button>
 				</div>
 			</div>
@@ -320,14 +338,13 @@ function App() {
 		}
 		document.addEventListener( 'flow-ew:open-setup-wizard', onOpen );
 		return () =>
-			document.removeEventListener(
-				'flow-ew:open-setup-wizard',
-				onOpen
-			);
+			document.removeEventListener( 'flow-ew:open-setup-wizard', onOpen );
 	}, [] );
 
 	useEffect( () => {
-		if ( ! savedNotice ) return undefined;
+		if ( ! savedNotice ) {
+			return undefined;
+		}
 		const t = setTimeout( () => setSavedNotice( false ), 4000 );
 		return () => clearTimeout( t );
 	}, [ savedNotice ] );

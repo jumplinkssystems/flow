@@ -9,7 +9,11 @@ import {
 	eventHitsShadowNode,
 	eventInsidePortalUI,
 } from '../utils/dom-helpers';
-import { getIframe, getIframeDoc, getIframeScale } from '../utils/iframe-bridge';
+import {
+	getIframe,
+	getIframeDoc,
+	getIframeScale,
+} from '../utils/iframe-bridge';
 import { pageData } from '../utils/api';
 import { defaultCommentApi } from '../utils/comment-api';
 import CommentEditor from './CommentEditor';
@@ -29,7 +33,10 @@ function getInitials( name ) {
 	return ( parts[ 0 ][ 0 ] + parts[ parts.length - 1 ][ 0 ] ).toUpperCase();
 }
 
-function CommentAuthorRow( { comment, className = 'flow-thread-popover__header' } ) {
+function CommentAuthorRow( {
+	comment,
+	className = 'flow-thread-popover__header',
+} ) {
 	return (
 		<div className={ className }>
 			{ comment.avatarUrl ? (
@@ -151,15 +158,15 @@ function markRectToViewport( rect, inIframe, popoverHeight = 320 ) {
 }
 
 /**
- * @param {object} [props]
+ * @param {Object} [props]
  * @param {{ postComment: Function, updateComment: Function }} [props.api]
  *   Backend adapter. Defaults to the single-post review namespace. The
  *   site-review chrome (Pro) supplies its own adapter targeting the Pro
  *   namespace.
- * @param {string} [props.mode] Optional mode tag for downstream branching.
- *   Defaults to `'review'`.
  */
-export default function InlineThreadPopover( { api = defaultCommentApi, mode = 'review' } = {} ) {
+export default function InlineThreadPopover( {
+	api = defaultCommentApi,
+} = {} ) {
 	const [ thread, setThread ] = useState( null );
 	const [ position, setPosition ] = useState( null );
 	const [ replying, setReplying ] = useState( false );
@@ -174,8 +181,14 @@ export default function InlineThreadPopover( { api = defaultCommentApi, mode = '
 		let maxRight = window.innerWidth - PAD;
 
 		// Activity sidebar (Pro) is on the LEFT — bounds minLeft.
-		if ( document.body.classList.contains( 'flow-review-page--activity-open' ) ) {
-			const activityHost = document.getElementById( 'flow-pro-activity-host' );
+		if (
+			document.body.classList.contains(
+				'flow-review-page--activity-open'
+			)
+		) {
+			const activityHost = document.getElementById(
+				'flow-pro-activity-host'
+			);
 			const activityRight =
 				activityHost?.getBoundingClientRect?.().right || 0;
 			if ( activityRight > 0 ) {
@@ -215,7 +228,7 @@ export default function InlineThreadPopover( { api = defaultCommentApi, mode = '
 
 	const rebuildOpenThread = useCallback( () => {
 		const rid = openThreadRootIdRef.current;
-		if ( rid == null ) {
+		if ( rid === null || rid === undefined ) {
 			return;
 		}
 		const flat = collectThreadFlat( commentsRef.current, rid );
@@ -237,9 +250,7 @@ export default function InlineThreadPopover( { api = defaultCommentApi, mode = '
 				return;
 			}
 			const cid = Number( comment.id );
-			if (
-				commentsRef.current.some( ( c ) => Number( c.id ) === cid )
-			) {
+			if ( commentsRef.current.some( ( c ) => Number( c.id ) === cid ) ) {
 				rebuildOpenThread();
 				return;
 			}
@@ -288,10 +299,21 @@ export default function InlineThreadPopover( { api = defaultCommentApi, mode = '
 			rebuildOpenThread();
 		};
 
+		const onReset = ( e ) => {
+			const next = e.detail?.comments;
+			if ( ! Array.isArray( next ) ) {
+				return;
+			}
+			commentsRef.current = next;
+			rebuildOpenThread();
+		};
+
 		window.addEventListener( 'flow:inline-comment-updated', onUpdated );
 		window.addEventListener( 'flow:inline-comment-deleted', onDeleted );
 		window.addEventListener( 'flow:inline-comment-resolved', onResolved );
+		window.addEventListener( 'flow:inline-comments-reset', onReset );
 		return () => {
+			window.removeEventListener( 'flow:inline-comments-reset', onReset );
 			window.removeEventListener(
 				'flow:inline-comment-updated',
 				onUpdated
@@ -378,7 +400,9 @@ export default function InlineThreadPopover( { api = defaultCommentApi, mode = '
 	}, [ thread, clampCenterToViewport ] );
 
 	useEffect( () => {
-		if ( ! thread ) return;
+		if ( ! thread ) {
+			return;
+		}
 		const id = window.requestAnimationFrame( () => {
 			repositionToThreadAnchor();
 		} );
@@ -408,13 +432,24 @@ export default function InlineThreadPopover( { api = defaultCommentApi, mode = '
 			return undefined;
 		}
 
-		const onViewportChange = () => repositionToThreadAnchor();
+		// Coalesce scroll/resize bursts into one reposition per frame; passive
+		// listeners so scrolling is never blocked on this work.
+		let rafId = 0;
+		const onViewportChange = () => {
+			if ( rafId ) {
+				return;
+			}
+			rafId = window.requestAnimationFrame( () => {
+				rafId = 0;
+				repositionToThreadAnchor();
+			} );
+		};
 		const attachIframeScroll = ( iframe ) => {
 			try {
 				iframe?.contentWindow?.addEventListener(
 					'scroll',
 					onViewportChange,
-					true
+					{ capture: true, passive: true }
 				);
 			} catch {
 				// cross-origin safety
@@ -427,19 +462,26 @@ export default function InlineThreadPopover( { api = defaultCommentApi, mode = '
 					onViewportChange,
 					true
 				);
-			} catch {
-			}
+			} catch {}
 		};
 		const onIframeReady = ( e ) => attachIframeScroll( e.detail?.iframe );
 		const onIframeRemoved = () => detachIframeScroll( getIframe() );
 
-		window.addEventListener( 'scroll', onViewportChange, true );
-		window.addEventListener( 'resize', onViewportChange );
+		window.addEventListener( 'scroll', onViewportChange, {
+			capture: true,
+			passive: true,
+		} );
+		window.addEventListener( 'resize', onViewportChange, {
+			passive: true,
+		} );
 		window.addEventListener( 'flow:iframe-ready', onIframeReady );
 		window.addEventListener( 'flow:iframe-removed', onIframeRemoved );
 		attachIframeScroll( getIframe() );
 
 		return () => {
+			if ( rafId ) {
+				window.cancelAnimationFrame( rafId );
+			}
 			window.removeEventListener( 'scroll', onViewportChange, true );
 			window.removeEventListener( 'resize', onViewportChange );
 			window.removeEventListener( 'flow:iframe-ready', onIframeReady );
@@ -472,9 +514,7 @@ export default function InlineThreadPopover( { api = defaultCommentApi, mode = '
 		const maxShift = Math.max( 0, cardWidth / 2 - 20 );
 		const anchorLeft = Number( position.anchorLeft || position.left );
 		const popoverCentre =
-			window.innerWidth <= 600
-				? window.innerWidth / 2
-				: position.left;
+			window.innerWidth <= 600 ? window.innerWidth / 2 : position.left;
 		const delta = anchorLeft - popoverCentre;
 		setCaretOffset( Math.max( -maxShift, Math.min( delta, maxShift ) ) );
 	}, [ position ] );
@@ -486,22 +526,25 @@ export default function InlineThreadPopover( { api = defaultCommentApi, mode = '
 		setReplying( false );
 	}, [] );
 
-	const handleMouseDown = useCallback( ( e ) => {
-		if ( eventHitsShadowNode( e, popoverRef.current ) ) {
-			return;
-		}
-		if ( eventInsidePortalUI( e ) ) {
-			return;
-		}
-		const mark = closestFromEventTarget(
-			e.target,
-			`.${ HIGHLIGHT_CLASS }, .${ MEDIA_HIGHLIGHT_CLASS }`
-		);
-		if ( mark ) {
-			return;
-		}
-		handleClose();
-	}, [ handleClose ] );
+	const handleMouseDown = useCallback(
+		( e ) => {
+			if ( eventHitsShadowNode( e, popoverRef.current ) ) {
+				return;
+			}
+			if ( eventInsidePortalUI( e ) ) {
+				return;
+			}
+			const mark = closestFromEventTarget(
+				e.target,
+				`.${ HIGHLIGHT_CLASS }, .${ MEDIA_HIGHLIGHT_CLASS }`
+			);
+			if ( mark ) {
+				return;
+			}
+			handleClose();
+		},
+		[ handleClose ]
+	);
 
 	useEffect( () => {
 		const attachIframe = ( iframe ) => {
@@ -520,8 +563,7 @@ export default function InlineThreadPopover( { api = defaultCommentApi, mode = '
 					'mousedown',
 					handleMouseDown
 				);
-			} catch {
-			}
+			} catch {}
 		};
 
 		document.addEventListener( 'mousedown', handleMouseDown );
@@ -642,17 +684,17 @@ export default function InlineThreadPopover( { api = defaultCommentApi, mode = '
 				<div className="flow-thread-popover__header-actions">
 					{ ! thread.isResolved &&
 						Number( pageData.currentUserId || 0 ) > 0 && (
-						<Button
-							icon={ commentResolveIcon }
-							size="small"
-							className="flow-thread-popover__resolve-icon"
-							label={ __(
-								'Mark as resolved',
-								'jumplinks-editorial-workflow'
-							) }
-							onClick={ handleResolve }
-						/>
-					) }
+							<Button
+								icon={ commentResolveIcon }
+								size="small"
+								className="flow-thread-popover__resolve-icon"
+								label={ __(
+									'Mark as resolved',
+									'jumplinks-editorial-workflow'
+								) }
+								onClick={ handleResolve }
+							/>
+						) }
 					<Button
 						icon={ closeSmall }
 						className="flow-thread-popover__close"

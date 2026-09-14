@@ -48,8 +48,20 @@ export default function BasicCommentEditor( {
 	const [ submitting, setSubmitting ] = useState( false );
 	const [ submitError, setSubmitError ] = useState( null );
 
+	const syncedHtmlRef = useRef( initialHtml );
+	const textRef = useRef( text );
+	textRef.current = text;
 	useEffect( () => {
-		if ( initialHtml !== null ) {
+		if ( initialHtml === null || initialHtml === syncedHtmlRef.current ) {
+			return;
+		}
+		// Someone else edited this comment. Re-syncing a draft the user has
+		// already changed would wipe their typing, so only take the new text
+		// when the box is still untouched.
+		const pristine =
+			textRef.current === htmlToPlainText( syncedHtmlRef.current || '' );
+		syncedHtmlRef.current = initialHtml;
+		if ( pristine ) {
 			setText( htmlToPlainText( initialHtml ) );
 		}
 	}, [ initialHtml ] );
@@ -61,13 +73,13 @@ export default function BasicCommentEditor( {
 
 		const focusField = () => {
 			const el = textareaRef.current;
-			if ( ! el || document.activeElement === el ) {
+			if ( ! el || el.ownerDocument.activeElement === el ) {
 				return true;
 			}
 			el.focus();
 			const len = el.value.length;
 			el.setSelectionRange( len, len );
-			return document.activeElement === el;
+			return el.ownerDocument.activeElement === el;
 		};
 
 		// Clicking "Add Comment" can leave focus on the (unmounted) button or
@@ -98,7 +110,8 @@ export default function BasicCommentEditor( {
 	const isEmpty = ! text.trim();
 	const submitDisabled = isEmpty || submitting || disabled;
 	const showCancel =
-		onCancel != null || ( clearDraftOnCancel && ! submitDisabled );
+		( onCancel !== null && onCancel !== undefined ) ||
+		( clearDraftOnCancel && ! submitDisabled );
 
 	const handleCancelClick = useCallback( () => {
 		if ( onCancel ) {
@@ -123,7 +136,10 @@ export default function BasicCommentEditor( {
 		} catch ( err ) {
 			setSubmitError(
 				err.message ||
-					__( 'Failed to post comment.', 'jumplinks-editorial-workflow' )
+					__(
+						'Failed to post comment.',
+						'jumplinks-editorial-workflow'
+					)
 			);
 		} finally {
 			setSubmitting( false );
@@ -144,7 +160,6 @@ export default function BasicCommentEditor( {
 					) }
 					disabled={ submitting || disabled }
 					rows={ 3 }
-					autoFocus={ autoFocus }
 				/>
 			</div>
 			{ submitError && (

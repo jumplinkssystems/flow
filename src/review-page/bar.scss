@@ -515,6 +515,26 @@ textarea {
 	max-width: 360px;
 }
 
+// wp-components lays the content out as a flex row, which puts the link
+// beside the message and breaks it mid-phrase at this width.
+.flow-bar__snackbar .components-snackbar__content {
+	display: block;
+}
+
+.flow-bar__snackbar-link {
+	display: block;
+	margin-top: 4px;
+	color: #fff;
+	font-weight: 600;
+	text-decoration: underline;
+
+	&:hover,
+	&:focus {
+		color: #fff;
+		opacity: 0.85;
+	}
+}
+
 // ---------------------------------------------------------------------------
 // Mobile: keep only what's needed to drive the review — sidebar toggle and
 // the approve / request-changes buttons. Everything else (centred meta

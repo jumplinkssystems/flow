@@ -3,7 +3,7 @@
  * Always dedupes to a single node so classic-render / MutationObserver races
  * cannot stack copies.
  *
- * @param {object} opts
+ * @param {Object} opts
  * @param {ParentNode} opts.root Drawer/panel root.
  * @param {object|null|undefined} opts.review
  * @param {object|null|undefined} opts.data { href, label, helpText }
@@ -35,7 +35,7 @@ export function syncBuilderReviewerUpsell( opts ) {
 		select.dataset.inviteEmail ||
 		''
 	).trim();
-	const hasReviewer = !!(
+	const hasReviewer = !! (
 		val === 'email' ||
 		Number( val ) > 0 ||
 		invite.length > 0 ||

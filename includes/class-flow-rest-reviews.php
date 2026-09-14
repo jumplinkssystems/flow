@@ -12,6 +12,73 @@ class REST_Reviews extends \WP_REST_Controller {
 	protected $namespace = 'flow/v1';
 	protected $rest_base = 'reviews';
 
+	/**
+	 * @return array<string,mixed>
+	 */
+	private static function int_arg( bool $required = true, ?int $fallback = null ): array {
+		$arg = [
+			'required'          => $required,
+			'type'              => 'integer',
+			'sanitize_callback' => 'absint',
+		];
+		if ( null !== $fallback ) {
+			$arg['default'] = $fallback;
+		}
+		return $arg;
+	}
+
+	/**
+	 * @return array<string,mixed>
+	 */
+	private static function text_arg( bool $required = false ): array {
+		return [
+			'required'          => $required,
+			'type'              => 'string',
+			'sanitize_callback' => 'sanitize_text_field',
+		];
+	}
+
+	/** `comment_text` is a TEXT column: 65 535 bytes after kses. */
+	const MAX_COMMENT_BYTES = 60000;
+
+	/**
+	 * Byte-length validator for string args; bytes, not characters, are what
+	 * the database column limit counts.
+	 */
+	private static function max_bytes( int $limit ): callable {
+		return static function ( $value, $request, string $param ) use ( $limit ) {
+			unset( $request );
+			if ( is_string( $value ) && strlen( $value ) > $limit ) {
+				return new \WP_Error(
+					'rest_invalid_param',
+					sprintf(
+						/* translators: 1: parameter name, 2: maximum size in bytes */
+						__( '%1$s is too long (maximum %2$d bytes).', 'jumplinks-editorial-workflow' ),
+						$param,
+						$limit
+					),
+					[ 'status' => 400 ]
+				);
+			}
+			return true;
+		};
+	}
+
+	/**
+	 * @return array<string,mixed>
+	 */
+	private static function bounded_text_arg( int $limit, bool $required = false, ?string $fallback = '' ): array {
+		$arg = [
+			'required'          => $required,
+			'type'              => 'string',
+			'validate_callback' => self::max_bytes( $limit ),
+		];
+		if ( null !== $fallback ) {
+			$arg['default'] = $fallback;
+		}
+		return $arg;
+	}
+
 	public function register_routes(): void {
 		register_rest_route(
 			$this->namespace,
@@ -35,11 +102,7 @@ class REST_Reviews extends \WP_REST_Controller {
 					'callback'            => [ $this, 'get_item' ],
 					'permission_callback' => [ $this, 'get_item_permissions_check' ],
 					'args'                => [
-						'post_id' => [
-							'required'          => true,
-							'type'              => 'integer',
-							'sanitize_callback' => 'absint',
-						],
+						'post_id' => self::int_arg(),
 					],
 				],
 			]
@@ -66,16 +129,27 @@ class REST_Reviews extends \WP_REST_Controller {
 						'callback'            => [ $this, $callback ],
 						'permission_callback' => [ $this, 'action_permissions_check' ],
 						'args'                => [
-							'id' => [
-								'required'          => true,
-								'type'              => 'integer',
-								'sanitize_callback' => 'absint',
-							],
+							'id' => self::int_arg(),
 						],
 					],
 				]
 			);
 		}
+
+		register_rest_route(
+			$this->namespace,
+			'/' . $this->rest_base . '/(?P<id>[\d]+)/comments/sync',
+			[
+				'methods'             => \WP_REST_Server::READABLE,
+				'callback'            => [ $this, 'get_comment_sync' ],
+				'permission_callback' => [ $this, 'read_comments_permissions_check' ],
+				'args'                => [
+					'id'       => self::int_arg(),
+					'version'  => self::bounded_text_arg( 64 ),
+					'revision' => self::int_arg( false, 0 ),
+				],
+			]
+		);
 
 		register_rest_route(
 			$this->namespace,
@@ -86,11 +160,7 @@ class REST_Reviews extends \WP_REST_Controller {
 					'callback'            => [ $this, 'get_comment_items' ],
 					'permission_callback' => [ $this, 'action_permissions_check' ],
 					'args'                => [
-						'id' => [
-							'required'          => true,
-							'type'              => 'integer',
-							'sanitize_callback' => 'absint',
-						],
+						'id' => self::int_arg(),
 					],
 				],
 				[
@@ -98,41 +168,13 @@ class REST_Reviews extends \WP_REST_Controller {
 					'callback'            => [ $this, 'create_comment_item' ],
 					'permission_callback' => [ $this, 'action_permissions_check' ],
 					'args'                => [
-						'id'            => [
-							'required'          => true,
-							'type'              => 'integer',
-							'sanitize_callback' => 'absint',
-						],
-						'html'          => [
-							'required' => true,
-							'type'     => 'string',
-						],
-						'parentId'      => [
-							'required'          => false,
-							'type'              => 'integer',
-							'sanitize_callback' => 'absint',
-							'default'           => 0,
-						],
-						'anchorText'    => [
-							'required' => false,
-							'type'     => 'string',
-							'default'  => '',
-						],
-						'blockClientId' => [
-							'required' => false,
-							'type'     => 'string',
-							'default'  => '',
-						],
-						'authorName'    => [
-							'required' => false,
-							'type'     => 'string',
-							'default'  => '',
-						],
-						'authorEmail'   => [
-							'required' => false,
-							'type'     => 'string',
-							'default'  => '',
-						],
+						'id'            => self::int_arg(),
+						'html'          => self::bounded_text_arg( self::MAX_COMMENT_BYTES, true, null ),
+						'parentId'      => self::int_arg( false, 0 ),
+						'anchorText'    => self::bounded_text_arg( 5000 ),
+						'blockClientId' => self::bounded_text_arg( 5000 ),
+						'authorName'    => self::bounded_text_arg( 190 ),
+						'authorEmail'   => self::bounded_text_arg( 190 ),
 					],
 				],
 			]
@@ -147,15 +189,8 @@ class REST_Reviews extends \WP_REST_Controller {
 					'callback'            => [ $this, 'update_comment_item' ],
 					'permission_callback' => [ $this, 'comment_update_permissions_check' ],
 					'args'                => [
-						'comment_id' => [
-							'required'          => true,
-							'type'              => 'integer',
-							'sanitize_callback' => 'absint',
-						],
-						'html'       => [
-							'required' => false,
-							'type'     => 'string',
-						],
+						'comment_id' => self::int_arg(),
+						'html'       => self::bounded_text_arg( self::MAX_COMMENT_BYTES, false, null ),
 						'resolved'   => [
 							'required' => false,
 							'type'     => 'boolean',
@@ -167,11 +202,7 @@ class REST_Reviews extends \WP_REST_Controller {
 					'callback'            => [ $this, 'delete_comment_item' ],
 					'permission_callback' => [ $this, 'comment_ownership_check' ],
 					'args'                => [
-						'comment_id' => [
-							'required'          => true,
-							'type'              => 'integer',
-							'sanitize_callback' => 'absint',
-						],
+						'comment_id' => self::int_arg(),
 					],
 				],
 			]
@@ -186,11 +217,7 @@ class REST_Reviews extends \WP_REST_Controller {
 					'callback'            => [ $this, 'get_reviewers' ],
 					'permission_callback' => [ $this, 'get_reviewers_permissions_check' ],
 					'args'                => [
-						'post_id' => [
-							'required'          => false,
-							'type'              => 'integer',
-							'sanitize_callback' => 'absint',
-						],
+						'post_id' => self::int_arg( false ),
 					],
 				],
 			]
@@ -205,11 +232,7 @@ class REST_Reviews extends \WP_REST_Controller {
 					'callback'            => [ $this, 'get_invite_link' ],
 					'permission_callback' => [ $this, 'invite_link_permissions_check' ],
 					'args'                => [
-						'id'    => [
-							'required'          => true,
-							'type'              => 'integer',
-							'sanitize_callback' => 'absint',
-						],
+						'id'    => self::int_arg(),
 						'email' => [
 							'type'              => 'string',
 							'default'           => '',
@@ -249,43 +272,13 @@ class REST_Reviews extends \WP_REST_Controller {
 					'callback'            => [ $this, 'list_reviews' ],
 					'permission_callback' => [ $this, 'list_reviews_permissions_check' ],
 					'args'                => [
-						'status'       => [
-							'required'          => false,
-							'type'              => 'string',
-							'sanitize_callback' => 'sanitize_text_field',
-						],
-						'reviewer_id'  => [
-							'required'          => false,
-							'type'              => 'integer',
-							'sanitize_callback' => 'absint',
-						],
-						'requester_id' => [
-							'required'          => false,
-							'type'              => 'integer',
-							'sanitize_callback' => 'absint',
-						],
-						'post_type'    => [
-							'required'          => false,
-							'type'              => 'string',
-							'sanitize_callback' => 'sanitize_text_field',
-						],
-						'assigned_to'  => [
-							'required'          => false,
-							'type'              => 'string',
-							'sanitize_callback' => 'sanitize_text_field',
-						],
-						'per_page'     => [
-							'required'          => false,
-							'type'              => 'integer',
-							'default'           => 20,
-							'sanitize_callback' => 'absint',
-						],
-						'page'         => [
-							'required'          => false,
-							'type'              => 'integer',
-							'default'           => 1,
-							'sanitize_callback' => 'absint',
-						],
+						'status'       => self::text_arg(),
+						'reviewer_id'  => self::int_arg( false ),
+						'requester_id' => self::int_arg( false ),
+						'post_type'    => self::text_arg(),
+						'assigned_to'  => self::text_arg(),
+						'per_page'     => self::int_arg( false, 20 ),
+						'page'         => self::int_arg( false, 1 ),
 					],
 				],
 			]
@@ -300,12 +293,7 @@ class REST_Reviews extends \WP_REST_Controller {
 					'callback'            => [ $this, 'get_activity' ],
 					'permission_callback' => [ $this, 'list_reviews_permissions_check' ],
 					'args'                => [
-						'per_page' => [
-							'required'          => false,
-							'type'              => 'integer',
-							'default'           => 20,
-							'sanitize_callback' => 'absint',
-						],
+						'per_page' => self::int_arg( false, 20 ),
 					],
 				],
 			]
@@ -504,6 +492,56 @@ class REST_Reviews extends \WP_REST_Controller {
 		return rest_ensure_response( $this->prepare_review( $updated ) );
 	}
 
+	/**
+	 * Poll target for an open review page: answers "did anything move?" from
+	 * one aggregate query, and only serialises comments when the answer is yes.
+	 */
+	public function get_comment_sync( \WP_REST_Request $request ) {
+		$review = DB::get_review( (int) $request->get_param( 'id' ) );
+		if ( ! $review ) {
+			return new \WP_Error( 'flow_ew_not_found', __( 'Review not found.', 'jumplinks-editorial-workflow' ), [ 'status' => 404 ] );
+		}
+		$type_ok = $this->assert_review_post_type_supported( $review );
+		if ( is_wp_error( $type_ok ) ) {
+			return $type_ok;
+		}
+
+		$known   = (string) $request->get_param( 'version' );
+		$version = Comment_Presenter::version(
+			DB::get_comments_state( (int) $review->post_id, (int) $review->id ),
+			$review
+		);
+		if ( '' !== $known && $known === $version ) {
+			return rest_ensure_response(
+				[
+					'version' => $version,
+					'changed' => false,
+				]
+			);
+		}
+
+		$lists = Comment_Presenter::list_for_review( $review );
+
+		return rest_ensure_response(
+			(array) \apply_filters(
+				'flow_ew_review_sync_payload',
+				[
+					// Recomputed from the rows just read, so a comment landing
+					// between the two queries is not skipped until the next poll.
+					'version'        => $lists['commentsVersion'],
+					'changed'        => true,
+					'comments'       => $lists['comments'],
+					'inlineComments' => $lists['inlineComments'],
+					'review'         => ReviewPage::review_state_payload(
+						$review,
+						(int) $request->get_param( 'revision' ) ?: null
+					),
+				],
+				$review
+			)
+		);
+	}
+
 	public function get_comment_items( \WP_REST_Request $request ) {
 		$review_id = (int) $request->get_param( 'id' );
 		$review    = DB::get_review( $review_id );
@@ -529,11 +567,11 @@ class REST_Reviews extends \WP_REST_Controller {
 			return $type_ok;
 		}
 
-		$html      = wp_kses_post( (string) $request->get_param( 'html' ) );
+		$html      = Comment_Html::sanitize( (string) $request->get_param( 'html' ) );
 		$user_id   = get_current_user_id();
 		$parent_id = (int) $request->get_param( 'parentId' );
 
-		$html            = (string) \apply_filters(
+		$html = (string) \apply_filters(
 			'flow_ew_filter_comment_html',
 			$html,
 			[
@@ -542,10 +580,21 @@ class REST_Reviews extends \WP_REST_Controller {
 				'is_edit' => false,
 			]
 		);
+		if ( strlen( $html ) > 65535 ) {
+			return new \WP_Error( 'rest_invalid_param', __( 'This comment is too long.', 'jumplinks-editorial-workflow' ), [ 'status' => 400 ] );
+		}
 		$anchor_text     = sanitize_text_field( (string) $request->get_param( 'anchorText' ) );
 		$block_client_id = sanitize_text_field( (string) $request->get_param( 'blockClientId' ) );
 		$author_name     = sanitize_text_field( (string) $request->get_param( 'authorName' ) );
 		$author_email    = sanitize_email( (string) $request->get_param( 'authorEmail' ) );
+
+		$parent = null;
+		if ( $parent_id > 0 ) {
+			$parent = DB::get_comment( $parent_id );
+			if ( ! $parent || (int) $parent->review_id !== $review_id ) {
+				return new \WP_Error( 'flow_ew_invalid_parent', __( 'The parent comment does not belong to this review.', 'jumplinks-editorial-workflow' ), [ 'status' => 400 ] );
+			}
+		}
 
 		$invite = ( 0 === $user_id ) ? Email_Review::current_invite_for_review( $review_id ) : null;
 		if ( $invite ) {
@@ -608,13 +657,10 @@ class REST_Reviews extends \WP_REST_Controller {
 			$insert_data['block_client_id'] = $block_client_id;
 		}
 
-		if ( $parent_id > 0 ) {
-			$parent = DB::get_comment( $parent_id );
-			if ( $parent ) {
-				$insert_data['parent_id'] = (int) $parent->parent_id > 0
-					? (int) $parent->parent_id
-					: $parent_id;
-			}
+		if ( $parent ) {
+			$insert_data['parent_id'] = (int) $parent->parent_id > 0
+				? (int) $parent->parent_id
+				: $parent_id;
 		}
 
 		$comment_id = DB::insert_comment( $insert_data );
@@ -625,38 +671,14 @@ class REST_Reviews extends \WP_REST_Controller {
 
 		\do_action( 'flow_ew_comment_created', $comment_id, $review_id, (int) $review->post_id, $user_id );
 
-		$author          = $user_id > 0 ? get_userdata( $user_id ) : null;
-		$display_name    = $author
-			? $author->display_name
-			: ( '' !== $author_name ? $author_name : __( 'Reviewer', 'jumplinks-editorial-workflow' ) );
-		$avatar_identity = $user_id > 0 ? $user_id : ( '' !== $author_email ? $author_email : '' );
-		$now             = time();
-
-		return rest_ensure_response(
-			[
-				'id'            => $comment_id,
-				'html'          => $html,
-				'author'        => $display_name,
-				'authorId'      => $user_id,
-				'avatarUrl'     => '' !== $avatar_identity
-					? (string) ( get_avatar_url( $avatar_identity, [ 'size' => 56 ] ) ?: '' )
-					: '',
-				'parentId'      => $insert_data['parent_id'] ?? 0,
-				'isResolved'    => false,
-				'anchorText'    => $anchor_text ?: null,
-				'blockClientId' => $block_client_id ?: null,
-				'date'          => (string) wp_date(
-					get_option( 'date_format' ) . ' ' . get_option( 'time_format' ),
-					$now
-				),
-			]
-		);
+		$row = DB::get_comment( $comment_id );
+		return rest_ensure_response( $row ? Comment_Presenter::to_array( $row ) : [ 'id' => $comment_id ] );
 	}
 
 	public function update_comment_item( \WP_REST_Request $request ) {
 		$comment_id = (int) $request->get_param( 'comment_id' );
 		$html       = $request->has_param( 'html' )
-			? wp_kses_post( (string) $request->get_param( 'html' ) )
+			? Comment_Html::sanitize( (string) $request->get_param( 'html' ) )
 			: null;
 		$resolved   = $request->has_param( 'resolved' )
 			? (bool) $request->get_param( 'resolved' )
@@ -664,9 +686,9 @@ class REST_Reviews extends \WP_REST_Controller {
 
 		$update_data = [];
 		if ( null !== $html ) {
-			$comment                     = DB::get_comment( $comment_id );
-			$review_for                  = $comment ? DB::get_review( (int) $comment->review_id ) : null;
-			$html                        = (string) \apply_filters(
+			$comment    = DB::get_comment( $comment_id );
+			$review_for = $comment ? DB::get_review( (int) $comment->review_id ) : null;
+			$html       = (string) \apply_filters(
 				'flow_ew_filter_comment_html',
 				$html,
 				[
@@ -675,6 +697,9 @@ class REST_Reviews extends \WP_REST_Controller {
 					'is_edit' => true,
 				]
 			);
+			if ( strlen( $html ) > 65535 ) {
+				return new \WP_Error( 'rest_invalid_param', __( 'This comment is too long.', 'jumplinks-editorial-workflow' ), [ 'status' => 400 ] );
+			}
 			$update_data['comment_text'] = $html;
 		}
 		if ( null !== $resolved ) {
@@ -810,10 +835,11 @@ class REST_Reviews extends \WP_REST_Controller {
 		if ( ! empty( $reviewer_roles ) ) {
 			$users = get_users(
 				[
-					'role__in' => $reviewer_roles,
-					'exclude'  => [ get_current_user_id() ],
-					'fields'   => [ 'ID', 'display_name' ],
-					'number'   => 200,
+					'role__in'    => $reviewer_roles,
+					'exclude'     => [ get_current_user_id() ],
+					'fields'      => [ 'ID', 'display_name' ],
+					'number'      => 200,
+					'count_total' => false,
 				]
 			);
 
@@ -892,6 +918,22 @@ class REST_Reviews extends \WP_REST_Controller {
 			__( 'You do not have permission to view this review.', 'jumplinks-editorial-workflow' ),
 			[ 'status' => 403 ]
 		);
+	}
+
+	/**
+	 * Reading comments is wider than acting on a review: the post author may
+	 * view the review page, so they may read its comments too.
+	 */
+	public function read_comments_permissions_check( \WP_REST_Request $request ) {
+		$result = $this->action_permissions_check( $request );
+		if ( true === $result || ! is_user_logged_in() ) {
+			return $result;
+		}
+		$review = DB::get_review( (int) $request->get_param( 'id' ) );
+		if ( $review && Review::can_user_read_comments( $review, get_current_user_id() ) ) {
+			return true;
+		}
+		return $result;
 	}
 
 	public function action_permissions_check( \WP_REST_Request $request ) {
@@ -974,9 +1016,10 @@ class REST_Reviews extends \WP_REST_Controller {
 		$users = get_users(
 			[
 				'search'         => '*' . $q . '*',
-				'search_columns' => [ 'user_login', 'display_name' ],
+				'search_columns' => [ 'display_name' ],
 				'number'         => 20,
 				'fields'         => [ 'ID', 'display_name' ],
+				'count_total'    => false,
 			]
 		);
 
@@ -1101,6 +1144,7 @@ class REST_Reviews extends \WP_REST_Controller {
 		$per_page    = max( 1, min( 100, $args['per_page'] ?: 20 ) );
 		$total_pages = (int) ceil( $total / $per_page );
 
+		Review::prime_review_list_caches( $reviews );
 		$data = array_map( [ $this, 'prepare_review' ], $reviews );
 
 		$response = rest_ensure_response( $data );
@@ -1124,7 +1168,8 @@ class REST_Reviews extends \WP_REST_Controller {
 		$per_page            = max( 1, min( 100, (int) $request->get_param( 'per_page' ) ) );
 		$participant_user_id = current_user_can( 'flow_manage_reviews' ) ? 0 : get_current_user_id();
 		$reviews             = DB::get_recent_activity( $per_page, $participant_user_id );
-		$data                = array_map( [ $this, 'prepare_review' ], $reviews );
+		Review::prime_review_list_caches( $reviews );
+		$data = array_map( [ $this, 'prepare_review' ], $reviews );
 
 		return rest_ensure_response( $data );
 	}

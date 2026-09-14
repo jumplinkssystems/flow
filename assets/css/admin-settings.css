@@ -188,3 +188,83 @@
 	line-height: 1.5;
 	margin: 8px 0 0;
 }
+
+/* Settings fields */
+.flow-ew-settings-check,
+.flow-ew-settings-radio,
+.flow-ew-settings-pt-item {
+	display: flex;
+	align-items: flex-start;
+	gap: 8px;
+	cursor: pointer;
+}
+
+.flow-ew-settings-radio {
+	margin-bottom: 12px;
+}
+
+.flow-ew-settings-radio:last-child {
+	margin-bottom: 0;
+}
+
+.flow-ew-settings-pt-item {
+	align-items: center;
+	margin-bottom: 8px;
+}
+
+.flow-ew-settings-check input,
+.flow-ew-settings-radio input {
+	margin-top: 3px;
+	flex-shrink: 0;
+}
+
+.flow-ew-settings-intro {
+	margin-top: 0;
+	margin-bottom: 10px;
+}
+
+.flow-ew-settings-select-all {
+	display: inline-block;
+	font-size: 12px;
+	text-decoration: none;
+	margin-bottom: 10px;
+}
+
+.flow-ew-settings-divider {
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+	border-top: 1px solid #ddd;
+	margin-bottom: 10px;
+}
+
+.flow-ew-rating-prompt {
+	color: #646970;
+	font-size: 13px;
+	margin: 0 0 1em;
+}
+
+/* Settings tabs: one form, sections shown one at a time. */
+.flow-ew-settings-tabs {
+	/* `.nav-tab` floats, which collapses the nav and lets the panel heading
+	   overlap the buttons. Flex keeps them in flow. */
+	display: flex;
+	flex-wrap: wrap;
+	margin-bottom: 0;
+}
+
+.flow-ew-settings-tabs .nav-tab {
+	background: none;
+	cursor: pointer;
+	float: none;
+	font-size: 14px;
+	line-height: inherit;
+}
+
+.flow-ew-settings-tab-panel {
+	padding-top: 4px;
+}
+
+.flow-ew-settings-tab-panel > h2:first-of-type {
+	margin-top: 1em;
+}

@@ -199,17 +199,23 @@ final class Assets {
 	}
 
 	/**
-	 * Prefer SCRIPT_DEBUG-driven names, but fall back when only one bundle exists
-	 * (e.g. after `npm run build:readable` without `build:minified`).
-	 *
-	 * @param string $absolute_path_without_extension Full path without .js / .min.js.
-	 * @param string $ext                           "js" or "css".
+	 * Enqueue the classic-editor bundle and `flowEW` localization payload. Every
+	 * builder integration loads it before its own bundle.
 	 */
-	/**
-	 * Enqueue the classic-editor bundle and `flowEW` localization payload. Shared
-	 * by the Bricks and Elementor builder integrations, which load it before their
-	 * own bundles.
-	 */
+	/** Register (once) and return the handle of the status-colour custom properties. */
+	public static function status_tokens_handle(): string {
+		if ( ! wp_style_is( 'flow-ew-status-tokens', 'registered' ) ) {
+			$path = FLOW_EW_PLUGIN_DIR . 'assets/css/status-tokens.css';
+			wp_register_style(
+				'flow-ew-status-tokens',
+				FLOW_EW_PLUGIN_URL . 'assets/css/status-tokens.css',
+				[],
+				file_exists( $path ) ? (string) filemtime( $path ) : FLOW_EW_VERSION
+			);
+		}
+		return 'flow-ew-status-tokens';
+	}
+
 	public static function enqueue_classic_editor_companion( int $post_id ): void {
 		$asset_file = FLOW_EW_PLUGIN_DIR . 'build/classic-editor/index.asset.php';
 		if ( ! file_exists( $asset_file ) ) {
@@ -232,7 +238,7 @@ final class Assets {
 			'flow-ew-classic-editor',
 			FLOW_EW_PLUGIN_URL . 'build/classic-editor/style-index' . $css . '.css',
 			[],
-			$asset['version']
+			self::style_version( FLOW_EW_PLUGIN_DIR . 'build/classic-editor/style-index' . $css . '.css', (string) $asset['version'] )
 		);
 		wp_localize_script(
 			'flow-ew-classic-editor',
@@ -242,9 +248,8 @@ final class Assets {
 	}
 
 	/**
-	 * Enqueue a per-builder companion bundle (`bricks` or `elementor`) that
-	 * depends on the classic-editor bundle. Caller must have already enqueued
-	 * the companion via {@see enqueue_classic_editor_companion()}.
+	 * Enqueue a per-builder bundle that depends on the classic-editor bundle.
+	 * Caller must have already run {@see enqueue_classic_editor_companion()}.
 	 */
 	public static function enqueue_builder_bundle( string $name ): void {
 		$asset_file = FLOW_EW_PLUGIN_DIR . "build/{$name}/index.asset.php";
@@ -266,8 +271,39 @@ final class Assets {
 			"flow-ew-{$name}",
 			FLOW_EW_PLUGIN_URL . "build/{$name}/style-index{$css}.css",
 			[ 'flow-ew-classic-editor' ],
-			$asset['version']
+			self::style_version( FLOW_EW_PLUGIN_DIR . "build/{$name}/style-index{$css}.css", (string) $asset['version'] )
 		);
+	}
+
+	/**
+	 * Prefer SCRIPT_DEBUG-driven names, but fall back when only one bundle exists
+	 * (e.g. after `npm run build:readable` without `build:minified`).
+	 *
+	 * @param string $absolute_path_without_extension Full path without .js / .min.js.
+	 * @param string $ext                           "js" or "css".
+	 */
+	/**
+	 * Hex for a review status, read from the palette the generated CSS tokens
+	 * are built from (`assets/status-palette.json`). Empty when the palette or
+	 * the status is missing, so callers can fall back to an inherited colour.
+	 */
+	public static function status_color( string $status, string $key = 'text' ): string {
+		static $palette = null;
+		if ( null === $palette ) {
+			$decoded = wp_json_file_decode( FLOW_EW_PLUGIN_DIR . 'assets/status-palette.json', [ 'associative' => true ] );
+			$palette = is_array( $decoded ) ? $decoded : [];
+		}
+		$value = isset( $palette[ $status ][ $key ] ) ? (string) $palette[ $status ][ $key ] : '';
+		return 1 === preg_match( '/^#[0-9a-f]{3,8}$/i', $value ) ? $value : '';
+	}
+
+	/**
+	 * Compiled stylesheets share the JS chunk hash from `*.asset.php`, which
+	 * does not change on a CSS-only rebuild; the file's mtime does.
+	 */
+	public static function style_version( string $absolute_path, string $fallback ): string {
+		$mtime = file_exists( $absolute_path ) ? filemtime( $absolute_path ) : false;
+		return false === $mtime ? $fallback : $fallback . '.' . $mtime;
 	}
 
 	public static function webpack_build_suffix( string $absolute_path_without_extension, string $ext ): string {
