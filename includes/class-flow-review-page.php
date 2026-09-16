@@ -525,6 +525,8 @@ class ReviewPage {
 			'currentUserId'      => $current_user_id,
 			// Seconds between comment sync polls; 0 turns polling off.
 			'syncInterval'       => max( 0, (int) apply_filters( 'flow_ew_comment_sync_interval', 15 ) ),
+			'hintVideoWebm'      => Assets::asset_url( 'assets/highlight.webm' ),
+			'hintVideoMp4'       => Assets::asset_url( 'assets/highlight.mp4' ),
 		];
 
 		$review = $review_id ? DB::get_review( $review_id ) : null;

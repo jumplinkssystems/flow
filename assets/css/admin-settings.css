@@ -268,3 +268,48 @@
 .flow-ew-settings-tab-panel > h2:first-of-type {
 	margin-top: 1em;
 }
+
+/* Dependent block under the "Let AI agents write comments" switch. */
+
+/* WordPress puts this class on the <tr>; the toggle script hides the row. */
+tr.flow-ew-agent-dependent[hidden] {
+	display: none;
+}
+
+.flow-ew-agent-author-error {
+	margin: 0 0 8px;
+	color: #b32d2e;
+	font-weight: 500;
+}
+
+.flow-ew-agent-author-error[hidden] {
+	display: none;
+}
+
+.flow-ew-user-combobox__option-name {
+	display: block;
+}
+
+.flow-ew-user-combobox__option-meta {
+	display: block;
+	font-size: 11px;
+	line-height: 1.4;
+	color: #646970;
+}
+
+/* "Experimental" marker riding along with a settings row title. */
+.flow-ew-experimental {
+	display: inline-block;
+	margin-left: 6px;
+	padding: 1px 6px;
+	border: 1px solid #d6a300;
+	border-radius: 9px;
+	background: #fcf3d4;
+	color: #7a5c00;
+	font-size: 10px;
+	font-weight: 600;
+	line-height: 1.7;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	vertical-align: middle;
+}

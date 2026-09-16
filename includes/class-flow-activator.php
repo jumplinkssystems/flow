@@ -78,6 +78,7 @@ class Activator {
 			author_email    VARCHAR(190) DEFAULT NULL,
 			parent_id       BIGINT(20) UNSIGNED DEFAULT NULL,
 			is_resolved     TINYINT(1) NOT NULL DEFAULT 0,
+			is_agent        TINYINT(1) NOT NULL DEFAULT 0,
 			created_at      DATETIME NOT NULL,
 			updated_at      DATETIME NOT NULL,
 			PRIMARY KEY  (id),

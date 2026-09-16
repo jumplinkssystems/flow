@@ -56,6 +56,9 @@ export default function CommentCard( {
 	}, [ editing, comment.id ] );
 	const [ menuOpen, setMenuOpen ] = useState( false );
 	const [ truncated, setTruncated ] = useState( false );
+	// Expanding one long comment is separate from expanding the whole thread.
+	const [ bodyExpanded, setBodyExpanded ] = useState( false );
+	const expanded = isThreadExpanded || bodyExpanded;
 	const bodyRef = useRef( null );
 	const editEditorRef = useRef( null );
 	const menuRef = useRef( null );
@@ -166,11 +169,16 @@ export default function CommentCard( {
 						{ initials }
 					</span>
 				) }
-				<span
-					className="flow-comment-card__author"
-					title={ comment.author }
-				>
-					{ comment.author }
+				<span className="flow-comment-card__byline">
+					<span
+						className="flow-comment-card__author"
+						title={ comment.author }
+					>
+						{ comment.author }
+					</span>
+					{ comment.isAgent && (
+						<span className="flow-comment-card__agent">AI</span>
+					) }
 				</span>
 				<span className="flow-comment-card__date">
 					{ comment.date }
@@ -288,22 +296,41 @@ export default function CommentCard( {
 						ref={ bodyRef }
 						role="presentation"
 						className={ `flow-comment-card__body${
-							truncated && ! isThreadExpanded
+							truncated && ! expanded
 								? ' flow-comment-card__body--truncated'
 								: ''
 						}` }
 						dangerouslySetInnerHTML={ { __html: comment.html } }
 						onClick={ () => {
-							if (
-								truncated &&
-								! isThreadExpanded &&
-								canTriggerExpand &&
-								onRequestExpand
-							) {
-								onRequestExpand();
+							if ( ! truncated || expanded ) {
+								return;
 							}
+							if ( canTriggerExpand && onRequestExpand ) {
+								onRequestExpand();
+								return;
+							}
+							setBodyExpanded( true );
 						} }
 					/>
+					{ truncated && ! isThreadExpanded && (
+						<button
+							type="button"
+							className="flow-comment-card__more"
+							onClick={ () =>
+								setBodyExpanded( ( prev ) => ! prev )
+							}
+						>
+							{ bodyExpanded
+								? __(
+										'Show less',
+										'jumplinks-editorial-workflow'
+								  )
+								: __(
+										'Read more',
+										'jumplinks-editorial-workflow'
+								  ) }
+						</button>
+					) }
 				</>
 			) }
 		</div>

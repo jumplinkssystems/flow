@@ -371,6 +371,7 @@ class DB {
 			'author_email'    => '%s',
 			'parent_id'       => '%d',
 			'is_resolved'     => '%d',
+			'is_agent'        => '%d',
 			'created_at'      => '%s',
 			'updated_at'      => '%s',
 		];

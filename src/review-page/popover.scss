@@ -660,6 +660,15 @@
 		background: transparent;
 	}
 
+	&__byline {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		min-width: 0;
+		grid-column: 2;
+		grid-row: 1;
+	}
+
 	&__author {
 		font-weight: 600;
 		font-size: 12px;
@@ -668,8 +677,18 @@
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
-		grid-column: 2;
-		grid-row: 1;
+	}
+
+	&__agent {
+		flex: none;
+		padding: 0 5px;
+		border: 1px solid #c3c4c7;
+		border-radius: 2px;
+		font-size: 9px;
+		font-weight: 600;
+		line-height: 15px;
+		letter-spacing: 0.04em;
+		color: #757575;
 	}
 
 	&__date {
@@ -957,5 +976,18 @@
 		border-radius: 2px;
 		color: #cc1818;
 		font-size: 12px;
+	}
+}
+
+.flow-thread-popover__reopen {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	margin-bottom: 8px;
+	font-size: 12px;
+	cursor: pointer;
+
+	input {
+		margin: 0;
 	}
 }

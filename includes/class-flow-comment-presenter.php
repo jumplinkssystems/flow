@@ -151,6 +151,7 @@ final class Comment_Presenter {
 				? (string) ( get_avatar_url( $avatar_identity, [ 'size' => 56 ] ) ?: '' )
 				: '',
 			'parentId'      => (int) ( $c->parent_id ?? 0 ),
+			'isAgent'       => Settings::should_mark_agent_comments() && ! empty( $c->is_agent ),
 			'isResolved'    => (bool) ( $c->is_resolved ?? false ),
 			'anchorText'    => $anchor_text ?: null,
 			'blockClientId' => ( $c->block_client_id ?? null ) ?: null,

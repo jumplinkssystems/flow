@@ -55,11 +55,16 @@ function CommentAuthorRow( {
 					{ getInitials( comment.author ) }
 				</span>
 			) }
-			<span
-				className="flow-thread-popover__author"
-				title={ comment.author }
-			>
-				{ comment.author }
+			<span className="flow-thread-popover__byline">
+				<span
+					className="flow-thread-popover__author"
+					title={ comment.author }
+				>
+					{ comment.author }
+				</span>
+				{ comment.isAgent && (
+					<span className="flow-thread-popover__agent">AI</span>
+				) }
 			</span>
 			<span className="flow-thread-popover__date">{ comment.date }</span>
 		</div>
@@ -170,6 +175,9 @@ export default function InlineThreadPopover( {
 	const [ thread, setThread ] = useState( null );
 	const [ position, setPosition ] = useState( null );
 	const [ replying, setReplying ] = useState( false );
+	// Replying to a resolved thread almost always means the fix was wrong, so
+	// reopening is the default. The box is visible, so it is easy to opt out.
+	const [ reopen, setReopen ] = useState( true );
 	const commentsRef = useRef( pageData.inlineComments || [] );
 	const openThreadRootIdRef = useRef( null );
 	const popoverRef = useRef( null );
@@ -292,9 +300,11 @@ export default function InlineThreadPopover( {
 			if ( ! commentId ) {
 				return;
 			}
+			// Reopening a thread sends the same event with `resolved: false`.
+			const resolved = e.detail?.resolved ?? true;
 			const cid = Number( commentId );
 			commentsRef.current = commentsRef.current.map( ( c ) =>
-				Number( c.id ) === cid ? { ...c, isResolved: true } : c
+				Number( c.id ) === cid ? { ...c, isResolved: resolved } : c
 			);
 			rebuildOpenThread();
 		};
@@ -649,10 +659,31 @@ export default function InlineThreadPopover( {
 					detail: { comment },
 				} )
 			);
+
+			if ( thread.isResolved && reopen ) {
+				await api.updateComment( thread.id, { resolved: false } );
+				const tid = Number( thread.id );
+				// Update the ref before rebuilding: the rebuild reads from it.
+				commentsRef.current = commentsRef.current.map( ( c ) =>
+					Number( c.id ) === tid ? { ...c, isResolved: false } : c
+				);
+				window.dispatchEvent(
+					new CustomEvent( 'flow:highlight-resolve', {
+						detail: { commentId: thread.id, resolved: false },
+					} )
+				);
+				window.dispatchEvent(
+					new CustomEvent( 'flow:inline-comment-resolved', {
+						detail: { commentId: thread.id, resolved: false },
+					} )
+				);
+			}
+
 			rebuildOpenThread();
 			setReplying( false );
+			setReopen( true );
 		},
-		[ thread, rebuildOpenThread, api ]
+		[ thread, rebuildOpenThread, api, reopen ]
 	);
 
 	if ( ! thread || ! position ) {
@@ -730,8 +761,29 @@ export default function InlineThreadPopover( {
 					</div>
 				) }
 
+				{ thread.isResolved && (
+					<div className="flow-thread-popover__resolved-badge">
+						{ __( 'Resolved', 'jumplinks-editorial-workflow' ) }
+					</div>
+				) }
+
 				{ replying && (
 					<div className="flow-thread-popover__reply-editor">
+						{ thread.isResolved && (
+							<label className="flow-thread-popover__reopen">
+								<input
+									type="checkbox"
+									checked={ reopen }
+									onChange={ ( e ) =>
+										setReopen( e.target.checked )
+									}
+								/>
+								{ __(
+									'Reopen this thread',
+									'jumplinks-editorial-workflow'
+								) }
+							</label>
+						) }
 						<CommentEditor
 							autoFocus
 							onSubmit={ handleReplySubmit }
@@ -744,7 +796,7 @@ export default function InlineThreadPopover( {
 					</div>
 				) }
 
-				{ ! thread.isResolved && ! replying && (
+				{ ! replying && (
 					<div className="flow-thread-popover__actions">
 						<Button
 							className="flow-btn--text flow-thread-popover__reply-btn"
@@ -753,12 +805,6 @@ export default function InlineThreadPopover( {
 						>
 							{ __( 'Reply', 'jumplinks-editorial-workflow' ) }
 						</Button>
-					</div>
-				) }
-
-				{ thread.isResolved && (
-					<div className="flow-thread-popover__resolved-badge">
-						{ __( 'Resolved', 'jumplinks-editorial-workflow' ) }
 					</div>
 				) }
 			</div>

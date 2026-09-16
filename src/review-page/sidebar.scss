@@ -501,6 +501,17 @@ textarea {
 		background: transparent;
 	}
 
+	// Holds the grid cell so the badge sits beside the name without taking a
+	// column of its own.
+	&__byline {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		min-width: 0;
+		grid-column: 2;
+		grid-row: 1;
+	}
+
 	&__author {
 		font-weight: 600;
 		font-size: 12px;
@@ -510,8 +521,18 @@ textarea {
 		min-width: 0;
 		overflow: hidden;
 		text-overflow: ellipsis;
-		grid-column: 2;
-		grid-row: 1;
+	}
+
+	&__agent {
+		flex: none;
+		padding: 0 5px;
+		border: 1px solid #c3c4c7;
+		border-radius: 2px;
+		font-size: 9px;
+		font-weight: 600;
+		line-height: 15px;
+		letter-spacing: 0.04em;
+		color: $color-muted;
 	}
 
 	&__date {
@@ -771,6 +792,24 @@ textarea {
 				background: linear-gradient(transparent, var(--flow-comment-fade-bg));
 				pointer-events: none;
 			}
+		}
+	}
+
+	&__more {
+		display: inline-flex;
+		align-items: center;
+		margin-top: 6px;
+		padding: 0;
+		background: none;
+		border: 0;
+		color: $color-accent;
+		font-size: 12px;
+		font-weight: 600;
+		cursor: pointer;
+
+		&:hover,
+		&:focus-visible {
+			text-decoration: underline;
 		}
 	}
 
@@ -1107,5 +1146,18 @@ textarea {
 		border-radius: $radius-sm;
 		color: $error-text;
 		font-size: 12px;
+	}
+}
+
+.flow-comment-thread__reopen {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	margin-bottom: 8px;
+	font-size: 12px;
+	cursor: pointer;
+
+	input {
+		margin: 0;
 	}
 }

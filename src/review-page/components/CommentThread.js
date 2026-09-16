@@ -28,6 +28,9 @@ export default function CommentThread( {
 		return () => releaseCommentBusy( replyingTo );
 	}, [ replyingTo ] );
 	const [ threadExpanded, setThreadExpanded ] = useState( false );
+	// Replying to a resolved thread almost always means the fix was wrong, so
+	// reopening is the default. The box is visible, so it is easy to opt out.
+	const [ reopen, setReopen ] = useState( true );
 	const replyEditorRef = useRef( null );
 
 	const handleReply = useCallback( ( parentId ) => {
@@ -36,10 +39,11 @@ export default function CommentThread( {
 
 	const handleReplySubmit = useCallback(
 		async ( html ) => {
-			await onReply( replyingTo, html );
+			await onReply( replyingTo, html, thread.isResolved && reopen );
 			setReplyingTo( null );
+			setReopen( true );
 		},
-		[ replyingTo, onReply ]
+		[ replyingTo, onReply, thread.isResolved, reopen ]
 	);
 
 	const visibleReplies = threadExpanded
@@ -140,7 +144,7 @@ export default function CommentThread( {
 				</div>
 			) }
 
-			{ onResolve && ! thread.isResolved && ! replyingTo && (
+			{ onResolve && ! replyingTo && (
 				<div className="flow-comment-thread__resolve-row">
 					<Button
 						className="flow-btn--text flow-comment-thread__reply-btn"
@@ -157,6 +161,21 @@ export default function CommentThread( {
 					className="flow-comment-thread__reply-editor"
 					ref={ replyEditorRef }
 				>
+					{ thread.isResolved && (
+						<label className="flow-comment-thread__reopen">
+							<input
+								type="checkbox"
+								checked={ reopen }
+								onChange={ ( e ) =>
+									setReopen( e.target.checked )
+								}
+							/>
+							{ __(
+								'Reopen this thread',
+								'jumplinks-editorial-workflow'
+							) }
+						</label>
+					) }
 					<CommentEditor
 						autoFocus
 						onSubmit={ handleReplySubmit }

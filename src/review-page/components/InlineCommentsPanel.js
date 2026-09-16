@@ -117,7 +117,7 @@ export default function InlineCommentsPanel( {
 	}, [] );
 
 	const handleReply = useCallback(
-		async ( parentId, html ) => {
+		async ( parentId, html, reopen = false ) => {
 			const comment = await api.postComment( { html, parentId } );
 			setComments( ( prev ) => {
 				const cid = Number( comment.id );
@@ -126,6 +126,25 @@ export default function InlineCommentsPanel( {
 				}
 				return [ ...prev, comment ];
 			} );
+			if ( reopen ) {
+				await api.updateComment( parentId, { resolved: false } );
+				const pid = Number( parentId );
+				setComments( ( prev ) =>
+					prev.map( ( c ) =>
+						Number( c.id ) === pid ? { ...c, isResolved: false } : c
+					)
+				);
+				window.dispatchEvent(
+					new CustomEvent( 'flow:highlight-resolve', {
+						detail: { commentId: parentId, resolved: false },
+					} )
+				);
+				window.dispatchEvent(
+					new CustomEvent( 'flow:inline-comment-resolved', {
+						detail: { commentId: parentId, resolved: false },
+					} )
+				);
+			}
 			window.dispatchEvent(
 				new CustomEvent( 'flow:inline-comment-added', {
 					detail: { comment },

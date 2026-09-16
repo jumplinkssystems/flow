@@ -19,6 +19,12 @@ class Settings {
 	const OPTION_SUPPORTED_POST_TYPES  = 'flow_ew_supported_post_types';
 	const OPTION_SHOW_UPGRADE_HINTS    = 'flow_ew_show_upgrade_hints';
 	const OPTION_SETUP_COMPLETED       = 'flow_ew_setup_completed';
+	const OPTION_AGENT_COMMENTS        = 'flow_ew_agent_comments_enabled';
+	const OPTION_AGENT_COMMENT_AUTHOR  = 'flow_ew_agent_comment_author_id';
+	const OPTION_AGENT_COMMENT_MARKER  = 'flow_ew_agent_comment_marker';
+	const OPTION_AGENT_RESOLVE_NOTES   = 'flow_ew_agent_resolve_notes';
+	const OPTION_AGENT_FOLLOWUP        = 'flow_ew_agent_followup';
+	const OPTION_AGENT_ASK_BEFORE_EDIT = 'flow_ew_agent_ask_before_edit';
 	const OPTION_GROUP                 = 'flow_ew_settings';
 	const PAGE_SLUG                    = 'jumplinks-editorial-workflow';
 
@@ -202,6 +208,52 @@ class Settings {
 		return max( 0, (int) get_option( self::OPTION_AUTO_ASSIGN_REVIEWER, 0 ) );
 	}
 
+	/**
+	 * The user agent-written comments are posted as, or 0. Validated against a
+	 * real account so deleting that user turns the feature off rather than
+	 * failing every resolve.
+	 */
+	public static function get_agent_comment_author_id(): int {
+		$user_id = max( 0, (int) get_option( self::OPTION_AGENT_COMMENT_AUTHOR, 0 ) );
+		if ( $user_id <= 0 ) {
+			return 0;
+		}
+		return get_userdata( $user_id ) ? $user_id : 0;
+	}
+
+	/** Needs both the switch and somebody to post as. */
+	public static function agent_comments_enabled(): bool {
+		return (bool) get_option( self::OPTION_AGENT_COMMENTS, false )
+			&& self::get_agent_comment_author_id() > 0;
+	}
+
+	public static function should_mark_agent_comments(): bool {
+		return self::agent_comments_enabled()
+			&& (bool) get_option( self::OPTION_AGENT_COMMENT_MARKER, true );
+	}
+
+	/** Whether resolving must carry a note saying what the agent changed. */
+	public static function agent_resolve_notes_enabled(): bool {
+		return self::agent_comments_enabled()
+			&& (bool) get_option( self::OPTION_AGENT_RESOLVE_NOTES, true );
+	}
+
+	/** Whether the agent may reply to ask what an unclear comment meant. */
+	public static function agent_followup_comments_enabled(): bool {
+		return self::agent_comments_enabled()
+			&& (bool) get_option( self::OPTION_AGENT_FOLLOWUP, true );
+	}
+
+	/**
+	 * Whether the agent must summarise its intended edits and wait for a
+	 * go-ahead. Gated on the master switch like every other row in the tab: the
+	 * row hides with it, and a hidden row must never stay quietly active.
+	 */
+	public static function agent_asks_before_editing(): bool {
+		return self::agent_comments_enabled()
+			&& (bool) get_option( self::OPTION_AGENT_ASK_BEFORE_EDIT, false );
+	}
+
 	public static function is_debug_mode(): bool {
 		return (bool) get_option( self::OPTION_DEBUG_MODE, false );
 	}
@@ -366,7 +418,7 @@ class Settings {
 	public function render_workflow_section_description(): void {
 		?>
 		<p>
-			<?php esc_html_e( 'Use the options below to match how your team publishes. Debug mode remains available for administrators who need broader access while testing.', 'jumplinks-editorial-workflow' ); ?>
+			<?php esc_html_e( 'Use the options below to match how your team publishes.', 'jumplinks-editorial-workflow' ); ?>
 		</p>
 		<?php
 	}
@@ -462,6 +514,66 @@ class Settings {
 			]
 		);
 
+		register_setting(
+			self::OPTION_GROUP,
+			self::OPTION_AGENT_COMMENTS,
+			[
+				'type'              => 'boolean',
+				'default'           => false,
+				'sanitize_callback' => [ $this, 'sanitize_agent_comments_enabled' ],
+			]
+		);
+
+		register_setting(
+			self::OPTION_GROUP,
+			self::OPTION_AGENT_COMMENT_AUTHOR,
+			[
+				'type'              => 'integer',
+				'default'           => 0,
+				'sanitize_callback' => [ $this, 'sanitize_user_id_option' ],
+			]
+		);
+
+		register_setting(
+			self::OPTION_GROUP,
+			self::OPTION_AGENT_COMMENT_MARKER,
+			[
+				'type'              => 'boolean',
+				'default'           => true,
+				'sanitize_callback' => 'rest_sanitize_boolean',
+			]
+		);
+
+		register_setting(
+			self::OPTION_GROUP,
+			self::OPTION_AGENT_RESOLVE_NOTES,
+			[
+				'type'              => 'boolean',
+				'default'           => true,
+				'sanitize_callback' => 'rest_sanitize_boolean',
+			]
+		);
+
+		register_setting(
+			self::OPTION_GROUP,
+			self::OPTION_AGENT_FOLLOWUP,
+			[
+				'type'              => 'boolean',
+				'default'           => true,
+				'sanitize_callback' => 'rest_sanitize_boolean',
+			]
+		);
+
+		register_setting(
+			self::OPTION_GROUP,
+			self::OPTION_AGENT_ASK_BEFORE_EDIT,
+			[
+				'type'              => 'boolean',
+				'default'           => false,
+				'sanitize_callback' => 'rest_sanitize_boolean',
+			]
+		);
+
 		add_settings_section(
 			'flow_ew_general',
 			__( 'Workflow', 'jumplinks-editorial-workflow' ),
@@ -473,14 +585,6 @@ class Settings {
 			self::OPTION_MANDATORY,
 			__( 'Review Mode', 'jumplinks-editorial-workflow' ),
 			[ $this, 'render_mandatory_field' ],
-			self::PAGE_SLUG,
-			'flow_ew_general'
-		);
-
-		add_settings_field(
-			self::OPTION_SHOW_REVIEWED_BY,
-			__( 'Reviewed by', 'jumplinks-editorial-workflow' ),
-			[ $this, 'render_show_reviewed_by_field' ],
 			self::PAGE_SLUG,
 			'flow_ew_general'
 		);
@@ -502,14 +606,6 @@ class Settings {
 		);
 
 		add_settings_field(
-			self::OPTION_AUTO_ASSIGN_REVIEWER,
-			__( 'Automatic reviewer', 'jumplinks-editorial-workflow' ),
-			[ $this, 'render_auto_assign_reviewer_field' ],
-			self::PAGE_SLUG,
-			'flow_ew_general'
-		);
-
-		add_settings_field(
 			self::OPTION_DISABLE_OPEN_REVIEWS,
 			__( 'Open Review', 'jumplinks-editorial-workflow' ),
 			[ $this, 'render_disable_open_reviews_field' ],
@@ -518,21 +614,113 @@ class Settings {
 		);
 
 		add_settings_field(
+			self::OPTION_SHOW_REVIEWED_BY,
+			__( 'Reviewed by', 'jumplinks-editorial-workflow' ),
+			[ $this, 'render_show_reviewed_by_field' ],
+			self::PAGE_SLUG,
+			'flow_ew_extras'
+		);
+		add_settings_field(
+			self::OPTION_AUTO_ASSIGN_REVIEWER,
+			__( 'Automatic reviewer', 'jumplinks-editorial-workflow' ),
+			[ $this, 'render_auto_assign_reviewer_field' ],
+			self::PAGE_SLUG,
+			'flow_ew_extras'
+		);
+
+		// Registered ahead of the Pro hook: Pro appends two untitled notification
+		// rows during it, and they have to follow this label, not precede it.
+		add_settings_field(
 			self::OPTION_DISABLE_NOTIFICATIONS,
 			__( 'Notifications', 'jumplinks-editorial-workflow' ),
 			[ $this, 'render_disable_notifications_field' ],
 			self::PAGE_SLUG,
-			'flow_ew_general'
+			'flow_ew_extras'
 		);
 
 		\do_action( 'flow_ew_register_settings', self::OPTION_GROUP, self::PAGE_SLUG );
+
+		// Registered after the Pro sections so AI agent sits second from last,
+		// immediately before Extras.
+		add_settings_section(
+			'flow_ew_ai_agent',
+			__( 'AI agent', 'jumplinks-editorial-workflow' ),
+			[ $this, 'render_ai_agent_section_description' ],
+			self::PAGE_SLUG
+		);
+
+		add_settings_field(
+			self::OPTION_AGENT_COMMENTS,
+			__( 'Enable AI comments', 'jumplinks-editorial-workflow' ),
+			[ $this, 'render_agent_comments_field' ],
+			self::PAGE_SLUG,
+			'flow_ew_ai_agent'
+		);
+
+		// `class` lands on the <tr>, which is what the toggle script hides.
+		add_settings_field(
+			self::OPTION_AGENT_COMMENT_AUTHOR,
+			__( 'Select AI user', 'jumplinks-editorial-workflow' ),
+			[ $this, 'render_agent_author_field' ],
+			self::PAGE_SLUG,
+			'flow_ew_ai_agent',
+			[ 'class' => 'flow-ew-agent-dependent' ]
+		);
+
+		add_settings_field(
+			self::OPTION_AGENT_RESOLVE_NOTES,
+			__( 'Resolve comments', 'jumplinks-editorial-workflow' ),
+			[ $this, 'render_agent_resolve_notes_field' ],
+			self::PAGE_SLUG,
+			'flow_ew_ai_agent',
+			[ 'class' => 'flow-ew-agent-dependent' ]
+		);
+
+		add_settings_field(
+			self::OPTION_AGENT_FOLLOWUP,
+			__( 'Follow-up comments', 'jumplinks-editorial-workflow' ),
+			[ $this, 'render_agent_followup_field' ],
+			self::PAGE_SLUG,
+			'flow_ew_ai_agent',
+			[ 'class' => 'flow-ew-agent-dependent' ]
+		);
+
+		add_settings_field(
+			self::OPTION_AGENT_COMMENT_MARKER,
+			__( 'Mark as AI', 'jumplinks-editorial-workflow' ),
+			[ $this, 'render_agent_marker_field' ],
+			self::PAGE_SLUG,
+			'flow_ew_ai_agent',
+			[ 'class' => 'flow-ew-agent-dependent' ]
+		);
+
+		// `do_settings_fields()` echoes the title unescaped, so the marker can
+		// ride along with it rather than needing its own row.
+		add_settings_field(
+			self::OPTION_AGENT_ASK_BEFORE_EDIT,
+			__( 'Ask before editing', 'jumplinks-editorial-workflow' )
+				. ' <span class="flow-ew-experimental">'
+				. esc_html__( 'Experimental', 'jumplinks-editorial-workflow' )
+				. '</span>',
+			[ $this, 'render_agent_ask_before_edit_field' ],
+			self::PAGE_SLUG,
+			'flow_ew_ai_agent',
+			[ 'class' => 'flow-ew-agent-dependent' ]
+		);
+
+		add_settings_section(
+			'flow_ew_extras',
+			__( 'Extras', 'jumplinks-editorial-workflow' ),
+			[ $this, 'render_extras_section_description' ],
+			self::PAGE_SLUG
+		);
 
 		add_settings_field(
 			self::OPTION_SHOW_UPGRADE_HINTS,
 			__( 'Marketing', 'jumplinks-editorial-workflow' ),
 			[ $this, 'render_show_upgrade_hints_field' ],
 			self::PAGE_SLUG,
-			'flow_ew_general'
+			'flow_ew_extras'
 		);
 
 		add_settings_field(
@@ -540,7 +728,7 @@ class Settings {
 			__( 'Debug Mode', 'jumplinks-editorial-workflow' ),
 			[ $this, 'render_debug_mode_field' ],
 			self::PAGE_SLUG,
-			'flow_ew_general'
+			'flow_ew_extras'
 		);
 	}
 
@@ -564,6 +752,43 @@ class Settings {
 	 * @param mixed $value
 	 * @return string[]
 	 */
+	/**
+	 * Refuses to store the switch as on unless the same submission also names
+	 * a real user, so the site can never sit in a half-configured state. The
+	 * browser blocks this first; this is the no-JavaScript backstop.
+	 *
+	 * @param mixed $value
+	 */
+	public function sanitize_agent_comments_enabled( $value ): bool {
+		if ( ! rest_sanitize_boolean( $value ) ) {
+			return false;
+		}
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- options.php verified the nonce first; absint() below both unslashes and sanitizes.
+		$posted = absint( $_POST[ self::OPTION_AGENT_COMMENT_AUTHOR ] ?? 0 );
+
+		if ( $posted > 0 && get_userdata( $posted ) ) {
+			return true;
+		}
+
+		add_settings_error(
+			self::OPTION_AGENT_COMMENTS,
+			'flow_ew_agent_author_required',
+			__( 'Choose the user AI comments are posted as before turning them on.', 'jumplinks-editorial-workflow' ),
+			'error'
+		);
+		return false;
+	}
+
+	/** Shared by every option that stores a single user id. */
+	public function sanitize_user_id_option( $value ): int {
+		$user_id = absint( $value );
+		if ( 0 === $user_id ) {
+			return 0;
+		}
+		return get_userdata( $user_id ) ? $user_id : 0;
+	}
+
 	public function sanitize_supported_post_types( $value ): array {
 		if ( ! is_array( $value ) ) {
 			return [];
@@ -727,31 +952,170 @@ class Settings {
 	}
 
 	public function render_auto_assign_reviewer_field(): void {
-		$user_id = self::get_auto_assign_reviewer_id();
-		$user    = $user_id > 0 ? get_userdata( $user_id ) : false;
+		$this->render_user_combobox(
+			'flow-ew-auto-reviewer',
+			self::OPTION_AUTO_ASSIGN_REVIEWER,
+			self::get_auto_assign_reviewer_id(),
+			__( 'Automatically assign this user to review new content. Any WordPress user can be selected, regardless of Review Roles, including yourself.', 'jumplinks-editorial-workflow' )
+		);
+	}
+
+	public function render_extras_section_description(): void {
+		?>
+		<p>
+			<?php esc_html_e( 'Optional touches: publication credit, a default reviewer, and developer options.', 'jumplinks-editorial-workflow' ); ?>
+		</p>
+		<?php
+	}
+
+	public function render_ai_agent_section_description(): void {
+		?>
+		<p>
+			<?php esc_html_e( 'Connected AI agents read review feedback over MCP. These settings decide what they may write back, and how they should behave before they start editing.', 'jumplinks-editorial-workflow' ); ?>
+		</p>
+		<?php
+	}
+
+	public function render_agent_comments_field(): void {
+		$this->render_checkbox(
+			self::OPTION_AGENT_COMMENTS,
+			(bool) get_option( self::OPTION_AGENT_COMMENTS, false ),
+			__( 'Let AI agents write comments', 'jumplinks-editorial-workflow' ),
+			__( 'Lets connected agents write comments back on a review. Choose below what they are allowed to write. Off until you also choose a user.', 'jumplinks-editorial-workflow' )
+		);
+		?>
+		<script>
+			( function () {
+				// This script is inside the first field's cell, so the rows it
+				// controls are not parsed yet — wait for the document.
+				var start = function () {
+					var toggle = document.querySelector( 'input[name="<?php echo esc_js( self::OPTION_AGENT_COMMENTS ); ?>"]' );
+					var rows   = document.querySelectorAll( 'tr.flow-ew-agent-dependent' );
+					if ( ! toggle || ! rows.length ) {
+						return;
+					}
+					// Hidden, never disabled: a disabled input posts nothing
+					// and options.php would write null over the saved value.
+					var sync = function () {
+						Array.prototype.forEach.call( rows, function ( row ) {
+							row.hidden = ! toggle.checked;
+						} );
+					};
+					toggle.addEventListener( 'change', sync );
+					sync();
+
+					// Block the save rather than let the server quietly refuse
+					// the switch. A hidden input cannot use HTML validation.
+					var form = toggle.form;
+					var user = document.querySelector( 'input[name="<?php echo esc_js( self::OPTION_AGENT_COMMENT_AUTHOR ); ?>"]' );
+					var note = document.querySelector( '[data-flow-ew-agent-author-error]' );
+					if ( ! form || ! user || ! note ) {
+						return;
+					}
+					form.addEventListener( 'submit', function ( event ) {
+						var missing = toggle.checked && ! ( parseInt( user.value, 10 ) > 0 );
+						note.hidden = ! missing;
+						if ( ! missing ) {
+							return;
+						}
+						event.preventDefault();
+						var search = document.getElementById( 'flow-ew-agent-author-search' );
+						if ( search ) {
+							search.focus();
+						}
+						note.scrollIntoView( { block: 'center' } );
+					} );
+				};
+				if ( 'loading' === document.readyState ) {
+					document.addEventListener( 'DOMContentLoaded', start );
+				} else {
+					start();
+				}
+			} )();
+		</script>
+		<?php
+	}
+
+	public function render_agent_author_field(): void {
+		?>
+		<p class="flow-ew-agent-author-error" data-flow-ew-agent-author-error hidden>
+			<?php esc_html_e( 'Choose the user AI comments are posted as before turning them on.', 'jumplinks-editorial-workflow' ); ?>
+		</p>
+		<?php
+		$this->render_user_combobox(
+			'flow-ew-agent-author',
+			self::OPTION_AGENT_COMMENT_AUTHOR,
+			self::get_agent_comment_author_id(),
+			__( 'Agent comments are posted under this user\'s name and avatar. Leave empty to stop agents writing anything. Anyone who can comment on a review can cause a comment to appear as this user, so pick an account you are happy to lend.', 'jumplinks-editorial-workflow' )
+		);
+	}
+
+	public function render_agent_resolve_notes_field(): void {
+		$this->render_checkbox(
+			self::OPTION_AGENT_RESOLVE_NOTES,
+			(bool) get_option( self::OPTION_AGENT_RESOLVE_NOTES, true ),
+			__( 'Say what was changed when resolving', 'jumplinks-editorial-workflow' ),
+			__( 'An agent must post a short note describing what it actually changed before a comment counts as resolved, so every resolved thread keeps its own record. With this off, agents resolve silently.', 'jumplinks-editorial-workflow' )
+		);
+	}
+
+	public function render_agent_followup_field(): void {
+		$this->render_checkbox(
+			self::OPTION_AGENT_FOLLOWUP,
+			(bool) get_option( self::OPTION_AGENT_FOLLOWUP, true ),
+			__( 'Ask when feedback is unclear', 'jumplinks-editorial-workflow' ),
+			__( 'An agent may reply once inside a thread to ask what you meant instead of guessing, and leaves the comment unresolved until you answer.', 'jumplinks-editorial-workflow' )
+		);
+	}
+
+	public function render_agent_ask_before_edit_field(): void {
+		$this->render_checkbox(
+			self::OPTION_AGENT_ASK_BEFORE_EDIT,
+			(bool) get_option( self::OPTION_AGENT_ASK_BEFORE_EDIT, false ),
+			__( 'Summarise the changes and wait for my go-ahead', 'jumplinks-editorial-workflow' ),
+			__( 'The agent works out everything it would change, describes it in your chat — which page, which wording, and anything it still needs from you — then waits for you to confirm before touching the site. This is an instruction Flow gives the agent, not something it can enforce: an agent that ignores it can still edit.', 'jumplinks-editorial-workflow' )
+		);
+	}
+
+	public function render_agent_marker_field(): void {
+		$this->render_checkbox(
+			self::OPTION_AGENT_COMMENT_MARKER,
+			(bool) get_option( self::OPTION_AGENT_COMMENT_MARKER, true ),
+			__( 'Mark comments as AI-written', 'jumplinks-editorial-workflow' ),
+			__( 'Adds a small AI label to those comments. The author stays the user above either way; turning this off only hides the label.', 'jumplinks-editorial-workflow' )
+		);
+	}
+
+	/**
+	 * One user picker. `$base_id` scopes the ids; the script finds every
+	 * instance by class, so more than one may appear on the page.
+	 */
+	private function render_user_combobox( string $base_id, string $option_name, int $user_id, string $description ): void {
+		$user = $user_id > 0 ? get_userdata( $user_id ) : false;
 		if ( ! $user ) {
 			$user_id = 0;
 		}
 		?>
-		<div id="flow-ew-auto-reviewer" class="flow-ew-user-combobox">
+		<div id="<?php echo esc_attr( $base_id ); ?>" class="flow-ew-user-combobox">
 			<input
 				type="hidden"
-				id="flow-ew-auto-reviewer-id"
-				name="<?php echo esc_attr( self::OPTION_AUTO_ASSIGN_REVIEWER ); ?>"
+				id="<?php echo esc_attr( $base_id . '-id' ); ?>"
+				class="flow-ew-user-combobox__value"
+				name="<?php echo esc_attr( $option_name ); ?>"
 				value="<?php echo esc_attr( (string) $user_id ); ?>"
 			/>
 			<div class="flow-ew-user-combobox__field">
 				<div class="flow-ew-user-combobox__control">
 					<input
 						type="search"
-						id="flow-ew-auto-reviewer-search"
-						class="regular-text"
+						id="<?php echo esc_attr( $base_id . '-search' ); ?>"
+						class="regular-text flow-ew-user-combobox__search"
 						placeholder="<?php esc_attr_e( 'Search users…', 'jumplinks-editorial-workflow' ); ?>"
 						autocomplete="off"
 						role="combobox"
 						aria-autocomplete="list"
 						aria-expanded="false"
-						aria-controls="flow-ew-auto-reviewer-results"
+						aria-controls="<?php echo esc_attr( $base_id . '-results' ); ?>"
 					/>
 					<button
 						type="button"
@@ -760,7 +1124,7 @@ class Settings {
 					><?php esc_html_e( 'Clear', 'jumplinks-editorial-workflow' ); ?></button>
 				</div>
 				<div
-					id="flow-ew-auto-reviewer-selected"
+					id="<?php echo esc_attr( $base_id . '-selected' ); ?>"
 					class="flow-ew-user-combobox__selected"
 					<?php echo 0 === $user_id ? 'hidden' : ''; ?>
 				>
@@ -770,18 +1134,15 @@ class Settings {
 					<?php endif; ?>
 				</div>
 				<div
-					id="flow-ew-auto-reviewer-results"
+					id="<?php echo esc_attr( $base_id . '-results' ); ?>"
 					class="flow-ew-user-combobox__results"
 					role="listbox"
 					hidden
 				></div>
 			</div>
-			<p class="description">
-				<?php esc_html_e( 'Automatically assign this user to review new content. Any WordPress user can be selected, regardless of Review Roles, including yourself.', 'jumplinks-editorial-workflow' ); ?>
-			</p>
+			<p class="description"><?php echo esc_html( $description ); ?></p>
 		</div>
 		<?php
-		$this->add_auto_assign_reviewer_script();
 	}
 
 	public function render_show_upgrade_hints_field(): void {
@@ -866,6 +1227,9 @@ class Settings {
 		);
 		wp_register_script( 'flow-ew-settings-fields', false, [ 'wp-api-fetch' ], $ver, true );
 		wp_enqueue_script( 'flow-ew-settings-fields' );
+		// Once for the page, not once per picker — two copies would double
+		// every user search.
+		$this->add_user_combobox_script();
 	}
 
 	/**
@@ -885,64 +1249,84 @@ class Settings {
 		wp_add_inline_script( 'flow-ew-settings-fields', $js, 'after' );
 	}
 
-	private function add_auto_assign_reviewer_script(): void {
+	/**
+	 * Drives every `.flow-ew-user-combobox` on the page. Scoped by class, not
+	 * by id, so a second picker needs no extra script.
+	 */
+	private function add_user_combobox_script(): void {
 		$js = <<<'JS'
 (function(){
-	var root=document.getElementById('flow-ew-auto-reviewer');
-	if(!root||!window.wp||!window.wp.apiFetch)return;
-	var hidden=root.querySelector('#flow-ew-auto-reviewer-id');
-	var input=root.querySelector('#flow-ew-auto-reviewer-search');
-	var results=root.querySelector('#flow-ew-auto-reviewer-results');
-	var selected=root.querySelector('#flow-ew-auto-reviewer-selected');
-	var clear=root.querySelector('.flow-ew-user-combobox__clear');
-	var timer=0;
-	var request=0;
-	function close(){results.hidden=true;results.innerHTML='';input.setAttribute('aria-expanded','false');}
-	function select(user){
-		hidden.value=String(user.id);
-		selected.innerHTML='';
-		if(user.avatar_url){var img=document.createElement('img');img.src=user.avatar_url;img.alt='';img.width=32;img.height=32;selected.appendChild(img);}
-		var name=document.createElement('span');name.textContent=user.name;selected.appendChild(name);
-		selected.hidden=false;clear.hidden=false;input.value='';close();
-	}
-	function render(users){
-		results.innerHTML='';
-		users.forEach(function(user){
-			var option=document.createElement('button');
-			option.type='button';option.className='flow-ew-user-combobox__option';
-			option.setAttribute('role','option');option.textContent=user.name;
-			option.addEventListener('click',function(){select(user);});
-			results.appendChild(option);
+	if(!window.wp||!window.wp.apiFetch)return;
+	var roots=document.querySelectorAll('.flow-ew-user-combobox');
+	Array.prototype.forEach.call(roots,function(root){
+		var hidden=root.querySelector('.flow-ew-user-combobox__value');
+		var input=root.querySelector('.flow-ew-user-combobox__search');
+		var results=root.querySelector('.flow-ew-user-combobox__results');
+		var selected=root.querySelector('.flow-ew-user-combobox__selected');
+		var clear=root.querySelector('.flow-ew-user-combobox__clear');
+		if(!hidden||!input||!results||!selected||!clear)return;
+		var timer=0;
+		var request=0;
+		function close(){results.hidden=true;results.innerHTML='';input.setAttribute('aria-expanded','false');}
+		function select(user){
+			hidden.value=String(user.id);
+			selected.innerHTML='';
+			if(user.avatar_url){var img=document.createElement('img');img.src=user.avatar_url;img.alt='';img.width=32;img.height=32;selected.appendChild(img);}
+			var name=document.createElement('span');name.textContent=user.name;selected.appendChild(name);
+			selected.hidden=false;clear.hidden=false;input.value='';close();
+		}
+		function render(users){
+			results.innerHTML='';
+			users.forEach(function(user){
+				var option=document.createElement('button');
+				option.type='button';option.className='flow-ew-user-combobox__option';
+				option.setAttribute('role','option');
+				var name=document.createElement('span');
+				name.className='flow-ew-user-combobox__option-name';
+				name.textContent=user.name;
+				option.appendChild(name);
+				// Two people can share a display name; the address or username
+				// is what tells them apart.
+				var detail=user.email||user.login||'';
+				if(detail&&detail!==user.name){
+					var meta=document.createElement('span');
+					meta.className='flow-ew-user-combobox__option-meta';
+					meta.textContent=detail;
+					option.appendChild(meta);
+				}
+				option.addEventListener('click',function(){select(user);});
+				results.appendChild(option);
+			});
+			results.hidden=users.length===0;input.setAttribute('aria-expanded',users.length?'true':'false');
+		}
+		input.addEventListener('input',function(){
+			window.clearTimeout(timer);
+			var query=input.value.trim();
+			if(query.length<2){close();return;}
+			timer=window.setTimeout(function(){
+				var current=++request;
+				window.wp.apiFetch({path:'/flow/v1/users/search?q='+encodeURIComponent(query)})
+					.then(function(users){if(current===request)render(Array.isArray(users)?users:[]);})
+					.catch(function(){if(current===request)close();});
+			},250);
 		});
-		results.hidden=users.length===0;input.setAttribute('aria-expanded',users.length?'true':'false');
-	}
-	input.addEventListener('input',function(){
-		window.clearTimeout(timer);
-		var query=input.value.trim();
-		if(query.length<2){close();return;}
-		timer=window.setTimeout(function(){
-			var current=++request;
-			window.wp.apiFetch({path:'/flow/v1/users/search?q='+encodeURIComponent(query)})
-				.then(function(users){if(current===request)render(Array.isArray(users)?users:[]);})
-				.catch(function(){if(current===request)close();});
-		},250);
+		input.addEventListener('keydown',function(event){
+			var options=results.querySelectorAll('.flow-ew-user-combobox__option');
+			if(event.key==='Escape'){close();return;}
+			if(event.key==='ArrowDown'&&options.length){event.preventDefault();options[0].focus();}
+		});
+		results.addEventListener('keydown',function(event){
+			var options=Array.prototype.slice.call(results.querySelectorAll('.flow-ew-user-combobox__option'));
+			var index=options.indexOf(document.activeElement);
+			if(event.key==='ArrowDown'&&index<options.length-1){event.preventDefault();options[index+1].focus();}
+			if(event.key==='ArrowUp'){event.preventDefault();if(index>0){options[index-1].focus();}else{input.focus();}}
+			if(event.key==='Escape'){close();input.focus();}
+		});
+		clear.addEventListener('click',function(){
+			hidden.value='0';selected.hidden=true;selected.innerHTML='';clear.hidden=true;input.value='';close();input.focus();
+		});
+		document.addEventListener('click',function(event){if(!root.contains(event.target))close();});
 	});
-	input.addEventListener('keydown',function(event){
-		var options=results.querySelectorAll('.flow-ew-user-combobox__option');
-		if(event.key==='Escape'){close();return;}
-		if(event.key==='ArrowDown'&&options.length){event.preventDefault();options[0].focus();}
-	});
-	results.addEventListener('keydown',function(event){
-		var options=Array.prototype.slice.call(results.querySelectorAll('.flow-ew-user-combobox__option'));
-		var index=options.indexOf(document.activeElement);
-		if(event.key==='ArrowDown'&&index<options.length-1){event.preventDefault();options[index+1].focus();}
-		if(event.key==='ArrowUp'){event.preventDefault();if(index>0){options[index-1].focus();}else{input.focus();}}
-		if(event.key==='Escape'){close();input.focus();}
-	});
-	clear.addEventListener('click',function(){
-		hidden.value='0';selected.hidden=true;selected.innerHTML='';clear.hidden=true;input.value='';close();input.focus();
-	});
-	document.addEventListener('click',function(event){if(!root.contains(event.target))close();});
 })();
 JS;
 		wp_add_inline_script( 'flow-ew-settings-fields', $js, 'after' );
@@ -963,16 +1347,25 @@ JS;
 			return;
 		}
 
-		$ids   = array_keys( $sections );
-		$first = (string) reset( $ids );
+		$ids    = array_keys( $sections );
+		$active = (string) reset( $ids );
+
+		// options.php sends the browser back to `_wp_http_referer`, and a URL
+		// fragment never survives that round trip, so the tab travels as a query
+		// arg and the active panel is picked here rather than after paint.
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- display-only, and validated against the registered section ids below.
+		$requested = isset( $_GET['flow_tab'] ) ? sanitize_key( wp_unslash( $_GET['flow_tab'] ) ) : '';
+		if ( '' !== $requested && isset( $sections[ $requested ] ) ) {
+			$active = $requested;
+		}
 		?>
 		<nav class="nav-tab-wrapper flow-ew-settings-tabs" role="tablist">
 			<?php foreach ( $sections as $id => $section ) : ?>
 				<button
 					type="button"
 					role="tab"
-					class="nav-tab<?php echo $id === $first ? ' nav-tab-active' : ''; ?>"
-					aria-selected="<?php echo $id === $first ? 'true' : 'false'; ?>"
+					class="nav-tab<?php echo $id === $active ? ' nav-tab-active' : ''; ?>"
+					aria-selected="<?php echo $id === $active ? 'true' : 'false'; ?>"
 					aria-controls="<?php echo esc_attr( 'flow-ew-tab-' . $id ); ?>"
 					data-flow-ew-tab="<?php echo esc_attr( $id ); ?>"
 				>
@@ -986,7 +1379,7 @@ JS;
 				id="<?php echo esc_attr( 'flow-ew-tab-' . $id ); ?>"
 				class="flow-ew-settings-tab-panel"
 				data-flow-ew-tab-panel="<?php echo esc_attr( $id ); ?>"
-				<?php echo $id === $first ? '' : 'hidden'; ?>
+				<?php echo $id === $active ? '' : 'hidden'; ?>
 			>
 				<?php
 				if ( ! empty( $section['callback'] ) ) {
@@ -1027,7 +1420,23 @@ JS;
 						tab.classList.toggle( 'nav-tab-active', mine );
 						tab.setAttribute( 'aria-selected', mine ? 'true' : 'false' );
 					} );
+					rememberForSave( id );
 					return true;
+				}
+				// Saving posts to options.php, which redirects to whatever
+				// `_wp_http_referer` held. Fragments are never sent, so the tab
+				// rides in the query string or the save lands back on the first.
+				function rememberForSave( id ) {
+					var field = document.querySelector( 'input[name="_wp_http_referer"]' );
+					if ( ! field ) {
+						return;
+					}
+					var parts = field.value.split( '#' )[ 0 ].split( '?' );
+					var params = ( parts[ 1 ] || '' ).split( '&' ).filter( function ( p ) {
+						return p && p.indexOf( 'flow_tab=' ) !== 0;
+					} );
+					params.push( 'flow_tab=' + encodeURIComponent( id ) );
+					field.value = parts[ 0 ] + '?' + params.join( '&' );
 				}
 				tabs.forEach( function ( tab ) {
 					tab.addEventListener( 'click', function () {
@@ -1057,6 +1466,8 @@ JS;
 		?>
 		<div class="wrap">
 			<h1><?php esc_html_e( 'Flow Settings', 'jumplinks-editorial-workflow' ); ?></h1>
+
+			<?php settings_errors( self::OPTION_AGENT_COMMENTS ); ?>
 
 			<?php Dashboard_Page::render_rating_prompt(); ?>
 

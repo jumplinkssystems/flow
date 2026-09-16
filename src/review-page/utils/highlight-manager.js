@@ -169,13 +169,14 @@ function handleAdd( e ) {
 }
 
 function handleResolve( e ) {
-	const { commentId } = e.detail || {};
+	const { commentId, resolved = true } = e.detail || {};
 	if ( ! commentId ) {
 		return;
 	}
 
+	// Reopening a thread sends the same event with `resolved: false`.
 	queryHighlightedByCommentId( commentId ).forEach( ( mark ) =>
-		mark.classList.add( RESOLVED_CLASS )
+		mark.classList.toggle( RESOLVED_CLASS, !! resolved )
 	);
 }
 
@@ -417,11 +418,12 @@ function handleCommentAdded( e ) {
 }
 
 function handleCommentResolved( e ) {
-	const { commentId } = e.detail || {};
+	// Reopening a thread sends the same event with `resolved: false`.
+	const { commentId, resolved = true } = e.detail || {};
 	if ( commentId ) {
 		allComments = allComments.map( ( c ) =>
 			Number( c.id ) === Number( commentId )
-				? { ...c, isResolved: true }
+				? { ...c, isResolved: resolved }
 				: c
 		);
 	}

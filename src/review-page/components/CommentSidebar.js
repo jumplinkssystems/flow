@@ -101,9 +101,27 @@ function GeneralCommentsPanel( {
 	);
 
 	const handleReply = useCallback(
-		async ( parentId, html ) => {
+		async ( parentId, html, reopen = false ) => {
 			const comment = await api.postComment( { html, parentId } );
 			appendComment( comment );
+			if ( reopen ) {
+				await api.updateComment( parentId, { resolved: false } );
+				setComments( ( prev ) =>
+					prev.map( ( c ) =>
+						c.id === parentId ? { ...c, isResolved: false } : c
+					)
+				);
+				window.dispatchEvent(
+					new CustomEvent( 'flow:highlight-resolve', {
+						detail: { commentId: parentId, resolved: false },
+					} )
+				);
+				window.dispatchEvent(
+					new CustomEvent( 'flow:inline-comment-resolved', {
+						detail: { commentId: parentId, resolved: false },
+					} )
+				);
+			}
 			window.dispatchEvent(
 				new CustomEvent( 'flow:author-resubmit-activity', {
 					detail: {
@@ -113,7 +131,7 @@ function GeneralCommentsPanel( {
 				} )
 			);
 		},
-		[ api, appendComment ]
+		[ api, appendComment, setComments ]
 	);
 
 	const handleEdit = useCallback(
@@ -405,15 +423,21 @@ export default function CommentSidebar( {
 			if ( ! cid ) {
 				return;
 			}
+			// Reopening a thread sends the same event with `resolved: false`.
+			const resolved = e.detail?.resolved ?? true;
 			setInlineComments( ( prev ) => {
 				const has = prev.some( ( c ) => Number( c.id ) === cid );
 				if ( ! has ) {
-					pendingInlineResolvedRef.current.add( cid );
+					if ( resolved ) {
+						pendingInlineResolvedRef.current.add( cid );
+					} else {
+						pendingInlineResolvedRef.current.delete( cid );
+					}
 					return prev;
 				}
 				pendingInlineResolvedRef.current.delete( cid );
 				return prev.map( ( c ) =>
-					Number( c.id ) === cid ? { ...c, isResolved: true } : c
+					Number( c.id ) === cid ? { ...c, isResolved: resolved } : c
 				);
 			} );
 		};

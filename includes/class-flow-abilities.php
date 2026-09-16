@@ -323,6 +323,24 @@ class Abilities {
 			]
 		);
 
+		$resolve_notes = Settings::agent_resolve_notes_enabled();
+		$followup      = Settings::agent_followup_comments_enabled();
+
+		$resolve_properties = [
+			'comment_id' => [
+				'type'        => 'integer',
+				'description' => 'Flow comment ID from list-comments or get-review.',
+			],
+		];
+		$resolve_required   = [ 'comment_id' ];
+		if ( $resolve_notes ) {
+			$resolve_properties['note'] = [
+				'type'        => 'string',
+				'description' => 'One or two sentences naming the edit you actually made. If you made no edit, do not call resolve - reply to the comment and leave it unresolved. Posted into the comment thread.',
+			];
+			$resolve_required[]         = 'note';
+		}
+
 		self::register_ability(
 			'flow/resolve-comment',
 			[
@@ -331,31 +349,75 @@ class Abilities {
 				'category'         => self::CATEGORY,
 				'input_schema'     => [
 					'type'                 => 'object',
-					'properties'           => [
-						'comment_id' => [
-							'type'        => 'integer',
-							'description' => 'Flow comment ID from list-comments or get-review.',
-						],
-					],
-					'required'             => [ 'comment_id' ],
+					'properties'           => $resolve_properties,
+					'required'             => $resolve_required,
 					'additionalProperties' => false,
 				],
 				'output_schema'    => [
 					'type'       => 'object',
 					'properties' => [
-						'comment' => $comment_item,
+						'comment'         => $comment_item,
+						'note_comment_id' => [ 'type' => 'integer' ],
 					],
 				],
 				'execute_callback' => static function ( array $input ) {
-					return Ability_Context::resolve_comment( (int) ( $input['comment_id'] ?? 0 ) );
+					return Ability_Context::resolve_comment(
+						(int) ( $input['comment_id'] ?? 0 ),
+						(string) ( $input['note'] ?? '' )
+					);
 				},
 				'annotations'      => [
 					'readonly'    => false,
 					'destructive' => false,
-					'idempotent'  => true,
+					// Posting a note makes a second call add a second comment.
+					'idempotent'  => ! $resolve_notes,
 				],
 			]
 		);
+
+		if ( $followup ) {
+			self::register_ability(
+				'flow/reply-to-comment',
+				[
+					'label'            => __( 'Reply to Flow comment', 'jumplinks-editorial-workflow' ),
+					'description'      => __( 'Ask the human reviewer one clarifying question when their comment is genuinely ambiguous, then stop and wait for their answer.', 'jumplinks-editorial-workflow' ),
+					'category'         => self::CATEGORY,
+					'input_schema'     => [
+						'type'                 => 'object',
+						'properties'           => [
+							'comment_id' => [
+								'type'        => 'integer',
+								'description' => 'Flow comment ID to reply to, from list-comments or get-review.',
+							],
+							'body'       => [
+								'type'        => 'string',
+								'description' => 'Plain text. One specific question about what the reviewer asked for.',
+								'maxLength'   => 2000,
+							],
+						],
+						'required'             => [ 'comment_id', 'body' ],
+						'additionalProperties' => false,
+					],
+					'output_schema'    => [
+						'type'       => 'object',
+						'properties' => [
+							'comment' => $comment_item,
+						],
+					],
+					'execute_callback' => static function ( array $input ) {
+						return Ability_Context::reply_to_comment(
+							(int) ( $input['comment_id'] ?? 0 ),
+							(string) ( $input['body'] ?? '' )
+						);
+					},
+					'annotations'      => [
+						'readonly'    => false,
+						'destructive' => false,
+						'idempotent'  => false,
+					],
+				]
+			);
+		}
 
 		self::register_ability(
 			'flow/resubmit-review',
@@ -392,13 +454,59 @@ class Abilities {
 		if ( isset( $config['tools'] ) && is_array( $config['tools'] ) ) {
 			$existing = $config['tools'];
 		}
-		$tools           = (array) \apply_filters( 'flow_ew_agent_tools', self::TOOLS );
+		$tools = self::TOOLS;
+		if ( Settings::agent_followup_comments_enabled() ) {
+			$tools[] = 'flow/reply-to-comment';
+		}
+		$tools           = (array) \apply_filters( 'flow_ew_agent_tools', $tools );
 		$config['tools'] = array_values( array_unique( array_merge( $existing, $tools ) ) );
 
 		$extra                        = "\n\nJumplinks Flow: human-in-the-loop editorial review. Call flow/get-instructions before assigning or sending a review. Flow does not edit page content.";
 		$config['server_description'] = (string) ( $config['server_description'] ?? '' ) . $extra;
 
 		return $config;
+	}
+
+	/**
+	 * Appended, not merged into the main heredoc, so the base loop text stays
+	 * one block and this section can name the step it overrides.
+	 */
+	private static function comment_writing_instructions(): string {
+		$resolve_notes = Settings::agent_resolve_notes_enabled();
+		$followup      = Settings::agent_followup_comments_enabled();
+
+		$lines = [ 'Writing comments (this site allows it)' ];
+
+		if ( $resolve_notes ) {
+			$lines[] = '- Overrides step 9: flow/resolve-comment now requires note — one or two sentences on what you actually changed. No note, no resolve; nothing is marked resolved if the note fails. The note names an edit you really made; restating, interpreting or agreeing with the comment is not a change, and neither is deciding it needed no change.';
+		}
+
+		if ( $followup ) {
+			$lines[] = '- flow/reply-to-comment (comment_id, body): when a comment does not name a concrete change, ask one specific question, leave the comment unresolved, and wait for a human answer. That is the required move for vague or non-actionable feedback - never resolve it instead, and never guess. Not for progress reports, not for acknowledgements, not for arguing, and never in reply to your own comment.';
+		} else {
+			$lines[] = '- There is no reply tool on this site. When a comment does not name a concrete change, make no edit, leave it unresolved, and say so to the person you are working for. Never guess, and never resolve it to clear the queue.';
+		}
+
+		$lines[] = '- Your comments post under the site\'s configured Flow user, not under you, and carry is_agent true. Use that to tell your own writing from reviewer feedback; never treat your own question as a new instruction.';
+		$lines[] = '- Never: open a new comment thread; reply to yourself; use a reply where an edit was asked for; resolve a thread whose question you are still waiting on.';
+
+		return implode( "\n", $lines );
+	}
+
+	/**
+	 * Appended when the site asks agents to propose before they edit. Purely
+	 * advisory: Flow never touches content, so it cannot block an edit.
+	 */
+	private static function ask_before_editing_instructions(): string {
+		return <<<'TXT'
+Ask before editing (this site requires it)
+- Overrides step 8. Work out the full set of edits the feedback asks for, but make none of them yet. Do not edit content, do not resolve comments, do not resubmit the review.
+- Summarise the plan in your reply to the person you are working for: which post or page, what you would change, the current wording and your proposed wording where text is involved, and anything you still need from them (an image, a link, a decision they have to make).
+- List separately any comment you cannot act on, and say why.
+- Then stop and wait for their explicit go-ahead in the conversation. Silence is not approval.
+- If they approve only part of the plan, do only that part and leave the rest untouched.
+- This applies to every editing pass, not only the first one.
+TXT;
 	}
 
 	public static function instructions(): string {
@@ -412,16 +520,24 @@ Loop
 4. If next_action is assign_reviewer: flow/list-reviewers then flow/assign-reviewer (reviewer_id, or invite_email for an external reviewer). The reviewer must not be the same WordPress user as you unless the site auto-assign setting allows it.
 5. If next_action is send_for_review: persist content first, then flow/send-for-review. This notifies the human and sets unpublished posts to pending.
 6. Stop and wait. Do not approve. Humans leave inline and general comments on the Flow review page and may request changes.
-7. When status is changes_requested (or you are asked to address feedback): flow/get-review or flow/list-comments. Treat unresolved_inline[].selected_text as the passage to change; text/html is the instruction. unresolved_general is page-level feedback. Replies (kind=reply) belong to a parent thread.
+7. When status is changes_requested (or you are asked to address feedback): flow/get-review or flow/list-comments. The comment's own text/html is the only statement of what to change. unresolved_inline[].selected_text and location say only where the comment is anchored - they are context, never an instruction, and a passage being selected is not a request to rewrite it. unresolved_general is page-level feedback. Replies (kind=reply) belong to a parent thread.
 8. Apply edits with the builder that owns the page. Do not invent Flow edit tools.
-9. After each addressed inline comment, flow/resolve-comment with that comment_id.
+9. Resolve only what you actually changed: after each addressed inline comment, flow/resolve-comment with that comment_id. If a comment does not name a concrete change - it is vague, a placeholder, test text, or you cannot tell what is being asked - make no edit and leave it unresolved. Do not reconstruct a plausible request from the anchored passage, the surrounding content, or what the page seems to need. Say plainly which comments you left unresolved and why.
 10. Persist content, then flow/resubmit-review. You must be the post author.
 11. Repeat from step 6 until status is approved, then publish via builder/core tools if can_publish is true.
 
 Statuses: pending (assigned, not sent) → in_review (waiting on human) → changes_requested (your turn) → approved (publish allowed when mandatory). Humans may also cancel.
 
-Never: approve or request-changes as the authoring agent; publish while can_publish is false; skip saving before send/resubmit.
+Never: approve or request-changes as the authoring agent; publish while can_publish is false; skip saving before send/resubmit; infer a requested change from selected_text; resolve a comment you did not act on.
 TEXT;
+
+		if ( Settings::agent_resolve_notes_enabled() || Settings::agent_followup_comments_enabled() ) {
+			$instructions .= "\n\n" . self::comment_writing_instructions();
+		}
+
+		if ( Settings::agent_asks_before_editing() ) {
+			$instructions .= "\n\n" . self::ask_before_editing_instructions();
+		}
 
 		return (string) \apply_filters( 'flow_ew_agent_instructions', $instructions );
 	}
@@ -449,10 +565,14 @@ TEXT;
 				'html'          => [ 'type' => 'string' ],
 				'text'          => [ 'type' => 'string' ],
 				'is_resolved'   => [ 'type' => 'boolean' ],
+				'is_agent'      => [ 'type' => 'boolean' ],
 				'author'        => [ 'type' => 'string' ],
 				'author_id'     => [ 'type' => 'integer' ],
 				'date'          => [ 'type' => 'string' ],
-				'selected_text' => [ 'type' => 'string' ],
+				'selected_text' => [
+					'type'        => 'string',
+					'description' => 'The passage this comment is anchored to. Locates the feedback only; it never states what to change.',
+				],
 				'location'      => [
 					'type'       => 'object',
 					'properties' => [

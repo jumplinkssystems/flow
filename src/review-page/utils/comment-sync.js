@@ -47,6 +47,7 @@ function sameComment( a, b ) {
 	return (
 		a.html === b.html &&
 		a.isResolved === b.isResolved &&
+		a.isAgent === b.isAgent &&
 		a.parentId === b.parentId &&
 		a.author === b.author &&
 		a.anchorText === b.anchorText

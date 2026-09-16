@@ -4,7 +4,7 @@ Tags: client feedback, website feedback, content approval, site review, editoria
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.5.0
+Stable tag: 2.5.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -51,6 +51,7 @@ Flow doesn't generate text or detect AI content. It's the checkpoint between a d
 * Drafts created by ChatGPT, Claude, n8n, Make, Zapier, or the REST API can get a reviewer assigned automatically the moment the post is created.
 * With mandatory review on, the first Publish or Schedule stays blocked until a person approves, including attempts through the REST API.
 * AI agents connected through WordPress Agent Connector or MCP can send content for review, read comments, resolve threads, and resubmit. Only a human can approve or request changes.
+* Optionally let an agent reply to a comment to ask what you meant, and make it say what it changed when it resolves one. Off by default; you choose which user those comments are posted as.
 
 = 🤖 What makes Flow different =
 
@@ -194,6 +195,20 @@ No, and this is deliberate rather than an oversight. There is no approve ability
 
 == Changelog ==
 
+= 2.5.1 =
+* New: AI agents can now write back. An agent connected over MCP can reply to a review comment to ask a clarifying question when your instruction is ambiguous, instead of guessing or going quiet.
+* New: An agent must now say what it changed when it resolves a comment. The explanation is posted into the thread, so every resolved piece of feedback carries its own record.
+* New: Two switches under Settings → AI agent control this separately, both on by default. "Resolve comments" decides whether an agent has to explain what it changed before a comment counts as resolved, and "Follow-up comments" decides whether it may ask you a question when your feedback is unclear. Turn either off and that ability disappears from the agent entirely.
+* New: "Ask before editing", marked Experimental and off by default. It sits with the other AI agent options, so it needs "Enable AI comments" and a chosen AI user. With it on, the agent works out what it would change and describes the plan in your chat — which page, which wording, and anything it still needs from you — then waits for your go-ahead before touching the site. It is an instruction Flow gives the agent rather than a lock: Flow never edits content itself, so it cannot physically block an edit.
+* Improvement: Tightened what agents are told about feedback. A highlighted passage only locates a comment and never states what to change, and a vague or non-actionable comment must be left unresolved and asked about rather than guessed at.
+* New: Reopen a resolved comment. Reply to a resolved thread and tick "Reopen this thread" to move it back to active.
+* New: Copy a reviewer's link straight from the site review screen.
+* Improvement: First-time reviewers now get a short looping clip showing how to highlight text and leave a comment.
+* Improvement: The review page hint moved out of the way. It is now a dismissible card in the bottom-left corner.
+* Improvement: Long comments are no longer cut off in the sidebar. A "Read more" toggle expands a comment or a reply in place, and collapses it again.
+* Improvement: Settings are easier to scan. The AI agent options have their own tab, and the notification settings moved to Extras next to the other occasional options.
+* Fix: Saving settings no longer throws you back to the first tab. Whichever tab you were on is carried through the save, so you land where you left off.
+
 = 2.5.0 =
 * New: Live updates on the review page. Comments from another reviewer appear, change and disappear as they happen, and the status badge follows a decision someone else makes. No page refresh needed.
 * New: When the author saves a new version while you are reviewing, Flow tells you instead of swapping the page under you. The bar marks the content as outdated and a notification offers the link to the new version, so you choose when to move.
@@ -207,18 +222,5 @@ No, and this is deliberate rather than an oversight. There is no approve ability
 * Fix: Send for review no longer appears until a reviewer is assigned, so turning on Open Review does not leave a dead button behind.
 * Fix: The auto-assign reviewer setting now accepts any WordPress user, as the field describes. Picking someone outside the Review Roles, or yourself, assigns them and lets them approve.
 * Fix: Security hardening across review permissions, comment validation and webhook destinations.
-
-= 2.4.3 =
-* New (Pro): Webhooks for n8n, Zapier, Make, and any other HTTP endpoint. Flow posts a signed JSON payload when a review is sent, approved, or sent back for changes, so an automated pipeline can pick up where the human left off — publish once it is approved, or hand the reviewer's comments to your writing agent, apply them, and resubmit for another human look. Each payload carries the exact passage every inline comment points at, already formatted for a prompt. Deliveries are queued and retried with a full delivery log, so a short outage at your end never loses an approval.
-* New: AI agent capabilities for WordPress Agent Connector and other MCP clients. Connected agents can assign a reviewer, send content for review, read inline and general comments (including the selected text to change), resolve threads, and resubmit after they edit the page with the site's builder. Flow stays the human-in-the-loop gate: agents cannot approve their own work, and mandatory review still blocks Publish until a person approves.
-* Improvement: Copy an external reviewer's magic link. Once a post has been sent for review, a copy icon appears beside the external email reviewer so you can pass the link on yourself — over chat, or to someone whose spam filter swallowed the invitation. Only people who can edit the post can see it.
-
-= 2.4.2 =
-* New: Optional "Reviewed by" credit on published content. Turn it on under Settings → Flow; after approval it appears below the author and category line, with WordPress reviewer names linked to their author archives. External email reviewers are omitted.
-* New: Automatic reviewer assignment. Pick any WordPress user — including yourself, regardless of Review Roles — and Flow assigns them when new supported content is created.
-
-= 2.4.1 =
-* New: Add external emails as reviewers. Pick External Email in the reviewer field and Flow emails that person a signed magic link to the review page, where they can comment, approve, or request changes without a WordPress account. Available in every editor integration.
-* Fix: Oxygen container design fix.
 
 Earlier versions: https://jumplinks.net/changelog/

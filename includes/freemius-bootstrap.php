@@ -272,6 +272,12 @@ if ( ! function_exists( 'flow_fs' ) ) {
 				'flow_ew_show_upgrade_hints',
 				'flow_ew_migration_lock_free',
 				'flow_ew_cache_integrations',
+				'flow_ew_agent_comments_enabled',
+				'flow_ew_agent_comment_author_id',
+				'flow_ew_agent_comment_marker',
+				'flow_ew_agent_resolve_notes',
+				'flow_ew_agent_followup',
+				'flow_ew_agent_ask_before_edit',
 			);
 			foreach ( $flow_ew_free_options as $flow_ew_option ) {
 				delete_option( $flow_ew_option );

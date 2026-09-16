@@ -567,34 +567,13 @@ class REST_Reviews extends \WP_REST_Controller {
 			return $type_ok;
 		}
 
-		$html      = Comment_Html::sanitize( (string) $request->get_param( 'html' ) );
 		$user_id   = get_current_user_id();
 		$parent_id = (int) $request->get_param( 'parentId' );
 
-		$html = (string) \apply_filters(
-			'flow_ew_filter_comment_html',
-			$html,
-			[
-				'review'  => $review,
-				'request' => $request,
-				'is_edit' => false,
-			]
-		);
-		if ( strlen( $html ) > 65535 ) {
-			return new \WP_Error( 'rest_invalid_param', __( 'This comment is too long.', 'jumplinks-editorial-workflow' ), [ 'status' => 400 ] );
-		}
 		$anchor_text     = sanitize_text_field( (string) $request->get_param( 'anchorText' ) );
 		$block_client_id = sanitize_text_field( (string) $request->get_param( 'blockClientId' ) );
 		$author_name     = sanitize_text_field( (string) $request->get_param( 'authorName' ) );
 		$author_email    = sanitize_email( (string) $request->get_param( 'authorEmail' ) );
-
-		$parent = null;
-		if ( $parent_id > 0 ) {
-			$parent = DB::get_comment( $parent_id );
-			if ( ! $parent || (int) $parent->review_id !== $review_id ) {
-				return new \WP_Error( 'flow_ew_invalid_parent', __( 'The parent comment does not belong to this review.', 'jumplinks-editorial-workflow' ), [ 'status' => 400 ] );
-			}
-		}
 
 		$invite = ( 0 === $user_id ) ? Email_Review::current_invite_for_review( $review_id ) : null;
 		if ( $invite ) {
@@ -617,59 +596,22 @@ class REST_Reviews extends \WP_REST_Controller {
 			);
 		}
 
-		// Pre-flight filter for add-ons; non-empty return becomes a 4xx.
-		$reject = (string) \apply_filters(
-			'flow_ew_pre_create_comment_error',
-			'',
+		$comment_id = Comment_Writer::create(
+			$review,
 			[
-				'review'       => $review,
-				'user_id'      => $user_id,
-				'html'         => $html,
-				'author_name'  => $author_name,
-				'author_email' => $author_email,
-				'request'      => $request,
+				'html'            => (string) $request->get_param( 'html' ),
+				'author_id'       => $user_id,
+				'author_name'     => $author_name,
+				'author_email'    => $author_email,
+				'parent_id'       => $parent_id,
+				'anchor_text'     => $anchor_text,
+				'block_client_id' => $block_client_id,
+				'request'         => $request,
 			]
 		);
-		if ( '' !== $reject ) {
-			return new \WP_Error(
-				'flow_ew_comment_rejected',
-				$reject,
-				[ 'status' => 422 ]
-			);
+		if ( is_wp_error( $comment_id ) ) {
+			return $comment_id;
 		}
-
-		$insert_data = [
-			'review_id'    => $review_id,
-			'post_id'      => (int) $review->post_id,
-			'comment_text' => $html,
-			'author_id'    => $user_id,
-		];
-
-		if ( 0 === $user_id ) {
-			$insert_data['author_name']  = $author_name;
-			$insert_data['author_email'] = $author_email; // sanitize_email returns '' for invalid
-		}
-
-		if ( '' !== $anchor_text ) {
-			$insert_data['anchor_text'] = $anchor_text;
-		}
-		if ( '' !== $block_client_id ) {
-			$insert_data['block_client_id'] = $block_client_id;
-		}
-
-		if ( $parent ) {
-			$insert_data['parent_id'] = (int) $parent->parent_id > 0
-				? (int) $parent->parent_id
-				: $parent_id;
-		}
-
-		$comment_id = DB::insert_comment( $insert_data );
-
-		if ( ! $comment_id ) {
-			return new \WP_Error( 'flow_ew_error', __( 'Failed to save comment.', 'jumplinks-editorial-workflow' ), [ 'status' => 500 ] );
-		}
-
-		\do_action( 'flow_ew_comment_created', $comment_id, $review_id, (int) $review->post_id, $user_id );
 
 		$row = DB::get_comment( $comment_id );
 		return rest_ensure_response( $row ? Comment_Presenter::to_array( $row ) : [ 'id' => $comment_id ] );
@@ -1006,6 +948,15 @@ class REST_Reviews extends \WP_REST_Controller {
 		];
 	}
 
+	/** How many matches a picker shows at once. */
+	const USER_SEARCH_LIMIT = 20;
+
+	/**
+	 * Two passes because WordPress cannot do both in one query: `search_columns`
+	 * covers the user table, while first and last name live in usermeta and need
+	 * a meta query. Combining them in one `get_users()` call would AND the two,
+	 * not OR them.
+	 */
 	public function search_users( \WP_REST_Request $request ): \WP_REST_Response {
 		$q = trim( (string) $request->get_param( 'q' ) );
 
@@ -1013,25 +964,65 @@ class REST_Reviews extends \WP_REST_Controller {
 			return rest_ensure_response( [] );
 		}
 
+		$common = [
+			'number'      => self::USER_SEARCH_LIMIT,
+			'fields'      => [ 'ID', 'display_name', 'user_login', 'user_email' ],
+			'count_total' => false,
+		];
+
 		$users = get_users(
-			[
-				'search'         => '*' . $q . '*',
-				'search_columns' => [ 'display_name' ],
-				'number'         => 20,
-				'fields'         => [ 'ID', 'display_name' ],
-				'count_total'    => false,
-			]
+			array_merge(
+				$common,
+				[
+					'search'         => '*' . $q . '*',
+					'search_columns' => [ 'display_name', 'user_login', 'user_email', 'user_nicename' ],
+				]
+			)
 		);
 
+		$by_name = get_users(
+			array_merge(
+				$common,
+				[
+					// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- bounded to 20 rows and only runs on an admin-side picker keystroke.
+					'meta_query' => [
+						'relation' => 'OR',
+						[
+							'key'     => 'first_name',
+							'value'   => $q,
+							'compare' => 'LIKE',
+						],
+						[
+							'key'     => 'last_name',
+							'value'   => $q,
+							'compare' => 'LIKE',
+						],
+					],
+				]
+			)
+		);
+
+		$merged = [];
+		foreach ( array_merge( $users, $by_name ) as $u ) {
+			$merged[ (int) $u->ID ] = $u;
+		}
+		$merged = array_slice( $merged, 0, self::USER_SEARCH_LIMIT, true );
+
+		// The address is the only way to tell two people with the same display
+		// name apart, but it is only shown to someone who may already list users.
+		$show_email = current_user_can( 'list_users' );
+
 		$data = array_map(
-			static function ( $u ) {
+			static function ( $u ) use ( $show_email ) {
 				return [
 					'id'         => (int) $u->ID,
 					'name'       => $u->display_name,
+					'login'      => (string) $u->user_login,
+					'email'      => $show_email ? (string) $u->user_email : '',
 					'avatar_url' => get_avatar_url( (int) $u->ID, [ 'size' => 32 ] ),
 				];
 			},
-			$users
+			$merged
 		);
 
 		return rest_ensure_response( array_values( $data ) );

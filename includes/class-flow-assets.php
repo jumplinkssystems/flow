@@ -287,6 +287,13 @@ final class Assets {
 	 * are built from (`assets/status-palette.json`). Empty when the palette or
 	 * the status is missing, so callers can fall back to an inherited colour.
 	 */
+	/** Empty when the file is absent, so callers can omit the asset entirely. */
+	public static function asset_url( string $relative ): string {
+		return file_exists( FLOW_EW_PLUGIN_DIR . $relative )
+			? FLOW_EW_PLUGIN_URL . $relative
+			: '';
+	}
+
 	public static function status_color( string $status, string $key = 'text' ): string {
 		static $palette = null;
 		if ( null === $palette ) {
