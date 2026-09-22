@@ -66,7 +66,7 @@ if ( flow_ew_is_pro_build() ) {
 		define( 'FLOW_EW_PRO_VERSION', '1.4.0' );
 	}
 	if ( ! defined( 'FLOW_EW_PRO_DB_VERSION' ) ) {
-		define( 'FLOW_EW_PRO_DB_VERSION', '9' );
+		define( 'FLOW_EW_PRO_DB_VERSION', '10' );
 	}
 	if ( ! defined( 'FLOW_EW_PRO_PLUGIN_FILE' ) ) {
 		define( 'FLOW_EW_PRO_PLUGIN_FILE', dirname( __DIR__ ) . '/jumplinks-editorial-workflow.php' );

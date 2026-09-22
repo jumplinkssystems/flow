@@ -41,6 +41,15 @@ function markSeen() {
 	}
 }
 
+/**
+ * An invitee who already gave a display name has been here before, whatever
+ * this browser remembers.
+ */
+function hasNamedThemselves() {
+	const pageData = window.flowReviewPage || {};
+	return '' !== String( pageData.inviteDisplayName || '' ).trim();
+}
+
 export function removeCommentableNotice() {
 	window.document.querySelector( '.' + NOTICE_CLASS )?.remove();
 }
@@ -96,7 +105,7 @@ export function installCommentableChrome( options = {} ) {
 		return;
 	}
 
-	if ( hasSeen() ) {
+	if ( hasSeen() || hasNamedThemselves() ) {
 		return;
 	}
 	if ( doc.querySelector( '.' + NOTICE_CLASS ) ) {

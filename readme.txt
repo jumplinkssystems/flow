@@ -4,7 +4,7 @@ Tags: client feedback, website feedback, content approval, site review, editoria
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.5.1
+Stable tag: 2.5.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -194,6 +194,20 @@ No, and this is deliberate rather than an oversight. There is no approve ability
 9. Assign reviewer to page in Bricks
 
 == Changelog ==
+
+= 2.5.2 =
+* New: Settings → AI agent now hands you the prompts to give your agent, each with a copy button. An agent only picks up these rules by calling flow/get-instructions, so the first prompt tells it to do that after you change a setting. The rest are short examples for everyday jobs: resolving the comments on a post, getting an overview of the feedback on a page, and sending it back to the reviewer.
+* New (Pro): The site review screen now tells you which cookies your page cache has to let through. Reviewers arrive logged out, so a cache can hand them a copy of the site saved before the review existed; the Caching panel lists the exact cookie names to add to a do-not-cache list, names any caching plugin it finds, and links to the setup guide.
+* Improvement (Pro): Site review feedback now arrives live. When another reviewer comments while you have the review open, it shows up on its own instead of on your next reload, the way it already worked on a page review. Coming back to the tab or window refreshes it straight away, so you never look at a stale page while catching up.
+* Improvement: Anonymous reviewers can leave up to 10 comments a minute from one address, up from 5. The limit counts the address rather than the person, so two people reviewing from the same office or home network were reaching it between them.
+* New: Review links get through maintenance and coming-soon modes. Someone holding a valid review link lands on the page and comments as usual while the site is closed to everyone else, and every other visitor still meets the maintenance screen. Works with Bricks, Beaver Builder, Avada, Elementor, Breakdance, Oxygen and WooCommerce, with no setting to turn on.
+* New: Turn external reviewers off for page reviews. Under Settings → Workflow, "Disable external reviewers" hides the External Email option in the editor and turns away email invites at the API. It is off by default, and anyone already invited keeps the access they have.
+* New (Pro): Site review rounds. Once a reviewer has sent their feedback and you have applied it, send the site back to that reviewer for another look — from the Site Review screen, from the review bar while previewing, or through the flow/resubmit-site-review agent ability. Each reviewer is sent back individually, gets a fresh link, and their earlier comments stay in place. Agents see who to send back in resubmit_to, and a new site_review.resubmitted webhook event fires.
+* New (Pro): Add or remove reviewers after a site review has gone out. People you add get their invitation; someone you remove loses access immediately.
+* Improvement (Pro): The Site Review screen was rebuilt. The list is now what you land on, with status, how many reviewers have submitted, and the comment counts readable at a glance, plus filters, search, sorting and paging. Creating a review has its own screen, and every review has its own page with the reviewer roster, per-reviewer actions, and the feedback broken down by page.
+* Improvement (Pro): External reviewers are invited from the same Reviewers field as everyone else on the Site Review screen. Type an address and pick "Invite", instead of ticking a box and filling a second field. With "Disable external reviews" on, the option is not offered at all.
+* Improvement: The welcome popin no longer greets a reviewer who has already been through it. Anyone who gave their name or left feedback goes straight into the review, even on a different browser or device.
+* Fix (Pro): Clicking the "Invite {email}" suggestion in the Reviewers field now adds that external reviewer.
 
 = 2.5.1 =
 * New: AI agents can now write back. An agent connected over MCP can reply to a review comment to ask a clarifying question when your instruction is ambiguous, instead of guessing or going quiet.

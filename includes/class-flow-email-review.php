@@ -68,6 +68,9 @@ class Email_Review {
 	 * @throws \RuntimeException When persistence fails.
 	 */
 	public static function assign_invite( int $post_id, string $email, int $requester_id ): int {
+		if ( Settings::are_external_reviewers_disabled() ) {
+			throw new \InvalidArgumentException( esc_html__( 'External reviewers are disabled.', 'jumplinks-editorial-workflow' ) );
+		}
 		$email = Email_Review_Invites_DB::normalize_email( $email );
 		if ( '' === $email || ! is_email( $email ) ) {
 			throw new \InvalidArgumentException( esc_html__( 'Please enter a valid email address.', 'jumplinks-editorial-workflow' ) );

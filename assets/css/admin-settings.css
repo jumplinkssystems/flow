@@ -313,3 +313,66 @@ tr.flow-ew-agent-dependent[hidden] {
 	text-transform: uppercase;
 	vertical-align: middle;
 }
+
+.flow-ew-agent-primer {
+	margin: 12px 0 0;
+}
+
+.flow-ew-agent-primer__row {
+	margin: 0 0 12px;
+}
+
+.flow-ew-agent-primer__box {
+	display: flex;
+	align-items: flex-start;
+	gap: 12px;
+	padding: 10px 12px;
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+	background: #f6f7f7;
+}
+
+.flow-ew-agent-primer__text {
+	flex: 1 1 auto;
+	padding: 0;
+	background: none;
+	font-size: 13px;
+	word-break: break-word;
+}
+
+.flow-ew-agent-primer__copy {
+	flex: 0 0 auto;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 28px;
+	height: 28px;
+	padding: 0;
+	border-radius: 3px;
+	color: #50575e;
+	cursor: pointer;
+}
+
+.flow-ew-agent-primer__copy:hover,
+.flow-ew-agent-primer__copy:focus {
+	color: #2271b1;
+	background: #fff;
+}
+
+.flow-ew-agent-primer__copy.is-copied {
+	color: #007017;
+}
+
+.flow-ew-copy-icon {
+	width: 18px;
+	height: 18px;
+}
+
+.flow-ew-copy-icon--done,
+.flow-ew-agent-primer__copy.is-copied .flow-ew-copy-icon--copy {
+	display: none;
+}
+
+.flow-ew-agent-primer__copy.is-copied .flow-ew-copy-icon--done {
+	display: block;
+}

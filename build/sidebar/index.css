@@ -126,6 +126,12 @@
 	--flow-status-pending-bg: #e6f3f5;
 	--flow-status-pending-text: #5e777b;
 	--flow-status-pending-border: #cde3e7;
+	--flow-status-completed-bg: #e0f3f0;
+	--flow-status-completed-text: #0f6b5c;
+	--flow-status-completed-border: #bfe5dd;
+	--flow-status-cancelled-bg: #f0f0f1;
+	--flow-status-cancelled-text: #50575e;
+	--flow-status-cancelled-border: #dcdcde;
 }
 /* Review mode notices (mandatory review / no reviewers). Shared by the
    Gutenberg sidebar and the classic/builder companion. */

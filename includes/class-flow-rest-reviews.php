@@ -765,14 +765,15 @@ class REST_Reviews extends \WP_REST_Controller {
 
 	public function get_reviewers( \WP_REST_Request $request ) {
 		$reviewer_roles = Settings::get_reviewer_roles();
-		$data           = [
-			[
+		$data           = [];
+		if ( ! Settings::are_external_reviewers_disabled() ) {
+			$data[] = [
 				'id'         => Email_Review::SENTINEL_OPTION,
 				'name'       => __( 'External Email', 'jumplinks-editorial-workflow' ),
 				'avatar_url' => '',
 				'is_email'   => true,
-			],
-		];
+			];
+		}
 
 		if ( ! empty( $reviewer_roles ) ) {
 			$users = get_users(

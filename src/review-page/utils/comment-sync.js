@@ -17,6 +17,7 @@ import {
 const DEFAULT_INTERVAL_MS = 15000;
 const MAX_BACKOFF_MS = 60000;
 const STOP_STATUSES = [ 401, 403, 404 ];
+const MIN_REFOCUS_GAP_MS = 2000;
 
 let timer = null;
 let controller = null;
@@ -26,6 +27,19 @@ let failures = 0;
 let version = '';
 let lastLocalWriteAt = 0;
 let draftOpen = false;
+let lastPollStartedAt = 0;
+let adapter = null;
+
+/**
+ * Point the poller at another backend. Site Review reuses the merge, backoff
+ * and visibility behaviour here against its own REST namespace, where comments
+ * belong to a whole site rather than one post.
+ *
+ * @param {{fetchPayload: Function, handlePayload: Function}} next
+ */
+export function configureCommentSync( next ) {
+	adapter = next;
+}
 
 /**
  * Called around every local write. A response that left the browser before the
@@ -141,6 +155,7 @@ async function poll() {
 	}
 
 	const startedAt = Date.now();
+	lastPollStartedAt = startedAt;
 	controller =
 		typeof AbortController !== 'undefined' ? new AbortController() : null;
 
@@ -153,10 +168,13 @@ async function poll() {
 			params.set( 'revision', String( pageData.revisionId ) );
 		}
 		const query = params.toString() ? `?${ params.toString() }` : '';
-		const payload = await flowFetch(
-			`reviews/${ pageData.reviewId }/comments/sync${ query }`,
-			controller ? { signal: controller.signal } : {}
-		);
+		const options = controller ? { signal: controller.signal } : {};
+		const payload = adapter
+			? await adapter.fetchPayload( query, options )
+			: await flowFetch(
+					`reviews/${ pageData.reviewId }/comments/sync${ query }`,
+					options
+			  );
 		failures = 0;
 
 		if ( lastLocalWriteAt >= startedAt ) {
@@ -174,7 +192,11 @@ async function poll() {
 				return;
 			}
 			version = payload.version || version;
-			broadcast( payload );
+			if ( adapter ) {
+				adapter.handlePayload( payload );
+			} else {
+				broadcast( payload );
+			}
 		} else if ( payload && payload.version ) {
 			version = payload.version;
 		}
@@ -226,8 +248,30 @@ function onVisibilityChange() {
 	}
 }
 
+/**
+ * Coming back to the page should show what arrived while it was away, rather
+ * than the rest of the interval. Switching browser tabs fires
+ * `visibilitychange`, but switching windows or applications only fires
+ * `focus` — the page stays "visible" the whole time — so both are wired up.
+ */
+function onFocus() {
+	if ( stopped || document.visibilityState !== 'visible' ) {
+		return;
+	}
+	// A poll that just went out already covers this; don't double up on
+	// someone alt-tabbing back and forth.
+	if ( Date.now() - lastPollStartedAt < MIN_REFOCUS_GAP_MS ) {
+		return;
+	}
+	schedule( 0 );
+}
+
 export function startCommentSync() {
-	if ( started || ! pageData.reviewId || pageData.error ) {
+	if ( started || pageData.error ) {
+		return;
+	}
+	// Site Review drives the poller through an adapter and has no review id.
+	if ( ! adapter && ! pageData.reviewId ) {
 		return;
 	}
 	if ( Number( pageData.syncInterval ) === 0 ) {
@@ -237,6 +281,7 @@ export function startCommentSync() {
 	version = String( pageData.commentsVersion || '' );
 
 	document.addEventListener( 'visibilitychange', onVisibilityChange );
+	window.addEventListener( 'focus', onFocus );
 	window.addEventListener( 'flow:inline-draft-state', ( e ) => {
 		draftOpen = !! e.detail?.open;
 		if ( ! draftOpen ) {

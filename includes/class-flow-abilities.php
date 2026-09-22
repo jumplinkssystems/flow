@@ -474,14 +474,24 @@ class Abilities {
 	private static function comment_writing_instructions(): string {
 		$resolve_notes = Settings::agent_resolve_notes_enabled();
 		$followup      = Settings::agent_followup_comments_enabled();
+		$asks_first    = Settings::agent_asks_before_editing();
 
 		$lines = [ 'Writing comments (this site allows it)' ];
+
+		// Without this the two blocks contradict each other: one hands the agent
+		// a reply tool for vague feedback, the other forbids writing until the
+		// operator approves. An agent read that gap as permission and posted.
+		if ( $asks_first ) {
+			$lines[] = '- "Ask before editing" is on, and it takes precedence over everything in this section. Do not call flow/reply-to-comment or flow/resolve-comment until the operator has approved your plan in the conversation. Ask clarifying questions there, not on the review.';
+		}
 
 		if ( $resolve_notes ) {
 			$lines[] = '- Overrides step 9: flow/resolve-comment now requires note — one or two sentences on what you actually changed. No note, no resolve; nothing is marked resolved if the note fails. The note names an edit you really made; restating, interpreting or agreeing with the comment is not a change, and neither is deciding it needed no change.';
 		}
 
-		if ( $followup ) {
+		if ( $followup && $asks_first ) {
+			$lines[] = '- flow/reply-to-comment (comment_id, body) exists, but not yet: while "Ask before editing" is on, a vague comment is raised with the operator in the conversation first. Use this tool only once they approve, and then only to ask one specific question, leaving the comment unresolved. Never resolve it instead, and never guess.';
+		} elseif ( $followup ) {
 			$lines[] = '- flow/reply-to-comment (comment_id, body): when a comment does not name a concrete change, ask one specific question, leave the comment unresolved, and wait for a human answer. That is the required move for vague or non-actionable feedback - never resolve it instead, and never guess. Not for progress reports, not for acknowledgements, not for arguing, and never in reply to your own comment.';
 		} else {
 			$lines[] = '- There is no reply tool on this site. When a comment does not name a concrete change, make no edit, leave it unresolved, and say so to the person you are working for. Never guess, and never resolve it to clear the queue.';
@@ -500,10 +510,14 @@ class Abilities {
 	private static function ask_before_editing_instructions(): string {
 		return <<<'TXT'
 Ask before editing (this site requires it)
-- Overrides step 8. Work out the full set of edits the feedback asks for, but make none of them yet. Do not edit content, do not resolve comments, do not resubmit the review.
-- Summarise the plan in your reply to the person you are working for: which post or page, what you would change, the current wording and your proposed wording where text is involved, and anything you still need from them (an image, a link, a decision they have to make).
+- This section takes precedence over every other instruction here, including the comment-writing rules. Until the person you are working for approves, you may write NOTHING to Flow: no flow/reply-to-comment, no flow/resolve-comment, no note, no new thread. Asking a clarifying question is still writing, and it still waits.
+- Overrides step 8. Work out the full set of edits the feedback asks for, but make none of them yet. Do not edit content, do not post comments, do not resolve comments, do not resubmit the review.
+- "Your reply" means your own message in the chat you are having with that person. It never means a reply posted into a Flow comment thread. Approval is asked for and given in that conversation, not on the review.
+- Summarise the plan there: which post or page, what you would change, the current wording and your proposed wording where text is involved, and anything you still need from them (an image, a link, a decision they have to make).
+- If a comment is vague, say so in that same conversation and ask them. Do not use flow/reply-to-comment to ask - that is a write, and writes wait for approval.
 - List separately any comment you cannot act on, and say why.
 - Then stop and wait for their explicit go-ahead in the conversation. Silence is not approval.
+- Only once they approve may you edit and use the comment tools as the rules elsewhere describe.
 - If they approve only part of the plan, do only that part and leave the rest untouched.
 - This applies to every editing pass, not only the first one.
 TXT;

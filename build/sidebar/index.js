@@ -1659,18 +1659,26 @@ function ReviewerField() {
     label: u.name
   })), [reviewers]);
 
+  // The REST list carries the external-email option only when the setting
+  // allows it, so the picker follows the list instead of assuming.
+  const externalAllowed = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_1__.useMemo)(() => reviewers.some(u => String(u.id) === _shared_invite_value__WEBPACK_IMPORTED_MODULE_10__.EMAIL_SENTINEL || u.is_email), [reviewers]);
+
   // No WP reviewers available — skip the External Email pick step.
-  const emailOnly = userOptions.length === 0;
+  const emailOnly = externalAllowed && userOptions.length === 0;
   const inEmailMode = emailMode || emailOnly;
   const externalEmailLabel = i18n?.externalEmail || (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_4__.__)('External Email', 'jumplinks-editorial-workflow');
   const comboboxOptions = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_1__.useMemo)(() => {
     // Combobox is only used to pick a WP user or "External Email".
     // Email typing uses TextControl (no autocomplete while composing).
-    return [{
-      value: _shared_invite_value__WEBPACK_IMPORTED_MODULE_10__.EMAIL_SENTINEL,
-      label: externalEmailLabel
-    }, ...userOptions];
-  }, [userOptions, externalEmailLabel]);
+    const options = [...userOptions];
+    if (externalAllowed) {
+      options.unshift({
+        value: _shared_invite_value__WEBPACK_IMPORTED_MODULE_10__.EMAIL_SENTINEL,
+        label: externalEmailLabel
+      });
+    }
+    return options;
+  }, [userOptions, externalEmailLabel, externalAllowed]);
   const renderSuggestion = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_1__.useCallback)(({
     item
   }) => {
@@ -1687,11 +1695,11 @@ function ReviewerField() {
   const inviteFormat = i18n?.inviteEmail || inviteFallback;
   const inviteSuggestionLabel = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_1__.useMemo)(() => {
     const trimmed = (filterValue || '').trim();
-    if (!(0,_shared_assign_invite_email__WEBPACK_IMPORTED_MODULE_9__.isValidEmail)(trimmed)) {
+    if (!externalAllowed || !(0,_shared_assign_invite_email__WEBPACK_IMPORTED_MODULE_9__.isValidEmail)(trimmed)) {
       return '';
     }
     return (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_4__.sprintf)(inviteFormat, trimmed);
-  }, [filterValue, inviteFormat]);
+  }, [filterValue, inviteFormat, externalAllowed]);
   const assignEmail = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_1__.useCallback)(async email => {
     const trimmed = (email || '').trim().toLowerCase();
     if (!(0,_shared_assign_invite_email__WEBPACK_IMPORTED_MODULE_9__.isValidEmail)(trimmed)) {
@@ -2280,7 +2288,7 @@ module.exports = window["wp"]["plugins"];
   \************************************/
 (module) {
 
-module.exports = /*#__PURE__*/JSON.parse('{"open_review":{"bg":"#dff4ff","text":"#1579a5","border":"#b6e6ff"},"approved":{"bg":"#e7f5e4","text":"#458037","border":"#cae8c4"},"in_review":{"bg":"#fcf0ce","text":"#957500","border":"#f2dda4"},"changes_requested":{"bg":"#ffebea","text":"#c92122","border":"#ffd1d0"},"pending":{"bg":"#e6f3f5","text":"#5e777b","border":"#cde3e7"}}');
+module.exports = /*#__PURE__*/JSON.parse('{"open_review":{"bg":"#dff4ff","text":"#1579a5","border":"#b6e6ff"},"approved":{"bg":"#e7f5e4","text":"#458037","border":"#cae8c4"},"in_review":{"bg":"#fcf0ce","text":"#957500","border":"#f2dda4"},"changes_requested":{"bg":"#ffebea","text":"#c92122","border":"#ffd1d0"},"pending":{"bg":"#e6f3f5","text":"#5e777b","border":"#cde3e7"},"completed":{"bg":"#e0f3f0","text":"#0f6b5c","border":"#bfe5dd"},"cancelled":{"bg":"#f0f0f1","text":"#50575e","border":"#dcdcde"}}');
 
 /***/ }
 

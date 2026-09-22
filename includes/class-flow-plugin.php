@@ -26,6 +26,7 @@ class Plugin {
 		Mailer::boot();
 		Privacy::boot();
 		Page_Cache::boot();
+		Maintenance_Bypass::boot();
 
 		( new Settings() )->boot();
 

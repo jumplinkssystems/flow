@@ -130,6 +130,12 @@ export default function ReviewBar( {
 			revisionStatusRef.current = next;
 			setRevisionStatus( next );
 			setLatestRevisionUrl( e.detail?.latestRevisionUrl || '' );
+			if ( 'outdated' === next ) {
+				// A newer version is exactly what the mount-time check counts
+				// as resubmittable activity; without this the author is told
+				// there is one while Resubmit stays disabled until a reload.
+				setHasAuthorResubmitActivity( true );
+			}
 			// Only on the way in: a later poll still reports `outdated`, and
 			// re-announcing it every time would nag.
 			if ( 'outdated' === next && ! wasOutdated ) {

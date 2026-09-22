@@ -59,6 +59,42 @@ final class Page_Cache {
 		return array_values( array_unique( $cookies ) );
 	}
 
+	/**
+	 * Page caches active on this site, by display name. Best effort: a reverse
+	 * proxy, a CDN or a host-level cache leaves no trace here, which is why the
+	 * site review screen shows the cookie names whether or not this finds
+	 * anything.
+	 *
+	 * @return string[]
+	 */
+	public static function detected_caches(): array {
+		$by_constant = [
+			'LiteSpeed Cache'  => [ 'LSCWP_V', 'LSCACHE_ADV_CACHE' ],
+			'WP Rocket'        => [ 'WP_ROCKET_VERSION' ],
+			'W3 Total Cache'   => [ 'W3TC' ],
+			'WP Super Cache'   => [ 'WPCACHEHOME' ],
+			'Cache Enabler'    => [ 'CACHE_ENABLER_VERSION' ],
+			'WP Fastest Cache' => [ 'WPFC_MAIN_PATH' ],
+			'NitroPack'        => [ 'NITROPACK_VERSION' ],
+			'Hummingbird'      => [ 'WPHB_VERSION' ],
+		];
+
+		$found = [];
+		foreach ( $by_constant as $label => $constants ) {
+			foreach ( $constants as $constant ) {
+				if ( defined( $constant ) ) {
+					$found[] = $label;
+					break;
+				}
+			}
+		}
+		if ( class_exists( '\SiteGround_Optimizer\Loader\Loader' ) ) {
+			$found[] = 'SG Optimizer';
+		}
+
+		return array_values( array_unique( $found ) );
+	}
+
 	public static function has_session_cookie(): bool {
 		foreach ( self::session_cookies() as $name ) {
 			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- presence-only check, the value is never read here.

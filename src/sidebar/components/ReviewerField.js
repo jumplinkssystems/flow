@@ -102,8 +102,18 @@ export default function ReviewerField() {
 		[ reviewers ]
 	);
 
+	// The REST list carries the external-email option only when the setting
+	// allows it, so the picker follows the list instead of assuming.
+	const externalAllowed = useMemo(
+		() =>
+			reviewers.some(
+				( u ) => String( u.id ) === EMAIL_SENTINEL || u.is_email
+			),
+		[ reviewers ]
+	);
+
 	// No WP reviewers available — skip the External Email pick step.
-	const emailOnly = userOptions.length === 0;
+	const emailOnly = externalAllowed && userOptions.length === 0;
 	const inEmailMode = emailMode || emailOnly;
 
 	const externalEmailLabel =
@@ -113,11 +123,15 @@ export default function ReviewerField() {
 	const comboboxOptions = useMemo( () => {
 		// Combobox is only used to pick a WP user or "External Email".
 		// Email typing uses TextControl (no autocomplete while composing).
-		return [
-			{ value: EMAIL_SENTINEL, label: externalEmailLabel },
-			...userOptions,
-		];
-	}, [ userOptions, externalEmailLabel ] );
+		const options = [ ...userOptions ];
+		if ( externalAllowed ) {
+			options.unshift( {
+				value: EMAIL_SENTINEL,
+				label: externalEmailLabel,
+			} );
+		}
+		return options;
+	}, [ userOptions, externalEmailLabel, externalAllowed ] );
 
 	const renderSuggestion = useCallback( ( { item } ) => {
 		if ( item.value === EMAIL_SENTINEL ) {
@@ -131,11 +145,11 @@ export default function ReviewerField() {
 	const inviteFormat = i18n?.inviteEmail || inviteFallback;
 	const inviteSuggestionLabel = useMemo( () => {
 		const trimmed = ( filterValue || '' ).trim();
-		if ( ! isValidEmail( trimmed ) ) {
+		if ( ! externalAllowed || ! isValidEmail( trimmed ) ) {
 			return '';
 		}
 		return sprintf( inviteFormat, trimmed );
-	}, [ filterValue, inviteFormat ] );
+	}, [ filterValue, inviteFormat, externalAllowed ] );
 
 	const assignEmail = useCallback(
 		async ( email ) => {

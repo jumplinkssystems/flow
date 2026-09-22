@@ -95,11 +95,13 @@ class ClassicEditor {
 		// True when no WP review roles/users — External Email does not clear this.
 		$no_reviewers = false;
 		if ( $can_assign ) {
-			$reviewers[] = [
-				'id'       => Email_Review::SENTINEL_OPTION,
-				'name'     => __( 'External Email', 'jumplinks-editorial-workflow' ),
-				'is_email' => true,
-			];
+			if ( ! Settings::are_external_reviewers_disabled() ) {
+				$reviewers[] = [
+					'id'       => Email_Review::SENTINEL_OPTION,
+					'name'     => __( 'External Email', 'jumplinks-editorial-workflow' ),
+					'is_email' => true,
+				];
+			}
 			if ( empty( $reviewer_roles ) ) {
 				$no_reviewers = true;
 			} else {

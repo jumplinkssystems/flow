@@ -37,6 +37,20 @@
 	--flow-status-border: var(--flow-status-pending-border);
 }
 
+.flow-ew-dashboard-page__status--completed,
+.flow-ew-pro-reviewer-row__status--completed {
+	--flow-status-bg: var(--flow-status-completed-bg);
+	--flow-status-text: var(--flow-status-completed-text);
+	--flow-status-border: var(--flow-status-completed-border);
+}
+
+.flow-ew-dashboard-page__status--cancelled,
+.flow-ew-pro-reviewer-row__status--cancelled {
+	--flow-status-bg: var(--flow-status-cancelled-bg);
+	--flow-status-text: var(--flow-status-cancelled-text);
+	--flow-status-border: var(--flow-status-cancelled-border);
+}
+
 /* ----- Shared status pill layout ------------------------------------------- */
 
 .flow-ew-status-pill__dot,

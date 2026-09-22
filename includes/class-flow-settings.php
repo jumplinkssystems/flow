@@ -15,6 +15,7 @@ class Settings {
 	const OPTION_AUTO_ASSIGN_REVIEWER  = 'flow_ew_auto_assign_reviewer_id';
 	const OPTION_DEBUG_MODE            = 'flow_ew_debug_mode';
 	const OPTION_DISABLE_OPEN_REVIEWS  = 'flow_ew_disable_open_reviews';
+	const OPTION_DISABLE_EXTERNAL      = 'flow_ew_disable_external_reviewers';
 	const OPTION_DISABLE_NOTIFICATIONS = 'flow_ew_disable_notifications';
 	const OPTION_SUPPORTED_POST_TYPES  = 'flow_ew_supported_post_types';
 	const OPTION_SHOW_UPGRADE_HINTS    = 'flow_ew_show_upgrade_hints';
@@ -266,6 +267,10 @@ class Settings {
 		return (bool) get_option( self::OPTION_DISABLE_OPEN_REVIEWS, false );
 	}
 
+	public static function are_external_reviewers_disabled(): bool {
+		return (bool) get_option( self::OPTION_DISABLE_EXTERNAL, false );
+	}
+
 	public static function are_notifications_disabled(): bool {
 		return (bool) get_option( self::OPTION_DISABLE_NOTIFICATIONS, false );
 	}
@@ -367,6 +372,7 @@ class Settings {
 			self::OPTION_SHOW_REVIEWED_BY      => false,
 			self::OPTION_DEBUG_MODE            => false,
 			self::OPTION_DISABLE_OPEN_REVIEWS  => false,
+			self::OPTION_DISABLE_EXTERNAL      => false,
 			self::OPTION_DISABLE_NOTIFICATIONS => false,
 			self::OPTION_SHOW_UPGRADE_HINTS    => true,
 			self::OPTION_SUPPORTED_POST_TYPES  => self::DEFAULT_SUPPORTED_POST_TYPES,
@@ -477,6 +483,16 @@ class Settings {
 		register_setting(
 			self::OPTION_GROUP,
 			self::OPTION_DISABLE_OPEN_REVIEWS,
+			[
+				'type'              => 'boolean',
+				'default'           => false,
+				'sanitize_callback' => 'rest_sanitize_boolean',
+			]
+		);
+
+		register_setting(
+			self::OPTION_GROUP,
+			self::OPTION_DISABLE_EXTERNAL,
 			[
 				'type'              => 'boolean',
 				'default'           => false,
@@ -606,6 +622,14 @@ class Settings {
 		);
 
 		add_settings_field(
+			self::OPTION_DISABLE_EXTERNAL,
+			__( 'External reviewers', 'jumplinks-editorial-workflow' ),
+			[ $this, 'render_disable_external_reviewers_field' ],
+			self::PAGE_SLUG,
+			'flow_ew_general'
+		);
+
+		add_settings_field(
 			self::OPTION_DISABLE_OPEN_REVIEWS,
 			__( 'Open Review', 'jumplinks-editorial-workflow' ),
 			[ $this, 'render_disable_open_reviews_field' ],
@@ -648,6 +672,7 @@ class Settings {
 			[ $this, 'render_ai_agent_section_description' ],
 			self::PAGE_SLUG
 		);
+		add_action( 'flow_ew_after_settings_section', [ $this, 'render_agent_primer' ] );
 
 		add_settings_field(
 			self::OPTION_AGENT_COMMENTS,
@@ -976,6 +1001,111 @@ class Settings {
 		<?php
 	}
 
+	/**
+	 * Sits under the AI agent fields: the rules above only reach an agent when
+	 * it calls `flow/get-instructions`, so the screen has to hand the user a
+	 * prompt that makes it do that.
+	 */
+	public function render_agent_primer( string $section_id ): void {
+		if ( 'flow_ew_ai_agent' !== $section_id ) {
+			return;
+		}
+		?>
+		<div class="flow-ew-agent-primer">
+			<p class="description">
+				<?php esc_html_e( 'After changing settings, we recommend the following prompt for your agent:', 'jumplinks-editorial-workflow' ); ?>
+			</p>
+			<?php
+			$this->render_agent_prompt(
+				__( 'Call the Flow get-instructions tool now, then follow those rules for the rest of this session. They reflect this site\'s current Flow settings.', 'jumplinks-editorial-workflow' )
+			);
+			?>
+			<p class="description">
+				<?php esc_html_e( 'Prompts for working through review feedback:', 'jumplinks-editorial-workflow' ); ?>
+			</p>
+			<?php
+			$this->render_agent_prompt( __( 'Resolve all the Flow comments on post [id]', 'jumplinks-editorial-workflow' ) );
+			$this->render_agent_prompt( __( 'Give me an overview of the feedback on [url]', 'jumplinks-editorial-workflow' ) );
+			$this->render_agent_prompt( __( 'Send the page back to the reviewer', 'jumplinks-editorial-workflow' ) );
+			?>
+		</div>
+		<?php
+		$this->add_agent_primer_copy_script();
+	}
+
+	/** One copyable prompt, with the copy control inside the box. */
+	private function render_agent_prompt( string $prompt ): void {
+		$copy = __( 'Copy', 'jumplinks-editorial-workflow' );
+		?>
+		<div class="flow-ew-agent-primer__row">
+			<div class="flow-ew-agent-primer__box">
+				<code class="flow-ew-agent-primer__text"><?php echo esc_html( $prompt ); ?></code>
+				<button
+					type="button"
+					class="button-link flow-ew-agent-primer__copy"
+					data-copy="<?php echo esc_attr( $prompt ); ?>"
+					data-copy-label="<?php echo esc_attr( $copy ); ?>"
+					data-copied-label="<?php esc_attr_e( 'Copied!', 'jumplinks-editorial-workflow' ); ?>"
+					title="<?php echo esc_attr( $copy ); ?>"
+					aria-label="<?php echo esc_attr( $copy ); ?>"
+				>
+					<svg class="flow-ew-copy-icon flow-ew-copy-icon--copy" viewBox="0 0 24 24" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><path fill="currentColor" d="M18 0H8C6.897 0 6 0.897 6 2V6H2C0.897 6 0 6.897 0 8V18C0 19.103 0.897 20 2 20H12C13.103 20 14 19.103 14 18V14H18C19.103 14 20 13.103 20 12V2C20 0.897 19.103 0 18 0ZM2 18V8H12L12.002 18H2ZM18 12H14V8C14 6.897 13.103 6 12 6H8V2H18V12Z" transform="translate(2 2)"/></svg>
+					<svg class="flow-ew-copy-icon flow-ew-copy-icon--done" viewBox="0 0 24 24" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><path fill="currentColor" d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z"/></svg>
+					<span class="screen-reader-text"><?php echo esc_html( $copy ); ?></span>
+				</button>
+			</div>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Copies the suggested opening prompt. `navigator.clipboard` needs a secure
+	 * context, which an admin served over plain HTTP is not, so the textarea
+	 * fallback stays.
+	 */
+	private function add_agent_primer_copy_script(): void {
+		$js = <<<'JS'
+(function(){
+	var buttons=document.querySelectorAll('.flow-ew-agent-primer__copy');
+	if(!buttons.length)return;
+	function fallback(text,done){
+		var ta=document.createElement('textarea');
+		ta.value=text;
+		ta.setAttribute('readonly','');
+		ta.style.position='absolute';
+		ta.style.left='-9999px';
+		document.body.appendChild(ta);
+		ta.select();
+		try{document.execCommand('copy');done();}catch(e){}
+		document.body.removeChild(ta);
+	}
+	Array.prototype.forEach.call(buttons,function(btn){
+		btn.addEventListener('click',function(){
+			var text=btn.getAttribute('data-copy')||'';
+			var copyLabel=btn.getAttribute('data-copy-label')||'';
+			var copiedLabel=btn.getAttribute('data-copied-label')||copyLabel;
+			var done=function(){
+				btn.classList.add('is-copied');
+				btn.setAttribute('title',copiedLabel);
+				btn.setAttribute('aria-label',copiedLabel);
+				window.setTimeout(function(){
+					btn.classList.remove('is-copied');
+					btn.setAttribute('title',copyLabel);
+					btn.setAttribute('aria-label',copyLabel);
+				},2000);
+			};
+			if(navigator.clipboard&&navigator.clipboard.writeText){
+				navigator.clipboard.writeText(text).then(done).catch(function(){fallback(text,done);});
+			}else{
+				fallback(text,done);
+			}
+		});
+	});
+})();
+JS;
+		wp_add_inline_script( 'flow-ew-settings-fields', $js, 'after' );
+	}
+
 	public function render_agent_comments_field(): void {
 		$this->render_checkbox(
 			self::OPTION_AGENT_COMMENTS,
@@ -1169,6 +1299,15 @@ class Settings {
 			self::are_notifications_disabled(),
 			__( 'Disable all notifications.', 'jumplinks-editorial-workflow' ),
 			__( 'When enabled, no review-related emails are sent at all (assignment, approval, changes requested, mentions). Use this for staging or quiet rollouts.', 'jumplinks-editorial-workflow' )
+		);
+	}
+
+	public function render_disable_external_reviewers_field(): void {
+		$this->render_checkbox(
+			self::OPTION_DISABLE_EXTERNAL,
+			self::are_external_reviewers_disabled(),
+			__( 'Disable external reviewers.', 'jumplinks-editorial-workflow' ),
+			__( 'Hide the External Email option in the editor and reject email invites at the API. People already invited keep the access they have.', 'jumplinks-editorial-workflow' )
 		);
 	}
 
@@ -1388,6 +1527,12 @@ JS;
 				echo '<table class="form-table" role="presentation">';
 				do_settings_fields( self::PAGE_SLUG, (string) $id );
 				echo '</table>';
+				/**
+				 * Lets a section add something below its fields.
+				 *
+				 * @param string $id Section id.
+				 */
+				do_action( 'flow_ew_after_settings_section', (string) $id );
 				?>
 			</div>
 		<?php endforeach; ?>
