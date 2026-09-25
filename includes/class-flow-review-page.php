@@ -668,7 +668,9 @@ class ReviewPage {
 		$revision_id                          = null !== $viewing_revision_id
 			? $viewing_revision_id
 			: (int) ( $review->revision_id ?? 0 );
-		[ $revision_status, $latest_rev_url ] = self::revision_state( $review, $revision_id );
+		[ $revision_status, $latest_rev_url ] = 0 === $viewing_revision_id
+			? self::revision_state_since_none( $review )
+			: self::revision_state( $review, $revision_id );
 
 		return [
 			'revisionId'             => $revision_id,
@@ -683,10 +685,41 @@ class ReviewPage {
 		];
 	}
 
-	/** The revision this request is actually showing: the URL wins over the stored one. */
+	/**
+	 * The revision this request is actually showing: the URL wins over the
+	 * stored one. With neither — a review that was never sent — the page shows
+	 * the post as it is now, which is its newest revision; without naming it
+	 * here the page had no baseline and every later save read as "latest".
+	 */
 	public static function viewing_revision_id( object $review ): int {
 		$from_url = (int) get_query_var( 'flow_revision_id', 0 );
-		return $from_url ?: (int) ( $review->revision_id ?? 0 );
+		if ( $from_url ) {
+			return $from_url;
+		}
+		$stored = (int) ( $review->revision_id ?? 0 );
+		if ( $stored ) {
+			return $stored;
+		}
+		$revisions = wp_get_post_revisions( (int) $review->post_id, [ 'numberposts' => 1 ] );
+		return ! empty( $revisions ) ? (int) reset( $revisions )->ID : 0;
+	}
+
+	/**
+	 * A page that rendered before the post had any revision: the first one to
+	 * appear is, by definition, newer than what the reviewer is looking at.
+	 * This is the agent's usual path — create a post, then fix its feedback.
+	 *
+	 * @return array{0:?string,1:string}
+	 */
+	private static function revision_state_since_none( object $review ): array {
+		$revisions = wp_get_post_revisions( (int) $review->post_id, [ 'numberposts' => 1 ] );
+		if ( empty( $revisions ) ) {
+			return self::revision_state( $review, 0 );
+		}
+		return [
+			'outdated',
+			add_query_arg( 'flow_revision_id', (int) reset( $revisions )->ID, Review::get_preview_url( (int) $review->id, 0, (int) $review->post_id ) ),
+		];
 	}
 
 	private static function revision_state( object $review, int $effective_rev ): array {

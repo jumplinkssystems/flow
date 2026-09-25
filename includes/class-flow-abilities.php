@@ -323,24 +323,10 @@ class Abilities {
 			]
 		);
 
-		$resolve_notes = Settings::agent_resolve_notes_enabled();
-		$followup      = Settings::agent_followup_comments_enabled();
-
-		$resolve_properties = [
-			'comment_id' => [
-				'type'        => 'integer',
-				'description' => 'Flow comment ID from list-comments or get-review.',
-			],
-		];
-		$resolve_required   = [ 'comment_id' ];
-		if ( $resolve_notes ) {
-			$resolve_properties['note'] = [
-				'type'        => 'string',
-				'description' => 'One or two sentences naming the edit you actually made. If you made no edit, do not call resolve - reply to the comment and leave it unresolved. Posted into the comment thread.',
-			];
-			$resolve_required[]         = 'note';
-		}
-
+		// Tool shapes never follow the AI agent settings. MCP clients fetch the
+		// tool list once per connection and WordPress servers never tell them it
+		// changed, so a shape that moved with a setting stranded every connected
+		// agent on the old one. The settings are enforced when a tool runs.
 		self::register_ability(
 			'flow/resolve-comment',
 			[
@@ -349,8 +335,17 @@ class Abilities {
 				'category'         => self::CATEGORY,
 				'input_schema'     => [
 					'type'                 => 'object',
-					'properties'           => $resolve_properties,
-					'required'             => $resolve_required,
+					'properties'           => [
+						'comment_id' => [
+							'type'        => 'integer',
+							'description' => 'Flow comment ID from list-comments or get-review.',
+						],
+						'note'       => [
+							'type'        => 'string',
+							'description' => 'One or two sentences naming the edit you actually made, posted into the comment thread. Required when this site asks agents to explain their changes (see get-instructions); ignored when it does not. If you made no edit, do not call resolve.',
+						],
+					],
+					'required'             => [ 'comment_id' ],
 					'additionalProperties' => false,
 				],
 				'output_schema'    => [
@@ -369,55 +364,53 @@ class Abilities {
 				'annotations'      => [
 					'readonly'    => false,
 					'destructive' => false,
-					// Posting a note makes a second call add a second comment.
-					'idempotent'  => ! $resolve_notes,
+					// With notes on, a second call adds a second comment.
+					'idempotent'  => false,
 				],
 			]
 		);
 
-		if ( $followup ) {
-			self::register_ability(
-				'flow/reply-to-comment',
-				[
-					'label'            => __( 'Reply to Flow comment', 'jumplinks-editorial-workflow' ),
-					'description'      => __( 'Ask the human reviewer one clarifying question when their comment is genuinely ambiguous, then stop and wait for their answer.', 'jumplinks-editorial-workflow' ),
-					'category'         => self::CATEGORY,
-					'input_schema'     => [
-						'type'                 => 'object',
-						'properties'           => [
-							'comment_id' => [
-								'type'        => 'integer',
-								'description' => 'Flow comment ID to reply to, from list-comments or get-review.',
-							],
-							'body'       => [
-								'type'        => 'string',
-								'description' => 'Plain text. One specific question about what the reviewer asked for.',
-								'maxLength'   => 2000,
-							],
+		self::register_ability(
+			'flow/reply-to-comment',
+			[
+				'label'            => __( 'Reply to Flow comment', 'jumplinks-editorial-workflow' ),
+				'description'      => __( 'Ask the human reviewer one clarifying question when their comment is genuinely ambiguous, then stop and wait for their answer. Refused when this site does not allow follow-up questions (see get-instructions).', 'jumplinks-editorial-workflow' ),
+				'category'         => self::CATEGORY,
+				'input_schema'     => [
+					'type'                 => 'object',
+					'properties'           => [
+						'comment_id' => [
+							'type'        => 'integer',
+							'description' => 'Flow comment ID to reply to, from list-comments or get-review.',
 						],
-						'required'             => [ 'comment_id', 'body' ],
-						'additionalProperties' => false,
-					],
-					'output_schema'    => [
-						'type'       => 'object',
-						'properties' => [
-							'comment' => $comment_item,
+						'body'       => [
+							'type'        => 'string',
+							'description' => 'Plain text. One specific question about what the reviewer asked for.',
+							'maxLength'   => 2000,
 						],
 					],
-					'execute_callback' => static function ( array $input ) {
-						return Ability_Context::reply_to_comment(
-							(int) ( $input['comment_id'] ?? 0 ),
-							(string) ( $input['body'] ?? '' )
-						);
-					},
-					'annotations'      => [
-						'readonly'    => false,
-						'destructive' => false,
-						'idempotent'  => false,
+					'required'             => [ 'comment_id', 'body' ],
+					'additionalProperties' => false,
+				],
+				'output_schema'    => [
+					'type'       => 'object',
+					'properties' => [
+						'comment' => $comment_item,
 					],
-				]
-			);
-		}
+				],
+				'execute_callback' => static function ( array $input ) {
+					return Ability_Context::reply_to_comment(
+						(int) ( $input['comment_id'] ?? 0 ),
+						(string) ( $input['body'] ?? '' )
+					);
+				},
+				'annotations'      => [
+					'readonly'    => false,
+					'destructive' => false,
+					'idempotent'  => false,
+				],
+			]
+		);
 
 		self::register_ability(
 			'flow/resubmit-review',
@@ -454,10 +447,8 @@ class Abilities {
 		if ( isset( $config['tools'] ) && is_array( $config['tools'] ) ) {
 			$existing = $config['tools'];
 		}
-		$tools = self::TOOLS;
-		if ( Settings::agent_followup_comments_enabled() ) {
-			$tools[] = 'flow/reply-to-comment';
-		}
+		$tools           = self::TOOLS;
+		$tools[]         = 'flow/reply-to-comment';
 		$tools           = (array) \apply_filters( 'flow_ew_agent_tools', $tools );
 		$config['tools'] = array_values( array_unique( array_merge( $existing, $tools ) ) );
 
@@ -465,6 +456,35 @@ class Abilities {
 		$config['server_description'] = (string) ( $config['server_description'] ?? '' ) . $extra;
 
 		return $config;
+	}
+
+	/**
+	 * Which route a comment must take. Connectors hand agents a generic REST or
+	 * HTTP tool as well as these abilities, and a comment posted that way is
+	 * authored by whichever account the agent authenticated as — usually an
+	 * administrator — instead of the configured Flow user. Only the abilities
+	 * set the author, so the rule has to be stated rather than assumed.
+	 */
+	private static function comment_routing_instructions(): string {
+		$lines = [ 'Writing into a review' ];
+
+		if ( Settings::agent_comments_enabled() ) {
+			$author   = get_userdata( Settings::get_agent_comment_author_id() );
+			$name     = $author ? trim( (string) $author->display_name ) : '';
+			$posts_as = '' !== $name
+				? sprintf( '"%s" (the Flow user this site configured)', $name )
+				: 'the Flow user this site configured';
+
+			$lines[] = sprintf(
+				'- Post review comments only with the Flow abilities (flow/resolve-comment, flow/reply-to-comment). Never through the REST API, wp-admin, WP-CLI or any general-purpose HTTP tool, even when you have the access to: only these abilities post the comment as %s and mark it as agent-written. A comment you post any other way is authored by the account you are connected as, which is wrong and cannot be corrected afterwards.',
+				$posts_as
+			);
+			$lines[] = '- You do not set that author and cannot change it, so nothing about your own connection needs changing. If you are asked who writes your comments, the answer is that account, not the one you authenticated as.';
+		} else {
+			$lines[] = '- This site has agent comments switched off, so do not write comment text into a review by any route - not the Flow abilities, not the REST API, not wp-admin. Resolving still works and posts nothing; say the rest in the conversation with the person you are working for.';
+		}
+
+		return implode( "\n", $lines );
 	}
 
 	/**
@@ -494,7 +514,7 @@ class Abilities {
 		} elseif ( $followup ) {
 			$lines[] = '- flow/reply-to-comment (comment_id, body): when a comment does not name a concrete change, ask one specific question, leave the comment unresolved, and wait for a human answer. That is the required move for vague or non-actionable feedback - never resolve it instead, and never guess. Not for progress reports, not for acknowledgements, not for arguing, and never in reply to your own comment.';
 		} else {
-			$lines[] = '- There is no reply tool on this site. When a comment does not name a concrete change, make no edit, leave it unresolved, and say so to the person you are working for. Never guess, and never resolve it to clear the queue.';
+			$lines[] = '- flow/reply-to-comment is switched off on this site and refuses every call. When a comment does not name a concrete change, make no edit, leave it unresolved, and say so to the person you are working for. Never guess, and never resolve it to clear the queue.';
 		}
 
 		$lines[] = '- Your comments post under the site\'s configured Flow user, not under you, and carry is_agent true. Use that to tell your own writing from reviewer feedback; never treat your own question as a new instruction.';
@@ -544,6 +564,8 @@ Statuses: pending (assigned, not sent) → in_review (waiting on human) → chan
 
 Never: approve or request-changes as the authoring agent; publish while can_publish is false; skip saving before send/resubmit; infer a requested change from selected_text; resolve a comment you did not act on.
 TEXT;
+
+		$instructions .= "\n\n" . self::comment_routing_instructions();
 
 		if ( Settings::agent_resolve_notes_enabled() || Settings::agent_followup_comments_enabled() ) {
 			$instructions .= "\n\n" . self::comment_writing_instructions();
@@ -604,6 +626,8 @@ TEXT;
 	 * @param array<string,mixed> $args
 	 */
 	public static function register_ability( string $name, array $args ): void {
+		AI_Engine_Bridge::remember( $name, $args );
+
 		if ( function_exists( 'agent_connector_for_wp_register_ability' ) ) {
 			agent_connector_for_wp_register_ability( $name, $args );
 			return;

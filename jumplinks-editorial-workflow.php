@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Jumplinks Flow – Client Feedback & Editorial Workflow
  * Description: Client feedback on the live page with inline comments and content approval editorial workflow. Magic links for clients, no signup, no SaaS subscriptions, no external services. MCP AI-ready. Works with your builder.
- * Version: 2.5.2
+ * Version: 2.5.3
  * Author: Jumplinks Systems
  * Author URI: https://jumplinks.net
  * License: GPLv2 or later
@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'FLOW_EW_VERSION', '2.5.2' );
+define( 'FLOW_EW_VERSION', '2.5.3' );
 define( 'FLOW_EW_PLUGIN_FILE', __FILE__ );
 define( 'FLOW_EW_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FLOW_EW_PLUGIN_URL', plugin_dir_url( __FILE__ ) );

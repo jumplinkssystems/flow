@@ -27,6 +27,8 @@ class Plugin {
 		Privacy::boot();
 		Page_Cache::boot();
 		Maintenance_Bypass::boot();
+		AI_Engine_Bridge::boot();
+		Elementor_Mcp_Bridge::boot();
 
 		( new Settings() )->boot();
 

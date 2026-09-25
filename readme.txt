@@ -4,7 +4,7 @@ Tags: client feedback, website feedback, content approval, site review, editoria
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.5.2
+Stable tag: 2.5.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -175,7 +175,7 @@ Yes. In Mandatory review mode, Flow blocks the initial Publish or Schedule actio
 
 = Which AI agents work with it? =
 
-Any client that can call WordPress abilities: an MCP client, the WordPress Agent Connector, or your own integration against the REST API. There is no partner list and no approved-vendor gate. If your agent can reach WordPress, it can read the review queue and act on it.
+Any client that can call WordPress abilities: an MCP client, the WordPress Agent Connector, or your own integration against the REST API. AI Engine's and Elementor's MCP servers work too — each serves its own list of tools, so Flow adds its review tools to both. There is no partner list and no approved-vendor gate. If your agent can reach WordPress, it can read the review queue and act on it.
 
 = Can the agent approve its own work? =
 
@@ -194,6 +194,13 @@ No, and this is deliberate rather than an oversight. There is no approve ability
 9. Assign reviewer to page in Bricks
 
 == Changelog ==
+
+= 2.5.3 =
+* New: Flow now works with Elementor and AI Engine's MCP server.
+* Fix: AI agents now post review comments as the account chosen under Settings.
+* Improvement: AI agents pick up changes to the AI agent settings without reconnecting.
+* Fix: An open review page now tells you when a newer version is saved, including for reviews that were never sent and brand-new posts.
+* Fix (Pro): Switching between Desktop, Tablet and Mobile in a review now reloads the page at that width.
 
 = 2.5.2 =
 * New: Settings → AI agent now hands you the prompts to give your agent, each with a copy button. An agent only picks up these rules by calling flow/get-instructions, so the first prompt tells it to do that after you change a setting. The rest are short examples for everyday jobs: resolving the comments on a post, getting an overview of the feedback on a page, and sending it back to the reviewer.
@@ -223,18 +230,5 @@ No, and this is deliberate rather than an oversight. There is no approve ability
 * Improvement: Settings are easier to scan. The AI agent options have their own tab, and the notification settings moved to Extras next to the other occasional options.
 * Fix: Saving settings no longer throws you back to the first tab. Whichever tab you were on is carried through the save, so you land where you left off.
 
-= 2.5.0 =
-* New: Live updates on the review page. Comments from another reviewer appear, change and disappear as they happen, and the status badge follows a decision someone else makes. No page refresh needed.
-* New: When the author saves a new version while you are reviewing, Flow tells you instead of swapping the page under you. The bar marks the content as outdated and a notification offers the link to the new version, so you choose when to move.
-* New: Settings are now split into Workflow, Multiple reviewers and Site Review tabs, so the Pro options no longer crowd one screen.
-* Improvement: The Jumplinks icon now sits beside Review in the admin bar, tinted with the review status.
-* Improvement: Site review now carries the same desktop, tablet and mobile preview switcher as a single-page review.
-* Improvement: A new post now names the auto-assigned reviewer straight away, marked as pending until the first save creates the review.
-* Improvement: Page cache compatibility. Reviewer sessions bypass W3 Total Cache, WP Rocket, LiteSpeed, WP Super Cache, Cache Enabler and SiteGround Optimizer, so a share link never shows a stale page.
-* Improvement: Personal data export and erase now cover Flow, so review invitations, anonymous comments and Slack details answer the WordPress privacy tools.
-* Improvement: Faster admin and review pages, with far fewer database queries per request and a smaller editor bundle.
-* Fix: Send for review no longer appears until a reviewer is assigned, so turning on Open Review does not leave a dead button behind.
-* Fix: The auto-assign reviewer setting now accepts any WordPress user, as the field describes. Picking someone outside the Review Roles, or yourself, assigns them and lets them approve.
-* Fix: Security hardening across review permissions, comment validation and webhook destinations.
 
 Earlier versions: https://jumplinks.net/changelog/

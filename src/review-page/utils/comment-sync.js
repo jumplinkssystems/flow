@@ -164,8 +164,11 @@ async function poll() {
 		if ( version ) {
 			params.set( 'version', version );
 		}
-		if ( pageData.revisionId ) {
-			params.set( 'revision', String( pageData.revisionId ) );
+		// Localized data arrives as strings, and 0 is meaningful: the page
+		// rendered before the post had a revision.
+		const baseline = parseInt( pageData.revisionId, 10 );
+		if ( ! Number.isNaN( baseline ) ) {
+			params.set( 'revision', String( baseline ) );
 		}
 		const query = params.toString() ? `?${ params.toString() }` : '';
 		const options = controller ? { signal: controller.signal } : {};

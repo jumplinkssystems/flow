@@ -172,6 +172,8 @@ export default function ReviewBar( {
 	);
 	const [ activityOpen, setActivityOpen ] = useState( false );
 	const [ device, setDevice ] = useState( 'desktop' );
+	const previousDeviceRef = useRef( 'desktop' );
+	const iframeLoadedRef = useRef( false );
 	const [ hasAuthorResubmitActivity, setHasAuthorResubmitActivity ] =
 		useState( () => {
 			const hasNewerRevision = revisionStatus === 'outdated';
@@ -209,6 +211,7 @@ export default function ReviewBar( {
 
 		// Site-review iframes get a load handler too — same `flow:iframe-ready`
 		iframe.addEventListener( 'load', () => {
+			iframeLoadedRef.current = true;
 			setIframe( iframe );
 			try {
 				stampCanvasMarkerOnLinks( iframe.contentDocument );
@@ -293,6 +296,53 @@ export default function ReviewBar( {
 		window.addEventListener( 'resize', apply );
 		return () => window.removeEventListener( 'resize', apply );
 	}, [ commentsOpen, activityOpen, device ] );
+
+	// Resizing the frame alone leaves a theme that wires its nav at load with
+	// desktop behaviour at mobile width, so reload and let it boot at the new
+	// size. Comment highlights survive: the manager re-wraps on every
+	// `flow:iframe-ready`, which the load handler above fires again.
+	useEffect( () => {
+		const iframe = iframeRef.current;
+		if ( ! iframe || previousDeviceRef.current === device ) {
+			return;
+		}
+		const hadLoaded = iframeLoadedRef.current;
+		previousDeviceRef.current = device;
+		if ( ! hadLoaded ) {
+			// Still loading its first document — it will use the new width.
+			return;
+		}
+
+		let scrollY = 0;
+		try {
+			scrollY = iframe.contentWindow?.scrollY || 0;
+		} catch {
+			// cross-origin: reload without restoring
+		}
+
+		// The sizing effect just set the new width; flush it into layout or
+		// the document reloads at the old one.
+		void iframe.offsetWidth;
+
+		const restoreScroll = () => {
+			iframe.removeEventListener( 'load', restoreScroll );
+			if ( ! scrollY ) {
+				return;
+			}
+			try {
+				iframe.contentWindow?.scrollTo( 0, scrollY );
+			} catch {
+				// the new document is shorter, or gone
+			}
+		};
+		iframe.addEventListener( 'load', restoreScroll );
+
+		try {
+			iframe.contentWindow.location.reload();
+		} catch {
+			iframe.removeEventListener( 'load', restoreScroll );
+		}
+	}, [ device ] );
 
 	const isExternalCommentsToggleRef = useRef( false );
 

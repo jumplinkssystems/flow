@@ -61,7 +61,9 @@ final class Comment_Presenter {
 			'%d.%d.%d-%d.%d.%s-%d',
 			(int) $comment_state['total'],
 			(int) $comment_state['max_id'],
-			(int) strtotime( (string) $comment_state['max_updated'] . ' UTC' ),
+			// strtotime( ' UTC' ) is "now", which made a review with no
+			// comments report a change on every poll.
+			'' !== (string) $comment_state['max_updated'] ? (int) strtotime( (string) $comment_state['max_updated'] . ' UTC' ) : 0,
 			(int) strtotime( (string) ( $review->updated_at ?? '' ) . ' UTC' ),
 			(int) ( $review->iteration ?? 1 ),
 			(string) ( $review->status ?? '' ),

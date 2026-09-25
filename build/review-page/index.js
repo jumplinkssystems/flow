@@ -3409,6 +3409,8 @@ function ReviewBar({
   const [commentsOpen, setCommentsOpen] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useState)(() => !isMobileViewport());
   const [activityOpen, setActivityOpen] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useState)(false);
   const [device, setDevice] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useState)('desktop');
+  const previousDeviceRef = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useRef)('desktop');
+  const iframeLoadedRef = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useRef)(false);
   const [hasAuthorResubmitActivity, setHasAuthorResubmitActivity] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useState)(() => {
     const hasNewerRevision = revisionStatus === 'outdated';
     const hasOwnComment = [...comments, ...inlineComments].some(comment => Number(comment?.authorId || 0) === Number(currentUserId));
@@ -3436,6 +3438,7 @@ function ReviewBar({
 
     // Site-review iframes get a load handler too — same `flow:iframe-ready`
     iframe.addEventListener('load', () => {
+      iframeLoadedRef.current = true;
       (0,_utils_iframe_bridge__WEBPACK_IMPORTED_MODULE_6__.setIframe)(iframe);
       try {
         (0,_utils_canvas_marker__WEBPACK_IMPORTED_MODULE_13__.stampCanvasMarkerOnLinks)(iframe.contentDocument);
@@ -3488,6 +3491,50 @@ function ReviewBar({
     window.addEventListener('resize', apply);
     return () => window.removeEventListener('resize', apply);
   }, [commentsOpen, activityOpen, device]);
+
+  // Resizing the frame alone leaves a theme that wires its nav at load with
+  // desktop behaviour at mobile width, so reload and let it boot at the new
+  // size. Comment highlights survive: the manager re-wraps on every
+  // `flow:iframe-ready`, which the load handler above fires again.
+  (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
+    const iframe = iframeRef.current;
+    if (!iframe || previousDeviceRef.current === device) {
+      return;
+    }
+    const hadLoaded = iframeLoadedRef.current;
+    previousDeviceRef.current = device;
+    if (!hadLoaded) {
+      // Still loading its first document — it will use the new width.
+      return;
+    }
+    let scrollY = 0;
+    try {
+      scrollY = iframe.contentWindow?.scrollY || 0;
+    } catch {
+      // cross-origin: reload without restoring
+    }
+
+    // The sizing effect just set the new width; flush it into layout or
+    // the document reloads at the old one.
+    void iframe.offsetWidth;
+    const restoreScroll = () => {
+      iframe.removeEventListener('load', restoreScroll);
+      if (!scrollY) {
+        return;
+      }
+      try {
+        iframe.contentWindow?.scrollTo(0, scrollY);
+      } catch {
+        // the new document is shorter, or gone
+      }
+    };
+    iframe.addEventListener('load', restoreScroll);
+    try {
+      iframe.contentWindow.location.reload();
+    } catch {
+      iframe.removeEventListener('load', restoreScroll);
+    }
+  }, [device]);
   const isExternalCommentsToggleRef = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useRef)(false);
   const toggleComments = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useCallback)(() => {
     setCommentsOpen(prev => !prev);
@@ -4648,8 +4695,11 @@ async function poll() {
     if (version) {
       params.set('version', version);
     }
-    if (_api__WEBPACK_IMPORTED_MODULE_0__.pageData.revisionId) {
-      params.set('revision', String(_api__WEBPACK_IMPORTED_MODULE_0__.pageData.revisionId));
+    // Localized data arrives as strings, and 0 is meaningful: the page
+    // rendered before the post had a revision.
+    const baseline = parseInt(_api__WEBPACK_IMPORTED_MODULE_0__.pageData.revisionId, 10);
+    if (!Number.isNaN(baseline)) {
+      params.set('revision', String(baseline));
     }
     const query = params.toString() ? `?${params.toString()}` : '';
     const options = controller ? {

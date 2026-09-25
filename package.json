@@ -1,6 +1,6 @@
 {
   "name": "jumplinks-editorial-workflow",
-  "version": "2.5.2",
+  "version": "2.5.3",
   "description": "Jumplinks Flow – Client Feedback & Editorial Workflow",
   "scripts": {
     "test:php": "php vendor/bin/phpunit -c phpunit.xml.dist",

@@ -532,9 +532,13 @@ class REST_Reviews extends \WP_REST_Controller {
 					'changed'        => true,
 					'comments'       => $lists['comments'],
 					'inlineComments' => $lists['inlineComments'],
+					// An explicit 0 means the page rendered before any revision
+					// existed; only an absent param falls back to the stored one.
 					'review'         => ReviewPage::review_state_payload(
 						$review,
-						(int) $request->get_param( 'revision' ) ?: null
+						array_key_exists( 'revision', $request->get_query_params() )
+							? (int) $request->get_param( 'revision' )
+							: null
 					),
 				],
 				$review
