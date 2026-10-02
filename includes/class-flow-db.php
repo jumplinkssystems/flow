@@ -11,6 +11,8 @@ class DB {
 
 	/** @var array<int,object|null> Active review per post, request-scoped. */
 	private static array $active_cache = [];
+	/** @var array<int,object|null> Self review per post, request-scoped. */
+	private static array $private_cache = [];
 
 	/** @var array<int,object|null> Review row per id, request-scoped. */
 	private static array $review_cache = [];
@@ -33,13 +35,31 @@ class DB {
 		$table = esc_sql( self::reviews_table() );
 		$row   = $wpdb->get_row( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
 			$wpdb->prepare(
-				"SELECT * FROM {$table} WHERE post_id = %d ORDER BY updated_at DESC, id DESC LIMIT 1", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table from plugin prefix + literal name.
+				"SELECT * FROM {$table} WHERE post_id = %d AND is_private = 0 ORDER BY updated_at DESC, id DESC LIMIT 1", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table from plugin prefix + literal name.
 				$post_id
 			)
 		);
 
 		self::$active_cache[ $post_id ] = $row ?: null;
 		return self::$active_cache[ $post_id ];
+	}
+
+	/** The post's self review: a private channel the workflow queries never return. */
+	public static function get_private_review( int $post_id ) {
+		if ( array_key_exists( $post_id, self::$private_cache ) ) {
+			return self::$private_cache[ $post_id ];
+		}
+		global $wpdb;
+		$table = esc_sql( self::reviews_table() );
+		$row   = $wpdb->get_row( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+			$wpdb->prepare(
+				"SELECT * FROM {$table} WHERE post_id = %d AND is_private = 1 ORDER BY id DESC LIMIT 1", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table from plugin prefix + literal name.
+				$post_id
+			)
+		);
+
+		self::$private_cache[ $post_id ] = $row ?: null;
+		return self::$private_cache[ $post_id ];
 	}
 
 	/**
@@ -65,9 +85,10 @@ class DB {
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table literal; placeholders are %d.
 		$sql  = "SELECT r1.* FROM {$table} r1
 			WHERE r1.post_id IN ({$placeholders})
+			AND r1.is_private = 0
 			AND r1.id = (
 				SELECT id FROM {$table} r2
-				WHERE r2.post_id = r1.post_id
+				WHERE r2.post_id = r1.post_id AND r2.is_private = 0
 				ORDER BY r2.updated_at DESC, r2.id DESC
 				LIMIT 1
 			)";
@@ -83,8 +104,9 @@ class DB {
 	}
 
 	public static function flush_active_review_cache(): void {
-		self::$active_cache = [];
-		self::$review_cache = [];
+		self::$active_cache  = [];
+		self::$private_cache = [];
+		self::$review_cache  = [];
 	}
 
 	/**
@@ -101,9 +123,10 @@ class DB {
 		$sql  = "SELECT r1.post_id FROM {$table} r1
 			WHERE r1.is_open = 1
 			AND r1.reviewer_id = 0
+			AND r1.is_private = 0
 			AND r1.id = (
 				SELECT id FROM {$table} r2
-				WHERE r2.post_id = r1.post_id
+				WHERE r2.post_id = r1.post_id AND r2.is_private = 0
 				ORDER BY r2.updated_at DESC, r2.id DESC
 				LIMIT 1
 			)";
@@ -130,9 +153,10 @@ class DB {
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table literal; placeholders are %s.
 		$sql  = "SELECT r1.post_id FROM {$table} r1
 			WHERE r1.status IN ({$placeholders})
+			AND r1.is_private = 0
 			AND r1.id = (
 				SELECT id FROM {$table} r2
-				WHERE r2.post_id = r1.post_id
+				WHERE r2.post_id = r1.post_id AND r2.is_private = 0
 				ORDER BY r2.updated_at DESC, r2.id DESC
 				LIMIT 1
 			)";
@@ -182,10 +206,11 @@ class DB {
 					'created_at' => $now,
 					'updated_at' => $now,
 					'is_open'    => 0,
+					'is_private' => 0,
 				],
 				$data
 			),
-			[ '%s', '%d', '%s', '%s', '%d', '%d', '%d', '%d' ]
+			[ '%s', '%d', '%s', '%s', '%d', '%d', '%d', '%d', '%d' ]
 		);
 		self::flush_active_review_cache();
 		return ( 0 !== $wpdb->insert_id ) ? $wpdb->insert_id : false;
@@ -416,6 +441,8 @@ class DB {
 	 *     @type string    $post_type           Filter by post type (requires JOIN on posts table).
 	 *     @type bool|null $is_open             Filter on the `is_open` flag (null = no filter).
 	 *     @type bool      $unassigned          When true, restrict to reviews with no reviewer assigned.
+	 *     @type bool      $include_private     When true, self reviews are returned too (default false).
+	 *     @type bool      $only_private        When true, only self reviews are returned.
 	 *     @type int       $per_page            Results per page (default 20).
 	 *     @type int       $page                Page number (1-indexed, default 1).
 	 *     @type string    $orderby             Column to order by (default 'updated_at').
@@ -545,6 +572,11 @@ class DB {
 		if ( $unassigned ) {
 			$where[] = 'r.reviewer_id = 0';
 		}
+		if ( ! empty( $args['only_private'] ) ) {
+			$where[] = 'r.is_private = 1';
+		} elseif ( empty( $args['include_private'] ) ) {
+			$where[] = 'r.is_private = 0';
+		}
 
 		$join = '';
 		if ( '' !== $post_type ) {
@@ -583,7 +615,7 @@ class DB {
 				$placeholders = implode( ',', array_fill( 0, count( $extra_ids ), '%d' ) );
 				$rows         = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
 					$wpdb->prepare( // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber
-						"SELECT * FROM {$table} WHERE reviewer_id = %d OR requester_id = %d OR id IN ({$placeholders}) ORDER BY updated_at DESC LIMIT %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table + placeholders generated locally.
+						"SELECT * FROM {$table} WHERE is_private = 0 AND (reviewer_id = %d OR requester_id = %d OR id IN ({$placeholders})) ORDER BY updated_at DESC LIMIT %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table + placeholders generated locally.
 						array_merge(
 							[ $participant_user_id, $participant_user_id ],
 							$extra_ids,
@@ -594,7 +626,7 @@ class DB {
 			} else {
 				$rows = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
 					$wpdb->prepare(
-						"SELECT * FROM {$table} WHERE reviewer_id = %d OR requester_id = %d ORDER BY updated_at DESC LIMIT %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+						"SELECT * FROM {$table} WHERE is_private = 0 AND (reviewer_id = %d OR requester_id = %d) ORDER BY updated_at DESC LIMIT %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 						$participant_user_id,
 						$participant_user_id,
 						$limit
@@ -604,7 +636,7 @@ class DB {
 		} else {
 			$rows = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
 				$wpdb->prepare(
-					"SELECT * FROM {$table} ORDER BY updated_at DESC LIMIT %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table from plugin prefix + literal name.
+					"SELECT * FROM {$table} WHERE is_private = 0 ORDER BY updated_at DESC LIMIT %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table from plugin prefix + literal name.
 					$limit
 				)
 			);

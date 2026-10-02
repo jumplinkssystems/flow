@@ -21,4 +21,7 @@
 	--flow-status-cancelled-bg: #f0f0f1;
 	--flow-status-cancelled-text: #50575e;
 	--flow-status-cancelled-border: #dcdcde;
+	--flow-status-self_review-bg: #efe9fb;
+	--flow-status-self_review-text: #5b3fa6;
+	--flow-status-self_review-border: #d9ccf4;
 }

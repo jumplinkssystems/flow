@@ -1,50 +1,3 @@
-.flow-ew-setup-wrap .flow-ew-setup-lead {
-	font-size: 15px;
-	max-width: 720px;
-	margin: 0 0 8px;
-}
-
-.flow-ew-setup-card {
-	max-width: 720px;
-	margin-top: 16px;
-	padding: 24px 28px;
-	background: #fff;
-	border: 1px solid #c3c4c7;
-	border-radius: 2px;
-	box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
-}
-
-.flow-ew-setup-step-title {
-	margin: 28px 0 0;
-	font-size: 1.1em;
-}
-
-.flow-ew-setup-step-title:first-of-type {
-	margin-top: 0;
-}
-
-.flow-ew-setup-step-desc {
-	margin: 6px 0 12px;
-	color: #646970;
-	font-size: 13px;
-	max-width: 640px;
-}
-
-.flow-ew-setup-actions {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: center;
-	gap: 12px;
-	margin-top: 28px;
-	padding-top: 20px;
-	border-top: 1px solid #dcdcde;
-}
-
-.flow-ew-setup-actions .button-large {
-	min-height: 40px;
-	line-height: 38px;
-}
-
 .flow-ew-reviewer-roles-divider {
 	border-top: 1px solid #dcdcde;
 	display: block;
@@ -375,4 +328,12 @@ tr.flow-ew-agent-dependent[hidden] {
 
 .flow-ew-agent-primer__copy.is-copied .flow-ew-copy-icon--done {
 	display: block;
+}
+
+.flow-ew-use-case {
+	color: #646970;
+	display: inline-block;
+	font-size: 13px;
+	margin-left: 8px;
+	vertical-align: middle;
 }

@@ -14,6 +14,12 @@
  * @var string               $preview_url
  * @var string               $invite_email
  * @var array<int,array{id:int|string,name:string,is_email?:bool}> $reviewers
+ * @var bool                 $solo                Self review only mode.
+ * @var bool                 $self_review_offered
+ * @var bool                 $self_review_on      Self review is on for this post.
+ * @var bool                 $self_review_saved   The post is past auto-draft.
+ * @var string               $self_review_url     Link that creates the self review.
+ * @var string               $self_review_link    The self review's own link, or $self_review_url.
  */
 
 declare( strict_types=1 );
@@ -52,16 +58,77 @@ if ( false !== strpos( $root_class, 'flow-ew-classic--beaver' ) ) {
 		'flow_ew_classic_review_notice_template',
 		FLOW_EW_PLUGIN_DIR . 'templates/classic/review-notice.php'
 	);
-	if ( is_readable( $review_notice_template ) ) {
+	if ( empty( $solo ) && is_readable( $review_notice_template ) ) {
 		include $review_notice_template;
 	}
 	?>
 
-	<?php if ( $can_assign ) : ?>
+	<?php if ( ! empty( $solo ) ) : ?>
+		<div class="flow-ew-review-notice flow-ew-review-notice--in-review" role="status" data-flow-ew-dismiss="solo-mode" hidden>
+			<button type="button" class="flow-ew-review-notice__dismiss" aria-label="<?php esc_attr_e( 'Dismiss', 'jumplinks-editorial-workflow' ); ?>"><span aria-hidden="true">&times;</span></button>
+			<p class="flow-ew-review-notice__title"><?php esc_html_e( 'Self review only', 'jumplinks-editorial-workflow' ); ?></p>
+			<p class="flow-ew-review-notice__desc">
+				<?php
+				echo wp_kses(
+					sprintf(
+						/* translators: %s: Flow settings URL. */
+						__( 'To invite a client, switch Review mode in <a href="%s">Flow → Settings</a>.', 'jumplinks-editorial-workflow' ),
+						esc_url( admin_url( 'admin.php?page=' . \Flow\EditorialWorkflow\Settings::PAGE_SLUG ) )
+					),
+					[ 'a' => [ 'href' => [] ] ]
+				);
+				?>
+			</p>
+		</div>
+	<?php endif; ?>
+
+	<?php if ( ! empty( $self_review_offered ) ) : ?>
+		<div class="flow-ew-classic-self" data-flow-ew-self-review data-saved="<?php echo $self_review_saved ? '1' : '0'; ?>">
+			<div class="flow-ew-classic-self__row">
+				<label class="flow-ew-classic-open__row">
+					<input type="checkbox" class="flow-ew-classic-self__toggle" <?php checked( $self_review_on ); ?> />
+					<span><?php esc_html_e( 'Self review', 'jumplinks-editorial-workflow' ); ?></span>
+				</label>
+				<a
+					href="<?php echo esc_url( $self_review_url ); ?>"
+					target="_blank"
+					rel="noreferrer"
+					class="flow-ew-classic-self__goto"
+					title="<?php esc_attr_e( 'Open your private self review', 'jumplinks-editorial-workflow' ); ?>"
+					aria-label="<?php esc_attr_e( 'Open your private self review', 'jumplinks-editorial-workflow' ); ?>"
+					<?php echo ( $self_review_on && $self_review_saved && empty( $solo ) ) ? '' : 'hidden'; ?>
+				>
+					<svg class="flow-ew-share-icon flow-ew-share-icon--external" viewBox="0 0 24 24" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><path fill="currentColor" d="M9.71 9V0H0.71V2H6.3L0 8.29L1.42 9.71L7.71 3.41V9H9.71Z" transform="translate(7.145 7.145)"/></svg>
+				</a>
+			</div>
+			<p class="flow-ew-classic-open__desc"><?php esc_html_e( 'Leave private comments for yourself or your AI agent.', 'jumplinks-editorial-workflow' ); ?></p>
+			<?php if ( ! empty( $solo ) ) : ?>
+				<div class="flow-ew-classic__share flow-ew-classic-self__share" <?php echo ( $self_review_on && $self_review_saved ) ? '' : 'hidden'; ?>>
+					<span class="flow-ew-classic__share-label"><?php esc_html_e( 'Self review', 'jumplinks-editorial-workflow' ); ?></span>
+					<span class="flow-ew-classic__share-row">
+						<a href="<?php echo esc_url( $self_review_link ); ?>" target="_blank" rel="noreferrer" class="flow-ew-classic__share-link" title="<?php echo esc_attr( $self_review_link ); ?>">
+							<span class="flow-ew-classic__share-link-text"><?php echo esc_html( $self_review_link ); ?></span>
+						</a>
+						<button type="button" class="button flow-ew-classic__share-copy flow-ew-classic-self__copy" data-url="<?php echo esc_attr( $self_review_link ); ?>" aria-label="<?php esc_attr_e( 'Copy', 'jumplinks-editorial-workflow' ); ?>">
+							<svg class="flow-ew-share-icon flow-ew-share-icon--copy" viewBox="0 0 24 24" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><path fill="currentColor" d="M18 0H8C6.897 0 6 0.897 6 2V6H2C0.897 6 0 6.897 0 8V18C0 19.103 0.897 20 2 20H12C13.103 20 14 19.103 14 18V14H18C19.103 14 20 13.103 20 12V2C20 0.897 19.103 0 18 0ZM2 18V8H12L12.002 18H2ZM18 12H14V8C14 6.897 13.103 6 12 6H8V2H18V12Z" transform="translate(2 2)"/></svg>
+						</button>
+						<a href="<?php echo esc_url( $self_review_link ); ?>" target="_blank" rel="noreferrer" class="flow-ew-classic__share-goto" aria-label="<?php esc_attr_e( 'Open your private self review', 'jumplinks-editorial-workflow' ); ?>">
+							<svg class="flow-ew-share-icon flow-ew-share-icon--external" viewBox="0 0 24 24" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><path fill="currentColor" d="M9.71 9V0H0.71V2H6.3L0 8.29L1.42 9.71L7.71 3.41V9H9.71Z" transform="translate(7.145 7.145)"/></svg>
+						</a>
+					</span>
+				</div>
+			<?php endif; ?>
+		</div>
+	<?php endif; ?>
+
+	<?php if ( ! empty( $solo ) ) : ?>
+	<?php else : ?>
+
+		<?php if ( $can_assign ) : ?>
 		<div id="flow-ew-classic-open-slot"></div>
 	<?php endif; ?>
 
-	<?php if ( $can_assign && ! empty( $reviewers ) ) : ?>
+		<?php if ( $can_assign && ! empty( $reviewers ) ) : ?>
 		<div id="flow-ew-classic-reviewer-slot" class="flow-ew-multi-reviewer-slot" data-flow-multi-reviewer-slot></div>
 		<div class="flow-ew-classic__field flow-ew-classic__field--combobox">
 			<label for="flow-ew-reviewer-input" class="flow-ew-classic__label">
@@ -147,7 +214,7 @@ if ( false !== strpos( $root_class, 'flow-ew-classic--beaver' ) ) {
 				</select>
 			</div>
 		</div>
-		<?php if ( '' !== $pending_reviewer_name ) : ?>
+			<?php if ( '' !== $pending_reviewer_name ) : ?>
 			<p
 				class="flow-ew-classic__pending-reviewer"
 				data-flow-pending-reviewer
@@ -187,7 +254,7 @@ if ( false !== strpos( $root_class, 'flow-ew-classic--beaver' ) ) {
 		<?php endif; ?>
 	</div>
 
-	<?php if ( '' !== $preview_url ) : ?>
+		<?php if ( '' !== $preview_url ) : ?>
 		<div class="flow-ew-classic__share" id="flow-ew-share">
 			<span class="flow-ew-classic__share-label"><?php esc_html_e( 'Current Review', 'jumplinks-editorial-workflow' ); ?></span>
 			<span class="flow-ew-classic__share-row">
@@ -211,4 +278,6 @@ if ( false !== strpos( $root_class, 'flow-ew-classic--beaver' ) ) {
 	<?php endif; ?>
 
 	<span class="spinner" id="flow-ew-classic-spinner"></span>
+
+	<?php endif; ?>
 </div>

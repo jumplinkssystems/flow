@@ -20,10 +20,13 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class Dashboard_Page {
 
-	const PAGE_SLUG                  = 'flow-ew-dashboard';
-	const PAGE_BATCH                 = 100;
-	const NOTICE_DISMISS_META        = 'flow_ew_assigned_notice_dismissed_count';
-	const NOTICE_DISMISS_AJAX_ACTION = 'flow_ew_dismiss_assigned_notice';
+	const PAGE_SLUG                     = 'flow-ew-dashboard';
+	const PAGE_BATCH                    = 100;
+	const NOTICE_DISMISS_META           = 'flow_ew_assigned_notice_dismissed_count';
+	const NOTICE_DISMISS_AJAX_ACTION    = 'flow_ew_dismiss_assigned_notice';
+	const OPTION_INSTALLED_AT           = 'flow_ew_installed_at';
+	const RATING_PROMPT_AFTER_DAYS      = 7;
+	const RATING_PROMPT_AFTER_APPROVALS = 5;
 
 	/** @var string|null Hook suffix returned by add_submenu_page, used to gate asset enqueue. */
 	private ?string $hook_suffix = null;
@@ -152,7 +155,11 @@ class Dashboard_Page {
 			<h1 class="wp-heading-inline"><?php esc_html_e( 'Flow Dashboard', 'jumplinks-editorial-workflow' ); ?></h1>
 			<?php self::render_rating_prompt(); ?>
 			<?php
-			if ( ! $has_any ) {
+			if ( Settings::is_solo_mode() ) {
+				self::render_self_reviews( $user_id );
+			} elseif ( ! $has_any && current_user_can( 'edit_posts' ) ) {
+				self::render_first_review_steps();
+			} elseif ( ! $has_any ) {
 				printf(
 					'<p class="flow-ew-dash-empty flow-ew-dashboard-page__empty">%s</p>',
 					esc_html__( 'Nothing is waiting on you, and you haven’t sent anything for review yet.', 'jumplinks-editorial-workflow' )
@@ -225,8 +232,133 @@ class Dashboard_Page {
 		];
 	}
 
+	/**
+	 * Self review only: the dashboard is the list of pages carrying private
+	 * comments, the ones still waiting on a fix first.
+	 */
+	private static function render_self_reviews( int $user_id ): void {
+		$rows = [];
+		foreach ( self::fetch_all_pages( [ 'only_private' => true ] ) as $review ) {
+			if ( ! Review::can_user_access_private_review( $review, $user_id ) ) {
+				continue;
+			}
+			$comments = Ability_Context::list_comments_payload( $review, true );
+			$open     = count( $comments['unresolved_inline'] ) + count( $comments['unresolved_general'] );
+			$total    = count( DB::get_comments_for_post( (int) $review->post_id, (int) $review->id ) );
+			if ( 0 === $total ) {
+				continue;
+			}
+			$rows[] = [ $review, $open ];
+		}
+		usort(
+			$rows,
+			static function ( array $a, array $b ): int {
+				return [ $b[1] > 0, (string) ( $b[0]->updated_at ?? '' ) ] <=> [ $a[1] > 0, (string) ( $a[0]->updated_at ?? '' ) ];
+			}
+		);
+
+		if ( empty( $rows ) ) {
+			self::render_first_self_review_steps();
+			return;
+		}
+
+		$items = [];
+		foreach ( $rows as [ $review, $open ] ) {
+			$item = self::item_data( $review, true, '' );
+			if ( null === $item ) {
+				continue;
+			}
+			$item['meta'][] = $open > 0
+				? esc_html(
+					sprintf(
+						/* translators: %d: number of unresolved comments. */
+						_n( '%d unresolved comment', '%d unresolved comments', $open, 'jumplinks-editorial-workflow' ),
+						$open
+					)
+				)
+				: esc_html__( 'All comments resolved', 'jumplinks-editorial-workflow' );
+			$items[] = $item;
+		}
+		Dashboard_List_Renderer::section(
+			'self-reviews',
+			__( 'Pages with comments', 'jumplinks-editorial-workflow' ),
+			$items,
+			[
+				'page'        => true,
+				'description' => __( 'Your private self reviews. Open one to leave comments for yourself or your AI agent.', 'jumplinks-editorial-workflow' ),
+			]
+		);
+	}
+
+	private static function render_first_self_review_steps(): void {
+		?>
+		<div class="flow-ew-dashboard-page__section flow-ew-first-review">
+			<h2 class="flow-ew-first-review__title"><?php esc_html_e( 'Review your first page', 'jumplinks-editorial-workflow' ); ?></h2>
+			<ol class="flow-ew-first-review__steps">
+				<li><?php esc_html_e( 'Open any page on your site while logged in.', 'jumplinks-editorial-workflow' ); ?></li>
+				<li><?php esc_html_e( 'Click Review in the admin bar, or the go-to icon next to Self review in the editor.', 'jumplinks-editorial-workflow' ); ?></li>
+				<li><?php esc_html_e( 'Select text or an image and leave a comment. Your AI agent can read and resolve it over MCP.', 'jumplinks-editorial-workflow' ); ?></li>
+			</ol>
+			<p class="flow-ew-first-review__docs">
+				<a href="<?php echo esc_url( Settings::DOCS_URL ); ?>" target="_blank" rel="noopener"><?php esc_html_e( 'Read the documentation', 'jumplinks-editorial-workflow' ); ?></a>
+			</p>
+		</div>
+		<?php
+	}
+
+	private static function render_first_review_steps(): void {
+		$post_type = null;
+		foreach ( Settings::get_supported_post_types() as $slug ) {
+			$obj = get_post_type_object( (string) $slug );
+			if ( $obj && current_user_can( $obj->cap->edit_posts ) ) {
+				$post_type = $obj;
+				break;
+			}
+		}
+		?>
+		<div class="flow-ew-dashboard-page__section flow-ew-first-review">
+			<h2 class="flow-ew-first-review__title"><?php esc_html_e( 'Send your first page for review', 'jumplinks-editorial-workflow' ); ?></h2>
+			<ol class="flow-ew-first-review__steps">
+				<li>
+					<?php esc_html_e( 'Open a page or post in the editor.', 'jumplinks-editorial-workflow' ); ?>
+					<?php if ( $post_type ) : ?>
+						<a class="flow-ew-first-review__link" href="<?php echo esc_url( admin_url( 'edit.php?post_type=' . $post_type->name ) ); ?>"><?php echo esc_html( $post_type->labels->name ); ?></a>
+					<?php endif; ?>
+				</li>
+				<li><?php esc_html_e( 'In the Review panel, assign a reviewer: a WordPress user or your client’s email address.', 'jumplinks-editorial-workflow' ); ?></li>
+				<li><?php esc_html_e( 'Click Send for review. Flow creates the review link and emails it to them.', 'jumplinks-editorial-workflow' ); ?></li>
+			</ol>
+			<p class="flow-ew-first-review__docs">
+				<a href="<?php echo esc_url( Settings::DOCS_URL ); ?>" target="_blank" rel="noopener"><?php esc_html_e( 'Read the documentation', 'jumplinks-editorial-workflow' ); ?></a>
+			</p>
+		</div>
+		<?php
+	}
+
+	/** Asking for a review before anyone has used the plugin just reads as noise. */
+	public static function should_show_rating_prompt(): bool {
+		$installed_at = (int) get_option( self::OPTION_INSTALLED_AT, 0 );
+		if ( 0 === $installed_at ) {
+			$installed_at = time();
+			add_option( self::OPTION_INSTALLED_AT, $installed_at );
+		}
+		return self::rating_prompt_due(
+			$installed_at,
+			time(),
+			DB::count_reviews( [ 'status' => Review::STATUS_APPROVED ] )
+		);
+	}
+
+	public static function rating_prompt_due( int $installed_at, int $now, int $approved_reviews ): bool {
+		return $now - $installed_at >= self::RATING_PROMPT_AFTER_DAYS * DAY_IN_SECONDS
+			|| $approved_reviews >= self::RATING_PROMPT_AFTER_APPROVALS;
+	}
+
 	/** The "leave a review on WordPress.org" line shown atop Flow's admin pages. */
 	public static function render_rating_prompt(): void {
+		if ( ! self::should_show_rating_prompt() ) {
+			return;
+		}
 		?>
 		<p class="flow-ew-rating-prompt">
 			<?php
@@ -408,7 +540,7 @@ class Dashboard_Page {
 	private static array $assigned_count_cache = [];
 
 	public static function count_assigned_to_me( int $user_id ): int {
-		if ( $user_id <= 0 ) {
+		if ( $user_id <= 0 || Settings::is_solo_mode() ) {
 			return 0;
 		}
 		// The admin menu badge and the admin-notice both call this on every

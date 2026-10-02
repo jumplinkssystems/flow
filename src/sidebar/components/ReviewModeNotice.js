@@ -29,15 +29,26 @@ function SettingsHint( { settingsUrl, usersUrl } ) {
 		/>
 	);
 
-	return createInterpolateElement(
-		__(
-			'Please check the <settings>settings</settings> to see which user roles can review, and also if the role is applied the assigned <users>users</users>.',
-			'jumplinks-editorial-workflow'
-		),
-		{
-			settings: settingsLink,
-			users: usersLink,
-		}
+	return (
+		<>
+			{ createInterpolateElement(
+				__(
+					'Please check the <settings>settings</settings> to see which user roles can review, and also if the role is applied the assigned <users>users</users>.',
+					'jumplinks-editorial-workflow'
+				),
+				{
+					settings: settingsLink,
+					users: usersLink,
+				}
+			) }
+			{ flowEW.externalReviewersEnabled
+				? ' ' +
+				  __(
+						'You can still invite a reviewer by email below.',
+						'jumplinks-editorial-workflow'
+				  )
+				: null }
+		</>
 	);
 }
 

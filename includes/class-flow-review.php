@@ -15,6 +15,7 @@ class Review {
 	const STATUS_APPROVED          = 'approved';
 
 	const STATUS_OPEN_REVIEW = 'open_review';
+	const STATUS_SELF_REVIEW = 'self_review';
 
 	const TOKEN_MAX_AGE = 30 * DAY_IN_SECONDS;
 
@@ -28,6 +29,7 @@ class Review {
 			self::STATUS_CHANGES_REQUESTED => __( 'Changes Requested', 'jumplinks-editorial-workflow' ),
 			self::STATUS_APPROVED          => __( 'Approved', 'jumplinks-editorial-workflow' ),
 			self::STATUS_OPEN_REVIEW       => __( 'Open Review', 'jumplinks-editorial-workflow' ),
+			self::STATUS_SELF_REVIEW       => __( 'Self review', 'jumplinks-editorial-workflow' ),
 		];
 	}
 
@@ -46,6 +48,9 @@ class Review {
 	 * @param object $review Row from flow_reviews.
 	 */
 	public static function display_status( object $review ): string {
+		if ( self::is_private( $review ) ) {
+			return self::STATUS_SELF_REVIEW;
+		}
 		if ( ! empty( $review->is_open ) && (int) ( $review->reviewer_id ?? 0 ) === 0 ) {
 			return self::STATUS_OPEN_REVIEW;
 		}
@@ -55,7 +60,7 @@ class Review {
 	/**
 	 * Open Review lets a reviewer flip a review to public-ish access (any
 	 * logged-in user can view + comment via the share link). Site admins can
-	 * disable it via Settings → Flow; the filter still wins for code-level
+	 * disable it via Flow → Settings; the filter still wins for code-level
 	 * overrides.
 	 */
 	public static function is_open_review_feature_available(): bool {
@@ -64,6 +69,9 @@ class Review {
 	}
 
 	public static function request( int $post_id, int $reviewer_id, int $requester_id, bool $allow_self_assignment = false ): int {
+		if ( Settings::is_solo_mode() ) {
+			throw new \InvalidArgumentException( esc_html__( 'Reviewers are not available in Self review only mode.', 'jumplinks-editorial-workflow' ) );
+		}
 		if ( ! get_post( $post_id ) ) {
 			throw new \InvalidArgumentException( esc_html__( 'Invalid post ID.', 'jumplinks-editorial-workflow' ) );
 		}
@@ -78,7 +86,7 @@ class Review {
 				throw new \InvalidArgumentException( esc_html__( 'Invalid reviewer user ID.', 'jumplinks-editorial-workflow' ) );
 			}
 			if ( ! self::user_can_be_reviewer( $reviewer_id ) ) {
-				throw new \InvalidArgumentException( esc_html__( 'The selected user is not in a review role. Check Settings → Flow → Review Roles.', 'jumplinks-editorial-workflow' ) );
+				throw new \InvalidArgumentException( esc_html__( 'The selected user is not in a review role. Check Flow → Settings → Review Roles.', 'jumplinks-editorial-workflow' ) );
 			}
 			if ( ! $allow_self_assignment && $reviewer_id === $requester_id ) {
 				throw new \InvalidArgumentException( esc_html__( 'Reviewer cannot be the same as the requester.', 'jumplinks-editorial-workflow' ) );
@@ -124,10 +132,83 @@ class Review {
 		return $review_id;
 	}
 
+	public static function is_private( object $review ): bool {
+		return ! empty( $review->is_private );
+	}
+
+	/**
+	 * A self review is a private channel on the post: the workflow queries
+	 * never return it, so a client review can be started on the same post
+	 * without ever seeing these comments.
+	 */
+	public static function start_self_review( int $post_id, int $user_id ): int {
+		if ( $user_id <= 0 || ! get_post( $post_id ) ) {
+			throw new \InvalidArgumentException( esc_html__( 'Invalid post ID.', 'jumplinks-editorial-workflow' ) );
+		}
+		$post_type = get_post_type( $post_id );
+		if ( ! $post_type || ! Settings::is_post_type_supported( $post_type ) ) {
+			throw new \InvalidArgumentException( esc_html__( 'Reviews are not enabled for this content type.', 'jumplinks-editorial-workflow' ) );
+		}
+		$existing = DB::get_private_review( $post_id );
+		if ( $existing ) {
+			return (int) $existing->id;
+		}
+
+		$review_id = DB::insert_review(
+			[
+				'post_id'      => $post_id,
+				'reviewer_id'  => $user_id,
+				'requester_id' => $user_id,
+				'status'       => self::STATUS_IN_REVIEW,
+				'is_private'   => 1,
+				'revision_id'  => self::latest_revision_id( $post_id ) ?: null,
+			]
+		);
+		if ( ! $review_id ) {
+			throw new \RuntimeException( esc_html__( 'Failed to create review record.', 'jumplinks-editorial-workflow' ) );
+		}
+
+		do_action( 'flow_ew_self_review_started', $review_id, $post_id, $user_id );
+		return $review_id;
+	}
+
+	/** Re-baselines the snapshot so the page stops reporting the content as outdated. Notifies nobody. */
+	public static function refresh_self_review_snapshot( object $review ): void {
+		$update = [ 'iteration' => (int) $review->iteration + 1 ];
+		$latest = self::latest_revision_id( (int) $review->post_id );
+		if ( $latest ) {
+			$update['revision_id'] = $latest;
+		}
+		DB::update_review( (int) $review->id, $update );
+	}
+
+	public static function can_user_access_private_review( object $review, int $user_id ): bool {
+		if ( $user_id <= 0 ) {
+			return false;
+		}
+		return (int) $review->requester_id === $user_id
+			|| Settings::get_agent_comment_author_id() === $user_id
+			|| user_can( $user_id, 'flow_manage_reviews' );
+	}
+
+	private static function latest_revision_id( int $post_id ): int {
+		$revisions = wp_get_post_revisions(
+			$post_id,
+			[
+				'posts_per_page' => 1,
+				'fields'         => 'ids',
+			]
+		);
+		return empty( $revisions ) ? 0 : (int) reset( $revisions );
+	}
+
 	public static function send_for_review( int $review_id, int $user_id ): void {
 		$review = DB::get_review( $review_id );
 		if ( ! $review ) {
 			throw new \InvalidArgumentException( esc_html__( 'Review not found.', 'jumplinks-editorial-workflow' ) );
+		}
+		if ( self::is_private( $review ) ) {
+			throw new \RuntimeException( esc_html__( 'This action is not available on a self review.', 'jumplinks-editorial-workflow' ) );
 		}
 		if ( ! self::is_requester_or_manager( $review, $user_id ) ) {
 			throw new \RuntimeException( esc_html__( 'You are not authorized to send this review.', 'jumplinks-editorial-workflow' ) );
@@ -266,6 +347,9 @@ class Review {
 		if ( ! $review ) {
 			throw new \InvalidArgumentException( esc_html__( 'Review not found.', 'jumplinks-editorial-workflow' ) );
 		}
+		if ( self::is_private( $review ) ) {
+			throw new \RuntimeException( esc_html__( 'This action is not available on a self review.', 'jumplinks-editorial-workflow' ) );
+		}
 		if ( ! self::is_requester_or_manager( $review, $user_id ) ) {
 			throw new \RuntimeException( esc_html__( 'You are not authorized to cancel this review.', 'jumplinks-editorial-workflow' ) );
 		}
@@ -297,6 +381,13 @@ class Review {
 		$review = DB::get_review( $review_id );
 		if ( ! $review ) {
 			throw new \InvalidArgumentException( esc_html__( 'Review not found.', 'jumplinks-editorial-workflow' ) );
+		}
+		if ( self::is_private( $review ) ) {
+			if ( ! self::can_user_access_private_review( $review, $user_id ) ) {
+				throw new \RuntimeException( esc_html__( 'You are not authorized to resubmit this review.', 'jumplinks-editorial-workflow' ) );
+			}
+			self::refresh_self_review_snapshot( $review );
+			return;
 		}
 		if ( ! self::is_post_author( $review, $user_id ) ) {
 			throw new \RuntimeException( esc_html__( 'You are not authorized to resubmit this review.', 'jumplinks-editorial-workflow' ) );
@@ -340,6 +431,9 @@ class Review {
 		if ( (int) $review->requester_id === $user_id ) {
 			return true;
 		}
+		if ( self::is_private( $review ) ) {
+			return self::can_user_access_private_review( $review, $user_id );
+		}
 		return (bool) \apply_filters( 'flow_ew_is_review_participant', false, $review, $user_id );
 	}
 
@@ -366,6 +460,9 @@ class Review {
 	 * sign off on their own work.
 	 */
 	public static function can_user_take_reviewer_action( object $review, int $user_id ): bool {
+		if ( self::is_private( $review ) ) {
+			return false;
+		}
 		if ( $user_id > 0 ) {
 			return user_can( $user_id, 'flow_manage_reviews' )
 				|| self::is_assigned_reviewer( $review, $user_id );
@@ -387,7 +484,7 @@ class Review {
 	/**
 	 * Users in a review role (the set the reviewer picker shows) may be
 	 * assigned. Administrators and editors carry the cap by default; other
-	 * roles get it through Settings → Flow → Review Roles.
+	 * roles get it through Flow → Settings → Review Roles.
 	 *
 	 * The auto-assign user is the documented exception: that field names one
 	 * specific person and promises any user works there, review role or not.
@@ -416,7 +513,7 @@ class Review {
 	}
 
 	public static function can_user_access_as_participant_or_open( object $review, int $user_id ): bool {
-		$is_open = (bool) ( $review->is_open ?? false ) && self::is_open_review_feature_available();
+		$is_open = (bool) ( $review->is_open ?? false ) && self::is_open_review_feature_available() && ! self::is_private( $review );
 		return self::is_user_review_participant( $review, $user_id ) || $is_open;
 	}
 
@@ -490,6 +587,7 @@ class Review {
 			'updated_at'           => $review->updated_at ?? null,
 			'is_open'              => (bool) ( $review->is_open ?? false ),
 			'is_public'            => (bool) ( $review->is_public ?? false ),
+			'is_private'           => self::is_private( $review ),
 			'reviewer'             => $reviewer ? [
 				'id'         => (int) $reviewer->ID,
 				'name'       => $reviewer->display_name,

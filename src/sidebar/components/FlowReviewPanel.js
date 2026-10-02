@@ -11,6 +11,7 @@ import { shouldShowSendForReview } from '../../shared/should-show-send-for-revie
 import ReviewerField from './ReviewerField';
 import RevisionShareBar from './RevisionShareBar';
 import OpenReviewControl from './OpenReviewControl';
+import SelfReviewControl from './SelfReviewControl';
 import ReviewModeNotice from './ReviewModeNotice';
 import { getConfig } from '../../shared/config';
 
@@ -273,6 +274,13 @@ export default function FlowReviewPanel() {
 					reviewMandatory={ flowEW.reviewMandatory }
 					publishBlocked={ publishBlocked }
 					noReviewers={ noReviewers }
+				/>
+			) }
+
+			{ flowEW.selfReview?.offered && (
+				<SelfReviewControl
+					postStatus={ postStatus }
+					createErrorNotice={ createErrorNotice }
 				/>
 			) }
 

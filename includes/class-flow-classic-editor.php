@@ -46,7 +46,7 @@ class ClassicEditor {
 		if ( ! $post instanceof \WP_Post ) {
 			return $base;
 		}
-		$review = DB::get_active_review( (int) $post->ID );
+		$review = Settings::is_solo_mode() ? null : DB::get_active_review( (int) $post->ID );
 		if ( ! $review ) {
 			return $base;
 		}
@@ -103,7 +103,7 @@ class ClassicEditor {
 				];
 			}
 			if ( empty( $reviewer_roles ) ) {
-				$no_reviewers = true;
+				$no_reviewers = ! Settings::reviews_by_email_only();
 			} else {
 				$users        = get_users(
 					[
@@ -137,6 +137,8 @@ class ClassicEditor {
 		if ( $pending_reviewer_id > 0 ) {
 			$pending_user          = get_userdata( $pending_reviewer_id );
 			$pending_reviewer_name = $pending_user ? (string) $pending_user->display_name : '';
+		} else {
+			$pending_reviewer_name = Auto_Assign_Reviewer::pending_invite_email( $post_id );
 		}
 
 		$root_class = 'flow-ew-classic';
@@ -158,6 +160,13 @@ class ClassicEditor {
 		}
 
 		$is_post_author = (int) $post->post_author === $current_user_id;
+
+		$solo                = Settings::is_solo_mode();
+		$self_review_offered = Self_Review::is_offered_for( $post_id, $current_user_id );
+		$self_review_on      = Self_Review::is_on_for_post( $post_id );
+		$self_review_url     = Self_Review::start_url( $post_id );
+		$self_review_link    = Self_Review::link_for( $post_id );
+		$self_review_saved   = 'auto-draft' !== $post->post_status;
 
 		$template = (string) apply_filters(
 			'flow_ew_classic_review_ui_template',

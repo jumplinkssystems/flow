@@ -5,5 +5,6 @@
 	"changes_requested": { "bg": "#ffebea", "text": "#c92122", "border": "#ffd1d0" },
 	"pending": { "bg": "#e6f3f5", "text": "#5e777b", "border": "#cde3e7" },
 	"completed": { "bg": "#e0f3f0", "text": "#0f6b5c", "border": "#bfe5dd" },
-	"cancelled": { "bg": "#f0f0f1", "text": "#50575e", "border": "#dcdcde" }
+	"cancelled": { "bg": "#f0f0f1", "text": "#50575e", "border": "#dcdcde" },
+	"self_review": { "bg": "#efe9fb", "text": "#5b3fa6", "border": "#d9ccf4" }
 }

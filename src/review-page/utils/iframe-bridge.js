@@ -74,66 +74,11 @@ export function getActiveContentRoot() {
 	return resolveCommentContentRoot( document );
 }
 
-// Markup that identifies "this is the post" — title, byline, content, meta,
-// everything editorially owned by the post. Combines semantic wrappers
-// (`<article>`, `<main>`, WordPress's `post_class()` output, `id="post-N"`)
-// with the canonical title/meta classes WP itself emits — those cover block
-// themes / classic themes that render the title outside any wrapper.
-const POST_WRAPPER_SELECTOR = [
-	'article',
-	'main',
-	'[class~="type-post"]',
-	'[class~="type-page"]',
-	'[class~="type-product"]',
-	'[class~="type-attachment"]',
-	'[id^="post-"]',
-	'.entry-title',
-	'.entry-header',
-	'.entry-meta',
-	'.wp-block-post-title',
-].join( ',' );
-
-const POST_REGION_SELECTOR =
-	'.flow-preview-content, .entry-content, .wp-block-post-content, .product.type-product';
-
-/**
- * A site review covers the whole site, not one post, so headers, menus and
- * footers are legitimate things to comment on. A single-page review still
- * rejects them: there the post is the subject and site chrome is not.
- */
-function isSiteReviewMode() {
-	return (
-		typeof window !== 'undefined' &&
-		!! (
-			window.flowSiteReview && typeof window.flowSiteReview === 'object'
-		)
-	);
-}
-
 export function resolveContentRootFor( doc, node ) {
 	if ( ! doc || ! node ) {
 		return null;
 	}
-	const direct = resolveCommentContentRoot( doc, node );
-	if ( direct ) {
-		return direct;
-	}
-	// Selection is outside the post body. Accept it if it's still inside
-	// the post's wrapper — title, byline, categories, etc. — and anchor to
-	// `<body>` (rootType: 'body' on the descriptor). Reject otherwise so
-	// nav/footer/sidebar selections never become comments.
-	const targetEl = node.nodeType === 1 ? node : node.parentElement;
-	if ( targetEl && targetEl.closest( POST_WRAPPER_SELECTOR ) && doc.body ) {
-		return doc.body;
-	}
-	if ( isSiteReviewMode() ) {
-		return doc.body || null;
-	}
-	const hasAnyRoot = !! doc.querySelector( POST_REGION_SELECTOR );
-	if ( hasAnyRoot ) {
-		return null;
-	}
-	return doc.body || null;
+	return resolveCommentContentRoot( doc, node ) || doc.body || null;
 }
 
 /**

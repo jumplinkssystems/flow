@@ -245,14 +245,14 @@ import { createBuilderPublishGuard } from '../shared/builder-publish-guard';
 			const rect = toggle.getBoundingClientRect();
 			const top = Math.max( 8, Math.round( rect.bottom + 6 ) );
 			const available = Math.max( 240, window.innerHeight - top - 8 );
-			// Half the available viewport (keeps the drawer compact).
-			const height = Math.round( available / 2 );
 			drawer.style.top = top + 'px';
 			drawer.style.right = window.innerWidth - rect.right + 'px';
 			drawer.style.left = 'auto';
 			drawer.style.bottom = 'auto';
-			drawer.style.height = height + 'px';
-			drawer.style.maxHeight = height + 'px';
+			// Sized by its content, so an open reviewer list grows the drawer
+			// instead of hiding behind its scroll; the body scrolls past this.
+			drawer.style.height = 'auto';
+			drawer.style.maxHeight = available + 'px';
 		}
 
 		function refreshReviewNotices() {

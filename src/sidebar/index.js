@@ -10,6 +10,7 @@ import FlowReviewerInfoPanel from './components/FlowReviewerInfoPanel';
 import '../shared/share-bar.css';
 import './index.css';
 import { getConfig } from '../shared/config';
+import SelfReviewOnlyPanel from './components/SelfReviewOnlyPanel';
 
 const flowEW = getConfig();
 const { restUrl, nonce, postId, i18n } = flowEW;
@@ -125,6 +126,19 @@ function FlowReviewRoot() {
 		i18n.reviewPanelTitle
 	);
 
+	if ( flowEW.soloMode ) {
+		return (
+			<PluginDocumentSettingPanel
+				name="flow-ew-review"
+				title={ i18n.reviewPanelTitle }
+				className="flow-ew-review-panel"
+				initialOpen
+			>
+				<SelfReviewOnlyPanel />
+			</PluginDocumentSettingPanel>
+		);
+	}
+
 	return (
 		<>
 			<FlowDataLoader />
@@ -142,4 +156,8 @@ function FlowReviewRoot() {
 }
 
 registerPlugin( 'flow-ew-review-panel', { render: FlowReviewRoot } );
-registerPlugin( 'flow-ew-reviewer-info', { render: FlowReviewerInfoPanel } );
+if ( ! flowEW.soloMode ) {
+	registerPlugin( 'flow-ew-reviewer-info', {
+		render: FlowReviewerInfoPanel,
+	} );
+}

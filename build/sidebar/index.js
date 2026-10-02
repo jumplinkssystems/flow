@@ -481,6 +481,38 @@ function shouldShowSendForReview(review) {
 
 /***/ },
 
+/***/ "./src/shared/solo-mode-notice.js"
+/*!****************************************!*\
+  !*** ./src/shared/solo-mode-notice.js ***!
+  \****************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   SOLO_NOTICE_DISMISS_VALUE: () => (/* binding */ SOLO_NOTICE_DISMISS_VALUE),
+/* harmony export */   dismissSoloNotice: () => (/* binding */ dismissSoloNotice),
+/* harmony export */   isSoloNoticeDismissed: () => (/* binding */ isSoloNoticeDismissed)
+/* harmony export */ });
+/** Persistence for the "Self review only" editor notice. */
+const DISMISS_KEY = 'flow_ew_dismiss_solo_notice';
+const SOLO_NOTICE_DISMISS_VALUE = 'solo-mode';
+function isSoloNoticeDismissed() {
+  try {
+    return window.localStorage.getItem(DISMISS_KEY) === '1';
+  } catch (_err) {
+    return false;
+  }
+}
+function dismissSoloNotice() {
+  try {
+    window.localStorage.setItem(DISMISS_KEY, '1');
+  } catch (_err) {
+    // ignore
+  }
+}
+
+/***/ },
+
 /***/ "./src/shared/status-labels.js"
 /*!*************************************!*\
   !*** ./src/shared/status-labels.js ***!
@@ -503,7 +535,8 @@ const STATUS_LABELS = {
   in_review: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_0__.__)('In Review', 'jumplinks-editorial-workflow'),
   changes_requested: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_0__.__)('Changes Requested', 'jumplinks-editorial-workflow'),
   approved: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_0__.__)('Approved', 'jumplinks-editorial-workflow'),
-  open_review: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_0__.__)('Open Review', 'jumplinks-editorial-workflow')
+  open_review: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_0__.__)('Open Review', 'jumplinks-editorial-workflow'),
+  self_review: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_0__.__)('Self review', 'jumplinks-editorial-workflow')
 };
 
 /** @param {string|undefined|null} status */
@@ -602,10 +635,11 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _ReviewerField__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ./ReviewerField */ "./src/sidebar/components/ReviewerField.js");
 /* harmony import */ var _RevisionShareBar__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ./RevisionShareBar */ "./src/sidebar/components/RevisionShareBar.js");
 /* harmony import */ var _OpenReviewControl__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! ./OpenReviewControl */ "./src/sidebar/components/OpenReviewControl.js");
-/* harmony import */ var _ReviewModeNotice__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(/*! ./ReviewModeNotice */ "./src/sidebar/components/ReviewModeNotice.js");
-/* harmony import */ var _shared_config__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__(/*! ../../shared/config */ "./src/shared/config.js");
-/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_15__ = __webpack_require__(/*! react/jsx-runtime */ "react/jsx-runtime");
-/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_15___default = /*#__PURE__*/__webpack_require__.n(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_15__);
+/* harmony import */ var _SelfReviewControl__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(/*! ./SelfReviewControl */ "./src/sidebar/components/SelfReviewControl.js");
+/* harmony import */ var _ReviewModeNotice__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__(/*! ./ReviewModeNotice */ "./src/sidebar/components/ReviewModeNotice.js");
+/* harmony import */ var _shared_config__WEBPACK_IMPORTED_MODULE_15__ = __webpack_require__(/*! ../../shared/config */ "./src/shared/config.js");
+/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_16__ = __webpack_require__(/*! react/jsx-runtime */ "react/jsx-runtime");
+/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_16___default = /*#__PURE__*/__webpack_require__.n(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_16__);
 
 
 
@@ -622,7 +656,8 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-const flowEW = (0,_shared_config__WEBPACK_IMPORTED_MODULE_14__.getConfig)();
+
+const flowEW = (0,_shared_config__WEBPACK_IMPORTED_MODULE_15__.getConfig)();
 const {
   restUrl,
   currentUserId,
@@ -839,56 +874,59 @@ function FlowReviewPanel() {
     reviewerMeta: flowEW.reviewerMeta
   });
   const showReviewNotice = currentUserCan.assignReviewer && (noReviewers && !flowEW.reviewMandatory || publishBlocked);
-  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_15__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_15__.Fragment, {
-    children: [showReviewNotice && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_15__.jsx)(_ReviewModeNotice__WEBPACK_IMPORTED_MODULE_13__["default"], {
+  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_16__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_16__.Fragment, {
+    children: [showReviewNotice && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_16__.jsx)(_ReviewModeNotice__WEBPACK_IMPORTED_MODULE_14__["default"], {
       reviewMandatory: flowEW.reviewMandatory,
       publishBlocked: publishBlocked,
       noReviewers: noReviewers
-    }), currentUserCan.assignReviewer && flowEW.openReviewEnabled && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_15__.jsx)(_OpenReviewControl__WEBPACK_IMPORTED_MODULE_12__["default"], {
+    }), flowEW.selfReview?.offered && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_16__.jsx)(_SelfReviewControl__WEBPACK_IMPORTED_MODULE_13__["default"], {
+      postStatus: postStatus,
+      createErrorNotice: createErrorNotice
+    }), currentUserCan.assignReviewer && flowEW.openReviewEnabled && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_16__.jsx)(_OpenReviewControl__WEBPACK_IMPORTED_MODULE_12__["default"], {
       review: review,
       loading: loading,
       setReview: setReview,
       setLoading: setLoading,
       restUrl: restUrl,
       createErrorNotice: createErrorNotice
-    }), currentUserCan.assignReviewer && (reviewerFieldSlot || /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_15__.jsx)(_ReviewerField__WEBPACK_IMPORTED_MODULE_10__["default"], {})), reviewerFieldExtras, /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_15__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__.PanelRow, {
-      children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_15__.jsxs)("div", {
+    }), currentUserCan.assignReviewer && (reviewerFieldSlot || /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_16__.jsx)(_ReviewerField__WEBPACK_IMPORTED_MODULE_10__["default"], {})), reviewerFieldExtras, /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_16__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__.PanelRow, {
+      children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_16__.jsxs)("div", {
         className: "flow-ew-actions",
-        children: [isPendingSend && currentUserCan.assignReviewer && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_15__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_15__.Fragment, {
-          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_15__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__.Button, {
+        children: [isPendingSend && currentUserCan.assignReviewer && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_16__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_16__.Fragment, {
+          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_16__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__.Button, {
             variant: "primary",
             onClick: sendForReview,
             disabled: sendDisabled,
             isBusy: loading,
             className: "flow-ew-actions__btn",
             children: i18n.sendForReview
-          }), sendDisabled && sendDisabledHint && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_15__.jsx)("p", {
+          }), sendDisabled && sendDisabledHint && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_16__.jsx)("p", {
             className: "flow-ew-actions__hint",
             children: sendDisabledHint
           })]
-        }), isChangesRequested && isPostAuthor && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_15__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__.Button, {
+        }), isChangesRequested && isPostAuthor && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_16__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__.Button, {
           variant: "primary",
           onClick: resubmit,
           disabled: loading,
           isBusy: loading,
           className: "flow-ew-actions__btn",
           children: i18n.resubmit
-        }), isInReview && isReviewer && currentUserCan.reviewPosts && (myApproved ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_15__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__.Button, {
+        }), isInReview && isReviewer && currentUserCan.reviewPosts && (myApproved ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_16__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__.Button, {
           variant: "secondary",
           onClick: revokeApproval,
           disabled: loading,
           isBusy: loading,
           className: "flow-ew-actions__btn",
           children: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_4__.__)('Revoke Approval', 'jumplinks-editorial-workflow')
-        }) : /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_15__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_15__.Fragment, {
-          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_15__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__.Button, {
+        }) : /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_16__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_16__.Fragment, {
+          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_16__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__.Button, {
             variant: "primary",
             onClick: approve,
             disabled: loading,
             isBusy: loading,
             className: "flow-ew-actions__btn flow-ew-actions__btn--approve",
             children: i18n.approve
-          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_15__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__.Button, {
+          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_16__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__.Button, {
             variant: "secondary",
             isDestructive: true,
             onClick: requestChanges,
@@ -897,7 +935,7 @@ function FlowReviewPanel() {
             className: "flow-ew-actions__btn",
             children: i18n.requestChanges
           })]
-        })), review?.revision_preview_url && (review.status !== 'pending' || !!review.is_open) && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_15__.jsx)(_RevisionShareBar__WEBPACK_IMPORTED_MODULE_11__["default"], {
+        })), review?.revision_preview_url && (review.status !== 'pending' || !!review.is_open) && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_16__.jsx)(_RevisionShareBar__WEBPACK_IMPORTED_MODULE_11__["default"], {
           url: review.revision_preview_url
         })]
       })
@@ -1462,9 +1500,11 @@ function SettingsHint({
     target: "_blank",
     rel: "noreferrer"
   });
-  return (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.createInterpolateElement)((0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_2__.__)('Please check the <settings>settings</settings> to see which user roles can review, and also if the role is applied the assigned <users>users</users>.', 'jumplinks-editorial-workflow'), {
-    settings: settingsLink,
-    users: usersLink
+  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.Fragment, {
+    children: [(0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.createInterpolateElement)((0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_2__.__)('Please check the <settings>settings</settings> to see which user roles can review, and also if the role is applied the assigned <users>users</users>.', 'jumplinks-editorial-workflow'), {
+      settings: settingsLink,
+      users: usersLink
+    }), flowEW.externalReviewersEnabled ? ' ' + (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_2__.__)('You can still invite a reviewer by email below.', 'jumplinks-editorial-workflow') : null]
   });
 }
 function DismissableNotice({
@@ -1999,7 +2039,8 @@ const {
   i18n
 } = flowEW;
 function RevisionShareBar({
-  url
+  url,
+  label = i18n.snapshotLink
 }) {
   const [copied, setCopied] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useState)(false);
   const ref = (0,_wordpress_compose__WEBPACK_IMPORTED_MODULE_1__.useCopyToClipboard)(url, () => {
@@ -2010,7 +2051,7 @@ function RevisionShareBar({
     className: "flow-ew-share-bar",
     children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("p", {
       className: "flow-ew-field-label flow-ew-share-bar__label",
-      children: i18n.snapshotLink
+      children: label
     }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
       className: "flow-ew-share-bar__row",
       children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("a", {
@@ -2043,6 +2084,213 @@ function RevisionShareBar({
           name: "external"
         })
       })]
+    })]
+  });
+}
+
+/***/ },
+
+/***/ "./src/sidebar/components/SelfReviewControl.js"
+/*!*****************************************************!*\
+  !*** ./src/sidebar/components/SelfReviewControl.js ***!
+  \*****************************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (/* binding */ SelfReviewControl)
+/* harmony export */ });
+/* harmony import */ var _wordpress_element__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @wordpress/element */ "@wordpress/element");
+/* harmony import */ var _wordpress_element__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_wordpress_element__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var _wordpress_components__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @wordpress/components */ "@wordpress/components");
+/* harmony import */ var _wordpress_components__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(_wordpress_components__WEBPACK_IMPORTED_MODULE_1__);
+/* harmony import */ var _wordpress_i18n__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @wordpress/i18n */ "@wordpress/i18n");
+/* harmony import */ var _wordpress_i18n__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(_wordpress_i18n__WEBPACK_IMPORTED_MODULE_2__);
+/* harmony import */ var _wordpress_api_fetch__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! @wordpress/api-fetch */ "@wordpress/api-fetch");
+/* harmony import */ var _wordpress_api_fetch__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(_wordpress_api_fetch__WEBPACK_IMPORTED_MODULE_3__);
+/* harmony import */ var _shared_share_bar_icons__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../../shared/share-bar-icons */ "./src/shared/share-bar-icons.js");
+/* harmony import */ var _RevisionShareBar__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./RevisionShareBar */ "./src/sidebar/components/RevisionShareBar.js");
+/* harmony import */ var _shared_config__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ../../shared/config */ "./src/shared/config.js");
+/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! react/jsx-runtime */ "react/jsx-runtime");
+/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7___default = /*#__PURE__*/__webpack_require__.n(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__);
+
+
+
+
+
+
+
+
+const flowEW = (0,_shared_config__WEBPACK_IMPORTED_MODULE_6__.getConfig)();
+const {
+  postId,
+  restUrl,
+  i18n
+} = flowEW;
+
+/**
+ * Per-post switch for the private self review, above Open Review. On by
+ * default; the go-to link appears once the post has been saved.
+ */
+/**
+ * @param {Object}   props
+ * @param {string}   props.postStatus
+ * @param {Function} props.createErrorNotice
+ * @param {boolean}  props.shareBar Self review only: show the link like the client review's, instead of the icon.
+ */
+function SelfReviewControl({
+  postStatus,
+  createErrorNotice,
+  shareBar = false
+}) {
+  const [active, setActive] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useState)(!!flowEW.selfReview?.active);
+  const [busy, setBusy] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useState)(false);
+  const onToggle = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useCallback)(async checked => {
+    setBusy(true);
+    setActive(checked);
+    try {
+      await _wordpress_api_fetch__WEBPACK_IMPORTED_MODULE_3___default()({
+        url: `${restUrl}/self-review/${postId}`,
+        method: 'POST',
+        data: {
+          enabled: checked
+        }
+      });
+    } catch (err) {
+      setActive(!checked);
+      createErrorNotice(err?.message || (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_2__.__)('Could not save. Please try again.', 'jumplinks-editorial-workflow'), {
+        isDismissible: true
+      });
+    } finally {
+      setBusy(false);
+    }
+  }, [createErrorNotice]);
+  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.Fragment, {
+    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_1__.PanelRow, {
+      children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
+        className: "flow-ew-self-review",
+        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_1__.CheckboxControl, {
+          __nextHasNoMarginBottom: true,
+          label: i18n.selfReview,
+          help: i18n.myReviewHint,
+          checked: active,
+          onChange: onToggle,
+          disabled: busy
+        }), !shareBar && active && postStatus !== 'auto-draft' && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_1__.Button, {
+          href: flowEW.selfReview.startUrl,
+          target: "_blank",
+          rel: "noreferrer",
+          size: "compact",
+          variant: "tertiary",
+          label: i18n.myReviewGoTo,
+          showTooltip: true,
+          className: "flow-ew-self-review__goto",
+          icon: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)(_shared_share_bar_icons__WEBPACK_IMPORTED_MODULE_4__.ShareBarIcon, {
+            name: "external"
+          })
+        })]
+      })
+    }), shareBar && active && postStatus !== 'auto-draft' && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_1__.PanelRow, {
+      children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
+        className: "flow-ew-actions",
+        children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)(_RevisionShareBar__WEBPACK_IMPORTED_MODULE_5__["default"], {
+          url: flowEW.selfReview.link || flowEW.selfReview.startUrl,
+          label: i18n.selfReview
+        })
+      })
+    })]
+  });
+}
+
+/***/ },
+
+/***/ "./src/sidebar/components/SelfReviewOnlyPanel.js"
+/*!*******************************************************!*\
+  !*** ./src/sidebar/components/SelfReviewOnlyPanel.js ***!
+  \*******************************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (/* binding */ SelfReviewOnlyPanel)
+/* harmony export */ });
+/* harmony import */ var _wordpress_data__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @wordpress/data */ "@wordpress/data");
+/* harmony import */ var _wordpress_data__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_wordpress_data__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var _wordpress_element__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @wordpress/element */ "@wordpress/element");
+/* harmony import */ var _wordpress_element__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(_wordpress_element__WEBPACK_IMPORTED_MODULE_1__);
+/* harmony import */ var _wordpress_components__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @wordpress/components */ "@wordpress/components");
+/* harmony import */ var _wordpress_components__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__);
+/* harmony import */ var _wordpress_notices__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! @wordpress/notices */ "@wordpress/notices");
+/* harmony import */ var _wordpress_notices__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(_wordpress_notices__WEBPACK_IMPORTED_MODULE_3__);
+/* harmony import */ var _wordpress_i18n__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! @wordpress/i18n */ "@wordpress/i18n");
+/* harmony import */ var _wordpress_i18n__WEBPACK_IMPORTED_MODULE_4___default = /*#__PURE__*/__webpack_require__.n(_wordpress_i18n__WEBPACK_IMPORTED_MODULE_4__);
+/* harmony import */ var _shared_config__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../../shared/config */ "./src/shared/config.js");
+/* harmony import */ var _shared_solo_mode_notice__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ../../shared/solo-mode-notice */ "./src/shared/solo-mode-notice.js");
+/* harmony import */ var _SelfReviewControl__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./SelfReviewControl */ "./src/sidebar/components/SelfReviewControl.js");
+/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! react/jsx-runtime */ "react/jsx-runtime");
+/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_8___default = /*#__PURE__*/__webpack_require__.n(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_8__);
+
+
+
+
+
+
+
+
+
+const flowEW = (0,_shared_config__WEBPACK_IMPORTED_MODULE_5__.getConfig)();
+const {
+  i18n
+} = flowEW;
+function SoloModeNotice() {
+  const [dismissed, setDismissed] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_1__.useState)(() => (0,_shared_solo_mode_notice__WEBPACK_IMPORTED_MODULE_6__.isSoloNoticeDismissed)());
+  if (dismissed) {
+    return null;
+  }
+  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_8__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__.PanelRow, {
+    children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_8__.jsxs)("div", {
+      className: "flow-ew-review-notice flow-ew-review-notice--in-review",
+      role: "status",
+      "data-flow-ew-dismiss": _shared_solo_mode_notice__WEBPACK_IMPORTED_MODULE_6__.SOLO_NOTICE_DISMISS_VALUE,
+      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_8__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__.Button, {
+        className: "flow-ew-review-notice__dismiss",
+        icon: "no-alt",
+        label: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_4__.__)('Dismiss', 'jumplinks-editorial-workflow'),
+        onClick: () => {
+          (0,_shared_solo_mode_notice__WEBPACK_IMPORTED_MODULE_6__.dismissSoloNotice)();
+          setDismissed(true);
+        },
+        isSmall: true
+      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_8__.jsx)("p", {
+        className: "flow-ew-review-notice__title",
+        children: i18n.soloTitle
+      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_8__.jsx)("p", {
+        className: "flow-ew-review-notice__desc",
+        children: (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_1__.createInterpolateElement)(i18n.soloHint || '', {
+          a:
+          /*#__PURE__*/
+          // eslint-disable-next-line jsx-a11y/anchor-has-content -- createInterpolateElement fills it.
+          (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_8__.jsx)("a", {
+            href: flowEW.settingsUrl,
+            className: "flow-ew-review-notice__link"
+          })
+        })
+      })]
+    })
+  });
+}
+
+/** Self review only mode: the private review is the whole panel. */
+function SelfReviewOnlyPanel() {
+  const postStatus = (0,_wordpress_data__WEBPACK_IMPORTED_MODULE_0__.useSelect)(sel => sel('core/editor').getEditedPostAttribute('status'), []);
+  const {
+    createErrorNotice
+  } = (0,_wordpress_data__WEBPACK_IMPORTED_MODULE_0__.useDispatch)(_wordpress_notices__WEBPACK_IMPORTED_MODULE_3__.store);
+  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_8__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_8__.Fragment, {
+    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_8__.jsx)(SoloModeNotice, {}), flowEW.selfReview?.offered && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_8__.jsx)(_SelfReviewControl__WEBPACK_IMPORTED_MODULE_7__["default"], {
+      postStatus: postStatus,
+      createErrorNotice: createErrorNotice,
+      shareBar: true
     })]
   });
 }
@@ -2288,7 +2536,7 @@ module.exports = window["wp"]["plugins"];
   \************************************/
 (module) {
 
-module.exports = /*#__PURE__*/JSON.parse('{"open_review":{"bg":"#dff4ff","text":"#1579a5","border":"#b6e6ff"},"approved":{"bg":"#e7f5e4","text":"#458037","border":"#cae8c4"},"in_review":{"bg":"#fcf0ce","text":"#957500","border":"#f2dda4"},"changes_requested":{"bg":"#ffebea","text":"#c92122","border":"#ffd1d0"},"pending":{"bg":"#e6f3f5","text":"#5e777b","border":"#cde3e7"},"completed":{"bg":"#e0f3f0","text":"#0f6b5c","border":"#bfe5dd"},"cancelled":{"bg":"#f0f0f1","text":"#50575e","border":"#dcdcde"}}');
+module.exports = /*#__PURE__*/JSON.parse('{"open_review":{"bg":"#dff4ff","text":"#1579a5","border":"#b6e6ff"},"approved":{"bg":"#e7f5e4","text":"#458037","border":"#cae8c4"},"in_review":{"bg":"#fcf0ce","text":"#957500","border":"#f2dda4"},"changes_requested":{"bg":"#ffebea","text":"#c92122","border":"#ffd1d0"},"pending":{"bg":"#e6f3f5","text":"#5e777b","border":"#cde3e7"},"completed":{"bg":"#e0f3f0","text":"#0f6b5c","border":"#bfe5dd"},"cancelled":{"bg":"#f0f0f1","text":"#50575e","border":"#dcdcde"},"self_review":{"bg":"#efe9fb","text":"#5b3fa6","border":"#d9ccf4"}}');
 
 /***/ }
 
@@ -2390,8 +2638,10 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _shared_share_bar_css__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ../shared/share-bar.css */ "./src/shared/share-bar.css");
 /* harmony import */ var _index_css__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ./index.css */ "./src/sidebar/index.css");
 /* harmony import */ var _shared_config__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ../shared/config */ "./src/shared/config.js");
-/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! react/jsx-runtime */ "react/jsx-runtime");
-/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_12___default = /*#__PURE__*/__webpack_require__.n(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_12__);
+/* harmony import */ var _components_SelfReviewOnlyPanel__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! ./components/SelfReviewOnlyPanel */ "./src/sidebar/components/SelfReviewOnlyPanel.js");
+/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(/*! react/jsx-runtime */ "react/jsx-runtime");
+/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_13___default = /*#__PURE__*/__webpack_require__.n(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_13__);
+
 
 
 
@@ -2478,33 +2728,44 @@ function FlowReviewRoot() {
   const review = (0,_wordpress_data__WEBPACK_IMPORTED_MODULE_2__.useSelect)(sel => sel(_store__WEBPACK_IMPORTED_MODULE_5__.STORE_NAME).getReview(), []);
   const displayStatus = review ? review.display_status || review.status : null;
   const statusLabel = displayStatus ? _store__WEBPACK_IMPORTED_MODULE_5__.STATUS_LABELS[displayStatus] || null : null;
-  const panelTitle = statusLabel ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_12__.jsxs)("span", {
+  const panelTitle = statusLabel ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_13__.jsxs)("span", {
     className: "flow-ew-panel-title",
-    children: [i18n.reviewPanelTitle, /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_12__.jsxs)("span", {
+    children: [i18n.reviewPanelTitle, /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_13__.jsxs)("span", {
       className: "flow-ew-panel-title__badge",
       style: (0,_store__WEBPACK_IMPORTED_MODULE_5__.statusThemeStyle)(displayStatus),
-      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_12__.jsx)("span", {
+      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_13__.jsx)("span", {
         className: "flow-ew-badge__dot",
         "aria-hidden": "true"
       }), statusLabel]
     })]
   }) : i18n.reviewPanelTitle;
-  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_12__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_12__.Fragment, {
-    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_12__.jsx)(FlowDataLoader, {}), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_12__.jsx)(_components_PublishGuard__WEBPACK_IMPORTED_MODULE_7__["default"], {}), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_12__.jsx)(_wordpress_editor__WEBPACK_IMPORTED_MODULE_1__.PluginDocumentSettingPanel, {
+  if (flowEW.soloMode) {
+    return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_13__.jsx)(_wordpress_editor__WEBPACK_IMPORTED_MODULE_1__.PluginDocumentSettingPanel, {
+      name: "flow-ew-review",
+      title: i18n.reviewPanelTitle,
+      className: "flow-ew-review-panel",
+      initialOpen: true,
+      children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_13__.jsx)(_components_SelfReviewOnlyPanel__WEBPACK_IMPORTED_MODULE_12__["default"], {})
+    });
+  }
+  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_13__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_13__.Fragment, {
+    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_13__.jsx)(FlowDataLoader, {}), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_13__.jsx)(_components_PublishGuard__WEBPACK_IMPORTED_MODULE_7__["default"], {}), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_13__.jsx)(_wordpress_editor__WEBPACK_IMPORTED_MODULE_1__.PluginDocumentSettingPanel, {
       name: "flow-ew-review",
       title: panelTitle,
       className: "flow-ew-review-panel",
       initialOpen: true,
-      children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_12__.jsx)(_components_FlowReviewPanel__WEBPACK_IMPORTED_MODULE_6__["default"], {})
+      children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_13__.jsx)(_components_FlowReviewPanel__WEBPACK_IMPORTED_MODULE_6__["default"], {})
     })]
   });
 }
 (0,_wordpress_plugins__WEBPACK_IMPORTED_MODULE_0__.registerPlugin)('flow-ew-review-panel', {
   render: FlowReviewRoot
 });
-(0,_wordpress_plugins__WEBPACK_IMPORTED_MODULE_0__.registerPlugin)('flow-ew-reviewer-info', {
-  render: _components_FlowReviewerInfoPanel__WEBPACK_IMPORTED_MODULE_8__["default"]
-});
+if (!flowEW.soloMode) {
+  (0,_wordpress_plugins__WEBPACK_IMPORTED_MODULE_0__.registerPlugin)('flow-ew-reviewer-info', {
+    render: _components_FlowReviewerInfoPanel__WEBPACK_IMPORTED_MODULE_8__["default"]
+  });
+}
 })();
 
 /******/ })()

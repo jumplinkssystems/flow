@@ -220,6 +220,7 @@ textarea {
 		&--approved          { color: $badge-approved-text; background: $badge-approved-bg; border-color: $badge-approved-border; }
 		&--changes_requested { color: $badge-changes-text;  background: $badge-changes-bg;  border-color: $badge-changes-border; }
 		&--open_review       { color: $badge-open-text;     background: $badge-open-bg;     border-color: $badge-open-border; }
+		&--self_review       { color: $badge-self-text;     background: $badge-self-bg;     border-color: $badge-self-border; }
 	}
 
 	&__title {

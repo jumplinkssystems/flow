@@ -16,7 +16,7 @@
  * overlay back to its media sibling (img/video/iframe) when handling clicks.
  */
 import { __ } from '@wordpress/i18n';
-import { resolveCommentContentRoot, getIframeDoc } from './iframe-bridge';
+import { getIframeDoc } from './iframe-bridge';
 
 const WRAPPED_FLAG = 'flowEmbedWrapped';
 
@@ -486,12 +486,16 @@ function wrapMedia( media ) {
 	}
 
 	const cs0 = view.getComputedStyle( media );
-	if ( cs0.display === 'none' || cs0.visibility === 'hidden' ) {
+	if (
+		cs0.display === 'none' ||
+		cs0.visibility === 'hidden' ||
+		( media.offsetWidth === 0 && media.offsetHeight === 0 )
+	) {
+		pendingMedia.add( media );
+		schedulePendingRetry();
 		return;
 	}
-	if ( media.offsetWidth === 0 && media.offsetHeight === 0 ) {
-		return;
-	}
+	pendingMedia.delete( media );
 
 	media.dataset[ WRAPPED_FLAG ] = '1';
 
@@ -516,6 +520,9 @@ function wrapMedia( media ) {
 		linkTarget: linkTarget || null,
 	} );
 	overlay.flowMedia = media;
+	if ( isPositioned && ! isIframe ) {
+		overlay.style.zIndex = cs.zIndex;
+	}
 
 	// Always isolate overlay surface clicks from theme lightbox / video-modal
 	// scripts. Link pills and play pills opt out inside the handler.
@@ -659,7 +666,7 @@ function attachFloatingOverlay( media, overlay, parent, view ) {
 		overlay.style.height = mr.height + 'px';
 	};
 	reposition();
-	parent.appendChild( overlay );
+	media.after( overlay );
 
 	// Hover-time recompute is the primary signal — by the time the
 	// reviewer is hovering, layout has fully settled and the user is
@@ -700,16 +707,65 @@ let observer = null;
 let lateLoadHandler = null;
 let lateLoadRoot = null;
 
+// Media hidden at scan time (scroll-reveal themes, lazy galleries) is retried
+// once it may have become visible.
+const pendingMedia = new Set();
+let pendingTimer = null;
+let pendingCleanup = null;
+
+function retryPendingMedia() {
+	pendingTimer = null;
+	for ( const media of [ ...pendingMedia ] ) {
+		pendingMedia.delete( media );
+		if ( media.isConnected && ! media.dataset[ WRAPPED_FLAG ] ) {
+			wrapMedia( media );
+		}
+	}
+}
+
+function schedulePendingRetry( delay = 200 ) {
+	if ( pendingTimer || ! pendingMedia.size ) {
+		return;
+	}
+	pendingTimer = window.setTimeout( retryPendingMedia, delay );
+}
+
+function watchPendingMedia( doc ) {
+	if ( pendingCleanup ) {
+		pendingCleanup();
+	}
+	const view = doc.defaultView;
+	const onChange = () => schedulePendingRetry();
+	view?.addEventListener( 'scroll', onChange, { passive: true } );
+	view?.addEventListener( 'resize', onChange );
+	doc.addEventListener( 'transitionend', onChange, true );
+	doc.addEventListener( 'animationend', onChange, true );
+	const timers = [ 1000, 3000 ].map( ( ms ) =>
+		window.setTimeout( onChange, ms )
+	);
+	pendingCleanup = () => {
+		view?.removeEventListener( 'scroll', onChange );
+		view?.removeEventListener( 'resize', onChange );
+		doc.removeEventListener( 'transitionend', onChange, true );
+		doc.removeEventListener( 'animationend', onChange, true );
+		timers.forEach( ( t ) => window.clearTimeout( t ) );
+		window.clearTimeout( pendingTimer );
+		pendingTimer = null;
+		pendingMedia.clear();
+		pendingCleanup = null;
+	};
+}
+
 export function attachToDoc( doc ) {
 	if ( ! doc ) {
 		return;
 	}
-	const root =
-		resolveCommentContentRoot( doc ) || doc.body || doc.documentElement;
+	const root = doc.body || doc.documentElement;
 	if ( ! root ) {
 		return;
 	}
 	injectOverlayStyles( doc );
+	watchPendingMedia( doc );
 	scanRoot( root );
 
 	if ( observer ) {
@@ -792,6 +848,9 @@ export function initEmbedOverlays() {
 			lateLoadRoot.removeEventListener( 'load', lateLoadHandler, true );
 			lateLoadHandler = null;
 			lateLoadRoot = null;
+		}
+		if ( pendingCleanup ) {
+			pendingCleanup();
 		}
 	};
 	window.addEventListener( 'flow:iframe-removed', detach );

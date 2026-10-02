@@ -24,6 +24,9 @@
 	--flow-status-cancelled-bg: #f0f0f1;
 	--flow-status-cancelled-text: #50575e;
 	--flow-status-cancelled-border: #dcdcde;
+	--flow-status-self_review-bg: #efe9fb;
+	--flow-status-self_review-text: #5b3fa6;
+	--flow-status-self_review-border: #d9ccf4;
 }
 /* Review mode notices (mandatory review / no reviewers). Shared by the
    Gutenberg sidebar and the classic/builder companion. */
@@ -440,6 +443,27 @@
 	font-size: 12px;
 	line-height: 1.4;
 	margin-top: 4px;
+}
+.flow-ew-classic-self {
+	font-size: 13px;
+	margin-bottom: 12px;
+}
+.flow-ew-classic-self__row {
+	align-items: center;
+	display: flex;
+	justify-content: space-between;
+}
+.flow-ew-classic-self__goto {
+	color: inherit;
+	display: inline-flex;
+	line-height: 0;
+}
+.flow-ew-classic-self__goto[hidden] {
+	display: none;
+}
+.flow-ew-classic-self__goto .flow-ew-share-icon {
+	height: 20px;
+	width: 20px;
 }
 /* Extension slot — empty in Free, filled by add-ons (e.g. Pro's Open to public). */
 .flow-ew-open-review-extras:empty {

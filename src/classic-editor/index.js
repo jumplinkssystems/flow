@@ -1,6 +1,7 @@
 import './style.css';
 import '../shared/share-bar.css';
 import './open-review';
+import './self-review';
 import { applyStatusTheme } from '../shared/status-themes';
 import { escAttr, escHtml } from '../shared/escape';
 import { createRestClient } from './api';
@@ -38,7 +39,7 @@ import { initReviewerCombobox } from '../shared/reviewer-combobox';
 		return;
 	}
 
-	if ( classicRoot.dataset.flowEwClassicReady === '1' ) {
+	if ( classicRoot.dataset.flowEwClassicReady === '1' || flowEW.soloMode ) {
 		return;
 	}
 	classicRoot.dataset.flowEwClassicReady = '1';

@@ -400,10 +400,10 @@
 	position: fixed;
 	top: calc(38px + var(--wp-admin--admin-bar--height, 0px));
 	left: 12px;
-	/* Match Elementor drawer: 320px wide, about half the viewport tall. */
-	width: 320px;
-	min-width: 320px;
-	max-width: min(320px, calc(100vw - 24px));
+	/* Match Elementor drawer: 360px wide, about half the viewport tall. */
+	width: 360px;
+	min-width: 360px;
+	max-width: min(360px, calc(100vw - 24px));
 	height: 50vh;
 	max-height: 50vh;
 	background: #1f232b;

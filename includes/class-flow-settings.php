@@ -9,17 +9,28 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class Settings {
 
-	const OPTION_MANDATORY             = 'flow_ew_review_mandatory';
+	const DOCS_URL = 'https://jumplinks.net/documentation/';
+
+	const OPTION_MANDATORY   = 'flow_ew_review_mandatory';
+	const OPTION_REVIEW_MODE = 'flow_ew_review_mode';
+
+	const MODE_OPTIONAL  = 'optional';
+	const MODE_MANDATORY = 'mandatory';
+	const MODE_SOLO      = 'solo';
+
 	const OPTION_SHOW_REVIEWED_BY      = 'flow_ew_show_reviewed_by';
 	const OPTION_REVIEWER_ROLES        = 'flow_ew_reviewer_roles';
 	const OPTION_AUTO_ASSIGN_REVIEWER  = 'flow_ew_auto_assign_reviewer_id';
+	const OPTION_AUTO_ASSIGN_EMAIL     = 'flow_ew_auto_assign_reviewer_email';
 	const OPTION_DEBUG_MODE            = 'flow_ew_debug_mode';
 	const OPTION_DISABLE_OPEN_REVIEWS  = 'flow_ew_disable_open_reviews';
+	const OPTION_SELF_REVIEW           = 'flow_ew_self_review';
 	const OPTION_DISABLE_EXTERNAL      = 'flow_ew_disable_external_reviewers';
 	const OPTION_DISABLE_NOTIFICATIONS = 'flow_ew_disable_notifications';
 	const OPTION_SUPPORTED_POST_TYPES  = 'flow_ew_supported_post_types';
 	const OPTION_SHOW_UPGRADE_HINTS    = 'flow_ew_show_upgrade_hints';
 	const OPTION_SETUP_COMPLETED       = 'flow_ew_setup_completed';
+	const OPTION_USE_CASE              = 'flow_ew_use_case';
 	const OPTION_AGENT_COMMENTS        = 'flow_ew_agent_comments_enabled';
 	const OPTION_AGENT_COMMENT_AUTHOR  = 'flow_ew_agent_comment_author_id';
 	const OPTION_AGENT_COMMENT_MARKER  = 'flow_ew_agent_comment_marker';
@@ -30,7 +41,7 @@ class Settings {
 	const PAGE_SLUG                    = 'jumplinks-editorial-workflow';
 
 	/** @var string[] */
-	private const DEFAULT_SUPPORTED_POST_TYPES = [ 'post', 'page' ];
+	const DEFAULT_SUPPORTED_POST_TYPES = [ 'post', 'page' ];
 
 	/**
 	 * Default reviewer roles for new installs and the setup wizard.
@@ -124,6 +135,7 @@ class Settings {
 		add_action( 'admin_menu', [ $this, 'add_menu_page' ], 11 );
 		add_action( 'admin_init', [ $this, 'register_settings' ] );
 		add_action( 'admin_enqueue_scripts', [ $this, 'enqueue_settings_assets' ] );
+		add_action( 'admin_menu', [ $this, 'add_docs_menu_item' ], 5 );
 		( new Setup_Wizard( $this ) )->boot();
 
 		add_filter(
@@ -132,6 +144,39 @@ class Settings {
 				return self::are_notifications_disabled() ? false : $should;
 			},
 			1
+		);
+
+		add_action(
+			'update_option_' . self::OPTION_MANDATORY,
+			static function ( $old, $value ) {
+				self::sync_mode_from_legacy( $value );
+			},
+			10,
+			2
+		);
+		add_action(
+			'add_option_' . self::OPTION_MANDATORY,
+			static function ( $name, $value ) {
+				self::sync_mode_from_legacy( $value );
+			},
+			10,
+			2
+		);
+		add_action(
+			'update_option_' . self::OPTION_REVIEW_MODE,
+			static function ( $old, $value ) {
+				self::sync_legacy_from_mode( $value );
+			},
+			10,
+			2
+		);
+		add_action(
+			'add_option_' . self::OPTION_REVIEW_MODE,
+			static function ( $name, $value ) {
+				self::sync_legacy_from_mode( $value );
+			},
+			10,
+			2
 		);
 
 		// Sync reviewer caps when the option is updated.
@@ -160,6 +205,23 @@ class Settings {
 		add_filter( 'plugin_row_meta', [ $this, 'add_plugin_row_meta' ], 10, 2 );
 	}
 
+	/** Freemius renders its link items after the plugin's own submenus and opens this one in a new tab. */
+	public function add_docs_menu_item(): void {
+		if ( ! function_exists( '\\flow_fs' ) ) {
+			return;
+		}
+		\flow_fs()->add_submenu_link_item(
+			__( 'Documentation', 'jumplinks-editorial-workflow' ),
+			self::DOCS_URL,
+			'documentation',
+			'read',
+			10,
+			true,
+			'',
+			true
+		);
+	}
+
 	/**
 	 * @param array<int,string> $plugin_meta
 	 */
@@ -167,6 +229,11 @@ class Settings {
 		if ( 'jumplinks-editorial-workflow/jumplinks-editorial-workflow.php' !== $plugin_file ) {
 			return $plugin_meta;
 		}
+		$plugin_meta[] = sprintf(
+			'<a href="%s" target="_blank" rel="noopener">%s</a>',
+			esc_url( self::DOCS_URL ),
+			esc_html__( 'Documentation', 'jumplinks-editorial-workflow' )
+		);
 		$plugin_meta[] = sprintf(
 			'<a href="%s" target="_blank" rel="noopener">%s</a>',
 			esc_url( 'https://wordpress.org/support/plugin/jumplinks-editorial-workflow/reviews/#new-post' ),
@@ -186,8 +253,59 @@ class Settings {
 		return $links;
 	}
 
+	/** Self review only, Optional or Mandatory. Falls back to the older boolean on sites that predate the mode option. */
+	public static function review_mode(): string {
+		$mode = (string) get_option( self::OPTION_REVIEW_MODE, '' );
+		if ( in_array( $mode, [ self::MODE_OPTIONAL, self::MODE_MANDATORY, self::MODE_SOLO ], true ) ) {
+			return $mode;
+		}
+		return get_option( self::OPTION_MANDATORY, false ) ? self::MODE_MANDATORY : self::MODE_OPTIONAL;
+	}
+
 	public static function is_mandatory(): bool {
-		return (bool) get_option( self::OPTION_MANDATORY, false );
+		return self::MODE_MANDATORY === self::review_mode();
+	}
+
+	/** Only the private self review exists: no reviewers, no approval, no client workflow. */
+	public static function is_solo_mode(): bool {
+		return self::MODE_SOLO === self::review_mode();
+	}
+
+	public static function sanitize_review_mode( $value ): string {
+		$value = sanitize_key( (string) $value );
+		return in_array( $value, [ self::MODE_OPTIONAL, self::MODE_MANDATORY, self::MODE_SOLO ], true ) ? $value : self::MODE_OPTIONAL;
+	}
+
+	/** @var bool Set while one of the two mode options writes the other. */
+	private static bool $syncing_mode = false;
+
+	/**
+	 * The wizard, WP-CLI and older code still write the boolean; the mode
+	 * option follows it, except that "not mandatory" leaves Self review only alone.
+	 *
+	 * @param mixed $value
+	 */
+	public static function sync_mode_from_legacy( $value ): void {
+		if ( self::$syncing_mode ) {
+			return;
+		}
+		$mandatory = (bool) $value;
+		if ( ! $mandatory && self::is_solo_mode() ) {
+			return;
+		}
+		self::$syncing_mode = true;
+		update_option( self::OPTION_REVIEW_MODE, $mandatory ? self::MODE_MANDATORY : self::MODE_OPTIONAL );
+		self::$syncing_mode = false;
+	}
+
+	/** @param mixed $value */
+	public static function sync_legacy_from_mode( $value ): void {
+		if ( self::$syncing_mode ) {
+			return;
+		}
+		self::$syncing_mode = true;
+		update_option( self::OPTION_MANDATORY, self::MODE_MANDATORY === self::sanitize_review_mode( $value ) );
+		self::$syncing_mode = false;
 	}
 
 	public static function should_show_reviewed_by(): bool {
@@ -205,8 +323,32 @@ class Settings {
 		return (array) $saved;
 	}
 
+	/**
+	 * Review Roles saved as an empty list while email invites are allowed: the
+	 * site reviews through external reviewers only (the Client feedback setup),
+	 * so "no reviewer accounts" is intended, not a misconfiguration.
+	 */
+	public static function reviews_by_email_only(): bool {
+		return [] === get_option( self::OPTION_REVIEWER_ROLES, null )
+			&& ! self::are_external_reviewers_disabled();
+	}
+
 	public static function get_auto_assign_reviewer_id(): int {
 		return max( 0, (int) get_option( self::OPTION_AUTO_ASSIGN_REVIEWER, 0 ) );
+	}
+
+	/** External reviewer invited on new content; only used when no user is set and external reviewers are allowed. */
+	public static function get_auto_assign_email(): string {
+		if ( self::get_auto_assign_reviewer_id() > 0 || self::are_external_reviewers_disabled() ) {
+			return '';
+		}
+		return self::sanitize_auto_assign_email( get_option( self::OPTION_AUTO_ASSIGN_EMAIL, '' ) );
+	}
+
+	/** @param mixed $value */
+	public static function sanitize_auto_assign_email( $value ): string {
+		$email = strtolower( trim( (string) $value ) );
+		return ( '' !== $email && is_email( $email ) ) ? $email : '';
 	}
 
 	/**
@@ -269,6 +411,10 @@ class Settings {
 
 	public static function are_external_reviewers_disabled(): bool {
 		return (bool) get_option( self::OPTION_DISABLE_EXTERNAL, false );
+	}
+
+	public static function is_self_review_enabled(): bool {
+		return self::is_solo_mode() || (bool) get_option( self::OPTION_SELF_REVIEW, false );
 	}
 
 	public static function are_notifications_disabled(): bool {
@@ -372,6 +518,7 @@ class Settings {
 			self::OPTION_SHOW_REVIEWED_BY      => false,
 			self::OPTION_DEBUG_MODE            => false,
 			self::OPTION_DISABLE_OPEN_REVIEWS  => false,
+			self::OPTION_SELF_REVIEW           => false,
 			self::OPTION_DISABLE_EXTERNAL      => false,
 			self::OPTION_DISABLE_NOTIFICATIONS => false,
 			self::OPTION_SHOW_UPGRADE_HINTS    => true,
@@ -380,6 +527,7 @@ class Settings {
 		foreach ( $defaults as $name => $value ) {
 			add_option( $name, $value );
 		}
+		add_option( self::OPTION_REVIEW_MODE, self::review_mode() );
 	}
 
 	public function sync_reviewer_role_caps( $old_value, $new_value ): void {
@@ -416,6 +564,17 @@ class Settings {
 		return $this->settings_hook_suffix;
 	}
 
+	/** The use case picked in the setup wizard, or '' when it was never finished. */
+	public static function use_case(): string {
+		$use_case = (string) get_option( self::OPTION_USE_CASE, '' );
+		return in_array( $use_case, Setup_Presets::use_cases(), true ) ? $use_case : '';
+	}
+
+	/** The prompt that makes a connected agent read this site's Flow rules; shared by Settings and the setup wizard. */
+	public static function agent_primer_prompt(): string {
+		return __( 'Call the Flow get-instructions tool now, then follow those rules for the rest of this session. They reflect this site\'s current Flow settings.', 'jumplinks-editorial-workflow' );
+	}
+
 	/** Whether the first-run setup wizard was completed or skipped. */
 	public static function is_setup_completed(): bool {
 		return (bool) get_option( self::OPTION_SETUP_COMPLETED, false );
@@ -432,11 +591,11 @@ class Settings {
 	public function register_settings(): void {
 		register_setting(
 			self::OPTION_GROUP,
-			self::OPTION_MANDATORY,
+			self::OPTION_REVIEW_MODE,
 			[
-				'type'              => 'boolean',
-				'default'           => false,
-				'sanitize_callback' => 'rest_sanitize_boolean',
+				'type'              => 'string',
+				'default'           => self::MODE_OPTIONAL,
+				'sanitize_callback' => [ self::class, 'sanitize_review_mode' ],
 			]
 		);
 
@@ -472,6 +631,16 @@ class Settings {
 
 		register_setting(
 			self::OPTION_GROUP,
+			self::OPTION_AUTO_ASSIGN_EMAIL,
+			[
+				'type'              => 'string',
+				'default'           => '',
+				'sanitize_callback' => [ self::class, 'sanitize_auto_assign_email' ],
+			]
+		);
+
+		register_setting(
+			self::OPTION_GROUP,
 			self::OPTION_DEBUG_MODE,
 			[
 				'type'              => 'boolean',
@@ -483,6 +652,16 @@ class Settings {
 		register_setting(
 			self::OPTION_GROUP,
 			self::OPTION_DISABLE_OPEN_REVIEWS,
+			[
+				'type'              => 'boolean',
+				'default'           => false,
+				'sanitize_callback' => 'rest_sanitize_boolean',
+			]
+		);
+
+		register_setting(
+			self::OPTION_GROUP,
+			self::OPTION_SELF_REVIEW,
 			[
 				'type'              => 'boolean',
 				'default'           => false,
@@ -606,6 +785,15 @@ class Settings {
 		);
 
 		add_settings_field(
+			self::OPTION_SELF_REVIEW,
+			__( 'Self review', 'jumplinks-editorial-workflow' ),
+			[ $this, 'render_self_review_field' ],
+			self::PAGE_SLUG,
+			'flow_ew_general',
+			[ 'class' => 'flow-ew-solo-hidden' ]
+		);
+
+		add_settings_field(
 			self::OPTION_SUPPORTED_POST_TYPES,
 			__( 'Content types', 'jumplinks-editorial-workflow' ),
 			[ $this, 'render_supported_post_types_field' ],
@@ -618,7 +806,8 @@ class Settings {
 			__( 'Review Roles', 'jumplinks-editorial-workflow' ),
 			[ $this, 'render_reviewer_roles_field' ],
 			self::PAGE_SLUG,
-			'flow_ew_general'
+			'flow_ew_general',
+			[ 'class' => 'flow-ew-solo-hidden' ]
 		);
 
 		add_settings_field(
@@ -626,7 +815,8 @@ class Settings {
 			__( 'External reviewers', 'jumplinks-editorial-workflow' ),
 			[ $this, 'render_disable_external_reviewers_field' ],
 			self::PAGE_SLUG,
-			'flow_ew_general'
+			'flow_ew_general',
+			[ 'class' => 'flow-ew-solo-hidden' ]
 		);
 
 		add_settings_field(
@@ -634,7 +824,8 @@ class Settings {
 			__( 'Open Review', 'jumplinks-editorial-workflow' ),
 			[ $this, 'render_disable_open_reviews_field' ],
 			self::PAGE_SLUG,
-			'flow_ew_general'
+			'flow_ew_general',
+			[ 'class' => 'flow-ew-solo-hidden' ]
 		);
 
 		add_settings_field(
@@ -642,14 +833,16 @@ class Settings {
 			__( 'Reviewed by', 'jumplinks-editorial-workflow' ),
 			[ $this, 'render_show_reviewed_by_field' ],
 			self::PAGE_SLUG,
-			'flow_ew_extras'
+			'flow_ew_extras',
+			[ 'class' => 'flow-ew-solo-hidden' ]
 		);
 		add_settings_field(
 			self::OPTION_AUTO_ASSIGN_REVIEWER,
 			__( 'Automatic reviewer', 'jumplinks-editorial-workflow' ),
 			[ $this, 'render_auto_assign_reviewer_field' ],
 			self::PAGE_SLUG,
-			'flow_ew_extras'
+			'flow_ew_extras',
+			[ 'class' => 'flow-ew-solo-hidden' ]
 		);
 
 		// Registered ahead of the Pro hook: Pro appends two untitled notification
@@ -659,7 +852,8 @@ class Settings {
 			__( 'Notifications', 'jumplinks-editorial-workflow' ),
 			[ $this, 'render_disable_notifications_field' ],
 			self::PAGE_SLUG,
-			'flow_ew_extras'
+			'flow_ew_extras',
+			[ 'class' => 'flow-ew-solo-hidden' ]
 		);
 
 		\do_action( 'flow_ew_register_settings', self::OPTION_GROUP, self::PAGE_SLUG );
@@ -789,8 +983,12 @@ class Settings {
 			return false;
 		}
 
-		// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- options.php verified the nonce first; absint() below both unslashes and sanitizes.
-		$posted = absint( $_POST[ self::OPTION_AGENT_COMMENT_AUTHOR ] ?? 0 );
+		// Saves made outside the settings form (the setup wizard) store the user first.
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- options.php verified the nonce first; this only checks presence.
+		$posted = isset( $_POST[ self::OPTION_AGENT_COMMENT_AUTHOR ] )
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- options.php verified the nonce first; absint() both unslashes and sanitizes.
+			? absint( $_POST[ self::OPTION_AGENT_COMMENT_AUTHOR ] )
+			: self::get_agent_comment_author_id();
 
 		if ( $posted > 0 && get_userdata( $posted ) ) {
 			return true;
@@ -823,40 +1021,72 @@ class Settings {
 	}
 
 	public function render_mandatory_field(): void {
-		$mandatory = self::is_mandatory();
+		$mode    = self::review_mode();
+		$choices = [
+			self::MODE_OPTIONAL  => [
+				__( 'Optional', 'jumplinks-editorial-workflow' ),
+				'',
+				__( 'Authors can publish posts freely without a review. The review workflow stays available so teams can still request approval when it helps. Best for mixed or low-friction workflows.', 'jumplinks-editorial-workflow' ),
+			],
+			self::MODE_MANDATORY => [
+				__( 'Mandatory', 'jumplinks-editorial-workflow' ),
+				__( 'Publishing is blocked until the post is approved by a reviewer.', 'jumplinks-editorial-workflow' ),
+				__( ' Authors must assign a reviewer before the post can go live. Best when every public change should pass review.', 'jumplinks-editorial-workflow' ),
+			],
+			self::MODE_SOLO      => [
+				__( 'Self review only', 'jumplinks-editorial-workflow' ),
+				'',
+				__( 'You review your own pages, alone or with an AI agent. No reviewers, no approval step: every page gets a private review link where you leave comments for yourself or your agent.', 'jumplinks-editorial-workflow' ),
+			],
+		];
 		?>
-		<fieldset>
-			<label class="flow-ew-settings-radio">
-				<input
-					type="radio"
-					name="<?php echo esc_attr( self::OPTION_MANDATORY ); ?>"
-					value="0"
-					<?php checked( $mandatory, false ); ?>
-				/>
-				<span>
-					<strong><?php esc_html_e( 'Optional', 'jumplinks-editorial-workflow' ); ?></strong><br>
-					<span class="description">
-						<?php esc_html_e( 'Authors can publish posts freely without a review. The review workflow stays available so teams can still request approval when it helps. Best for mixed or low-friction workflows.', 'jumplinks-editorial-workflow' ); ?>
+		<fieldset data-flow-ew-review-mode>
+			<?php foreach ( $choices as $value => [ $label, $emphasis, $description ] ) : ?>
+				<label class="flow-ew-settings-radio">
+					<input
+						type="radio"
+						name="<?php echo esc_attr( self::OPTION_REVIEW_MODE ); ?>"
+						value="<?php echo esc_attr( $value ); ?>"
+						<?php checked( $mode, $value ); ?>
+					/>
+					<span>
+						<strong><?php echo esc_html( $label ); ?></strong><br>
+						<span class="description">
+							<?php if ( '' !== $emphasis ) : ?>
+								<u><?php echo esc_html( $emphasis ); ?></u>
+							<?php endif; ?>
+							<?php echo esc_html( $description ); ?>
+						</span>
 					</span>
-				</span>
-			</label>
-
-			<label class="flow-ew-settings-radio">
-				<input
-					type="radio"
-					name="<?php echo esc_attr( self::OPTION_MANDATORY ); ?>"
-					value="1"
-					<?php checked( $mandatory, true ); ?>
-				/>
-				<span>
-					<strong><?php esc_html_e( 'Mandatory', 'jumplinks-editorial-workflow' ); ?></strong><br>
-					<span class="description">
-						<u><?php esc_html_e( 'Publishing is blocked until the post is approved by a reviewer.', 'jumplinks-editorial-workflow' ); ?></u>
-						<?php esc_html_e( ' Authors must assign a reviewer before the post can go live. Best when every public change should pass review.', 'jumplinks-editorial-workflow' ); ?>
-					</span>
-				</span>
-			</label>
+				</label>
+			<?php endforeach; ?>
 		</fieldset>
+		<script>
+			( function () {
+				// Rows that only matter when other people review are hidden, never
+				// disabled: a disabled input posts nothing and options.php would
+				// write null over the saved value.
+				var start = function () {
+					var radios = document.querySelectorAll( 'input[name="<?php echo esc_js( self::OPTION_REVIEW_MODE ); ?>"]' );
+					var rows   = document.querySelectorAll( 'tr.flow-ew-solo-hidden' );
+					var sync   = function () {
+						var solo = !! document.querySelector( 'input[name="<?php echo esc_js( self::OPTION_REVIEW_MODE ); ?>"][value="<?php echo esc_js( self::MODE_SOLO ); ?>"]:checked' );
+						Array.prototype.forEach.call( rows, function ( row ) {
+							row.hidden = solo;
+						} );
+					};
+					Array.prototype.forEach.call( radios, function ( radio ) {
+						radio.addEventListener( 'change', sync );
+					} );
+					sync();
+				};
+				if ( 'loading' === document.readyState ) {
+					document.addEventListener( 'DOMContentLoaded', start );
+				} else {
+					start();
+				}
+			}() );
+		</script>
 		<?php
 	}
 
@@ -977,11 +1207,16 @@ class Settings {
 	}
 
 	public function render_auto_assign_reviewer_field(): void {
+		$allow_email = ! self::are_external_reviewers_disabled();
 		$this->render_user_combobox(
 			'flow-ew-auto-reviewer',
 			self::OPTION_AUTO_ASSIGN_REVIEWER,
 			self::get_auto_assign_reviewer_id(),
-			__( 'Automatically assign this user to review new content. Any WordPress user can be selected, regardless of Review Roles, including yourself.', 'jumplinks-editorial-workflow' )
+			$allow_email
+				? __( 'Automatically assign this user to review new content. Any WordPress user can be selected, regardless of Review Roles, including yourself. Type an email address to invite an external reviewer instead.', 'jumplinks-editorial-workflow' )
+				: __( 'Automatically assign this user to review new content. Any WordPress user can be selected, regardless of Review Roles, including yourself.', 'jumplinks-editorial-workflow' ),
+			$allow_email ? self::OPTION_AUTO_ASSIGN_EMAIL : '',
+			$allow_email ? self::get_auto_assign_email() : ''
 		);
 	}
 
@@ -1016,9 +1251,7 @@ class Settings {
 				<?php esc_html_e( 'After changing settings, we recommend the following prompt for your agent:', 'jumplinks-editorial-workflow' ); ?>
 			</p>
 			<?php
-			$this->render_agent_prompt(
-				__( 'Call the Flow get-instructions tool now, then follow those rules for the rest of this session. They reflect this site\'s current Flow settings.', 'jumplinks-editorial-workflow' )
-			);
+			$this->render_agent_prompt( self::agent_primer_prompt() );
 			?>
 			<p class="description">
 				<?php esc_html_e( 'Prompts for working through review feedback:', 'jumplinks-editorial-workflow' ); ?>
@@ -1026,7 +1259,12 @@ class Settings {
 			<?php
 			$this->render_agent_prompt( __( 'Resolve all the Flow comments on post [id]', 'jumplinks-editorial-workflow' ) );
 			$this->render_agent_prompt( __( 'Give me an overview of the feedback on [url]', 'jumplinks-editorial-workflow' ) );
-			$this->render_agent_prompt( __( 'Send the page back to the reviewer', 'jumplinks-editorial-workflow' ) );
+			if ( ! self::is_solo_mode() ) {
+				$this->render_agent_prompt( __( 'Send the page back to the reviewer', 'jumplinks-editorial-workflow' ) );
+			}
+			if ( self::is_self_review_enabled() ) {
+				$this->render_agent_prompt( __( 'Open my self review for [url] and fix the comments I left', 'jumplinks-editorial-workflow' ) );
+			}
 			?>
 		</div>
 		<?php
@@ -1220,13 +1458,26 @@ JS;
 	 * One user picker. `$base_id` scopes the ids; the script finds every
 	 * instance by class, so more than one may appear on the page.
 	 */
-	private function render_user_combobox( string $base_id, string $option_name, int $user_id, string $description ): void {
+	/**
+	 * @param string $email_option When set, a typed email address can be chosen instead of a user and is saved here.
+	 */
+	private function render_user_combobox( string $base_id, string $option_name, int $user_id, string $description, string $email_option = '', string $email = '' ): void {
 		$user = $user_id > 0 ? get_userdata( $user_id ) : false;
 		if ( ! $user ) {
 			$user_id = 0;
 		}
+		if ( $user_id > 0 ) {
+			$email = '';
+		}
+		$has_value = $user_id > 0 || '' !== $email;
 		?>
-		<div id="<?php echo esc_attr( $base_id ); ?>" class="flow-ew-user-combobox">
+		<div
+			id="<?php echo esc_attr( $base_id ); ?>"
+			class="flow-ew-user-combobox"
+			<?php if ( '' !== $email_option ) : ?>
+				data-invite-label="<?php /* translators: %s: email address */ echo esc_attr( __( 'Invite %s', 'jumplinks-editorial-workflow' ) ); ?>"
+			<?php endif; ?>
+		>
 			<input
 				type="hidden"
 				id="<?php echo esc_attr( $base_id . '-id' ); ?>"
@@ -1234,13 +1485,21 @@ JS;
 				name="<?php echo esc_attr( $option_name ); ?>"
 				value="<?php echo esc_attr( (string) $user_id ); ?>"
 			/>
+			<?php if ( '' !== $email_option ) : ?>
+				<input
+					type="hidden"
+					class="flow-ew-user-combobox__email"
+					name="<?php echo esc_attr( $email_option ); ?>"
+					value="<?php echo esc_attr( $email ); ?>"
+				/>
+			<?php endif; ?>
 			<div class="flow-ew-user-combobox__field">
 				<div class="flow-ew-user-combobox__control">
 					<input
 						type="search"
 						id="<?php echo esc_attr( $base_id . '-search' ); ?>"
 						class="regular-text flow-ew-user-combobox__search"
-						placeholder="<?php esc_attr_e( 'Search users…', 'jumplinks-editorial-workflow' ); ?>"
+						placeholder="<?php echo esc_attr( '' !== $email_option ? __( 'Search user or type email address', 'jumplinks-editorial-workflow' ) : __( 'Search users…', 'jumplinks-editorial-workflow' ) ); ?>"
 						autocomplete="off"
 						role="combobox"
 						aria-autocomplete="list"
@@ -1250,17 +1509,19 @@ JS;
 					<button
 						type="button"
 						class="button flow-ew-user-combobox__clear"
-						<?php echo 0 === $user_id ? 'hidden' : ''; ?>
+						<?php echo $has_value ? '' : 'hidden'; ?>
 					><?php esc_html_e( 'Clear', 'jumplinks-editorial-workflow' ); ?></button>
 				</div>
 				<div
 					id="<?php echo esc_attr( $base_id . '-selected' ); ?>"
 					class="flow-ew-user-combobox__selected"
-					<?php echo 0 === $user_id ? 'hidden' : ''; ?>
+					<?php echo $has_value ? '' : 'hidden'; ?>
 				>
 					<?php if ( $user ) : ?>
 						<?php echo get_avatar( $user_id, 32 ); ?>
 						<span><?php echo esc_html( (string) $user->display_name ); ?></span>
+					<?php elseif ( '' !== $email ) : ?>
+						<span><?php echo esc_html( $email ); ?></span>
 					<?php endif; ?>
 				</div>
 				<div
@@ -1321,6 +1582,15 @@ JS;
 		\do_action( 'flow_ew_after_open_review_field' );
 	}
 
+	public function render_self_review_field(): void {
+		$this->render_checkbox(
+			self::OPTION_SELF_REVIEW,
+			self::is_self_review_enabled(),
+			__( 'Enable self review.', 'jumplinks-editorial-workflow' ),
+			__( 'Adds a "Self review" link to the admin bar and editor on every supported page. Comments you leave there are private: assigned reviewers and clients never see them, and connected AI agents can read and resolve them over MCP.', 'jumplinks-editorial-workflow' )
+		);
+	}
+
 	/**
 	 * A labelled checkbox with a bold title and description.
 	 *
@@ -1347,9 +1617,7 @@ JS;
 			return;
 		}
 
-		$is_settings = null !== $this->settings_hook_suffix && $this->settings_hook_suffix === $hook_suffix;
-		$is_setup    = 'admin_page_' . Setup_Wizard::PAGE_SLUG === $hook_suffix;
-		if ( ! $is_settings && ! $is_setup ) {
+		if ( null === $this->settings_hook_suffix || $this->settings_hook_suffix !== $hook_suffix ) {
 			return;
 		}
 
@@ -1403,12 +1671,16 @@ JS;
 		var results=root.querySelector('.flow-ew-user-combobox__results');
 		var selected=root.querySelector('.flow-ew-user-combobox__selected');
 		var clear=root.querySelector('.flow-ew-user-combobox__clear');
+		var emailField=root.querySelector('.flow-ew-user-combobox__email');
+		var inviteLabel=root.getAttribute('data-invite-label')||'';
 		if(!hidden||!input||!results||!selected||!clear)return;
+		function isEmail(v){return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);}
 		var timer=0;
 		var request=0;
 		function close(){results.hidden=true;results.innerHTML='';input.setAttribute('aria-expanded','false');}
 		function select(user){
 			hidden.value=String(user.id);
+			if(emailField){emailField.value=user.isEmail?user.name:'';}
 			selected.innerHTML='';
 			if(user.avatar_url){var img=document.createElement('img');img.src=user.avatar_url;img.alt='';img.width=32;img.height=32;selected.appendChild(img);}
 			var name=document.createElement('span');name.textContent=user.name;selected.appendChild(name);
@@ -1416,13 +1688,17 @@ JS;
 		}
 		function render(users){
 			results.innerHTML='';
+			var typed=input.value.trim();
+			if(emailField&&inviteLabel&&isEmail(typed)){
+				users=[{id:0,name:typed.toLowerCase(),isEmail:true,label:inviteLabel.replace('%s',typed.toLowerCase())}].concat(users);
+			}
 			users.forEach(function(user){
 				var option=document.createElement('button');
 				option.type='button';option.className='flow-ew-user-combobox__option';
 				option.setAttribute('role','option');
 				var name=document.createElement('span');
 				name.className='flow-ew-user-combobox__option-name';
-				name.textContent=user.name;
+				name.textContent=user.label||user.name;
 				option.appendChild(name);
 				// Two people can share a display name; the address or username
 				// is what tells them apart.
@@ -1442,6 +1718,7 @@ JS;
 			window.clearTimeout(timer);
 			var query=input.value.trim();
 			if(query.length<2){close();return;}
+			if(emailField&&isEmail(query)){render([]);}
 			timer=window.setTimeout(function(){
 				var current=++request;
 				window.wp.apiFetch({path:'/flow/v1/users/search?q='+encodeURIComponent(query)})
@@ -1462,7 +1739,7 @@ JS;
 			if(event.key==='Escape'){close();input.focus();}
 		});
 		clear.addEventListener('click',function(){
-			hidden.value='0';selected.hidden=true;selected.innerHTML='';clear.hidden=true;input.value='';close();input.focus();
+			hidden.value='0';if(emailField){emailField.value='';}selected.hidden=true;selected.innerHTML='';clear.hidden=true;input.value='';close();input.focus();
 		});
 		document.addEventListener('click',function(event){if(!root.contains(event.target))close();});
 	});
@@ -1610,31 +1887,24 @@ JS;
 		}
 		?>
 		<div class="wrap">
-			<h1><?php esc_html_e( 'Flow Settings', 'jumplinks-editorial-workflow' ); ?></h1>
+			<h1 class="wp-heading-inline"><?php esc_html_e( 'Flow Settings', 'jumplinks-editorial-workflow' ); ?></h1>
+			<button type="button" class="page-title-action" data-flow-ew-open-setup>
+				<?php esc_html_e( 'Run setup again', 'jumplinks-editorial-workflow' ); ?>
+			</button>
+			<?php $flow_ew_use_case = self::use_case(); ?>
+			<?php if ( '' !== $flow_ew_use_case ) : ?>
+				<span class="flow-ew-use-case">
+					<?php
+					/* translators: %s: setup use case, e.g. "Client feedback". */
+					echo esc_html( sprintf( __( 'Set up for: %s', 'jumplinks-editorial-workflow' ), Setup_Presets::labels()[ $flow_ew_use_case ] ) );
+					?>
+				</span>
+			<?php endif; ?>
+			<hr class="wp-header-end">
 
 			<?php settings_errors( self::OPTION_AGENT_COMMENTS ); ?>
 
 			<?php Dashboard_Page::render_rating_prompt(); ?>
-
-			<?php
-			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- display-only query flag after redirect.
-			if ( isset( $_GET['flow_ew_setup_done'] ) && '1' === sanitize_text_field( wp_unslash( $_GET['flow_ew_setup_done'] ) ) ) {
-				if ( function_exists( 'wp_admin_notice' ) ) {
-					wp_admin_notice(
-						__( 'Setup saved. Your workflow preferences are active.', 'jumplinks-editorial-workflow' ),
-						[
-							'type'               => 'success',
-							'dismissible'        => true,
-							'additional_classes' => [ 'flow-ew-setup-saved-notice' ],
-						]
-					);
-				} else {
-					echo '<div class="notice notice-success is-dismissible"><p>';
-					esc_html_e( 'Setup saved. Your workflow preferences are active.', 'jumplinks-editorial-workflow' );
-					echo '</p></div>';
-				}
-			}
-			?>
 
 			<form method="post" action="options.php">
 				<?php

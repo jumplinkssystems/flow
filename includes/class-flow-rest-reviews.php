@@ -451,6 +451,9 @@ class REST_Reviews extends \WP_REST_Controller {
 		if ( is_wp_error( $type_ok ) ) {
 			return $type_ok;
 		}
+		if ( Review::is_private( $review ) ) {
+			return new \WP_Error( 'rest_forbidden', __( 'This action is not available on a self review.', 'jumplinks-editorial-workflow' ), [ 'status' => 403 ] );
+		}
 		if ( ! Review::is_requester_or_manager( $review, get_current_user_id() ) ) {
 			return new \WP_Error( 'rest_forbidden', __( 'You are not authorized to modify this review.', 'jumplinks-editorial-workflow' ), [ 'status' => 403 ] );
 		}
@@ -479,6 +482,9 @@ class REST_Reviews extends \WP_REST_Controller {
 		$type_ok = $this->assert_review_post_type_supported( $review );
 		if ( is_wp_error( $type_ok ) ) {
 			return $type_ok;
+		}
+		if ( Review::is_private( $review ) ) {
+			return new \WP_Error( 'rest_forbidden', __( 'This action is not available on a self review.', 'jumplinks-editorial-workflow' ), [ 'status' => 403 ] );
 		}
 		if ( ! Review::is_requester_or_manager( $review, get_current_user_id() ) ) {
 			return new \WP_Error( 'rest_forbidden', __( 'You are not authorized to modify this review.', 'jumplinks-editorial-workflow' ), [ 'status' => 403 ] );

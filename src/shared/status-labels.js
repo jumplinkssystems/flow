@@ -12,6 +12,7 @@ export const STATUS_LABELS = {
 	),
 	approved: __( 'Approved', 'jumplinks-editorial-workflow' ),
 	open_review: __( 'Open Review', 'jumplinks-editorial-workflow' ),
+	self_review: __( 'Self review', 'jumplinks-editorial-workflow' ),
 };
 
 /** @param {string|undefined|null} status */

@@ -66,14 +66,17 @@ class Plugin {
 		( new Avada() )->boot();
 		( new BeaverBuilder() )->boot();
 		( new Divi() )->boot();
-		( new Dashboard_Widget() )->boot();
 		( new Dashboard_Page() )->boot();
 		( new Publish_Guard() )->boot();
-		( new Admin_Columns() )->boot();
 		( new Admin_Bar() )->boot();
+		( new Self_Review() )->boot();
 		( new Pro_Upsell_Menus() )->boot();
 		( new Reviewed_By() )->boot();
-		( new Auto_Assign_Reviewer() )->boot();
+		if ( ! Settings::is_solo_mode() ) {
+			( new Dashboard_Widget() )->boot();
+			( new Admin_Columns() )->boot();
+			( new Auto_Assign_Reviewer() )->boot();
+		}
 		( new Abilities() )->boot();
 
 		add_action( 'init', [ $this, 'register_post_meta' ], 20 );
@@ -145,6 +148,16 @@ class Plugin {
 					'avatar_url' => get_avatar_url( $pending_reviewer_id, [ 'size' => 32 ] ),
 				];
 			}
+		} elseif ( $post_id ) {
+			$pending_email = Auto_Assign_Reviewer::pending_invite_email( $post_id );
+			if ( '' !== $pending_email ) {
+				$pending_reviewer = [
+					'id'         => 0,
+					'name'       => $pending_email,
+					'avatar_url' => '',
+					'is_email'   => true,
+				];
+			}
 		}
 
 		$settings_url = admin_url( 'admin.php?page=' . Settings::PAGE_SLUG );
@@ -168,30 +181,41 @@ class Plugin {
 			esc_url( $settings_url ),
 			esc_url( $users_url )
 		);
+		if ( ! Settings::are_external_reviewers_disabled() ) {
+			$roles_hint .= ' ' . esc_html__( 'You can still invite a reviewer by email below.', 'jumplinks-editorial-workflow' );
+		}
 
 		$data = [
-			'restUrl'             => rest_url( 'flow/v1' ),
-			'nonce'               => wp_create_nonce( 'wp_rest' ),
-			'postId'              => $post_id,
-			'postAuthorId'        => $post_id ? (int) get_post_field( 'post_author', $post_id ) : 0,
-			'currentUserId'       => $current_user_id,
-			'currentUserCan'      => [
+			'restUrl'                  => rest_url( 'flow/v1' ),
+			'nonce'                    => wp_create_nonce( 'wp_rest' ),
+			'postId'                   => $post_id,
+			'postAuthorId'             => $post_id ? (int) get_post_field( 'post_author', $post_id ) : 0,
+			'currentUserId'            => $current_user_id,
+			'currentUserCan'           => [
 				'assignReviewer' => current_user_can( 'flow_assign_reviewer' ),
 				'reviewPosts'    => Review::user_can_be_reviewer( $current_user_id ),
 				'manageReviews'  => current_user_can( 'flow_manage_reviews' ),
 			],
-			'activeReview'        => $active_review,
-			'pendingReviewer'     => $pending_reviewer,
-			'debugMode'           => Settings::is_debug_mode(),
-			'reviewMandatory'     => Settings::is_mandatory(),
-			'noReviewers'         => $no_reviewers,
-			'reviewRolesHintHtml' => $roles_hint,
-			'openReviewEnabled'   => Review::is_open_review_feature_available(),
-			'settingsUrl'         => admin_url( 'admin.php?page=' . Settings::PAGE_SLUG ),
-			'usersUrl'            => admin_url( 'users.php' ),
-			'isPublished'         => $post_id ? in_array( get_post_status( $post_id ), [ 'publish', 'future' ], true ) : false,
-			'reviewerMeta'        => $post_id ? (int) get_post_meta( $post_id, '_flow_reviewer_id', true ) : 0,
-			'i18n'                => [
+			'activeReview'             => $active_review,
+			'pendingReviewer'          => $pending_reviewer,
+			'debugMode'                => Settings::is_debug_mode(),
+			'reviewMandatory'          => Settings::is_mandatory(),
+			'noReviewers'              => $no_reviewers && ! Settings::is_solo_mode() && ! Settings::reviews_by_email_only(),
+			'reviewRolesHintHtml'      => $roles_hint,
+			'externalReviewersEnabled' => ! Settings::are_external_reviewers_disabled(),
+			'openReviewEnabled'        => Review::is_open_review_feature_available() && ! Settings::is_solo_mode(),
+			'soloMode'                 => Settings::is_solo_mode(),
+			'selfReview'               => [
+				'offered'  => Self_Review::is_offered_for( $post_id, $current_user_id ),
+				'active'   => $post_id ? Self_Review::is_on_for_post( $post_id ) : true,
+				'startUrl' => $post_id ? Self_Review::start_url( $post_id ) : '',
+				'link'     => $post_id ? Self_Review::link_for( $post_id ) : '',
+			],
+			'settingsUrl'              => admin_url( 'admin.php?page=' . Settings::PAGE_SLUG ),
+			'usersUrl'                 => admin_url( 'users.php' ),
+			'isPublished'              => $post_id ? in_array( get_post_status( $post_id ), [ 'publish', 'future' ], true ) : false,
+			'reviewerMeta'             => $post_id ? (int) get_post_meta( $post_id, '_flow_reviewer_id', true ) : 0,
+			'i18n'                     => [
 				'reviewPanelTitle'     => __( 'Review', 'jumplinks-editorial-workflow' ),
 				'selectReviewer'       => __( 'Select Reviewer', 'jumplinks-editorial-workflow' ),
 				'approve'              => __( 'Approve', 'jumplinks-editorial-workflow' ),
@@ -228,6 +252,11 @@ class Plugin {
 				'reviewMandatoryTitle' => __( 'Review Mode set to Mandatory', 'jumplinks-editorial-workflow' ),
 				'reviewMandatoryDesc'  => __( 'Post can go live only after approval by a reviewer.', 'jumplinks-editorial-workflow' ),
 				'noReviewRolesTitle'   => __( 'No Review Roles Assigned', 'jumplinks-editorial-workflow' ),
+				'selfReview'           => __( 'Self review', 'jumplinks-editorial-workflow' ),
+				'myReviewHint'         => __( 'Leave private comments for yourself or your AI agent.', 'jumplinks-editorial-workflow' ),
+				'myReviewGoTo'         => __( 'Open your private self review', 'jumplinks-editorial-workflow' ),
+				'soloTitle'            => __( 'Self review only', 'jumplinks-editorial-workflow' ),
+				'soloHint'             => __( 'To invite a client, switch Review mode in <a>Flow → Settings</a>.', 'jumplinks-editorial-workflow' ),
 			],
 		];
 

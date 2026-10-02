@@ -104,8 +104,10 @@ __webpack_require__.r(__webpack_exports__);
     if (!proxy || !arrow) {
       return;
     }
-    const styles = getComputedStyle(document.documentElement);
-    const panelWidth = parseFloat(styles.getPropertyValue('--fl-builder-panel-width')) || 320;
+
+    // The drawer is at least 360px, so measure it rather than Beaver's panel width.
+    const drawerEl = document.querySelector('.flow-ew-beaver-drawer');
+    const panelWidth = drawerEl && drawerEl.getBoundingClientRect().width || parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--fl-builder-panel-width')) || 360;
     const arrowWidth = arrow.getBoundingClientRect().width || 20;
     const buttonRect = proxy.getBoundingClientRect();
     const buttonCenterX = buttonRect.x + buttonRect.width / 2;

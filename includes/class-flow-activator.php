@@ -17,6 +17,7 @@ class Activator {
 		self::create_reviewer_role();
 		Settings::seed_default_options();
 		update_option( 'flow_ew_db_version', FLOW_EW_DB_VERSION );
+		add_option( Dashboard_Page::OPTION_INSTALLED_AT, time() );
 		set_transient( 'flow_ew_activation_redirect', 1, 30 * MINUTE_IN_SECONDS );
 	}
 
@@ -54,6 +55,7 @@ class Activator {
 			revision_id    BIGINT(20) UNSIGNED DEFAULT NULL,
 			is_open        TINYINT(1) NOT NULL DEFAULT 0,
 			is_public      TINYINT(1) NOT NULL DEFAULT 0,
+			is_private     TINYINT(1) NOT NULL DEFAULT 0,
 			created_at     DATETIME NOT NULL,
 			updated_at     DATETIME NOT NULL,
 			PRIMARY KEY  (id),
@@ -63,6 +65,7 @@ class Activator {
 			KEY status       (status),
 			KEY updated_at   (updated_at),
 			KEY post_active  (post_id, updated_at, id),
+			KEY post_private (post_id, is_private, updated_at),
 			KEY status_recent (status, updated_at)
 		) {$charset_collate};";
 

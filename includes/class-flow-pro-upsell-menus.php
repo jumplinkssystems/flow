@@ -137,7 +137,7 @@ class Pro_Upsell_Menus {
 	}
 
 	public function register_menus(): void {
-		if ( ! Settings::should_show_upgrade_hints() ) {
+		if ( ! Settings::should_show_upgrade_hints() || Settings::is_solo_mode() ) {
 			return;
 		}
 		// Admin-only cap — non-admins can't act on the upgrade anyway,
@@ -458,8 +458,8 @@ class Pro_Upsell_Menus {
 			'flow-ew-upsell-open-review',
 			'flowEwUpsell',
 			array(
-				'label'    => __( 'Unlock public reviews', 'jumplinks-editorial-workflow' ),
-				'helpText' => __( 'Invite anyone, even people without a WordPress account.', 'jumplinks-editorial-workflow' ),
+				'label'    => __( 'Unlock public open reviews', 'jumplinks-editorial-workflow' ),
+				'helpText' => __( 'Share one link anyone can open and comment on — no invite, no account needed.', 'jumplinks-editorial-workflow' ),
 				'href'     => self::upgrade_url(),
 			)
 		);

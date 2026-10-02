@@ -5695,47 +5695,11 @@ function getActiveContentRoot() {
   }
   return resolveCommentContentRoot(document);
 }
-
-// Markup that identifies "this is the post" — title, byline, content, meta,
-// everything editorially owned by the post. Combines semantic wrappers
-// (`<article>`, `<main>`, WordPress's `post_class()` output, `id="post-N"`)
-// with the canonical title/meta classes WP itself emits — those cover block
-// themes / classic themes that render the title outside any wrapper.
-const POST_WRAPPER_SELECTOR = ['article', 'main', '[class~="type-post"]', '[class~="type-page"]', '[class~="type-product"]', '[class~="type-attachment"]', '[id^="post-"]', '.entry-title', '.entry-header', '.entry-meta', '.wp-block-post-title'].join(',');
-const POST_REGION_SELECTOR = '.flow-preview-content, .entry-content, .wp-block-post-content, .product.type-product';
-
-/**
- * A site review covers the whole site, not one post, so headers, menus and
- * footers are legitimate things to comment on. A single-page review still
- * rejects them: there the post is the subject and site chrome is not.
- */
-function isSiteReviewMode() {
-  return typeof window !== 'undefined' && !!(window.flowSiteReview && typeof window.flowSiteReview === 'object');
-}
 function resolveContentRootFor(doc, node) {
   if (!doc || !node) {
     return null;
   }
-  const direct = resolveCommentContentRoot(doc, node);
-  if (direct) {
-    return direct;
-  }
-  // Selection is outside the post body. Accept it if it's still inside
-  // the post's wrapper — title, byline, categories, etc. — and anchor to
-  // `<body>` (rootType: 'body' on the descriptor). Reject otherwise so
-  // nav/footer/sidebar selections never become comments.
-  const targetEl = node.nodeType === 1 ? node : node.parentElement;
-  if (targetEl && targetEl.closest(POST_WRAPPER_SELECTOR) && doc.body) {
-    return doc.body;
-  }
-  if (isSiteReviewMode()) {
-    return doc.body || null;
-  }
-  const hasAnyRoot = !!doc.querySelector(POST_REGION_SELECTOR);
-  if (hasAnyRoot) {
-    return null;
-  }
-  return doc.body || null;
+  return resolveCommentContentRoot(doc, node) || doc.body || null;
 }
 
 /**
@@ -6286,12 +6250,12 @@ function wrapMedia(media) {
     return;
   }
   const cs0 = view.getComputedStyle(media);
-  if (cs0.display === 'none' || cs0.visibility === 'hidden') {
+  if (cs0.display === 'none' || cs0.visibility === 'hidden' || media.offsetWidth === 0 && media.offsetHeight === 0) {
+    pendingMedia.add(media);
+    schedulePendingRetry();
     return;
   }
-  if (media.offsetWidth === 0 && media.offsetHeight === 0) {
-    return;
-  }
+  pendingMedia.delete(media);
   media.dataset[WRAPPED_FLAG] = '1';
   const cs = view.getComputedStyle(media);
   const isPositioned = cs.position === 'absolute' || cs.position === 'fixed';
@@ -6308,6 +6272,9 @@ function wrapMedia(media) {
     linkTarget: linkTarget || null
   });
   overlay.flowMedia = media;
+  if (isPositioned && !isIframe) {
+    overlay.style.zIndex = cs.zIndex;
+  }
 
   // Always isolate overlay surface clicks from theme lightbox / video-modal
   // scripts. Link pills and play pills opt out inside the handler.
@@ -6437,7 +6404,7 @@ function attachFloatingOverlay(media, overlay, parent, view) {
     overlay.style.height = mr.height + 'px';
   };
   reposition();
-  parent.appendChild(overlay);
+  media.after(overlay);
 
   // Hover-time recompute is the primary signal — by the time the
   // reviewer is hovering, layout has fully settled and the user is
@@ -6474,15 +6441,62 @@ function scanRoot(root) {
 let observer = null;
 let lateLoadHandler = null;
 let lateLoadRoot = null;
+
+// Media hidden at scan time (scroll-reveal themes, lazy galleries) is retried
+// once it may have become visible.
+const pendingMedia = new Set();
+let pendingTimer = null;
+let pendingCleanup = null;
+function retryPendingMedia() {
+  pendingTimer = null;
+  for (const media of [...pendingMedia]) {
+    pendingMedia.delete(media);
+    if (media.isConnected && !media.dataset[WRAPPED_FLAG]) {
+      wrapMedia(media);
+    }
+  }
+}
+function schedulePendingRetry(delay = 200) {
+  if (pendingTimer || !pendingMedia.size) {
+    return;
+  }
+  pendingTimer = window.setTimeout(retryPendingMedia, delay);
+}
+function watchPendingMedia(doc) {
+  if (pendingCleanup) {
+    pendingCleanup();
+  }
+  const view = doc.defaultView;
+  const onChange = () => schedulePendingRetry();
+  view?.addEventListener('scroll', onChange, {
+    passive: true
+  });
+  view?.addEventListener('resize', onChange);
+  doc.addEventListener('transitionend', onChange, true);
+  doc.addEventListener('animationend', onChange, true);
+  const timers = [1000, 3000].map(ms => window.setTimeout(onChange, ms));
+  pendingCleanup = () => {
+    view?.removeEventListener('scroll', onChange);
+    view?.removeEventListener('resize', onChange);
+    doc.removeEventListener('transitionend', onChange, true);
+    doc.removeEventListener('animationend', onChange, true);
+    timers.forEach(t => window.clearTimeout(t));
+    window.clearTimeout(pendingTimer);
+    pendingTimer = null;
+    pendingMedia.clear();
+    pendingCleanup = null;
+  };
+}
 function attachToDoc(doc) {
   if (!doc) {
     return;
   }
-  const root = (0,_iframe_bridge__WEBPACK_IMPORTED_MODULE_1__.resolveCommentContentRoot)(doc) || doc.body || doc.documentElement;
+  const root = doc.body || doc.documentElement;
   if (!root) {
     return;
   }
   injectOverlayStyles(doc);
+  watchPendingMedia(doc);
   scanRoot(root);
   if (observer) {
     observer.disconnect();
@@ -6562,6 +6576,9 @@ function initEmbedOverlays() {
       lateLoadRoot.removeEventListener('load', lateLoadHandler, true);
       lateLoadHandler = null;
       lateLoadRoot = null;
+    }
+    if (pendingCleanup) {
+      pendingCleanup();
     }
   };
   window.addEventListener('flow:iframe-removed', detach);
@@ -7048,6 +7065,9 @@ function installPreviewLinkGuard(doc) {
     }
     return false;
   };
+
+  // Let a drag inside a link select its text instead of dragging the link;
+  // navigation is still blocked in onClick.
   const onMouseDown = e => {
     if (e.button !== 0 || shouldIgnore(e)) {
       return;
@@ -7056,7 +7076,12 @@ function installPreviewLinkGuard(doc) {
     if (isSkippableAnchor(a)) {
       return;
     }
-    e.preventDefault();
+    a.draggable = false;
+  };
+  const onDragStart = e => {
+    if (!isSkippableAnchor(anchorFromEvent(e))) {
+      e.preventDefault();
+    }
   };
   const onClick = e => {
     if (e.button !== 0 || shouldIgnore(e)) {
@@ -7083,6 +7108,7 @@ function installPreviewLinkGuard(doc) {
     e.preventDefault();
   };
   doc.addEventListener('mousedown', onMouseDown, true);
+  doc.addEventListener('dragstart', onDragStart, true);
   doc.addEventListener('click', onClick, true);
   doc.addEventListener('auxclick', onAuxClick, true);
   const win = doc.defaultView;
@@ -7115,6 +7141,7 @@ function installPreviewLinkGuard(doc) {
   }
   return () => {
     doc.removeEventListener('mousedown', onMouseDown, true);
+    doc.removeEventListener('dragstart', onDragStart, true);
     doc.removeEventListener('click', onClick, true);
     doc.removeEventListener('auxclick', onAuxClick, true);
     if (restoreOpen) {
@@ -7300,6 +7327,9 @@ function getTextNodeAtOffset(element, charOffset) {
   return null;
 }
 function getCharOffset(element, textNode, nodeOffset) {
+  if (textNode === element) {
+    return Array.from(element.childNodes).slice(0, nodeOffset).reduce((sum, child) => sum + child.textContent.length, 0);
+  }
   const doc = element.ownerDocument || document;
   const walker = doc.createTreeWalker(element, NodeFilter.SHOW_TEXT, null);
   let offset = 0;
@@ -7314,7 +7344,8 @@ function getCharOffset(element, textNode, nodeOffset) {
   return offset;
 }
 function serializeRange(range) {
-  const root = getContentRootForNode(range.startContainer);
+  const startRoot = getContentRootForNode(range.startContainer);
+  const root = startRoot && !startRoot.contains(range.endContainer) ? range.startContainer.ownerDocument?.body || startRoot : startRoot;
   if (!root || !root.contains(range.startContainer)) {
     return null;
   }
@@ -7662,7 +7693,8 @@ const STATUS_LABELS = {
   in_review: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_0__.__)('In Review', 'jumplinks-editorial-workflow'),
   changes_requested: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_0__.__)('Changes Requested', 'jumplinks-editorial-workflow'),
   approved: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_0__.__)('Approved', 'jumplinks-editorial-workflow'),
-  open_review: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_0__.__)('Open Review', 'jumplinks-editorial-workflow')
+  open_review: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_0__.__)('Open Review', 'jumplinks-editorial-workflow'),
+  self_review: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_0__.__)('Self review', 'jumplinks-editorial-workflow')
 };
 
 /** @param {string|undefined|null} status */
@@ -7690,7 +7722,7 @@ __webpack_require__.r(__webpack_exports__);
   \**************************************/
 (module) {
 
-module.exports = "/*\n * Flow Review — Top Bar styles.\n * Injected into Shadow root #1. Fully isolated from theme CSS.\n * wp-components styles are cloned in from document.head at mount time.\n */\n.flow-confirm-dialog {\n  position: fixed;\n  inset: 0;\n  z-index: 1000003;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  padding: 16px;\n}\n\n.flow-confirm-dialog__backdrop {\n  position: absolute;\n  inset: 0;\n  margin: 0;\n  padding: 0;\n  border: 0;\n  background: rgba(0, 0, 0, 0.45);\n  cursor: default;\n}\n\n.flow-confirm-dialog__panel {\n  position: relative;\n  width: 100%;\n  max-width: min(420px, 100% - 32px);\n  font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Oxygen-Sans, Ubuntu, Cantarell, \"Helvetica Neue\", sans-serif;\n  font-size: 13px;\n  line-height: 1.4;\n  color: #c92122;\n  background: #ffebea;\n  border: 1px solid #ffd1d0;\n  border-left-width: 4px;\n  border-left-color: #c92122;\n  border-radius: 2px;\n  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16);\n}\n\n.flow-confirm-dialog__alert {\n  display: flex;\n  align-items: flex-start;\n  gap: 12px;\n  padding: 12px 16px;\n}\n\n.flow-confirm-dialog__icon {\n  display: flex;\n  flex-shrink: 0;\n  align-items: center;\n  justify-content: center;\n  width: 24px;\n  height: 24px;\n  color: #c92122;\n}\n.flow-confirm-dialog__icon svg {\n  display: block;\n  width: 24px;\n  height: 24px;\n}\n\n.flow-confirm-dialog__content {\n  flex: 1 1 auto;\n  min-width: 0;\n}\n\n.flow-confirm-dialog__title {\n  margin: 0 0 2px;\n  font-size: inherit;\n  font-weight: 600;\n  line-height: inherit;\n  color: inherit;\n}\n\n.flow-confirm-dialog__message {\n  margin: 0;\n  font-size: inherit;\n  font-weight: 400;\n  line-height: inherit;\n  color: inherit;\n}\n\n.flow-confirm-dialog__actions {\n  display: flex;\n  justify-content: flex-end;\n  gap: 8px;\n  padding: 0 16px 12px;\n}\n\n.flow-confirm-dialog__confirm.components-button {\n  min-width: 80px;\n  justify-content: center;\n  background: #c92122 !important;\n  border: 1px solid #c92122 !important;\n  color: #fff !important;\n  box-shadow: none !important;\n}\n.flow-confirm-dialog__confirm.components-button:hover:not(:disabled), .flow-confirm-dialog__confirm.components-button:active:not(:disabled) {\n  background: #b32d2e !important;\n  border-color: #b32d2e !important;\n  color: #fff !important;\n}\n.flow-confirm-dialog__confirm.components-button:focus:not(:disabled) {\n  box-shadow: 0 0 0 var(--wp-admin-border-width-focus, 2px) #fff, 0 0 0 calc(var(--wp-admin-border-width-focus, 2px) + 1px) #c92122 !important;\n  outline: 1px solid transparent;\n}\n\n*,\n*::before,\n*::after {\n  box-sizing: border-box;\n}\n\n:host {\n  display: block;\n  position: fixed;\n  top: 0;\n  left: 0;\n  right: 0;\n  height: 64px;\n  z-index: 999999;\n  font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Oxygen-Sans, Ubuntu, Cantarell, \"Helvetica Neue\", sans-serif;\n  font-size: 13px;\n  line-height: 1.4;\n  color: #1e1e1e;\n  -webkit-font-smoothing: antialiased;\n  -moz-osx-font-smoothing: grayscale;\n}\n\nbutton,\ninput,\nselect,\ntextarea {\n  font-family: inherit;\n  font-size: inherit;\n  line-height: inherit;\n  color: inherit;\n}\n\n.components-button {\n  font-weight: 600;\n}\n\n.flow-bar {\n  height: 64px;\n  background: #fff;\n  border-bottom: 1px solid #e0e0e0;\n  display: flex;\n  align-items: center;\n  padding: 0 16px 0 0;\n  position: relative;\n}\n.flow-bar__left {\n  display: flex;\n  align-items: center;\n  gap: 10px;\n  min-width: 0;\n  flex: 1;\n}\n.flow-bar__right {\n  display: flex;\n  align-items: center;\n  gap: 8px;\n  flex-shrink: 0;\n}\n.flow-bar__wp-logo {\n  position: relative;\n  flex-shrink: 0;\n  width: 64px;\n  height: 64px;\n  overflow: hidden;\n}\n.flow-bar__wp-logo-link {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  width: 100%;\n  height: 100%;\n  color: #fff;\n  text-decoration: none;\n}\n.flow-bar__wp-logo-link:hover, .flow-bar__wp-logo-link:active {\n  color: #fff;\n}\n.flow-bar__wp-logo-link:focus {\n  box-shadow: none;\n  outline: none;\n}\n.flow-bar__wp-logo-icon {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  width: 100%;\n  height: 100%;\n  clip-path: inset(0% round 0px);\n  transition: clip-path 0.2s ease;\n}\n.flow-bar__wp-logo-icon svg {\n  fill: currentColor;\n  display: block;\n  background: #1e1e1e;\n  padding: 12px;\n  width: 100%;\n  height: 100%;\n}\n.flow-bar__wp-logo-back {\n  position: absolute;\n  top: 0;\n  left: 0;\n  width: 64px;\n  height: 64px;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  background-color: #ccc;\n  color: #1e1e1e;\n  pointer-events: none;\n  opacity: 0;\n  transform: scale(0.2);\n  clip-path: inset(0% round 0px);\n  transition: opacity 0.2s ease, transform 0.2s ease, clip-path 0.2s ease;\n}\n.flow-bar__wp-logo-back svg {\n  fill: currentColor;\n}\n.flow-bar__wp-logo:hover .flow-bar__wp-logo-icon, .flow-bar__wp-logo:focus-within .flow-bar__wp-logo-icon {\n  clip-path: inset(22% round 2px);\n}\n.flow-bar__wp-logo:hover .flow-bar__wp-logo-back, .flow-bar__wp-logo:focus-within .flow-bar__wp-logo-back {\n  opacity: 1;\n  transform: scale(1);\n  clip-path: inset(22% round 2px);\n}\n.flow-bar__sidebar-toggle.components-button, .flow-bar__comments-toggle.components-button, .flow-bar__edit-post.components-button {\n  height: 32px;\n  min-width: 32px;\n  padding: 4px;\n  flex-shrink: 0;\n  border-radius: 2px;\n  color: #1e1e1e;\n}\n.flow-bar__sidebar-toggle.components-button svg, .flow-bar__comments-toggle.components-button svg, .flow-bar__edit-post.components-button svg {\n  fill: currentColor;\n}\n.flow-bar__sidebar-toggle.components-button:focus:not(:disabled), .flow-bar__comments-toggle.components-button:focus:not(:disabled), .flow-bar__edit-post.components-button:focus:not(:disabled) {\n  box-shadow: 0 0 0 var(--wp-admin-border-width-focus, 2px) var(--wp-admin-theme-color, #007cba), inset 0 0 0 1px #fff;\n  outline: 1px solid transparent;\n}\n.flow-bar__edit-post.components-button {\n  text-decoration: none;\n  border: 1px solid #1e1e1e;\n  box-shadow: none;\n}\n.flow-bar__edit-post.components-button:hover:not(:disabled), .flow-bar__edit-post.components-button:active:not(:disabled), .flow-bar__edit-post.components-button:visited {\n  color: #1e1e1e;\n}\n.flow-bar__edit-post.components-button:hover:not(:disabled) {\n  background: #f6f7f7;\n}\n.flow-bar__sidebar-toggle.components-button.is-pressed, .flow-bar__comments-toggle.components-button.is-pressed {\n  background: #1e1e1e;\n  color: #fff;\n}\n.flow-bar__badge {\n  display: inline-flex;\n  align-items: center;\n  flex-shrink: 0;\n  gap: 4px;\n  font-size: 11px;\n  font-weight: 500;\n  line-height: 1.4;\n  padding: 2px 8px;\n  border-radius: 10px;\n  white-space: nowrap;\n  color: #5e777b;\n  background: #e6f3f5;\n  border: 1px solid #cde3e7;\n}\n.flow-bar__badge__dot {\n  width: 5px;\n  height: 5px;\n  border-radius: 50%;\n  background: currentColor;\n  flex-shrink: 0;\n}\n.flow-bar__badge--in_review {\n  color: #957500;\n  background: #fcf0ce;\n  border-color: #f2dda4;\n}\n.flow-bar__badge--approved {\n  color: #458037;\n  background: #e7f5e4;\n  border-color: #cae8c4;\n}\n.flow-bar__badge--changes_requested {\n  color: #c92122;\n  background: #ffebea;\n  border-color: #ffd1d0;\n}\n.flow-bar__badge--open_review {\n  color: #1579a5;\n  background: #dff4ff;\n  border-color: #b6e6ff;\n}\n.flow-bar__title {\n  display: flex;\n  align-items: baseline;\n  gap: 0.35em;\n  min-width: 0;\n  font-size: 14px;\n  line-height: 1.35;\n  white-space: nowrap;\n  overflow: hidden;\n}\n.flow-bar__title-prefix {\n  flex-shrink: 0;\n  color: #757575;\n  font-weight: 400;\n}\n.flow-bar__title-name, .flow-bar__title-type {\n  font-weight: 600;\n  color: #1e1e1e;\n}\n.flow-bar__title-name {\n  flex: 0 1 auto;\n  min-width: 0;\n  max-width: min(22ch, 18vw);\n  overflow: hidden;\n  text-overflow: ellipsis;\n}\n.flow-bar__title-type {\n  flex-shrink: 0;\n}\n.flow-bar__title-suffix {\n  flex-shrink: 0;\n  display: inline-flex;\n  align-items: baseline;\n  gap: 0.35em;\n}\n.flow-bar__title-dot {\n  color: #757575;\n  font-weight: 400;\n}\n.flow-bar__title--simple {\n  display: block;\n  font-weight: 500;\n  color: #1e1e1e;\n  text-overflow: ellipsis;\n}\n.flow-bar__meta {\n  position: absolute;\n  left: 50%;\n  transform: translateX(-50%);\n  max-width: 42%;\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  gap: 3px;\n  text-align: center;\n  pointer-events: none;\n}\n.flow-bar__freshness-row {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  flex-wrap: nowrap;\n  gap: 6px;\n  max-width: 100%;\n}\n.flow-bar__freshness {\n  display: inline-flex;\n  align-items: center;\n  gap: 4px;\n  font-size: 11px;\n  font-weight: 500;\n  padding: 2px 8px;\n  border-radius: 10px;\n  white-space: nowrap;\n}\n.flow-bar__freshness--latest {\n  color: #458037;\n  background: #e7f5e4;\n}\n.flow-bar__freshness--outdated {\n  color: #957500;\n  background: #fcf0ce;\n}\n.flow-bar__freshness--debug {\n  color: #957500;\n  background: #fcf0ce;\n}\n.flow-bar__freshness-icon {\n  display: inline-flex;\n  flex-shrink: 0;\n  width: 14px;\n  height: 14px;\n}\n.flow-bar__freshness-icon svg {\n  display: block;\n  width: 14px;\n  height: 14px;\n}\n.flow-bar__freshness-link {\n  color: var(--wp-admin-theme-color, #2271b1);\n  text-decoration: underline;\n  cursor: pointer;\n  pointer-events: auto;\n}\n.flow-bar__freshness-link:hover, .flow-bar__freshness-link:focus {\n  color: var(--wp-admin-theme-color-darker-10, #135e96);\n}\n.flow-bar__freshness-snapshot {\n  font-size: 10px;\n  color: #757575;\n  white-space: nowrap;\n  overflow: hidden;\n  text-overflow: ellipsis;\n  max-width: 100%;\n}\n.flow-bar__actions {\n  display: flex;\n  align-items: center;\n  gap: 8px;\n  flex-shrink: 0;\n}\n.flow-bar__btn--request-changes.components-button {\n  background: transparent !important;\n  border: 1px solid #1e1e1e !important;\n  color: #1e1e1e !important;\n  box-shadow: none !important;\n}\n.flow-bar__btn--request-changes.components-button:hover:not(:disabled), .flow-bar__btn--request-changes.components-button:active:not(:disabled) {\n  background: #f6f7f7 !important;\n  border-color: #1e1e1e !important;\n  color: #1e1e1e !important;\n}\n.flow-bar__btn--request-changes.components-button:focus:not(:disabled) {\n  box-shadow: 0 0 0 var(--wp-admin-border-width-focus, 2px) #fff, 0 0 0 calc(var(--wp-admin-border-width-focus, 2px) + 1px) #1e1e1e !important;\n  outline: 1px solid transparent;\n}\n.flow-bar__btn--request-changes.components-button:disabled, .flow-bar__btn--request-changes.components-button[aria-disabled=true] {\n  background: #f6f7f7 !important;\n  border-color: #ddd !important;\n  color: #8c8f94 !important;\n  opacity: 1 !important;\n}\n.flow-bar__btn--revoke.components-button {\n  background: #d63638 !important;\n  border-color: #d63638 !important;\n  color: #fff !important;\n  box-shadow: none !important;\n}\n.flow-bar__btn--revoke.components-button:hover:not(:disabled), .flow-bar__btn--revoke.components-button:active:not(:disabled) {\n  background: #b32d2e !important;\n  border-color: #b32d2e !important;\n  color: #fff !important;\n}\n.flow-bar__btn--revoke.components-button:focus:not(:disabled) {\n  box-shadow: 0 0 0 var(--wp-admin-border-width-focus, 2px) #fff, 0 0 0 calc(var(--wp-admin-border-width-focus, 2px) + 1px) #d63638 !important;\n  outline: 1px solid transparent;\n}\n.flow-bar__btn--revoke.components-button:disabled, .flow-bar__btn--revoke.components-button[aria-disabled=true] {\n  background: #f6f7f7 !important;\n  border-color: #ddd !important;\n  color: #8c8f94 !important;\n  opacity: 1 !important;\n  cursor: not-allowed;\n}\n\n.flow-bar__view-dropdown {\n  margin: 0;\n}\n\n@media (max-width: 782px) {\n  .flow-bar__view-dropdown-wrap {\n    display: none !important;\n  }\n}\n@media (max-width: 1600px) {\n  .flow-bar__meta {\n    position: static;\n    transform: none;\n    max-width: none;\n    flex-direction: row;\n    align-items: center;\n    gap: 6px;\n    text-align: right;\n    pointer-events: auto;\n  }\n  .flow-bar__freshness-snapshot {\n    display: none;\n  }\n}\n@media (max-width: 1400px) {\n  .flow-bar__title-prefix,\n  .flow-bar__title-suffix {\n    display: none;\n  }\n  .flow-bar__edit-post.components-button {\n    display: none !important;\n  }\n}\n.flow-bar__snackbar-list.components-snackbar-list {\n  position: fixed;\n  left: 16px;\n  bottom: calc(16px + var(--flow-ew-upsell-bar-height, 0px));\n  width: auto;\n  max-width: min(420px, 100vw - 32px);\n  pointer-events: none;\n  z-index: 1000000;\n}\n\n.flow-bar__snackbar-list .components-snackbar-list__notice-container {\n  padding-top: 0;\n  pointer-events: auto;\n}\n\n.flow-bar__snackbar.components-snackbar {\n  cursor: default;\n  min-height: 32px;\n  max-width: 360px;\n}\n\n.flow-bar__snackbar .components-snackbar__content {\n  display: block;\n}\n\n.flow-bar__snackbar-link {\n  display: block;\n  margin-top: 4px;\n  color: #fff;\n  font-weight: 600;\n  text-decoration: underline;\n}\n.flow-bar__snackbar-link:hover, .flow-bar__snackbar-link:focus {\n  color: #fff;\n  opacity: 0.85;\n}\n\n@media (max-width: 782px) {\n  .flow-bar {\n    padding: 0 8px 0 0;\n    gap: 4px;\n  }\n  .flow-bar__wp-logo, .flow-bar__wp-logo-back {\n    width: 48px;\n  }\n  .flow-bar__edit-post.components-button, .flow-bar__title, .flow-bar__meta, .flow-bar__badge {\n    display: none !important;\n  }\n  .flow-bar__right {\n    gap: 6px;\n  }\n  .flow-bar__actions {\n    gap: 6px;\n  }\n  .flow-bar__btn--request-changes.components-button, .flow-bar__btn--revoke.components-button {\n    padding-left: 10px !important;\n    padding-right: 10px !important;\n  }\n}";
+module.exports = "/*\n * Flow Review — Top Bar styles.\n * Injected into Shadow root #1. Fully isolated from theme CSS.\n * wp-components styles are cloned in from document.head at mount time.\n */\n.flow-confirm-dialog {\n  position: fixed;\n  inset: 0;\n  z-index: 1000003;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  padding: 16px;\n}\n\n.flow-confirm-dialog__backdrop {\n  position: absolute;\n  inset: 0;\n  margin: 0;\n  padding: 0;\n  border: 0;\n  background: rgba(0, 0, 0, 0.45);\n  cursor: default;\n}\n\n.flow-confirm-dialog__panel {\n  position: relative;\n  width: 100%;\n  max-width: min(420px, 100% - 32px);\n  font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Oxygen-Sans, Ubuntu, Cantarell, \"Helvetica Neue\", sans-serif;\n  font-size: 13px;\n  line-height: 1.4;\n  color: #c92122;\n  background: #ffebea;\n  border: 1px solid #ffd1d0;\n  border-left-width: 4px;\n  border-left-color: #c92122;\n  border-radius: 2px;\n  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16);\n}\n\n.flow-confirm-dialog__alert {\n  display: flex;\n  align-items: flex-start;\n  gap: 12px;\n  padding: 12px 16px;\n}\n\n.flow-confirm-dialog__icon {\n  display: flex;\n  flex-shrink: 0;\n  align-items: center;\n  justify-content: center;\n  width: 24px;\n  height: 24px;\n  color: #c92122;\n}\n.flow-confirm-dialog__icon svg {\n  display: block;\n  width: 24px;\n  height: 24px;\n}\n\n.flow-confirm-dialog__content {\n  flex: 1 1 auto;\n  min-width: 0;\n}\n\n.flow-confirm-dialog__title {\n  margin: 0 0 2px;\n  font-size: inherit;\n  font-weight: 600;\n  line-height: inherit;\n  color: inherit;\n}\n\n.flow-confirm-dialog__message {\n  margin: 0;\n  font-size: inherit;\n  font-weight: 400;\n  line-height: inherit;\n  color: inherit;\n}\n\n.flow-confirm-dialog__actions {\n  display: flex;\n  justify-content: flex-end;\n  gap: 8px;\n  padding: 0 16px 12px;\n}\n\n.flow-confirm-dialog__confirm.components-button {\n  min-width: 80px;\n  justify-content: center;\n  background: #c92122 !important;\n  border: 1px solid #c92122 !important;\n  color: #fff !important;\n  box-shadow: none !important;\n}\n.flow-confirm-dialog__confirm.components-button:hover:not(:disabled), .flow-confirm-dialog__confirm.components-button:active:not(:disabled) {\n  background: #b32d2e !important;\n  border-color: #b32d2e !important;\n  color: #fff !important;\n}\n.flow-confirm-dialog__confirm.components-button:focus:not(:disabled) {\n  box-shadow: 0 0 0 var(--wp-admin-border-width-focus, 2px) #fff, 0 0 0 calc(var(--wp-admin-border-width-focus, 2px) + 1px) #c92122 !important;\n  outline: 1px solid transparent;\n}\n\n*,\n*::before,\n*::after {\n  box-sizing: border-box;\n}\n\n:host {\n  display: block;\n  position: fixed;\n  top: 0;\n  left: 0;\n  right: 0;\n  height: 64px;\n  z-index: 999999;\n  font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Oxygen-Sans, Ubuntu, Cantarell, \"Helvetica Neue\", sans-serif;\n  font-size: 13px;\n  line-height: 1.4;\n  color: #1e1e1e;\n  -webkit-font-smoothing: antialiased;\n  -moz-osx-font-smoothing: grayscale;\n}\n\nbutton,\ninput,\nselect,\ntextarea {\n  font-family: inherit;\n  font-size: inherit;\n  line-height: inherit;\n  color: inherit;\n}\n\n.components-button {\n  font-weight: 600;\n}\n\n.flow-bar {\n  height: 64px;\n  background: #fff;\n  border-bottom: 1px solid #e0e0e0;\n  display: flex;\n  align-items: center;\n  padding: 0 16px 0 0;\n  position: relative;\n}\n.flow-bar__left {\n  display: flex;\n  align-items: center;\n  gap: 10px;\n  min-width: 0;\n  flex: 1;\n}\n.flow-bar__right {\n  display: flex;\n  align-items: center;\n  gap: 8px;\n  flex-shrink: 0;\n}\n.flow-bar__wp-logo {\n  position: relative;\n  flex-shrink: 0;\n  width: 64px;\n  height: 64px;\n  overflow: hidden;\n}\n.flow-bar__wp-logo-link {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  width: 100%;\n  height: 100%;\n  color: #fff;\n  text-decoration: none;\n}\n.flow-bar__wp-logo-link:hover, .flow-bar__wp-logo-link:active {\n  color: #fff;\n}\n.flow-bar__wp-logo-link:focus {\n  box-shadow: none;\n  outline: none;\n}\n.flow-bar__wp-logo-icon {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  width: 100%;\n  height: 100%;\n  clip-path: inset(0% round 0px);\n  transition: clip-path 0.2s ease;\n}\n.flow-bar__wp-logo-icon svg {\n  fill: currentColor;\n  display: block;\n  background: #1e1e1e;\n  padding: 12px;\n  width: 100%;\n  height: 100%;\n}\n.flow-bar__wp-logo-back {\n  position: absolute;\n  top: 0;\n  left: 0;\n  width: 64px;\n  height: 64px;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  background-color: #ccc;\n  color: #1e1e1e;\n  pointer-events: none;\n  opacity: 0;\n  transform: scale(0.2);\n  clip-path: inset(0% round 0px);\n  transition: opacity 0.2s ease, transform 0.2s ease, clip-path 0.2s ease;\n}\n.flow-bar__wp-logo-back svg {\n  fill: currentColor;\n}\n.flow-bar__wp-logo:hover .flow-bar__wp-logo-icon, .flow-bar__wp-logo:focus-within .flow-bar__wp-logo-icon {\n  clip-path: inset(22% round 2px);\n}\n.flow-bar__wp-logo:hover .flow-bar__wp-logo-back, .flow-bar__wp-logo:focus-within .flow-bar__wp-logo-back {\n  opacity: 1;\n  transform: scale(1);\n  clip-path: inset(22% round 2px);\n}\n.flow-bar__sidebar-toggle.components-button, .flow-bar__comments-toggle.components-button, .flow-bar__edit-post.components-button {\n  height: 32px;\n  min-width: 32px;\n  padding: 4px;\n  flex-shrink: 0;\n  border-radius: 2px;\n  color: #1e1e1e;\n}\n.flow-bar__sidebar-toggle.components-button svg, .flow-bar__comments-toggle.components-button svg, .flow-bar__edit-post.components-button svg {\n  fill: currentColor;\n}\n.flow-bar__sidebar-toggle.components-button:focus:not(:disabled), .flow-bar__comments-toggle.components-button:focus:not(:disabled), .flow-bar__edit-post.components-button:focus:not(:disabled) {\n  box-shadow: 0 0 0 var(--wp-admin-border-width-focus, 2px) var(--wp-admin-theme-color, #007cba), inset 0 0 0 1px #fff;\n  outline: 1px solid transparent;\n}\n.flow-bar__edit-post.components-button {\n  text-decoration: none;\n  border: 1px solid #1e1e1e;\n  box-shadow: none;\n}\n.flow-bar__edit-post.components-button:hover:not(:disabled), .flow-bar__edit-post.components-button:active:not(:disabled), .flow-bar__edit-post.components-button:visited {\n  color: #1e1e1e;\n}\n.flow-bar__edit-post.components-button:hover:not(:disabled) {\n  background: #f6f7f7;\n}\n.flow-bar__sidebar-toggle.components-button.is-pressed, .flow-bar__comments-toggle.components-button.is-pressed {\n  background: #1e1e1e;\n  color: #fff;\n}\n.flow-bar__badge {\n  display: inline-flex;\n  align-items: center;\n  flex-shrink: 0;\n  gap: 4px;\n  font-size: 11px;\n  font-weight: 500;\n  line-height: 1.4;\n  padding: 2px 8px;\n  border-radius: 10px;\n  white-space: nowrap;\n  color: #5e777b;\n  background: #e6f3f5;\n  border: 1px solid #cde3e7;\n}\n.flow-bar__badge__dot {\n  width: 5px;\n  height: 5px;\n  border-radius: 50%;\n  background: currentColor;\n  flex-shrink: 0;\n}\n.flow-bar__badge--in_review {\n  color: #957500;\n  background: #fcf0ce;\n  border-color: #f2dda4;\n}\n.flow-bar__badge--approved {\n  color: #458037;\n  background: #e7f5e4;\n  border-color: #cae8c4;\n}\n.flow-bar__badge--changes_requested {\n  color: #c92122;\n  background: #ffebea;\n  border-color: #ffd1d0;\n}\n.flow-bar__badge--open_review {\n  color: #1579a5;\n  background: #dff4ff;\n  border-color: #b6e6ff;\n}\n.flow-bar__badge--self_review {\n  color: #5b3fa6;\n  background: #efe9fb;\n  border-color: #d9ccf4;\n}\n.flow-bar__title {\n  display: flex;\n  align-items: baseline;\n  gap: 0.35em;\n  min-width: 0;\n  font-size: 14px;\n  line-height: 1.35;\n  white-space: nowrap;\n  overflow: hidden;\n}\n.flow-bar__title-prefix {\n  flex-shrink: 0;\n  color: #757575;\n  font-weight: 400;\n}\n.flow-bar__title-name, .flow-bar__title-type {\n  font-weight: 600;\n  color: #1e1e1e;\n}\n.flow-bar__title-name {\n  flex: 0 1 auto;\n  min-width: 0;\n  max-width: min(22ch, 18vw);\n  overflow: hidden;\n  text-overflow: ellipsis;\n}\n.flow-bar__title-type {\n  flex-shrink: 0;\n}\n.flow-bar__title-suffix {\n  flex-shrink: 0;\n  display: inline-flex;\n  align-items: baseline;\n  gap: 0.35em;\n}\n.flow-bar__title-dot {\n  color: #757575;\n  font-weight: 400;\n}\n.flow-bar__title--simple {\n  display: block;\n  font-weight: 500;\n  color: #1e1e1e;\n  text-overflow: ellipsis;\n}\n.flow-bar__meta {\n  position: absolute;\n  left: 50%;\n  transform: translateX(-50%);\n  max-width: 42%;\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  gap: 3px;\n  text-align: center;\n  pointer-events: none;\n}\n.flow-bar__freshness-row {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  flex-wrap: nowrap;\n  gap: 6px;\n  max-width: 100%;\n}\n.flow-bar__freshness {\n  display: inline-flex;\n  align-items: center;\n  gap: 4px;\n  font-size: 11px;\n  font-weight: 500;\n  padding: 2px 8px;\n  border-radius: 10px;\n  white-space: nowrap;\n}\n.flow-bar__freshness--latest {\n  color: #458037;\n  background: #e7f5e4;\n}\n.flow-bar__freshness--outdated {\n  color: #957500;\n  background: #fcf0ce;\n}\n.flow-bar__freshness--debug {\n  color: #957500;\n  background: #fcf0ce;\n}\n.flow-bar__freshness-icon {\n  display: inline-flex;\n  flex-shrink: 0;\n  width: 14px;\n  height: 14px;\n}\n.flow-bar__freshness-icon svg {\n  display: block;\n  width: 14px;\n  height: 14px;\n}\n.flow-bar__freshness-link {\n  color: var(--wp-admin-theme-color, #2271b1);\n  text-decoration: underline;\n  cursor: pointer;\n  pointer-events: auto;\n}\n.flow-bar__freshness-link:hover, .flow-bar__freshness-link:focus {\n  color: var(--wp-admin-theme-color-darker-10, #135e96);\n}\n.flow-bar__freshness-snapshot {\n  font-size: 10px;\n  color: #757575;\n  white-space: nowrap;\n  overflow: hidden;\n  text-overflow: ellipsis;\n  max-width: 100%;\n}\n.flow-bar__actions {\n  display: flex;\n  align-items: center;\n  gap: 8px;\n  flex-shrink: 0;\n}\n.flow-bar__btn--request-changes.components-button {\n  background: transparent !important;\n  border: 1px solid #1e1e1e !important;\n  color: #1e1e1e !important;\n  box-shadow: none !important;\n}\n.flow-bar__btn--request-changes.components-button:hover:not(:disabled), .flow-bar__btn--request-changes.components-button:active:not(:disabled) {\n  background: #f6f7f7 !important;\n  border-color: #1e1e1e !important;\n  color: #1e1e1e !important;\n}\n.flow-bar__btn--request-changes.components-button:focus:not(:disabled) {\n  box-shadow: 0 0 0 var(--wp-admin-border-width-focus, 2px) #fff, 0 0 0 calc(var(--wp-admin-border-width-focus, 2px) + 1px) #1e1e1e !important;\n  outline: 1px solid transparent;\n}\n.flow-bar__btn--request-changes.components-button:disabled, .flow-bar__btn--request-changes.components-button[aria-disabled=true] {\n  background: #f6f7f7 !important;\n  border-color: #ddd !important;\n  color: #8c8f94 !important;\n  opacity: 1 !important;\n}\n.flow-bar__btn--revoke.components-button {\n  background: #d63638 !important;\n  border-color: #d63638 !important;\n  color: #fff !important;\n  box-shadow: none !important;\n}\n.flow-bar__btn--revoke.components-button:hover:not(:disabled), .flow-bar__btn--revoke.components-button:active:not(:disabled) {\n  background: #b32d2e !important;\n  border-color: #b32d2e !important;\n  color: #fff !important;\n}\n.flow-bar__btn--revoke.components-button:focus:not(:disabled) {\n  box-shadow: 0 0 0 var(--wp-admin-border-width-focus, 2px) #fff, 0 0 0 calc(var(--wp-admin-border-width-focus, 2px) + 1px) #d63638 !important;\n  outline: 1px solid transparent;\n}\n.flow-bar__btn--revoke.components-button:disabled, .flow-bar__btn--revoke.components-button[aria-disabled=true] {\n  background: #f6f7f7 !important;\n  border-color: #ddd !important;\n  color: #8c8f94 !important;\n  opacity: 1 !important;\n  cursor: not-allowed;\n}\n\n.flow-bar__view-dropdown {\n  margin: 0;\n}\n\n@media (max-width: 782px) {\n  .flow-bar__view-dropdown-wrap {\n    display: none !important;\n  }\n}\n@media (max-width: 1600px) {\n  .flow-bar__meta {\n    position: static;\n    transform: none;\n    max-width: none;\n    flex-direction: row;\n    align-items: center;\n    gap: 6px;\n    text-align: right;\n    pointer-events: auto;\n  }\n  .flow-bar__freshness-snapshot {\n    display: none;\n  }\n}\n@media (max-width: 1400px) {\n  .flow-bar__title-prefix,\n  .flow-bar__title-suffix {\n    display: none;\n  }\n  .flow-bar__edit-post.components-button {\n    display: none !important;\n  }\n}\n.flow-bar__snackbar-list.components-snackbar-list {\n  position: fixed;\n  left: 16px;\n  bottom: calc(16px + var(--flow-ew-upsell-bar-height, 0px));\n  width: auto;\n  max-width: min(420px, 100vw - 32px);\n  pointer-events: none;\n  z-index: 1000000;\n}\n\n.flow-bar__snackbar-list .components-snackbar-list__notice-container {\n  padding-top: 0;\n  pointer-events: auto;\n}\n\n.flow-bar__snackbar.components-snackbar {\n  cursor: default;\n  min-height: 32px;\n  max-width: 360px;\n}\n\n.flow-bar__snackbar .components-snackbar__content {\n  display: block;\n}\n\n.flow-bar__snackbar-link {\n  display: block;\n  margin-top: 4px;\n  color: #fff;\n  font-weight: 600;\n  text-decoration: underline;\n}\n.flow-bar__snackbar-link:hover, .flow-bar__snackbar-link:focus {\n  color: #fff;\n  opacity: 0.85;\n}\n\n@media (max-width: 782px) {\n  .flow-bar {\n    padding: 0 8px 0 0;\n    gap: 4px;\n  }\n  .flow-bar__wp-logo, .flow-bar__wp-logo-back {\n    width: 48px;\n  }\n  .flow-bar__edit-post.components-button, .flow-bar__title, .flow-bar__meta, .flow-bar__badge {\n    display: none !important;\n  }\n  .flow-bar__right {\n    gap: 6px;\n  }\n  .flow-bar__actions {\n    gap: 6px;\n  }\n  .flow-bar__btn--request-changes.components-button, .flow-bar__btn--revoke.components-button {\n    padding-left: 10px !important;\n    padding-right: 10px !important;\n  }\n}";
 
 /***/ },
 

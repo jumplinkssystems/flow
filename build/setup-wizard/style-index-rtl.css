@@ -3,6 +3,7 @@
   \****************************************************************************************************************************************************************************************************************************************************/
 .flow-ew-wizard.components-modal__frame {
   background: #f0f0f1;
+  max-height: calc(100vh - 32px);
   max-width: 560px;
   overflow: hidden;
   padding: 0;
@@ -15,15 +16,27 @@
 }
 .flow-ew-wizard .components-modal__content {
   background: #f0f0f1;
+  display: flex;
+  flex-direction: column;
   margin: 72px 0 0;
-  overflow-x: hidden;
+  max-height: calc(100vh - 32px - 72px);
+  overflow: hidden;
   padding: 0;
+}
+.flow-ew-wizard .components-modal__children-container {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
 }
 .flow-ew-wizard__body {
   background: #f0f0f1;
   box-sizing: border-box;
+  flex: 1 1 auto;
   max-width: 100%;
+  min-height: 0;
   overflow-x: hidden;
+  overflow-y: auto;
   padding: 4px 24px 20px;
 }
 .flow-ew-wizard__lead {
@@ -92,11 +105,13 @@
   background-color: #eff2fe;
   border-color: var(--wp-admin-theme-color, #2271b1);
 }
-.flow-ew-wizard__option input[type=radio] {
+.flow-ew-wizard__option input[type=radio],
+.flow-ew-wizard__option input[type=checkbox] {
   flex-shrink: 0;
   margin: 4px 0 0;
 }
-.flow-ew-wizard__option input[type=radio]:focus {
+.flow-ew-wizard__option input[type=radio]:focus,
+.flow-ew-wizard__option input[type=checkbox]:focus {
   box-shadow: none;
   outline: none;
 }
@@ -110,6 +125,120 @@
 }
 .flow-ew-wizard__option u {
   text-decoration: underline;
+}
+.flow-ew-wizard__badge {
+  background: #f0f0f1;
+  border-radius: 2px;
+  color: #50575e;
+  font-size: 11px;
+  font-weight: 500;
+  margin-right: 6px;
+  padding: 1px 6px;
+  vertical-align: middle;
+}
+.flow-ew-wizard__field {
+  margin: 4px 0 14px;
+}
+.flow-ew-wizard__field .components-text {
+  margin-top: 6px;
+}
+.flow-ew-wizard__field-label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+.flow-ew-wizard__field-error {
+  color: #cc1818;
+  margin: 6px 0 0;
+}
+.flow-ew-wizard__picker {
+  position: relative;
+}
+.flow-ew-wizard__picker-input {
+  box-sizing: border-box;
+  max-width: 100%;
+  width: 360px;
+}
+.flow-ew-wizard__picker-results {
+  background: #ffffff;
+  border: 1px solid #c3c4c7;
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  list-style: none;
+  margin: 4px 0 0;
+  max-height: 220px;
+  max-width: 100%;
+  overflow-y: auto;
+  padding: 4px 0;
+  position: absolute;
+  width: 360px;
+  z-index: 10;
+}
+.flow-ew-wizard__picker-results li {
+  margin: 0;
+}
+.flow-ew-wizard__picker-option {
+  background: none;
+  border: 0;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  padding: 6px 10px;
+  text-align: right;
+  width: 100%;
+}
+.flow-ew-wizard__picker-option:hover, .flow-ew-wizard__picker-option:focus {
+  background: #eff2fe;
+}
+.flow-ew-wizard__picker-meta {
+  color: #757575;
+  font-size: 12px;
+}
+.flow-ew-wizard__picker-selected {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+}
+.flow-ew-wizard__prompt {
+  align-items: flex-start;
+  background: #f0f0f1;
+  border: 1px solid #dcdcde;
+  border-radius: 6px;
+  display: flex;
+  gap: 10px;
+  margin: 0 0 14px;
+  padding: 10px 12px;
+}
+.flow-ew-wizard__prompt code {
+  background: none;
+  flex: 1;
+  font-size: 13px;
+  white-space: normal;
+}
+.flow-ew-wizard__prompt-copy {
+  flex-shrink: 0;
+}
+.flow-ew-wizard__docs {
+  margin: 0 0 14px;
+}
+.flow-ew-wizard__changes {
+  border-top: 1px solid #dcdcde;
+  padding-top: 12px;
+}
+.flow-ew-wizard__changes ul {
+  margin: 6px 18px 0 0;
+}
+.flow-ew-wizard__changes li {
+  list-style: disc;
+  margin-bottom: 4px;
+}
+.flow-ew-wizard__changes-title {
+  font-weight: 600;
+  margin: 0;
+}
+.flow-ew-wizard__was {
+  color: #757575;
 }
 .flow-ew-wizard__select-all {
   display: inline-block;
@@ -159,6 +288,7 @@
 }
 .flow-ew-wizard__actions {
   align-items: center;
+  flex-shrink: 0;
   background: #ffffff;
   border-top: 1px solid #dcdcde;
   box-sizing: border-box;

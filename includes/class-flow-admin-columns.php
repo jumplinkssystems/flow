@@ -126,7 +126,7 @@ class Admin_Columns {
 
 		$options = array_merge(
 			[ '' => __( 'All review statuses', 'jumplinks-editorial-workflow' ) ],
-			Review::status_labels()
+			self::filterable_status_labels()
 		);
 
 		echo '<label for="flow-ew-review-status-filter" class="screen-reader-text">';
@@ -165,7 +165,7 @@ class Admin_Columns {
 			return;
 		}
 
-		if ( ! array_key_exists( $value, Review::status_labels() ) ) {
+		if ( ! array_key_exists( $value, self::filterable_status_labels() ) ) {
 			return;
 		}
 
@@ -260,5 +260,12 @@ class Admin_Columns {
 			esc_attr( $slug ),
 			esc_html( $label )
 		);
+	}
+
+	/** Self reviews are private and never a post's active review, so they cannot be filtered on. */
+	private static function filterable_status_labels(): array {
+		$labels = Review::status_labels();
+		unset( $labels[ Review::STATUS_SELF_REVIEW ] );
+		return $labels;
 	}
 }

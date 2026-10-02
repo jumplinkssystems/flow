@@ -408,3 +408,23 @@
 .flow-ew-review-notice {
 	width: 100%;
 }
+
+.flow-ew-self-review {
+	position: relative;
+	width: 100%;
+}
+
+.flow-ew-self-review__goto.components-button {
+	height: 24px;
+	min-width: 24px;
+	padding: 0;
+	position: absolute;
+	right: 0;
+	top: -2px;
+	width: 24px;
+}
+
+.flow-ew-self-review__goto .flow-ew-share-icon {
+	height: 16px;
+	width: 16px;
+}

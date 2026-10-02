@@ -50,6 +50,8 @@ export function installPreviewLinkGuard( doc ) {
 		return false;
 	};
 
+	// Let a drag inside a link select its text instead of dragging the link;
+	// navigation is still blocked in onClick.
 	const onMouseDown = ( e ) => {
 		if ( e.button !== 0 || shouldIgnore( e ) ) {
 			return;
@@ -58,7 +60,13 @@ export function installPreviewLinkGuard( doc ) {
 		if ( isSkippableAnchor( a ) ) {
 			return;
 		}
-		e.preventDefault();
+		a.draggable = false;
+	};
+
+	const onDragStart = ( e ) => {
+		if ( ! isSkippableAnchor( anchorFromEvent( e ) ) ) {
+			e.preventDefault();
+		}
 	};
 
 	const onClick = ( e ) => {
@@ -90,6 +98,7 @@ export function installPreviewLinkGuard( doc ) {
 	};
 
 	doc.addEventListener( 'mousedown', onMouseDown, true );
+	doc.addEventListener( 'dragstart', onDragStart, true );
 	doc.addEventListener( 'click', onClick, true );
 	doc.addEventListener( 'auxclick', onAuxClick, true );
 
@@ -124,6 +133,7 @@ export function installPreviewLinkGuard( doc ) {
 
 	return () => {
 		doc.removeEventListener( 'mousedown', onMouseDown, true );
+		doc.removeEventListener( 'dragstart', onDragStart, true );
 		doc.removeEventListener( 'click', onClick, true );
 		doc.removeEventListener( 'auxclick', onAuxClick, true );
 		if ( restoreOpen ) {

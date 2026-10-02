@@ -86,7 +86,14 @@ class Ability_Context {
 		];
 	}
 
-	public static function next_action( ?object $review, bool $can_publish ): string {
+	/**
+	 * @param array<string,mixed>|null $self_review The post's self review, when the site has one.
+	 */
+	public static function next_action( ?object $review, bool $can_publish, ?array $self_review = null ): string {
+		if ( ! $review && $self_review ) {
+			$unresolved = (int) ( $self_review['unresolved_inline'] ?? 0 ) + (int) ( $self_review['unresolved_general'] ?? 0 );
+			return $unresolved > 0 ? 'apply_self_review_comments' : 'share_self_review_link';
+		}
 		if ( ! $review ) {
 			return 'assign_reviewer';
 		}
@@ -172,9 +179,10 @@ class Ability_Context {
 			);
 		}
 
-		$review = DB::get_active_review( $post_id );
-		$gate   = Publish_Guard::describe_publish_gate( $post_id );
-		$post   = get_post( $post_id );
+		$review      = Settings::is_solo_mode() ? null : DB::get_active_review( $post_id );
+		$self_review = self::self_review_payload( $post_id );
+		$gate        = Publish_Guard::describe_publish_gate( $post_id );
+		$post        = get_post( $post_id );
 
 		$payload = [
 			'post_id'            => $post_id,
@@ -184,8 +192,9 @@ class Ability_Context {
 			'can_publish'        => $gate['can_publish'],
 			'block_reason'       => $gate['block_reason'],
 			'status'             => $gate['status'],
-			'next_action'        => self::next_action( $review, $gate['can_publish'] ),
+			'next_action'        => self::next_action( $review, $gate['can_publish'], $self_review ),
 			'review'             => null,
+			'self_review'        => $self_review,
 			'comments'           => [],
 			'unresolved_inline'  => [],
 			'unresolved_general' => [],
@@ -206,6 +215,9 @@ class Ability_Context {
 	 * @return array<string,mixed>|\WP_Error
 	 */
 	public static function list_reviewers( string $query = '' ) {
+		if ( Settings::is_solo_mode() ) {
+			return self::solo_mode_error();
+		}
 		if ( ! current_user_can( 'flow_assign_reviewer' ) ) {
 			return new \WP_Error(
 				'flow_ew_forbidden',
@@ -249,6 +261,9 @@ class Ability_Context {
 	 * @return array<string,mixed>|\WP_Error
 	 */
 	public static function assign_reviewer( int $post_id, int $reviewer_id, string $invite_email = '' ) {
+		if ( Settings::is_solo_mode() ) {
+			return self::solo_mode_error();
+		}
 		if ( ! current_user_can( 'flow_assign_reviewer' ) || ! current_user_can( 'edit_post', $post_id ) ) {
 			return new \WP_Error(
 				'flow_ew_forbidden',
@@ -287,6 +302,9 @@ class Ability_Context {
 	 * @return array<string,mixed>|\WP_Error
 	 */
 	public static function send_for_review( int $review_id = 0, int $post_id = 0 ) {
+		if ( Settings::is_solo_mode() ) {
+			return self::solo_mode_error();
+		}
 		return self::transition( $review_id, $post_id, [ Review::class, 'send_for_review' ] );
 	}
 
@@ -476,6 +494,34 @@ class Ability_Context {
 		];
 	}
 
+	private static function solo_mode_error(): \WP_Error {
+		return new \WP_Error(
+			'flow_ew_solo_mode',
+			__( 'This site uses Self review only: there are no reviewers to assign or send to. Use self_review from flow/get-review.', 'jumplinks-editorial-workflow' )
+		);
+	}
+
+	/**
+	 * The post's self review, created on first ask so the agent can always
+	 * hand the human a link. Null when the site has self review off.
+	 *
+	 * @return array<string,mixed>|null
+	 */
+	private static function self_review_payload( int $post_id ): ?array {
+		if ( ! Settings::is_self_review_enabled() || ! Self_Review::is_on_for_post( $post_id ) ) {
+			return null;
+		}
+		$private = DB::get_private_review( $post_id );
+		if ( ! $private ) {
+			try {
+				$private = DB::get_review( Review::start_self_review( $post_id, get_current_user_id() ) );
+			} catch ( \Exception $e ) {
+				return null;
+			}
+		}
+		return $private ? Self_Review::payload_for_agent( $private ) : null;
+	}
+
 	/**
 	 * @return object|\WP_Error
 	 */
@@ -485,6 +531,12 @@ class Ability_Context {
 			$review = DB::get_review( $review_id );
 		} elseif ( $post_id > 0 ) {
 			$review = DB::get_active_review( $post_id );
+			if ( ! $review && DB::get_private_review( $post_id ) ) {
+				return new \WP_Error(
+					'flow_ew_not_found',
+					__( 'This post has no client review. Pass review_id = self_review.id from flow/get-review to work on the self review.', 'jumplinks-editorial-workflow' )
+				);
+			}
 		}
 		if ( ! $review ) {
 			return new \WP_Error(

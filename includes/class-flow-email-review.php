@@ -68,15 +68,15 @@ class Email_Review {
 	 * @throws \RuntimeException When persistence fails.
 	 */
 	public static function assign_invite( int $post_id, string $email, int $requester_id ): int {
+		if ( Settings::is_solo_mode() ) {
+			throw new \InvalidArgumentException( esc_html__( 'Reviewers are not available in Self review only mode.', 'jumplinks-editorial-workflow' ) );
+		}
 		if ( Settings::are_external_reviewers_disabled() ) {
 			throw new \InvalidArgumentException( esc_html__( 'External reviewers are disabled.', 'jumplinks-editorial-workflow' ) );
 		}
 		$email = Email_Review_Invites_DB::normalize_email( $email );
 		if ( '' === $email || ! is_email( $email ) ) {
 			throw new \InvalidArgumentException( esc_html__( 'Please enter a valid email address.', 'jumplinks-editorial-workflow' ) );
-		}
-		if ( self::is_self_invite( $post_id, $requester_id, $email ) ) {
-			throw new \InvalidArgumentException( esc_html__( 'You cannot invite your own email address as a reviewer.', 'jumplinks-editorial-workflow' ) );
 		}
 
 		// Same invite already on the active review — no-op. Re-POSTing used to
@@ -102,37 +102,6 @@ class Email_Review {
 		do_action( 'flow_ew_email_invite_assigned', $review_id, $post_id, $email, $requester_id );
 
 		return $review_id;
-	}
-
-	/**
-	 * Addresses that can never be invited on a post: the requester's and the
-	 * post author's own account emails. Inviting yourself would let one person
-	 * request and approve under mandatory review.
-	 *
-	 * @return string[] Normalized emails.
-	 */
-	public static function self_invite_emails( int $post_id, int $requester_id ): array {
-		$user_ids = [ $requester_id ];
-		$post     = get_post( $post_id );
-		if ( $post instanceof \WP_Post ) {
-			$user_ids[] = (int) $post->post_author;
-		}
-		$out = [];
-		foreach ( array_unique( $user_ids ) as $user_id ) {
-			if ( $user_id <= 0 ) {
-				continue;
-			}
-			$user = get_userdata( $user_id );
-			if ( $user && ! empty( $user->user_email ) ) {
-				$out[] = Email_Review_Invites_DB::normalize_email( (string) $user->user_email );
-			}
-		}
-		return array_values( array_unique( $out ) );
-	}
-
-	public static function is_self_invite( int $post_id, int $requester_id, string $email ): bool {
-		$email = Email_Review_Invites_DB::normalize_email( $email );
-		return '' !== $email && in_array( $email, self::self_invite_emails( $post_id, $requester_id ), true );
 	}
 
 	/** @var array<string,object|null> Verified invite per review id and cookie value; the review page asks 4 to 6 times per request. */
@@ -422,6 +391,7 @@ class Email_Review {
 			$post->post_title
 		);
 
+		$headers = self::reply_to_headers( $requester );
 		foreach ( $invites as $row ) {
 			$email = Email_Review_Invites_DB::normalize_email( (string) $row->email );
 			if ( '' === $email ) {
@@ -437,7 +407,7 @@ class Email_Review {
 				$message = sprintf(
 					/* translators: 1: requester display name, 2: post title, 3: review page URL, 4: site name */
 					__(
-						"Hi,\n\n%1\$s has sent \"%2\$s\" for your review.\n\nOpen the review page:\n%3\$s\n\n— %4\$s",
+						"Hi,\n\n%1\$s has sent \"%2\$s\" for your review.\n\nOpen the review page:\n%3\$s\n\nNo account or password needed — the link signs you in. Select any text or image on the page to leave a comment there. When you're done, click Approve or Request Changes.\n\n— %4\$s",
 						'jumplinks-editorial-workflow'
 					),
 					$req_name,
@@ -449,7 +419,7 @@ class Email_Review {
 				$message = sprintf(
 					/* translators: 1: invitee display name, 2: requester display name, 3: post title, 4: review page URL, 5: site name */
 					__(
-						"Hi %1\$s,\n\n%2\$s has sent \"%3\$s\" for your review.\n\nOpen the review page:\n%4\$s\n\n— %5\$s",
+						"Hi %1\$s,\n\n%2\$s has sent \"%3\$s\" for your review.\n\nOpen the review page:\n%4\$s\n\nNo account or password needed — the link signs you in. Select any text or image on the page to leave a comment there. When you're done, click Approve or Request Changes.\n\n— %5\$s",
 						'jumplinks-editorial-workflow'
 					),
 					$name,
@@ -459,7 +429,19 @@ class Email_Review {
 					$site
 				);
 			}
-			Mailer::queue( $email, $subject, $message );
+			Mailer::queue( $email, $subject, $message, $headers );
 		}
+	}
+
+	/**
+	 * @param mixed $user Whoever sent the review; replies go to them, not the site's From address.
+	 * @return string[]
+	 */
+	public static function reply_to_headers( $user ): array {
+		if ( ! $user instanceof \WP_User || ! is_email( $user->user_email ) ) {
+			return [];
+		}
+		$name = trim( str_replace( [ "\r", "\n", '"' ], '', $user->display_name ) );
+		return [ '' === $name ? 'Reply-To: ' . $user->user_email : sprintf( 'Reply-To: "%s" <%s>', $name, $user->user_email ) ];
 	}
 }

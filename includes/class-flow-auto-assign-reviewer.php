@@ -77,6 +77,25 @@ class Auto_Assign_Reviewer {
 		return self::eligible_reviewer_id( $post_id, get_post( $post_id ) );
 	}
 
+	/** The external reviewer auto-assign will invite on this post's first save, or ''. */
+	public static function pending_invite_email( int $post_id ): string {
+		if ( $post_id <= 0 || 'auto-draft' !== get_post_status( $post_id ) ) {
+			return '';
+		}
+		return self::eligible_invite_email( $post_id, get_post( $post_id ) );
+	}
+
+	/**
+	 * @param \WP_Post|object|null $post
+	 */
+	private static function eligible_invite_email( int $post_id, $post ): string {
+		$post_type = isset( $post->post_type ) ? (string) $post->post_type : (string) get_post_type( $post_id );
+		if ( '' === $post_type || ! Settings::is_post_type_supported( $post_type ) || DB::get_active_review( $post_id ) ) {
+			return '';
+		}
+		return Settings::get_auto_assign_email();
+	}
+
 	/**
 	 * @param \WP_Post|object|null $post
 	 */
@@ -108,7 +127,8 @@ class Auto_Assign_Reviewer {
 		}
 
 		$reviewer_id = self::eligible_reviewer_id( $post_id, $post );
-		if ( $reviewer_id <= 0 ) {
+		$email       = $reviewer_id > 0 ? '' : self::eligible_invite_email( $post_id, $post );
+		if ( $reviewer_id <= 0 && '' === $email ) {
 			return;
 		}
 
@@ -119,7 +139,11 @@ class Auto_Assign_Reviewer {
 
 		self::$assigning = true;
 		try {
-			Review::request( $post_id, $reviewer_id, $requester_id, true );
+			if ( '' !== $email ) {
+				Email_Review::assign_invite( $post_id, $email, $requester_id );
+			} else {
+				Review::request( $post_id, $reviewer_id, $requester_id, true );
+			}
 		} catch ( \Throwable $e ) {
 			// A misconfigured reviewer must never fatal a post save.
 			unset( $e );

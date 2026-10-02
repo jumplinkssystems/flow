@@ -88,6 +88,11 @@ function getTextNodeAtOffset( element, charOffset ) {
 }
 
 function getCharOffset( element, textNode, nodeOffset ) {
+	if ( textNode === element ) {
+		return Array.from( element.childNodes )
+			.slice( 0, nodeOffset )
+			.reduce( ( sum, child ) => sum + child.textContent.length, 0 );
+	}
 	const doc = element.ownerDocument || document;
 	const walker = doc.createTreeWalker( element, NodeFilter.SHOW_TEXT, null );
 	let offset = 0;
@@ -104,7 +109,11 @@ function getCharOffset( element, textNode, nodeOffset ) {
 }
 
 export function serializeRange( range ) {
-	const root = getContentRootForNode( range.startContainer );
+	const startRoot = getContentRootForNode( range.startContainer );
+	const root =
+		startRoot && ! startRoot.contains( range.endContainer )
+			? range.startContainer.ownerDocument?.body || startRoot
+			: startRoot;
 	if ( ! root || ! root.contains( range.startContainer ) ) {
 		return null;
 	}

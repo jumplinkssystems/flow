@@ -513,7 +513,8 @@
 	min-height: 40px;
 	min-width: 40px;
 	padding: 0;
-	margin: 0 0 0 4px;
+	/* Centres the 40px button in Elementor's 48px top-bar row, level with its neighbours. */
+	margin: 4px 0 4px 4px;
 	background: transparent;
 	border: 0;
 	border-radius: 50%;
@@ -631,7 +632,7 @@
 	--flow-ew-el-btn-secondary: #515962;
 
 	position: fixed;
-	width: 320px;
+	width: 360px;
 	max-width: calc(100vw - 16px);
 	/* Height comes from JS: top under the toggle, bottom near the viewport edge. */
 	z-index: 1270;
@@ -731,6 +732,7 @@
 
 .flow-ew-elementor-drawer__body {
 	flex: 1 1 auto;
+	min-height: 0;
 	overflow-y: auto;
 	overflow-x: hidden;
 	padding: 14px;
@@ -850,14 +852,11 @@
 }
 
 .flow-ew-elementor-drawer .flow-ew-reviewer-combobox__list {
-	position: absolute;
-	right: 0;
-	left: 0;
-	top: calc(100% + 4px);
-	z-index: 5;
+	/* In the flow, not floating: the drawer body scrolls and would clip a floating list. */
+	position: static;
 	max-height: 200px;
 	overflow-y: auto;
-	margin: 0;
+	margin: 4px 0 0;
 	padding: 4px 0;
 	list-style: none;
 	background: var(--flow-ew-el-bg-elevated);

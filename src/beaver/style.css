@@ -100,12 +100,12 @@
 	position: fixed !important;
 	top: var(--fl-builder-top-bar-height, 48px);
 	right: 0;
-	/* Match Elementor drawer: ~320px wide, about half the viewport tall. */
+	/* Match Elementor drawer: at least 360px wide, about half the viewport tall. */
 	bottom: auto;
 	height: 50vh;
 	max-height: 50vh;
-	width: var(--fl-builder-panel-width, 320px);
-	max-width: min(var(--fl-builder-panel-width, 320px), 100vw);
+	width: max(var(--fl-builder-panel-width, 360px), 360px);
+	max-width: 100vw;
 	background-color: var(--fl-builder-panel-bg-color, hsl(210, 25%, 99%));
 	border-radius: var(--fl-builder-radius, 4px);
 	box-shadow: 0 8px 40px 4px rgba(0, 0, 0, 0.3);

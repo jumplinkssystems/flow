@@ -20,6 +20,31 @@
 	font-style: italic;
 }
 
+.flow-ew-first-review {
+	max-width: 640px;
+	margin-top: 12px;
+	padding-bottom: 16px;
+}
+.flow-ew-first-review__title {
+	font-size: 15px;
+	margin: 0 0 10px;
+}
+.flow-ew-first-review__steps {
+	margin: 0 0 14px 20px;
+	font-size: 13px;
+}
+.flow-ew-first-review__steps li {
+	margin-bottom: 8px;
+}
+.flow-ew-first-review__link {
+	margin-left: 4px;
+	font-weight: 600;
+}
+.flow-ew-first-review__docs {
+	margin: 0;
+	font-size: 13px;
+}
+
 .flow-ew-dashboard-page__section .flow-ew-dash-section__title {
 	font-size: 15px;
 	margin: 0 0 4px;

@@ -459,9 +459,9 @@ body.flow-ew-avada-publish-blocked .flow-ew-avada-publish-blocked-control {
 	border-radius: 0 0 6px 6px;
 	box-shadow: 0 30px 30px rgba(0, 0, 0, 0.3);
 	color: #d5dde6;
-	/* Match Elementor drawer: 320px wide, about half the viewport tall. */
-	width: 320px;
-	min-width: 320px;
+	/* Match Elementor drawer: 360px wide, about half the viewport tall. */
+	width: 360px;
+	min-width: 360px;
 	height: 50vh;
 	max-height: 50vh;
 	overflow-x: hidden;
@@ -480,8 +480,8 @@ body.flow-ew-avada-publish-blocked .flow-ew-avada-publish-blocked-control {
 	border-radius: 0 0 6px 6px !important;
 	overflow-x: hidden !important;
 	overflow-y: auto !important;
-	width: 320px !important;
-	min-width: 320px !important;
+	width: 360px !important;
+	min-width: 360px !important;
 	height: 50vh !important;
 	max-height: 50vh !important;
 }

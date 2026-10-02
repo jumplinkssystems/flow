@@ -112,10 +112,10 @@ body.flow-ew-bricks-publish-blocked #bricks-toolbar li:has( [data-name='publish'
 	display: none;
 	flex-direction: column;
 	font-family: Inter, sans-serif;
-	/* Match Elementor drawer: 320px wide, about half the viewport tall. */
+	/* Match Elementor drawer: 360px wide, about half the viewport tall. */
 	height: 50vh;
 	max-height: 50vh;
-	min-width: 320px;
+	min-width: 360px;
 	opacity: 0;
 	overflow: hidden;
 	position: fixed;
@@ -123,7 +123,7 @@ body.flow-ew-bricks-publish-blocked #bricks-toolbar li:has( [data-name='publish'
 	top: calc( var( --builder-toolbar-height, 48px ) + 8px );
 	transform: translateY( -8px );
 	transition: opacity 0.18s ease, transform 0.18s ease;
-	width: 320px;
+	width: 360px;
 	z-index: 100000;
 }
 

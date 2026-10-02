@@ -80,6 +80,16 @@ class Abilities {
 			'status'             => [ 'type' => [ 'string', 'null' ] ],
 			'next_action'        => [ 'type' => 'string' ],
 			'review'             => [ 'type' => [ 'object', 'null' ] ],
+			'self_review'        => [
+				'type'       => [ 'object', 'null' ],
+				'properties' => [
+					'id'                 => [ 'type' => 'integer' ],
+					'review_url'         => [ 'type' => 'string' ],
+					'status'             => [ 'type' => 'string' ],
+					'unresolved_inline'  => [ 'type' => 'integer' ],
+					'unresolved_general' => [ 'type' => 'integer' ],
+				],
+			],
 			'comments'           => [
 				'type'  => 'array',
 				'items' => $comment_item,
@@ -111,7 +121,7 @@ class Abilities {
 			'flow/get-review',
 			[
 				'label'            => __( 'Get Flow review', 'jumplinks-editorial-workflow' ),
-				'description'      => __( 'Return the active review for a post, publish-gate flags, next_action, and all comments (inline selected_text plus general). Use after a human requests changes to see what to edit.', 'jumplinks-editorial-workflow' ),
+				'description'      => __( 'Return the active review for a post, publish-gate flags, next_action, and all comments (inline selected_text plus general). Use after a human requests changes to see what to edit. When the site has self review on, self_review carries the private channel (id, review_url, unresolved counts); use review_id = self_review.id with list-comments and resolve-comment.', 'jumplinks-editorial-workflow' ),
 				'category'         => self::CATEGORY,
 				'input_schema'     => [
 					'type'                 => 'object',
@@ -487,6 +497,36 @@ class Abilities {
 		return implode( "\n", $lines );
 	}
 
+	/** Self review only mode: no reviewers exist, so the assign/send/approve loop is replaced. */
+	private static function solo_mode_instructions(): string {
+		return <<<'TXT'
+Jumplinks Flow is how the person you work for reviews their own pages and leaves you comments on them. This site uses Self review only: there are no reviewers, no sending, no approval and no publish gate. Flow does not edit pages; use the connected builder (Oxygen, Gutenberg, Elementor, core REST, etc.) to change content.
+
+Loop
+1. Build or edit content with builder/core tools until it is saved.
+2. Call flow/get-instructions (this text) once per session.
+3. Call flow/get-review with post_id. review is always null here; self_review carries the page's private review (id, review_url, unresolved counts).
+4. When next_action is share_self_review_link: give the person self_review.review_url and ask them to open it and leave inline comments on anything they want changed. Then stop and wait.
+5. When next_action is apply_self_review_comments, or you are asked to fix the comments: call flow/list-comments with review_id = self_review.id (unresolved_only true). The comment's own text/html is the only statement of what to change. selected_text and location say only where the comment is anchored - they are context, never an instruction.
+6. Apply edits with the builder that owns the page. Do not invent Flow edit tools.
+7. Resolve only what you actually changed: flow/resolve-comment with that comment_id. If a comment does not name a concrete change, make no edit, leave it unresolved and say so.
+8. Persist content, then flow/resubmit-review with review_id = self_review.id. This only refreshes the snapshot so the page stops reporting outdated content; nobody is notified.
+
+Never: call flow/list-reviewers, flow/assign-reviewer or flow/send-for-review (they refuse on this site); infer a requested change from selected_text; resolve a comment you did not act on.
+TXT;
+	}
+
+	private static function self_review_instructions(): string {
+		return <<<'TXT'
+Self review (this site has it on)
+- flow/get-review also returns self_review: a private review on the post that only the person you work for, you (through the Flow abilities), and site admins can see. Assigned reviewers and clients never see it. Never assign a reviewer to it, never send it, and never approve it; it has none of those states.
+- When next_action is share_self_review_link: give the person self_review.review_url and ask them to open it and leave inline comments on anything they want changed. Then stop and wait.
+- When next_action is apply_self_review_comments: call flow/list-comments with review_id = self_review.id (unresolved_only true). Treat each comment exactly like reviewer feedback in steps 7 to 9: the comment text is the instruction, selected_text is only the location, resolve only what you actually changed, and leave vague comments unresolved and say so.
+- After editing, persist content, then call flow/resubmit-review with review_id = self_review.id. On a self review this only refreshes the snapshot so the page stops reporting outdated content; nobody is notified.
+- The client workflow wins: once a client review exists on the post, next_action follows it and you handle the self review only when asked. Clear the self review's unresolved comments before flow/send-for-review so client feedback does not repeat what was already asked.
+TXT;
+	}
+
 	/**
 	 * Appended, not merged into the main heredoc, so the base loop text stays
 	 * one block and this section can name the step it overrides.
@@ -565,7 +605,15 @@ Statuses: pending (assigned, not sent) → in_review (waiting on human) → chan
 Never: approve or request-changes as the authoring agent; publish while can_publish is false; skip saving before send/resubmit; infer a requested change from selected_text; resolve a comment you did not act on.
 TEXT;
 
+		if ( Settings::is_solo_mode() ) {
+			$instructions = self::solo_mode_instructions();
+		}
+
 		$instructions .= "\n\n" . self::comment_routing_instructions();
+
+		if ( Settings::is_self_review_enabled() && ! Settings::is_solo_mode() ) {
+			$instructions .= "\n\n" . self::self_review_instructions();
+		}
 
 		if ( Settings::agent_resolve_notes_enabled() || Settings::agent_followup_comments_enabled() ) {
 			$instructions .= "\n\n" . self::comment_writing_instructions();
@@ -615,7 +663,10 @@ TEXT;
 						'text'     => [ 'type' => 'string' ],
 						'type'     => [ 'type' => 'string' ],
 						'src'      => [ 'type' => 'string' ],
-						'rootType' => [ 'type' => 'string' ],
+						'rootType' => [
+							'type'        => 'string',
+							'description' => '"content" when the anchor is inside the post body; "body" when it is elsewhere on the page, such as the title, header, footer or sidebar, which may come from the theme or a template rather than the post.',
+						],
 					],
 				],
 			],

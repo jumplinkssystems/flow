@@ -117,6 +117,9 @@ class ReviewPage {
 					return false;
 				}
 			}
+			if ( Review::is_private( $review ) ) {
+				return Review::can_user_access_private_review( $review, $user_id );
+			}
 			if ( Review::can_user_access_as_participant_or_open( $review, $user_id ) ) {
 				return true;
 			}
@@ -632,6 +635,9 @@ class ReviewPage {
 	}
 
 	private static function snapshot_label( object $review, $timestamp ): string {
+		if ( Review::is_private( $review ) ) {
+			return __( 'Private review — only you, your AI agent and site admins can see these comments.', 'jumplinks-editorial-workflow' );
+		}
 		$requester = get_userdata( (int) $review->requester_id );
 		$date      = (string) wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $timestamp ?: null );
 		return sprintf(
@@ -676,8 +682,8 @@ class ReviewPage {
 			'revisionId'             => $revision_id,
 			'status'                 => (string) ( $review->status ?? '' ),
 			'displayStatus'          => Review::display_status( $review ),
-			'canAct'                 => $is_reviewer && Review::user_can_be_reviewer( $current_user_id ),
-			'currentUserCanResubmit' => $is_author,
+			'canAct'                 => $is_reviewer && Review::user_can_be_reviewer( $current_user_id ) && ! Review::is_private( $review ),
+			'currentUserCanResubmit' => $is_author && ! Review::is_private( $review ),
 			'reviewUpdatedAt'        => (string) ( $review->updated_at ?? '' ),
 			'reviewIteration'        => (int) ( $review->iteration ?? 1 ),
 			'revisionStatus'         => $revision_status,

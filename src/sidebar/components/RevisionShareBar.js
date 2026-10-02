@@ -7,7 +7,7 @@ import { getConfig } from '../../shared/config';
 const flowEW = getConfig();
 const { i18n } = flowEW;
 
-export default function RevisionShareBar( { url } ) {
+export default function RevisionShareBar( { url, label = i18n.snapshotLink } ) {
 	const [ copied, setCopied ] = useState( false );
 	const ref = useCopyToClipboard( url, () => {
 		setCopied( true );
@@ -17,7 +17,7 @@ export default function RevisionShareBar( { url } ) {
 	return (
 		<div className="flow-ew-share-bar">
 			<p className="flow-ew-field-label flow-ew-share-bar__label">
-				{ i18n.snapshotLink }
+				{ label }
 			</p>
 			<div className="flow-ew-share-bar__row">
 				<a

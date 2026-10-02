@@ -394,6 +394,31 @@
 	margin-top: 4px;
 }
 
+.flow-ew-classic-self {
+	font-size: 13px;
+	margin-bottom: 12px;
+}
+
+.flow-ew-classic-self__row {
+	align-items: center;
+	display: flex;
+	justify-content: space-between;
+}
+
+.flow-ew-classic-self__goto {
+	color: inherit;
+	display: inline-flex;
+	line-height: 0;
+}
+
+.flow-ew-classic-self__goto[hidden] {
+	display: none;
+}
+
+.flow-ew-classic-self__goto .flow-ew-share-icon {
+	height: 20px;
+	width: 20px;
+}
 /* Extension slot — empty in Free, filled by add-ons (e.g. Pro's Open to public). */
 .flow-ew-open-review-extras:empty {
 	display: none;

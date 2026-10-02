@@ -50,6 +50,9 @@ $settings_hint = sprintf(
 	esc_url( $settings_url ),
 	esc_url( $users_url )
 );
+if ( ! Settings::are_external_reviewers_disabled() ) {
+	$settings_hint .= ' ' . esc_html__( 'You can still invite a reviewer by email below.', 'jumplinks-editorial-workflow' );
+}
 
 $dismiss_label = esc_attr__( 'Dismiss', 'jumplinks-editorial-workflow' );
 $dismiss_btn   = sprintf(
