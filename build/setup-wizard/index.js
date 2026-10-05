@@ -180,7 +180,6 @@ const STEPS = {
   types: _steps__WEBPACK_IMPORTED_MODULE_5__.PostTypesStep,
   roles: _steps__WEBPACK_IMPORTED_MODULE_5__.RolesStep,
   extras: _steps__WEBPACK_IMPORTED_MODULE_5__.ExtrasStep,
-  agentAsk: _steps__WEBPACK_IMPORTED_MODULE_5__.AgentAskStep,
   agent: _steps__WEBPACK_IMPORTED_MODULE_5__.AgentStep,
   done: _steps__WEBPACK_IMPORTED_MODULE_5__.DoneStep
 };
@@ -202,6 +201,7 @@ function initialAnswers() {
     postTypes: Array.isArray(current.postTypes) ? current.postTypes : [],
     reviewerRoles: Array.isArray(current.reviewerRoles) ? current.reviewerRoles : [],
     allowExternal: current.allowExternal !== false,
+    selfReview: false,
     showReviewedBy: !!current.showReviewedBy,
     autoAssign,
     agentEnabled: !!current.agentComments,
@@ -221,6 +221,7 @@ function payload(answers) {
     post_types: answers.postTypes,
     reviewer_roles: answers.reviewerRoles,
     allow_external: answers.allowExternal,
+    self_review: answers.selfReview,
     show_reviewed_by: answers.showReviewedBy,
     auto_assign_reviewer_id: auto && auto.id ? auto.id : 0,
     auto_assign_email: auto && auto.email ? auto.email : '',
@@ -241,7 +242,7 @@ function Wizard({
   const [saving, setSaving] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useState)(false);
   const [error, setError] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useState)('');
   const [showErrors, setShowErrors] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useState)(false);
-  const steps = (0,_paths__WEBPACK_IMPORTED_MODULE_4__.pathFor)(answers.useCase, answers.agentEnabled);
+  const steps = (0,_paths__WEBPACK_IMPORTED_MODULE_4__.pathFor)(answers.useCase);
   const key = steps[Math.min(index, steps.length - 1)];
   const StepComponent = STEPS[key];
   const isFirst = index === 0;
@@ -453,21 +454,19 @@ function alwaysHasAgent(useCase) {
  * The screens a use case walks through, in order. The first screen (the
  * use-case cards) is always included so Back can return to it.
  *
- * @param {string}  useCase
- * @param {boolean} agentEnabled Answer to the "AI agent?" screen.
+ * @param {string} useCase
  * @return {string[]} Step keys.
  */
-function pathFor(useCase, agentEnabled) {
-  const agent = agentEnabled ? ['agent'] : [];
+function pathFor(useCase) {
   switch (useCase) {
     case CLIENT:
-      return ['useCase', 'types', 'extras', 'agentAsk', ...agent, 'done'];
+      return ['useCase', 'types', 'extras', 'agent', 'done'];
     case BUILD_AI:
       return ['useCase', 'agent', 'done'];
     case APPROVE_AI:
       return ['useCase', 'types', 'roles', 'extras', 'agent', 'done'];
     default:
-      return ['useCase', 'mode', 'types', 'roles', 'extras', 'agentAsk', ...agent, 'done'];
+      return ['useCase', 'mode', 'types', 'roles', 'extras', 'agent', 'done'];
   }
 }
 
@@ -498,9 +497,7 @@ function previewSettings(answers, allPostTypes) {
     out.reviewerRoles = useCase === CLIENT ? [] : answers.reviewerRoles || [];
     out.allowExternal = useCase === CLIENT ? true : !!answers.allowExternal;
     out.openReviews = useCase === EDITORIAL;
-    if (useCase === EDITORIAL || useCase === CLIENT) {
-      out.selfReview = false;
-    }
+    out.selfReview = !!answers.selfReview;
     out.showReviewedBy = !!answers.showReviewedBy;
     out.autoAssign = answers.autoAssign || null;
   }
@@ -521,7 +518,6 @@ function previewSettings(answers, allPostTypes) {
 
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   AgentAskStep: () => (/* binding */ AgentAskStep),
 /* harmony export */   AgentStep: () => (/* binding */ AgentStep),
 /* harmony export */   DoneStep: () => (/* binding */ DoneStep),
 /* harmony export */   ExtrasStep: () => (/* binding */ ExtrasStep),
@@ -783,6 +779,13 @@ function ExtrasStep({
       title: i18n.extrasTitle,
       desc: i18n.extrasDesc
     }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(CheckCard, {
+      checked: !!answers.selfReview,
+      onChange: selfReview => update({
+        selfReview
+      }),
+      title: i18n.selfReviewLabel,
+      children: i18n.selfReviewDesc
+    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(CheckCard, {
       checked: !!answers.showReviewedBy,
       onChange: showReviewedBy => update({
         showReviewedBy
@@ -818,37 +821,46 @@ function ExtrasStep({
     })]
   });
 }
-function AgentAskStep({
-  answers,
-  update
-}) {
-  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsxs)("div", {
-    className: "flow-ew-wizard__step",
-    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(StepHeader, {
-      title: i18n.agentAskTitle,
-      desc: i18n.agentAskDesc
-    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(CheckCard, {
-      checked: !!answers.agentEnabled,
-      onChange: agentEnabled => update({
-        agentEnabled
-      }),
-      title: i18n.agentAskLabel,
-      children: i18n.agentAskHelp
-    })]
-  });
-}
 function AgentStep({
   answers,
   update,
   showErrors
 }) {
+  const optional = !(0,_paths__WEBPACK_IMPORTED_MODULE_3__.alwaysHasAgent)(answers.useCase);
   const missingUser = answers.agentComments && !answers.agentAuthor;
   return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsxs)("div", {
     className: "flow-ew-wizard__step",
-    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(StepHeader, {
+    children: [optional ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.Fragment, {
+      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(StepHeader, {
+        title: i18n.agentAskTitle,
+        desc: i18n.agentAskDesc
+      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(CheckCard, {
+        checked: !!answers.agentEnabled,
+        onChange: agentEnabled => update({
+          agentEnabled
+        }),
+        title: i18n.agentAskLabel,
+        children: i18n.agentAskHelp
+      })]
+    }) : /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(StepHeader, {
       title: i18n.agentTitle,
       desc: i18n.agentDesc
-    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(CheckCard, {
+    }), (!optional || answers.agentEnabled) && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(AgentSettings, {
+      answers: answers,
+      update: update,
+      showErrors: showErrors,
+      missingUser: missingUser
+    })]
+  });
+}
+function AgentSettings({
+  answers,
+  update,
+  showErrors,
+  missingUser
+}) {
+  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.Fragment, {
+    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(CheckCard, {
       checked: !!answers.agentComments,
       onChange: agentComments => update({
         agentComments
@@ -914,6 +926,9 @@ function AgentStep({
 
 /** True when the agent screen would refuse to continue. */
 function agentStepBlocked(answers) {
+  if (!(0,_paths__WEBPACK_IMPORTED_MODULE_3__.alwaysHasAgent)(answers.useCase) && !answers.agentEnabled) {
+    return false;
+  }
   return !!answers.agentComments && !answers.agentAuthor;
 }
 function copyText(text) {
@@ -987,34 +1002,180 @@ function changes(answers) {
   const rows = [['reviewMode', i18n.modeTitle, MODE_LABELS()[next.reviewMode], MODE_LABELS()[current.reviewMode]], ['postTypes', i18n.typesTitle, listLabel(next.postTypes, choices.postTypes), listLabel(current.postTypes, choices.postTypes)], ['reviewerRoles', i18n.rolesTitle, listLabel(next.reviewerRoles, choices.roles), listLabel(current.reviewerRoles, choices.roles)], ['allowExternal', i18n.externalLabel, onOff(next.allowExternal), onOff(current.allowExternal)], ['openReviews', i18n.openReviewLabel, onOff(next.openReviews), onOff(current.openReviews)], ['selfReview', i18n.selfReviewLabel, onOff(next.selfReview), onOff(current.selfReview)], ['showReviewedBy', i18n.reviewedByLabel, onOff(next.showReviewedBy), onOff(current.showReviewedBy)], ['autoAssign', i18n.autoAssignLabel, personLabel(next.autoAssign), personLabel(currentAutoAssign)], ['agentComments', i18n.agentCommentsLabel, onOff(next.agentComments), onOff(current.agentComments)], ['agentAuthor', i18n.agentAuthorLabel, personLabel(next.agentAuthor), personLabel(current.agentAuthor)]];
   return rows.filter(([key,, value, was]) => key in next && value !== was);
 }
-function DoneStep({
+const next = cfg.next || {};
+function startUrl(answers, preferPage) {
+  const types = answers.postTypes || [];
+  let type = types[0] || 'post';
+  if (preferPage && types.includes('page')) {
+    type = 'page';
+  }
+  return `${next.newPostUrl}?post_type=${encodeURIComponent(type)}`;
+}
+function Steps({
+  items
+}) {
+  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("ol", {
+    className: "flow-ew-wizard__next-steps",
+    children: items.filter(Boolean).map(text => /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("li", {
+      children: text
+    }, text))
+  });
+}
+function StartButton({
+  href
+}) {
+  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("p", {
+    children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("a", {
+      className: "button button-primary",
+      href: href,
+      children: i18n.nextStart
+    })
+  });
+}
+
+/** Who can review with the roles picked in this run. */
+function ReviewerCheck({
+  answers
+}) {
+  const picked = (choices.roles || []).filter(role => (answers.reviewerRoles || []).includes(role.slug));
+  const total = picked.reduce((sum, role) => sum + Number(role.userCount || 0), 0);
+  const names = picked.map(role => String(role.label).replace(/ \(\d+\)$/, '')).join(', ');
+  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsxs)("div", {
+    className: `flow-ew-wizard__check flow-ew-wizard__check--${total > 0 ? 'ok' : 'warn'}`,
+    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsxs)("p", {
+      children: [total > 0 ? String(i18n.nextRolesSome).replace('%1$d', String(total)).replace('%2$s', names) : i18n.nextRolesNone, ' ', i18n.nextRolesHint]
+    }), (next.addUserUrl || next.usersUrl) && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsxs)("p", {
+      className: "flow-ew-wizard__check-actions",
+      children: [next.addUserUrl && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("a", {
+        className: "button",
+        href: next.addUserUrl,
+        target: "_blank",
+        rel: "noreferrer",
+        children: i18n.nextAddUser
+      }), next.usersUrl && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("a", {
+        className: "button button-link",
+        href: next.usersUrl,
+        target: "_blank",
+        rel: "noreferrer",
+        children: i18n.nextManageUsers
+      })]
+    })]
+  });
+}
+function Clip({
+  src,
+  label
+}) {
+  if (!src) {
+    return null;
+  }
+  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("video", {
+    className: "flow-ew-wizard__video",
+    src: src,
+    autoPlay: true,
+    muted: true,
+    loop: true,
+    playsInline: true,
+    "aria-label": label
+  });
+}
+function AgentPrompt({
+  first,
+  title
+}) {
+  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsxs)("div", {
+    className: `flow-ew-wizard__agent${first ? ' flow-ew-wizard__agent--first' : ''}`,
+    children: [title && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("p", {
+      className: "flow-ew-wizard__next-title",
+      children: title
+    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("p", {
+      className: "flow-ew-wizard__step-desc",
+      children: i18n.nextPastePrompt
+    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(PromptBox, {
+      prompt: cfg.agentPrompt
+    })]
+  });
+}
+function AskExamples({
+  items
+}) {
+  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.Fragment, {
+    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("p", {
+      className: "flow-ew-wizard__step-desc",
+      children: i18n.nextTryAsking
+    }), items.map(text => /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(PromptBox, {
+      prompt: text
+    }, text))]
+  });
+}
+function AiNextSteps({
+  useCase
+}) {
+  const build = useCase === _paths__WEBPACK_IMPORTED_MODULE_3__.BUILD_AI;
+  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.Fragment, {
+    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(AgentPrompt, {
+      first: build
+    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(Steps, {
+      items: build ? [i18n.nextBuildAi1, i18n.nextBuildAi2, i18n.nextBuildAi3, i18n.nextBuildAi4] : [i18n.nextApproveAi1, i18n.nextApproveAi2, i18n.nextApproveAi3, i18n.nextMandatory]
+    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(AskExamples, {
+      items: build ? [i18n.nextBuildAiAsk1, i18n.nextBuildAiAsk2] : [i18n.nextApproveAiAsk1, i18n.nextApproveAiAsk2]
+    })]
+  });
+}
+function NextSteps({
   answers
 }) {
   const {
     useCase
   } = answers;
-  const agent = (0,_paths__WEBPACK_IMPORTED_MODULE_3__.alwaysHasAgent)(useCase) || answers.agentEnabled;
+  if ((0,_paths__WEBPACK_IMPORTED_MODULE_3__.alwaysHasAgent)(useCase)) {
+    return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsxs)("div", {
+      className: "flow-ew-wizard__next",
+      children: [useCase === _paths__WEBPACK_IMPORTED_MODULE_3__.APPROVE_AI && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(ReviewerCheck, {
+        answers: answers
+      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(AiNextSteps, {
+        useCase: useCase
+      })]
+    });
+  }
+  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsxs)("div", {
+    className: "flow-ew-wizard__next",
+    children: [useCase === _paths__WEBPACK_IMPORTED_MODULE_3__.EDITORIAL && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.Fragment, {
+      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(ReviewerCheck, {
+        answers: answers
+      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(Steps, {
+        items: [i18n.nextEditorial1, i18n.nextEditorial2, i18n.nextEditorial3, answers.reviewMode === 'mandatory' ? i18n.nextMandatory : '']
+      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(Clip, {
+        src: next.editorialVideoWebm,
+        label: i18n.nextEditorialVideo
+      })]
+    }), useCase === _paths__WEBPACK_IMPORTED_MODULE_3__.CLIENT && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.Fragment, {
+      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(Steps, {
+        items: [i18n.nextClient1, i18n.nextClient2, i18n.nextClient3]
+      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(Clip, {
+        src: next.clientVideoWebm,
+        label: i18n.nextClientVideo
+      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("p", {
+        className: "flow-ew-wizard__step-desc",
+        children: i18n.nextClientTip
+      })]
+    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(StartButton, {
+      href: startUrl(answers, useCase === _paths__WEBPACK_IMPORTED_MODULE_3__.CLIENT)
+    }), answers.agentEnabled && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(AgentPrompt, {
+      title: i18n.nextAgentTitle
+    })]
+  });
+}
+function DoneStep({
+  answers
+}) {
   const rows = cfg.completed ? changes(answers) : [];
   return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsxs)("div", {
     className: "flow-ew-wizard__step",
     children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(StepHeader, {
       title: i18n.doneTitle
-    }), useCase === _paths__WEBPACK_IMPORTED_MODULE_3__.BUILD_AI && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("p", {
-      className: "flow-ew-wizard__step-desc",
-      children: i18n.doneBuildAi
-    }), useCase === _paths__WEBPACK_IMPORTED_MODULE_3__.EDITORIAL && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("p", {
-      className: "flow-ew-wizard__step-desc",
-      children: i18n.doneEditorial
-    }), useCase === _paths__WEBPACK_IMPORTED_MODULE_3__.CLIENT && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("p", {
-      className: "flow-ew-wizard__step-desc",
-      children: i18n.doneClient
-    }), agent && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.Fragment, {
-      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("p", {
-        className: "flow-ew-wizard__step-desc",
-        children: i18n.doneAgent
-      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(PromptBox, {
-        prompt: cfg.agentPrompt
-      })]
+    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(NextSteps, {
+      answers: answers
     }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("p", {
       className: "flow-ew-wizard__docs",
       children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("a", {

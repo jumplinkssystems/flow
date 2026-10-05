@@ -1,14 +1,21 @@
 import { useState } from '@wordpress/element';
 import { useCopyToClipboard } from '@wordpress/compose';
 import { Button } from '@wordpress/components';
+import CancelReviewModal from './CancelReviewModal';
 import { ShareBarIcon } from '../../shared/share-bar-icons';
 import { getConfig } from '../../shared/config';
 
 const flowEW = getConfig();
 const { i18n } = flowEW;
 
-export default function RevisionShareBar( { url, label = i18n.snapshotLink } ) {
+export default function RevisionShareBar( {
+	url,
+	label = i18n.snapshotLink,
+	onCancel = null,
+	isBusy = false,
+} ) {
 	const [ copied, setCopied ] = useState( false );
+	const [ confirming, setConfirming ] = useState( false );
 	const ref = useCopyToClipboard( url, () => {
 		setCopied( true );
 		setTimeout( () => setCopied( false ), 2000 );
@@ -43,6 +50,20 @@ export default function RevisionShareBar( { url, label = i18n.snapshotLink } ) {
 				>
 					<ShareBarIcon name={ copied ? 'copied' : 'copy' } />
 				</Button>
+				{ onCancel && (
+					<Button
+						size="compact"
+						variant="tertiary"
+						isDestructive
+						label={ i18n.cancelReview }
+						showTooltip
+						disabled={ isBusy }
+						onClick={ () => setConfirming( true ) }
+						className="flow-ew-share-bar__copy flow-ew-share-bar__cancel"
+					>
+						<ShareBarIcon name="cancel" />
+					</Button>
+				) }
 				<a
 					href={ url }
 					target="_blank"
@@ -53,6 +74,12 @@ export default function RevisionShareBar( { url, label = i18n.snapshotLink } ) {
 					<ShareBarIcon name="external" />
 				</a>
 			</div>
+			{ onCancel && confirming && (
+				<CancelReviewModal
+					onConfirm={ onCancel }
+					onClose={ () => setConfirming( false ) }
+				/>
+			) }
 		</div>
 	);
 }

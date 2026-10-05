@@ -600,7 +600,7 @@ Loop
 10. Persist content, then flow/resubmit-review. You must be the post author.
 11. Repeat from step 6 until status is approved, then publish via builder/core tools if can_publish is true.
 
-Statuses: pending (assigned, not sent) → in_review (waiting on human) → changes_requested (your turn) → approved (publish allowed when mandatory). Humans may also cancel.
+Statuses: pending (assigned, not sent) → in_review (waiting on human) → changes_requested (your turn) → approved (publish allowed when mandatory). Humans may also cancel: a cancelled review is closed and read-only, and assigning a reviewer again starts a new review with a new review_id and no carried-over comments.
 
 Never: approve or request-changes as the authoring agent; publish while can_publish is false; skip saving before send/resubmit; infer a requested change from selected_text; resolve a comment you did not act on.
 TEXT;

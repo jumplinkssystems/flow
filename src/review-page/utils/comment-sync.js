@@ -138,6 +138,11 @@ function broadcast( payload ) {
 			} )
 		);
 	}
+	if ( review && review.isCancelled && ! pageData.isCancelled ) {
+		// The page only knows read-only at boot, so a cancel elsewhere reloads it.
+		window.location.reload();
+		return;
+	}
 	if ( review && review.status ) {
 		// No `message` key: this must not raise the action snackbar, which is
 		// reserved for something the viewer did themselves.

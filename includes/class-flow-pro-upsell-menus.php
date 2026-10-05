@@ -137,7 +137,7 @@ class Pro_Upsell_Menus {
 	}
 
 	public function register_menus(): void {
-		if ( ! Settings::should_show_upgrade_hints() || Settings::is_solo_mode() ) {
+		if ( ! Settings::should_show_upgrade_hints() ) {
 			return;
 		}
 		// Admin-only cap — non-admins can't act on the upgrade anyway,
@@ -150,6 +150,9 @@ class Pro_Upsell_Menus {
 			self::SITE_REVIEW_SLUG,
 			[ $this, 'redirect_to_upgrade' ]
 		);
+		if ( Settings::is_solo_mode() ) {
+			return;
+		}
 
 		add_submenu_page(
 			Dashboard_Page::PAGE_SLUG,

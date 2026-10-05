@@ -1,0 +1,6 @@
+/* Builders force the button's text colour, so the red goes on the stroke itself. */
+.flow-ew-share-icon--cancel path,
+.flow-ew-share-icon--cancel circle {
+	fill: none !important;
+	stroke: #d63638 !important;
+}

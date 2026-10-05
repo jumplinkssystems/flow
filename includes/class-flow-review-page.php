@@ -51,6 +51,43 @@ class ReviewPage {
 		add_action( 'template_redirect', [ $this, 'handle_review_preview' ], 5 );
 		add_action( 'wp_enqueue_scripts', [ $this, 'enqueue_preview_assets' ] );
 		add_filter( 'woocommerce_coming_soon_exclude', [ $this, 'exclude_woocommerce_coming_soon_for_flow_preview' ] );
+		add_action( '_wp_put_post_revision', [ self::class, 'copy_layout_to_revision' ] );
+		add_filter( 'wp_save_post_revision_post_has_changed', [ self::class, 'layout_has_changed' ], 10, 3 );
+	}
+
+	/** Builders that keep their layout in meta but do not revision it themselves. */
+	private const UNREVISIONED_BUILDER_KEYS = [ '_fl_builder_data', '_fl_builder_data_settings' ];
+
+	/** So an older revision of a Beaver page can show its own layout. */
+	public static function copy_layout_to_revision( $revision_id ): void {
+		$revision = get_post( (int) $revision_id );
+		if ( ! $revision instanceof \WP_Post || ! $revision->post_parent ) {
+			return;
+		}
+		foreach ( self::UNREVISIONED_BUILDER_KEYS as $key ) {
+			if ( metadata_exists( 'post', $revision->post_parent, $key ) && ! metadata_exists( 'post', $revision->ID, $key ) ) {
+				add_metadata( 'post', $revision->ID, $key, wp_slash( get_post_meta( $revision->post_parent, $key, true ) ) );
+			}
+		}
+	}
+
+	/**
+	 * A layout-only save still deserves a revision.
+	 *
+	 * @param bool     $changed
+	 * @param \WP_Post $last_revision
+	 * @param \WP_Post $post
+	 */
+	public static function layout_has_changed( $changed, $last_revision, $post ): bool {
+		if ( $changed ) {
+			return true;
+		}
+		foreach ( self::UNREVISIONED_BUILDER_KEYS as $key ) {
+			if ( get_post_meta( $post->ID, $key, true ) !== get_post_meta( $last_revision->ID, $key, true ) ) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/**
@@ -215,6 +252,7 @@ class ReviewPage {
 		remove_action( 'wp_head', '_admin_bar_bump_cb' );
 
 		$snapshot = self::resolve_snapshot( $review );
+		self::serve_builder_data_from( $snapshot, (int) $review->post_id );
 
 		if ( $is_embed ) {
 			if ( ! self::is_breakdance_managed_post( (int) $review->post_id ) ) {
@@ -302,6 +340,39 @@ class ReviewPage {
 			}
 		}
 		return $snapshot instanceof \WP_Post ? $snapshot : null;
+	}
+
+	/** Builder layouts kept on each revision (by the builder, or by Flow for Beaver). */
+	private const REVISIONED_BUILDER_KEYS = [ '_bricks_page_content_2', '_elementor_data', '_elementor_page_settings', '_oxygen_data', '_breakdance_data', '_fl_builder_data', '_fl_builder_data_settings' ];
+
+	/**
+	 * Builders render from post meta, not post_content, so an older revision
+	 * only shows when its copy of that meta is served in place of the live one.
+	 */
+	private static function serve_builder_data_from( ?\WP_Post $snapshot, int $post_id ): void {
+		// The newest revision stands for the live content: builders like Bricks snapshot before saving, so the post itself is newer.
+		if ( ! $snapshot instanceof \WP_Post || Review::newest_saved_revision_id( $post_id ) === (int) $snapshot->ID ) {
+			return;
+		}
+		$revision_id = (int) $snapshot->ID;
+		add_filter(
+			'get_post_metadata',
+			static function ( $value, $object_id, $meta_key ) use ( $revision_id, $post_id ) {
+				if ( (int) $object_id !== $post_id ) {
+					return $value;
+				}
+				// Elementor's rendered-HTML cache would otherwise show the latest layout.
+				if ( '_elementor_element_cache' === $meta_key ) {
+					return [ '' ];
+				}
+				if ( in_array( $meta_key, self::REVISIONED_BUILDER_KEYS, true ) && metadata_exists( 'post', $revision_id, $meta_key ) ) {
+					return [ get_post_meta( $revision_id, $meta_key, true ) ];
+				}
+				return $value;
+			},
+			10,
+			3
+		);
 	}
 
 	private function setup_embed_mode( ?\WP_Post $snapshot, object $review ): void {
@@ -546,6 +617,7 @@ class ReviewPage {
 
 		$post          = get_post( (int) $review->post_id );
 		$is_author     = ( $post instanceof \WP_Post ) && ( (int) $post->post_author === $current_user_id );
+		$cancelled     = Review::is_cancelled( $review );
 		$revision_id   = (int) ( $review->revision_id ?? 0 );
 		$snapshot      = self::snapshot_payload( $review, $revision_id );
 		$comment_lists = Comment_Presenter::list_for_review( $review );
@@ -577,6 +649,8 @@ class ReviewPage {
 				'reviewerName'            => $reviewer_user ? $reviewer_user->display_name : '',
 				'requesterId'             => (int) $review->requester_id,
 				'requesterName'           => $requester_user ? $requester_user->display_name : '',
+				'currentUserIsRequester'  => (int) $review->requester_id === $current_user_id,
+				'canCancelReview'         => ! $cancelled && ! Review::is_private( $review ) && $current_user_id > 0 && (int) $review->requester_id === $current_user_id,
 				'reviewCreatedAt'         => (string) ( $review->created_at ?? '' ),
 			],
 			$review_state
@@ -682,13 +756,91 @@ class ReviewPage {
 			'revisionId'             => $revision_id,
 			'status'                 => (string) ( $review->status ?? '' ),
 			'displayStatus'          => Review::display_status( $review ),
-			'canAct'                 => $is_reviewer && Review::user_can_be_reviewer( $current_user_id ) && ! Review::is_private( $review ),
-			'currentUserCanResubmit' => $is_author && ! Review::is_private( $review ),
+			'canAct'                 => $is_reviewer && Review::user_can_be_reviewer( $current_user_id ) && ! Review::is_private( $review ) && ! Review::is_cancelled( $review ),
+			'currentUserCanResubmit' => $is_author && ! Review::is_private( $review ) && ! Review::is_cancelled( $review ),
+			'isCancelled'            => Review::is_cancelled( $review ),
 			'reviewUpdatedAt'        => (string) ( $review->updated_at ?? '' ),
 			'reviewIteration'        => (int) ( $review->iteration ?? 1 ),
 			'revisionStatus'         => $revision_status,
 			'latestRevisionUrl'      => $latest_rev_url,
 		];
+	}
+
+	/**
+	 * The page's saved revisions, newest first. Each carries this review's
+	 * comments raised while it was the latest content that have since been
+	 * resolved.
+	 *
+	 * @return array<int,array{id:int,date:string,resolved:int,url:string,latest:bool,viewing:bool}>
+	 */
+	public static function revision_list( object $review, int $viewing_rev ): array {
+		$post_id   = (int) $review->post_id;
+		$revisions = array_values(
+			array_filter(
+				wp_get_post_revisions(
+					$post_id,
+					[
+						'numberposts' => 60,
+						'orderby'     => 'ID',
+						'order'       => 'DESC',
+					]
+				),
+				static fn ( $rev ) => ! wp_is_post_autosave( $rev )
+			)
+		);
+		// On a builder page, a revision without the builder's layout has nothing distinct to show.
+		foreach ( [ '_bricks_page_content_2', '_elementor_data', '_oxygen_data', '_breakdance_data', '_fl_builder_data' ] as $layout_key ) {
+			if ( metadata_exists( 'post', $post_id, $layout_key ) ) {
+				$revisions = array_values(
+					array_filter(
+						$revisions,
+						static fn ( $rev ) => '' !== (string) get_post_meta( $rev->ID, $layout_key, true )
+					)
+				);
+				break;
+			}
+		}
+		$kept = array_slice( $revisions, 0, 30 );
+
+		$kept_ids    = array_map( static fn ( $rev ) => (int) $rev->ID, $kept );
+		$by_revision = [];
+		$resolved_at = [];
+		foreach ( DB::get_comments_for_post( $post_id, (int) $review->id ) as $comment ) {
+			if ( ! empty( $comment->parent_id ) || empty( $comment->is_resolved ) ) {
+				continue;
+			}
+			$raised_on = (int) ( $comment->revision_id ?? 0 );
+			if ( $raised_on > 0 && in_array( $raised_on, $kept_ids, true ) ) {
+				$by_revision[ $raised_on ] = ( $by_revision[ $raised_on ] ?? 0 ) + 1;
+				continue;
+			}
+			// Comments from before revisions were recorded fall back to their time.
+			$resolved_at[] = (int) strtotime( (string) $comment->created_at . ' UTC' );
+		}
+
+		$out   = [];
+		$until = PHP_INT_MAX;
+		$last  = count( $kept ) - 1;
+		foreach ( $kept as $index => $rev ) {
+			$from  = (int) strtotime( $rev->post_date_gmt . ' UTC' );
+			$lower = $index === $last ? PHP_INT_MIN : $from;
+			$count = ( $by_revision[ (int) $rev->ID ] ?? 0 ) + count(
+				array_filter(
+					$resolved_at,
+					static fn ( $at ) => $at >= $lower && $at < $until
+				)
+			);
+			$out[] = [
+				'id'       => (int) $rev->ID,
+				'date'     => wp_date( get_option( 'date_format' ) . ' H:i', $from ),
+				'resolved' => $count,
+				'url'      => add_query_arg( 'flow_revision_id', (int) $rev->ID, Review::get_preview_url( (int) $review->id, 0, $post_id ) ),
+				'latest'   => 0 === $index,
+				'viewing'  => (int) $rev->ID === $viewing_rev,
+			];
+			$until = $from;
+		}
+		return $out;
 	}
 
 	/**

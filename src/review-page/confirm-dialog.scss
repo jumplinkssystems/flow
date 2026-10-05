@@ -110,3 +110,71 @@
 		outline: 1px solid transparent;
 	}
 }
+
+// Neutral variant for lists (Older revisions); same frame, no alert colours.
+.flow-confirm-dialog__panel--neutral {
+	color: $color-text;
+	background: $color-bg-white;
+	border-color: $color-border;
+	border-left-width: 1px;
+	border-left-color: $color-border;
+	max-width: min( 480px, calc( 100% - 32px ) );
+
+	.flow-confirm-dialog__title {
+		margin-bottom: 8px;
+	}
+}
+
+.flow-revisions {
+	display: flex;
+	flex-direction: column;
+	max-height: min( 360px, 60vh );
+	margin: 0;
+	padding: 0;
+	overflow-y: auto;
+	list-style: none;
+
+	li {
+		margin: 0;
+	}
+}
+
+.flow-revisions__item {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 4px 8px;
+	padding: 8px;
+	border-radius: $radius-sm;
+	color: $color-text;
+	text-decoration: none;
+
+	&:hover,
+	&:focus-visible {
+		background: $color-bg-subtle;
+	}
+
+	&.is-viewing {
+		background: $color-bg-subtle;
+		font-weight: 600;
+	}
+}
+
+.flow-revisions__date {
+	font-variant-numeric: tabular-nums;
+}
+
+.flow-revisions__tag {
+	padding: 0 6px;
+	border: 1px solid $color-border;
+	border-radius: $radius-badge;
+	font-size: 11px;
+	font-weight: 500;
+	color: $color-muted;
+}
+
+.flow-revisions__resolved {
+	margin-left: auto;
+	font-size: 12px;
+	color: $color-muted;
+}

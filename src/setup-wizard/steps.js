@@ -246,6 +246,13 @@ export function ExtrasStep( { answers, update } ) {
 		<div className="flow-ew-wizard__step">
 			<StepHeader title={ i18n.extrasTitle } desc={ i18n.extrasDesc } />
 			<CheckCard
+				checked={ !! answers.selfReview }
+				onChange={ ( selfReview ) => update( { selfReview } ) }
+				title={ i18n.selfReviewLabel }
+			>
+				{ i18n.selfReviewDesc }
+			</CheckCard>
+			<CheckCard
 				checked={ !! answers.showReviewedBy }
 				onChange={ ( showReviewedBy ) => update( { showReviewedBy } ) }
 				title={ i18n.reviewedByLabel }
@@ -292,29 +299,45 @@ export function ExtrasStep( { answers, update } ) {
 	);
 }
 
-export function AgentAskStep( { answers, update } ) {
+export function AgentStep( { answers, update, showErrors } ) {
+	const optional = ! alwaysHasAgent( answers.useCase );
+	const missingUser = answers.agentComments && ! answers.agentAuthor;
 	return (
 		<div className="flow-ew-wizard__step">
-			<StepHeader
-				title={ i18n.agentAskTitle }
-				desc={ i18n.agentAskDesc }
-			/>
-			<CheckCard
-				checked={ !! answers.agentEnabled }
-				onChange={ ( agentEnabled ) => update( { agentEnabled } ) }
-				title={ i18n.agentAskLabel }
-			>
-				{ i18n.agentAskHelp }
-			</CheckCard>
+			{ optional ? (
+				<>
+					<StepHeader
+						title={ i18n.agentAskTitle }
+						desc={ i18n.agentAskDesc }
+					/>
+					<CheckCard
+						checked={ !! answers.agentEnabled }
+						onChange={ ( agentEnabled ) =>
+							update( { agentEnabled } )
+						}
+						title={ i18n.agentAskLabel }
+					>
+						{ i18n.agentAskHelp }
+					</CheckCard>
+				</>
+			) : (
+				<StepHeader title={ i18n.agentTitle } desc={ i18n.agentDesc } />
+			) }
+			{ ( ! optional || answers.agentEnabled ) && (
+				<AgentSettings
+					answers={ answers }
+					update={ update }
+					showErrors={ showErrors }
+					missingUser={ missingUser }
+				/>
+			) }
 		</div>
 	);
 }
 
-export function AgentStep( { answers, update, showErrors } ) {
-	const missingUser = answers.agentComments && ! answers.agentAuthor;
+function AgentSettings( { answers, update, showErrors, missingUser } ) {
 	return (
-		<div className="flow-ew-wizard__step">
-			<StepHeader title={ i18n.agentTitle } desc={ i18n.agentDesc } />
+		<>
 			<CheckCard
 				checked={ !! answers.agentComments }
 				onChange={ ( agentComments ) => update( { agentComments } ) }
@@ -390,12 +413,15 @@ export function AgentStep( { answers, update, showErrors } ) {
 					</CheckCard>
 				</>
 			) }
-		</div>
+		</>
 	);
 }
 
 /** True when the agent screen would refuse to continue. */
 export function agentStepBlocked( answers ) {
+	if ( ! alwaysHasAgent( answers.useCase ) && ! answers.agentEnabled ) {
+		return false;
+	}
 	return !! answers.agentComments && ! answers.agentAuthor;
 }
 
@@ -545,34 +571,233 @@ function changes( answers ) {
 	);
 }
 
-export function DoneStep( { answers } ) {
+const next = cfg.next || {};
+
+function startUrl( answers, preferPage ) {
+	const types = answers.postTypes || [];
+	let type = types[ 0 ] || 'post';
+	if ( preferPage && types.includes( 'page' ) ) {
+		type = 'page';
+	}
+	return `${ next.newPostUrl }?post_type=${ encodeURIComponent( type ) }`;
+}
+
+function Steps( { items } ) {
+	return (
+		<ol className="flow-ew-wizard__next-steps">
+			{ items.filter( Boolean ).map( ( text ) => (
+				<li key={ text }>{ text }</li>
+			) ) }
+		</ol>
+	);
+}
+
+function StartButton( { href } ) {
+	return (
+		<p>
+			<a className="button button-primary" href={ href }>
+				{ i18n.nextStart }
+			</a>
+		</p>
+	);
+}
+
+/** Who can review with the roles picked in this run. */
+function ReviewerCheck( { answers } ) {
+	const picked = ( choices.roles || [] ).filter( ( role ) =>
+		( answers.reviewerRoles || [] ).includes( role.slug )
+	);
+	const total = picked.reduce(
+		( sum, role ) => sum + Number( role.userCount || 0 ),
+		0
+	);
+	const names = picked
+		.map( ( role ) => String( role.label ).replace( / \(\d+\)$/, '' ) )
+		.join( ', ' );
+	return (
+		<div
+			className={ `flow-ew-wizard__check flow-ew-wizard__check--${
+				total > 0 ? 'ok' : 'warn'
+			}` }
+		>
+			<p>
+				{ total > 0
+					? String( i18n.nextRolesSome )
+							.replace( '%1$d', String( total ) )
+							.replace( '%2$s', names )
+					: i18n.nextRolesNone }{ ' ' }
+				{ i18n.nextRolesHint }
+			</p>
+			{ ( next.addUserUrl || next.usersUrl ) && (
+				<p className="flow-ew-wizard__check-actions">
+					{ next.addUserUrl && (
+						<a
+							className="button"
+							href={ next.addUserUrl }
+							target="_blank"
+							rel="noreferrer"
+						>
+							{ i18n.nextAddUser }
+						</a>
+					) }
+					{ next.usersUrl && (
+						<a
+							className="button button-link"
+							href={ next.usersUrl }
+							target="_blank"
+							rel="noreferrer"
+						>
+							{ i18n.nextManageUsers }
+						</a>
+					) }
+				</p>
+			) }
+		</div>
+	);
+}
+
+function Clip( { src, label } ) {
+	if ( ! src ) {
+		return null;
+	}
+	return (
+		<video
+			className="flow-ew-wizard__video"
+			src={ src }
+			autoPlay
+			muted
+			loop
+			playsInline
+			aria-label={ label }
+		/>
+	);
+}
+
+function AgentPrompt( { first, title } ) {
+	return (
+		<div
+			className={ `flow-ew-wizard__agent${
+				first ? ' flow-ew-wizard__agent--first' : ''
+			}` }
+		>
+			{ title && <p className="flow-ew-wizard__next-title">{ title }</p> }
+			<p className="flow-ew-wizard__step-desc">
+				{ i18n.nextPastePrompt }
+			</p>
+			<PromptBox prompt={ cfg.agentPrompt } />
+		</div>
+	);
+}
+
+function AskExamples( { items } ) {
+	return (
+		<>
+			<p className="flow-ew-wizard__step-desc">{ i18n.nextTryAsking }</p>
+			{ items.map( ( text ) => (
+				<PromptBox key={ text } prompt={ text } />
+			) ) }
+		</>
+	);
+}
+
+function AiNextSteps( { useCase } ) {
+	const build = useCase === BUILD_AI;
+	return (
+		<>
+			<AgentPrompt first={ build } />
+			<Steps
+				items={
+					build
+						? [
+								i18n.nextBuildAi1,
+								i18n.nextBuildAi2,
+								i18n.nextBuildAi3,
+								i18n.nextBuildAi4,
+						  ]
+						: [
+								i18n.nextApproveAi1,
+								i18n.nextApproveAi2,
+								i18n.nextApproveAi3,
+								i18n.nextMandatory,
+						  ]
+				}
+			/>
+			<AskExamples
+				items={
+					build
+						? [ i18n.nextBuildAiAsk1, i18n.nextBuildAiAsk2 ]
+						: [ i18n.nextApproveAiAsk1, i18n.nextApproveAiAsk2 ]
+				}
+			/>
+		</>
+	);
+}
+
+function NextSteps( { answers } ) {
 	const { useCase } = answers;
-	const agent = alwaysHasAgent( useCase ) || answers.agentEnabled;
+	if ( alwaysHasAgent( useCase ) ) {
+		return (
+			<div className="flow-ew-wizard__next">
+				{ useCase === APPROVE_AI && (
+					<ReviewerCheck answers={ answers } />
+				) }
+				<AiNextSteps useCase={ useCase } />
+			</div>
+		);
+	}
+	return (
+		<div className="flow-ew-wizard__next">
+			{ useCase === EDITORIAL && (
+				<>
+					<ReviewerCheck answers={ answers } />
+					<Steps
+						items={ [
+							i18n.nextEditorial1,
+							i18n.nextEditorial2,
+							i18n.nextEditorial3,
+							answers.reviewMode === 'mandatory'
+								? i18n.nextMandatory
+								: '',
+						] }
+					/>
+					<Clip
+						src={ next.editorialVideoWebm }
+						label={ i18n.nextEditorialVideo }
+					/>
+				</>
+			) }
+			{ useCase === CLIENT && (
+				<>
+					<Steps
+						items={ [
+							i18n.nextClient1,
+							i18n.nextClient2,
+							i18n.nextClient3,
+						] }
+					/>
+					<Clip
+						src={ next.clientVideoWebm }
+						label={ i18n.nextClientVideo }
+					/>
+					<p className="flow-ew-wizard__step-desc">
+						{ i18n.nextClientTip }
+					</p>
+				</>
+			) }
+			<StartButton href={ startUrl( answers, useCase === CLIENT ) } />
+			{ answers.agentEnabled && (
+				<AgentPrompt title={ i18n.nextAgentTitle } />
+			) }
+		</div>
+	);
+}
+
+export function DoneStep( { answers } ) {
 	const rows = cfg.completed ? changes( answers ) : [];
 	return (
 		<div className="flow-ew-wizard__step">
 			<StepHeader title={ i18n.doneTitle } />
-			{ useCase === BUILD_AI && (
-				<p className="flow-ew-wizard__step-desc">
-					{ i18n.doneBuildAi }
-				</p>
-			) }
-			{ useCase === EDITORIAL && (
-				<p className="flow-ew-wizard__step-desc">
-					{ i18n.doneEditorial }
-				</p>
-			) }
-			{ useCase === CLIENT && (
-				<p className="flow-ew-wizard__step-desc">{ i18n.doneClient }</p>
-			) }
-			{ agent && (
-				<>
-					<p className="flow-ew-wizard__step-desc">
-						{ i18n.doneAgent }
-					</p>
-					<PromptBox prompt={ cfg.agentPrompt } />
-				</>
-			) }
+			<NextSteps answers={ answers } />
 			<p className="flow-ew-wizard__docs">
 				<a href={ cfg.docsUrl } target="_blank" rel="noreferrer">
 					{ i18n.doneDocs }

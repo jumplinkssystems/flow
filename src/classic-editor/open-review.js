@@ -6,6 +6,7 @@
  * then opens it.
  */
 import { resolveClassicOpenSlot } from '../shared/resolve-classic-root';
+import { hasAssignedReviewer } from '../shared/should-show-send-for-review';
 
 ( function bootOpenReview( attempt ) {
 	const { flowEW } = window;
@@ -96,7 +97,8 @@ import { resolveClassicOpenSlot } from '../shared/resolve-classic-root';
 				if ( ! r.ok ) {
 					throw new Error( 'Failed' );
 				}
-				return r.json();
+				// Closing with nobody assigned cancels the review: 204, no body.
+				return r.status === 204 ? null : r.json();
 			} );
 		}
 
@@ -106,6 +108,17 @@ import { resolveClassicOpenSlot } from '../shared/resolve-classic-root';
 				return;
 			}
 			const wantOpen = checkbox.checked;
+			// With nobody assigned, unticking cancels the review.
+			if (
+				! wantOpen &&
+				currentReview &&
+				! hasAssignedReviewer( currentReview ) &&
+				// eslint-disable-next-line no-alert
+				! window.confirm( flowEW.i18n.cancelReviewBody )
+			) {
+				checkbox.checked = true;
+				return;
+			}
 			loading = true;
 
 			const ensureReview = currentReview
@@ -128,6 +141,11 @@ import { resolveClassicOpenSlot } from '../shared/resolve-classic-root';
 				.then( function ( data ) {
 					sync( data );
 					flowEW.activeReview = data;
+					if ( ! wantOpen && ! data ) {
+						document.dispatchEvent(
+							new CustomEvent( 'flow-ew:review-cancelled' )
+						);
+					}
 					document.dispatchEvent(
 						new CustomEvent( 'flow-ew:set-review', {
 							detail: { review: data },

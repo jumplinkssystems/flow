@@ -428,3 +428,25 @@
 	height: 16px;
 	width: 16px;
 }
+
+.flow-ew-confirm-modal .components-modal__content {
+	max-width: 420px;
+}
+
+.flow-ew-confirm-modal__actions {
+	display: flex;
+	justify-content: flex-end;
+	gap: 8px;
+	margin-top: 16px;
+}
+
+.flow-ew-share-bar__copy.flow-ew-share-bar__cancel.components-button {
+	border-left: 1px solid var(--flow-ew-wp-charcoal-5, #979aa0);
+}
+
+/* The sidebar is narrow: smaller actions leave room for the link. */
+.flow-ew-share-bar .flow-ew-share-bar__row {
+	--flow-ew-share-action-width: 32px;
+	--flow-ew-share-action-padding-x: 6px;
+	--flow-ew-share-icon-size: 20px;
+}

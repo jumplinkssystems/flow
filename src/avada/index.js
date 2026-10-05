@@ -251,13 +251,12 @@ import { syncFreeUpsells } from '../shared/builder-upsell';
 			shareRow.style.minHeight = '40px';
 		}
 
-		const shareCopy = drawer.querySelector(
-			'.flow-ew-classic__share-copy'
-		);
-		if ( shareCopy ) {
-			shareCopy.style.minWidth = '36px';
-			shareCopy.style.padding = '0';
-		}
+		drawer
+			.querySelectorAll( '.flow-ew-classic__share-copy' )
+			.forEach( function ( button ) {
+				button.style.minWidth = '36px';
+				button.style.padding = '0';
+			} );
 
 		const shareGoto = drawer.querySelector(
 			'.flow-ew-classic__share-goto'

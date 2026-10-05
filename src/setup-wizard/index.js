@@ -9,7 +9,6 @@ import {
 	PostTypesStep,
 	RolesStep,
 	ExtrasStep,
-	AgentAskStep,
 	AgentStep,
 	DoneStep,
 	agentStepBlocked,
@@ -25,7 +24,6 @@ const STEPS = {
 	types: PostTypesStep,
 	roles: RolesStep,
 	extras: ExtrasStep,
-	agentAsk: AgentAskStep,
 	agent: AgentStep,
 	done: DoneStep,
 };
@@ -50,6 +48,7 @@ function initialAnswers() {
 			? current.reviewerRoles
 			: [],
 		allowExternal: current.allowExternal !== false,
+		selfReview: false,
 		showReviewedBy: !! current.showReviewedBy,
 		autoAssign,
 		agentEnabled: !! current.agentComments,
@@ -70,6 +69,7 @@ function payload( answers ) {
 		post_types: answers.postTypes,
 		reviewer_roles: answers.reviewerRoles,
 		allow_external: answers.allowExternal,
+		self_review: answers.selfReview,
 		show_reviewed_by: answers.showReviewedBy,
 		auto_assign_reviewer_id: auto && auto.id ? auto.id : 0,
 		auto_assign_email: auto && auto.email ? auto.email : '',
@@ -91,7 +91,7 @@ function Wizard( { onClose } ) {
 	const [ error, setError ] = useState( '' );
 	const [ showErrors, setShowErrors ] = useState( false );
 
-	const steps = pathFor( answers.useCase, answers.agentEnabled );
+	const steps = pathFor( answers.useCase );
 	const key = steps[ Math.min( index, steps.length - 1 ) ];
 	const StepComponent = STEPS[ key ];
 	const isFirst = index === 0;

@@ -1,12 +1,16 @@
-import { useCallback } from '@wordpress/element';
+import { useCallback, useState } from '@wordpress/element';
+import { useDispatch } from '@wordpress/data';
+import { store as noticesStore } from '@wordpress/notices';
 import { PanelRow, CheckboxControl } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
 import apiFetch from '@wordpress/api-fetch';
 import { applyFilters } from '@wordpress/hooks';
 import { getConfig } from '../../shared/config';
+import { hasAssignedReviewer } from '../../shared/should-show-send-for-review';
+import CancelReviewModal from './CancelReviewModal';
 
 const flowEW = getConfig();
-const { postId } = flowEW;
+const { postId, i18n } = flowEW;
 
 /**
  * Open Review checkbox for the Gutenberg sidebar. Lives above the Reviewer
@@ -22,6 +26,8 @@ export default function OpenReviewControl( {
 	restUrl,
 	createErrorNotice,
 } ) {
+	const { createSuccessNotice } = useDispatch( noticesStore );
+	const [ confirmingClose, setConfirmingClose ] = useState( false );
 	const onToggle = useCallback(
 		async ( checked ) => {
 			setLoading( true );
@@ -40,7 +46,14 @@ export default function OpenReviewControl( {
 					}`,
 					method: 'POST',
 				} );
-				setReview( data );
+				setReview( data || null );
+				// Closing with nobody assigned cancels the review server-side.
+				if ( ! checked && ! data ) {
+					createSuccessNotice( i18n.reviewCancelled, {
+						type: 'snackbar',
+						isDismissible: true,
+					} );
+				}
 			} catch ( err ) {
 				createErrorNotice(
 					err?.message ||
@@ -54,7 +67,14 @@ export default function OpenReviewControl( {
 				setLoading( false );
 			}
 		},
-		[ review, restUrl, setReview, setLoading, createErrorNotice ]
+		[
+			review,
+			restUrl,
+			setReview,
+			setLoading,
+			createErrorNotice,
+			createSuccessNotice,
+		]
 	);
 
 	// Extension slot: only renders when the main toggle is on, so add-ons
@@ -84,11 +104,24 @@ export default function OpenReviewControl( {
 						'jumplinks-editorial-workflow'
 					) }
 					checked={ !! review?.is_open }
-					onChange={ onToggle }
+					onChange={ ( checked ) => {
+						// With nobody assigned, unticking cancels the review.
+						if ( ! checked && ! hasAssignedReviewer( review ) ) {
+							setConfirmingClose( true );
+							return;
+						}
+						onToggle( checked );
+					} }
 					disabled={ loading }
 				/>
 			</PanelRow>
 			{ extras }
+			{ confirmingClose && (
+				<CancelReviewModal
+					onConfirm={ () => onToggle( false ) }
+					onClose={ () => setConfirmingClose( false ) }
+				/>
+			) }
 		</>
 	);
 }

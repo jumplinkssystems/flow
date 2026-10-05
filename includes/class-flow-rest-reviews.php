@@ -108,6 +108,21 @@ class REST_Reviews extends \WP_REST_Controller {
 			]
 		);
 
+		register_rest_route(
+			$this->namespace,
+			'/' . $this->rest_base . '/(?P<post_id>[\d]+)/cancelled',
+			[
+				[
+					'methods'             => \WP_REST_Server::READABLE,
+					'callback'            => [ $this, 'get_cancelled_items' ],
+					'permission_callback' => [ $this, 'get_cancelled_items_permissions_check' ],
+					'args'                => [
+						'post_id' => self::int_arg(),
+					],
+				],
+			]
+		);
+
 		foreach (
 			[
 				'approve'         => 'approve_item',
@@ -115,6 +130,7 @@ class REST_Reviews extends \WP_REST_Controller {
 				'request-changes' => 'request_changes_item',
 				'resubmit'        => 'resubmit_item',
 				'cancel'          => 'cancel_item',
+				'remove-reviewer' => 'remove_reviewer_item',
 				'send'            => 'send_item',
 				'open'            => 'open_item',
 				'close'           => 'close_item',
@@ -147,6 +163,22 @@ class REST_Reviews extends \WP_REST_Controller {
 					'id'       => self::int_arg(),
 					'version'  => self::bounded_text_arg( 64 ),
 					'revision' => self::int_arg( false, 0 ),
+				],
+			]
+		);
+
+		register_rest_route(
+			$this->namespace,
+			'/' . $this->rest_base . '/(?P<id>[\d]+)/revisions',
+			[
+				[
+					'methods'             => \WP_REST_Server::READABLE,
+					'callback'            => [ $this, 'get_revision_items' ],
+					'permission_callback' => [ $this, 'action_permissions_check' ],
+					'args'                => [
+						'id'      => self::int_arg(),
+						'viewing' => self::int_arg( false, 0 ),
+					],
 				],
 			]
 		);
@@ -368,6 +400,18 @@ class REST_Reviews extends \WP_REST_Controller {
 		return rest_ensure_response( $this->prepare_review( $review ) );
 	}
 
+	public function get_cancelled_items_permissions_check( $request ) {
+		$post_id = (int) $request->get_param( 'post_id' );
+		if ( current_user_can( 'flow_manage_reviews' ) || ( $post_id > 0 && current_user_can( 'edit_post', $post_id ) ) ) {
+			return true;
+		}
+		return new \WP_Error( 'rest_forbidden', __( 'Sorry, you are not allowed to do that.', 'jumplinks-editorial-workflow' ), [ 'status' => rest_authorization_required_code() ] );
+	}
+
+	public function get_cancelled_items( $request ) {
+		return rest_ensure_response( Review::cancelled_history( (int) $request->get_param( 'post_id' ) ) );
+	}
+
 	public function approve_item( \WP_REST_Request $request ) {
 		return $this->dispatch_review_action( $request, [ Review::class, 'approve' ] );
 	}
@@ -389,11 +433,20 @@ class REST_Reviews extends \WP_REST_Controller {
 		if ( is_wp_error( $result ) ) {
 			return $result;
 		}
+		return new \WP_REST_Response( null, 204 );
+	}
+
+	/** 204 when removing the reviewer cancelled the review, else the still-open review. */
+	public function remove_reviewer_item( $request ) {
+		$result = $this->dispatch_review_action( $request, [ Review::class, 'remove_reviewer' ] );
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
 		$review = DB::get_review( (int) $request->get_param( 'id' ) );
-		if ( ! $review ) {
+		if ( ! $review || Review::is_cancelled( $review ) ) {
 			return new \WP_REST_Response( null, 204 );
 		}
-		return rest_ensure_response( $this->prepare_review( $review ) );
+		return $result;
 	}
 
 	public function send_item( $request ) {
@@ -454,6 +507,9 @@ class REST_Reviews extends \WP_REST_Controller {
 		if ( Review::is_private( $review ) ) {
 			return new \WP_Error( 'rest_forbidden', __( 'This action is not available on a self review.', 'jumplinks-editorial-workflow' ), [ 'status' => 403 ] );
 		}
+		if ( Review::is_cancelled( $review ) ) {
+			return new \WP_Error( 'flow_ew_review_cancelled', __( 'This review was cancelled.', 'jumplinks-editorial-workflow' ), [ 'status' => 403 ] );
+		}
 		if ( ! Review::is_requester_or_manager( $review, get_current_user_id() ) ) {
 			return new \WP_Error( 'rest_forbidden', __( 'You are not authorized to modify this review.', 'jumplinks-editorial-workflow' ), [ 'status' => 403 ] );
 		}
@@ -486,8 +542,20 @@ class REST_Reviews extends \WP_REST_Controller {
 		if ( Review::is_private( $review ) ) {
 			return new \WP_Error( 'rest_forbidden', __( 'This action is not available on a self review.', 'jumplinks-editorial-workflow' ), [ 'status' => 403 ] );
 		}
+		if ( Review::is_cancelled( $review ) ) {
+			return new \WP_Error( 'flow_ew_review_cancelled', __( 'This review was cancelled.', 'jumplinks-editorial-workflow' ), [ 'status' => 403 ] );
+		}
 		if ( ! Review::is_requester_or_manager( $review, get_current_user_id() ) ) {
 			return new \WP_Error( 'rest_forbidden', __( 'You are not authorized to modify this review.', 'jumplinks-editorial-workflow' ), [ 'status' => 403 ] );
+		}
+		// With nobody assigned, a closed review is unreachable; cancel it so it lands in the history.
+		if ( ! self::has_assigned_reviewer( $review ) ) {
+			try {
+				Review::cancel( $id, get_current_user_id() );
+			} catch ( \Throwable $e ) {
+				return new \WP_Error( 'flow_ew_review_action_failed', $e->getMessage(), [ 'status' => 400 ] );
+			}
+			return new \WP_REST_Response( null, 204 );
 		}
 		DB::update_review( $id, [ 'is_open' => 0 ] );
 		$updated = DB::get_review( $id );
@@ -496,6 +564,13 @@ class REST_Reviews extends \WP_REST_Controller {
 		}
 		\do_action( 'flow_ew_review_closed', $id, (int) $updated->post_id, get_current_user_id() );
 		return rest_ensure_response( $this->prepare_review( $updated ) );
+	}
+
+	private static function has_assigned_reviewer( object $review ): bool {
+		$ids = array_filter(
+			array_map( 'intval', (array) \apply_filters( 'flow_ew_review_reviewer_ids', [ (int) $review->reviewer_id ], $review ) )
+		);
+		return ! empty( $ids ) || ! empty( Email_Review_Invites_DB::get_for_review( (int) $review->id ) );
 	}
 
 	/**
@@ -550,6 +625,18 @@ class REST_Reviews extends \WP_REST_Controller {
 				$review
 			)
 		);
+	}
+
+	public function get_revision_items( \WP_REST_Request $request ) {
+		$review = DB::get_review( (int) $request->get_param( 'id' ) );
+		if ( ! $review ) {
+			return new \WP_Error( 'flow_ew_not_found', __( 'Review not found.', 'jumplinks-editorial-workflow' ), [ 'status' => 404 ] );
+		}
+		$type_ok = $this->assert_review_post_type_supported( $review );
+		if ( is_wp_error( $type_ok ) ) {
+			return $type_ok;
+		}
+		return rest_ensure_response( ReviewPage::revision_list( $review, (int) $request->get_param( 'viewing' ) ) );
 	}
 
 	public function get_comment_items( \WP_REST_Request $request ) {
@@ -740,6 +827,9 @@ class REST_Reviews extends \WP_REST_Controller {
 		if ( is_wp_error( $type_ok ) ) {
 			return $type_ok;
 		}
+		if ( Review::is_cancelled( $review ) ) {
+			return new \WP_Error( 'flow_ew_review_cancelled', __( 'This review was cancelled.', 'jumplinks-editorial-workflow' ), [ 'status' => 403 ] );
+		}
 		if ( get_current_user_id() !== (int) $comment->author_id && ! current_user_can( 'flow_manage_reviews' ) ) {
 			return new \WP_Error( 'rest_forbidden', __( 'You cannot edit this comment.', 'jumplinks-editorial-workflow' ), [ 'status' => 403 ] );
 		}
@@ -759,6 +849,9 @@ class REST_Reviews extends \WP_REST_Controller {
 		$type_ok = $this->assert_review_post_type_supported( $review );
 		if ( is_wp_error( $type_ok ) ) {
 			return $type_ok;
+		}
+		if ( Review::is_cancelled( $review ) ) {
+			return new \WP_Error( 'flow_ew_review_cancelled', __( 'This review was cancelled.', 'jumplinks-editorial-workflow' ), [ 'status' => 403 ] );
 		}
 
 		if ( ! is_user_logged_in() ) {

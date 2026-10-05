@@ -62,6 +62,7 @@ import { initReviewerCombobox } from '../shared/reviewer-combobox';
 			in_review: i18n.statusInReview,
 			changes_requested: i18n.statusChangesReq,
 			approved: i18n.statusApproved,
+			cancelled: i18n.statusCancelled,
 			open_review: i18n.statusOpenReview,
 		};
 
@@ -314,6 +315,13 @@ import { initReviewerCombobox } from '../shared/reviewer-combobox';
 				return;
 			}
 			const url = review.revision_preview_url;
+			const canCancel =
+				currentUserCan.manageReviews ||
+				Number(
+					review.requester_id ||
+						( review.requester && review.requester.id ) ||
+						0
+				) === Number( currentUserId );
 			const div = document.createElement( 'div' );
 			div.className = 'flow-ew-classic__share';
 			div.id = 'flow-ew-share';
@@ -334,6 +342,15 @@ import { initReviewerCombobox } from '../shared/reviewer-combobox';
 				'">' +
 				shareBarIconHtml( 'copy' ) +
 				'</button>' +
+				( canCancel
+					? '<button type="button" class="button flow-ew-classic__share-copy flow-ew-classic__share-cancel" data-action="cancel" aria-label="' +
+					  escAttr( i18n.cancelReview ) +
+					  '" title="' +
+					  escAttr( i18n.cancelReview ) +
+					  '">' +
+					  shareBarIconHtml( 'cancel' ) +
+					  '</button>'
+					: '' ) +
 				'<a href="' +
 				escAttr( url ) +
 				'" target="_blank" rel="noreferrer" class="flow-ew-classic__share-goto" aria-label="' +
@@ -364,11 +381,117 @@ import { initReviewerCombobox } from '../shared/reviewer-combobox';
 			node.hidden = assigned;
 		}
 
+		let cancelledReviews = flowEW.cancelledReviews || [];
+		const HISTORY_PAGE = 5;
+		let historyVisible = HISTORY_PAGE;
+		const historyKey = () =>
+			review ? review.id + ':' + review.status : '';
+		let lastHistoryKey = historyKey();
+
+		function renderHistory() {
+			const existing = $( '#flow-ew-history' );
+			if ( existing ) {
+				existing.remove();
+			}
+			const spinner = $( '#flow-ew-classic-spinner' );
+			if ( ! cancelledReviews.length || ! spinner ) {
+				return;
+			}
+			const div = document.createElement( 'div' );
+			div.className = 'flow-ew-history';
+			div.id = 'flow-ew-history';
+			div.innerHTML =
+				'<span class="flow-ew-classic__share-label">' +
+				escHtml( i18n.cancelledReviews ) +
+				'</span><ul class="flow-ew-history__list">' +
+				cancelledReviews
+					.slice( 0, historyVisible )
+					.map( function ( item ) {
+						return (
+							'<li class="flow-ew-history__item"><a href="' +
+							escAttr( item.url ) +
+							'" target="_blank" rel="noreferrer">' +
+							escHtml( item.date ) +
+							'</a>' +
+							( item.meta
+								? '<span class="flow-ew-history__meta">- ' +
+								  escHtml( item.meta ) +
+								  '</span>'
+								: '' ) +
+							'</li>'
+						);
+					} )
+					.join( '' ) +
+				'</ul>';
+			if ( cancelledReviews.length > historyVisible ) {
+				const more = document.createElement( 'button' );
+				more.type = 'button';
+				more.className = 'button-link flow-ew-history__more';
+				more.textContent = i18n.loadMore;
+				more.addEventListener( 'click', function () {
+					historyVisible += HISTORY_PAGE;
+					renderHistory();
+				} );
+				div.appendChild( more );
+			}
+			root.insertBefore( div, spinner );
+		}
+
+		// A cancel swaps the active review, or (Pro roster) marks it cancelled.
+		function refreshHistoryOnReviewChange() {
+			const key = historyKey();
+			if ( key === lastHistoryKey ) {
+				return;
+			}
+			lastHistoryKey = key;
+			api( '/reviews/' + postId + '/cancelled', 'GET' )
+				.then( function ( list ) {
+					cancelledReviews = Array.isArray( list ) ? list : [];
+					renderHistory();
+				} )
+				.catch( function () {} );
+		}
+
+		let toastTimer = 0;
+		function showToast( message ) {
+			const existing = $( '#flow-ew-classic-toast' );
+			if ( existing ) {
+				existing.remove();
+			}
+			const toast = document.createElement( 'div' );
+			toast.id = 'flow-ew-classic-toast';
+			toast.className = 'flow-ew-classic__toast';
+			toast.setAttribute( 'role', 'status' );
+			toast.textContent = message;
+			const spinner = $( '#flow-ew-classic-spinner' );
+			if ( spinner && root.contains( spinner ) ) {
+				root.insertBefore( toast, spinner );
+			} else {
+				root.appendChild( toast );
+			}
+			clearTimeout( toastTimer );
+			toastTimer = setTimeout( function () {
+				toast.remove();
+			}, 4000 );
+		}
+
+		document.addEventListener( 'flow-ew:review-cancelled', function () {
+			showToast( i18n.reviewCancelled );
+		} );
+
+		document.addEventListener( 'flow-ew:toast', function ( e ) {
+			if ( e.detail && e.detail.message ) {
+				showToast( e.detail.message );
+			}
+		} );
+
 		function fullRender() {
 			renderBadge();
 			renderNotice();
 			renderActions();
 			renderShareBar();
+			renderHistory();
+			refreshHistoryOnReviewChange();
 			updatePublishGuard();
 			updateSendEnabled();
 			renderPendingReviewer();
@@ -393,7 +516,8 @@ import { initReviewerCombobox } from '../shared/reviewer-combobox';
 			syncReviewerComboboxFromReview( review, root );
 		}
 
-		function clearAssignedReviewer() {
+		// `remove-reviewer` keeps an open review running; `cancel` always ends it.
+		function clearAssignedReviewer( action = 'cancel' ) {
 			if ( loading ) {
 				return;
 			}
@@ -404,7 +528,7 @@ import { initReviewerCombobox } from '../shared/reviewer-combobox';
 				return;
 			}
 			setLoading( true );
-			apiPost( '/reviews/' + review.id + '/cancel' )
+			apiPost( '/reviews/' + review.id + '/' + action )
 				.then( ( data ) => {
 					review = data || null;
 					if ( combobox ) {
@@ -437,6 +561,9 @@ import { initReviewerCombobox } from '../shared/reviewer-combobox';
 					clearEmailError();
 					fullRender();
 					syncClearBtn();
+					showToast(
+						data ? i18n.reviewerRemoved : i18n.reviewCancelled
+					);
 					document.dispatchEvent(
 						new CustomEvent( 'flow-ew:reviewer-field-reset', {
 							detail: { scope: root },
@@ -447,9 +574,21 @@ import { initReviewerCombobox } from '../shared/reviewer-combobox';
 				.finally( () => setLoading( false ) );
 		}
 
-		document.addEventListener( 'flow-ew:clear-reviewer', function () {
-			clearAssignedReviewer();
-		} );
+		// The reviewer ×: only asks first when removing the reviewer cancels the review.
+		function removeReviewer() {
+			const current = review || flowEW.activeReview;
+			if (
+				current &&
+				! current.is_open &&
+				// eslint-disable-next-line no-alert
+				! window.confirm( i18n.cancelReviewBody )
+			) {
+				return;
+			}
+			clearAssignedReviewer( 'remove-reviewer' );
+		}
+
+		document.addEventListener( 'flow-ew:clear-reviewer', removeReviewer );
 
 		// Capture on document so Elementor/builder overlays cannot swallow the ×.
 		document.addEventListener(
@@ -463,6 +602,26 @@ import { initReviewerCombobox } from '../shared/reviewer-combobox';
 				}
 				e.preventDefault();
 				e.stopPropagation();
+				removeReviewer();
+			},
+			true
+		);
+
+		document.addEventListener(
+			'pointerdown',
+			function ( e ) {
+				const btn = e.target.closest(
+					'.flow-ew-classic__share-cancel'
+				);
+				if ( ! btn || ! root.contains( btn ) || loading ) {
+					return;
+				}
+				e.preventDefault();
+				e.stopPropagation();
+				// eslint-disable-next-line no-alert
+				if ( ! window.confirm( i18n.cancelReviewBody ) ) {
+					return;
+				}
 				clearAssignedReviewer();
 			},
 			true
@@ -719,6 +878,9 @@ import { initReviewerCombobox } from '../shared/reviewer-combobox';
 
 			if ( action === 'send' ) {
 				sendForReview();
+				return;
+			}
+			if ( action === 'cancel' ) {
 				return;
 			}
 

@@ -123,12 +123,15 @@
 	color: var(--flow-status-text);
 }
 
-.flow-ew-classic--builder-dark .flow-ew-review-notice__link {
+.flow-ew-classic--builder-dark .flow-ew-review-notice__link,
+.flow-ew-classic--builder-dark .flow-ew-review-notice__desc a {
 	color: #ffd54d;
 }
 
 .flow-ew-classic--builder-dark .flow-ew-review-notice__link:hover,
-.flow-ew-classic--builder-dark .flow-ew-review-notice__link:focus {
+.flow-ew-classic--builder-dark .flow-ew-review-notice__link:focus,
+.flow-ew-classic--builder-dark .flow-ew-review-notice__desc a:hover,
+.flow-ew-classic--builder-dark .flow-ew-review-notice__desc a:focus {
 	color: #fffcf3;
 }
 
@@ -320,6 +323,14 @@
 .flow-ew-classic--builder-dark .flow-ew-reviewer-card__copy--done,
 .flow-ew-classic--builder-dark .flow-ew-reviewer-card__copy--done:hover {
 	color: #6fdc8c;
+}
+
+/* Builders force the button's text colour, so the red goes on the stroke itself. */
+
+.flow-ew-share-icon--cancel path,
+.flow-ew-share-icon--cancel circle {
+	fill: none !important;
+	stroke: #d63638 !important;
 }
 
 /**
@@ -968,5 +979,11 @@ html[data-app-color-mode='dark'] .flow-ew-divi-drawer {
 .flow-ew-divi-drawer .flow-ew-classic__share-copy--done,
 .flow-ew-divi-drawer .flow-ew-classic__share-copy--done svg {
 	color: #39b54a !important;
+}
+
+/* The link already draws the line before the first button. */
+
+.flow-ew-classic--divi .flow-ew-classic__share-link + .flow-ew-classic__share-copy {
+	border-right: 0 !important;
 }
 

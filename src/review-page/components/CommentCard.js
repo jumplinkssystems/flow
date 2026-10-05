@@ -2,7 +2,7 @@ import { useState, useCallback, useRef, useEffect } from '@wordpress/element';
 import { Button } from '@wordpress/components';
 import { chevronUp, closeSmall } from '@wordpress/icons';
 import { __ } from '@wordpress/i18n';
-import { pageData } from '../utils/api';
+import { pageData, isReviewReadOnly } from '../utils/api';
 import {
 	markCommentBusy,
 	releaseCommentBusy,
@@ -215,7 +215,7 @@ export default function CommentCard( {
 								onClick={ () => onResolve( comment.id ) }
 							/>
 						) }
-					{ isOwn && (
+					{ isOwn && ! isReviewReadOnly() && (
 						<div
 							ref={ menuRef }
 							className={

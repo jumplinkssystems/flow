@@ -100,6 +100,45 @@
 .flow-ew-review-notice__link:focus {
 	color: var(--wp-admin-theme-color-darker-10, #135e96);
 }
+/* Builders force the button's text colour, so the red goes on the stroke itself. */
+.flow-ew-share-icon--cancel path,
+.flow-ew-share-icon--cancel circle {
+	fill: none !important;
+	stroke: #d63638 !important;
+}
+.flow-ew-history {
+	margin-top: 12px;
+}
+.flow-ew-history__list {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	list-style: none;
+	margin: 4px 0 0;
+	padding: 0;
+}
+.flow-ew-history__item {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0 4px;
+	margin: 0;
+	font-size: 13px;
+	line-height: 1.4;
+}
+.flow-ew-history__meta {
+	font-size: 12px;
+	opacity: 0.75;
+}
+.flow-ew-history .flow-ew-history__more {
+	margin-top: 14px;
+	padding: 0;
+	border: 0;
+	background: none;
+	color: inherit;
+	font-size: 13px;
+	text-decoration: underline;
+	cursor: pointer;
+}
 .flow-ew-classic {
 	position: relative;
 }
@@ -444,6 +483,19 @@
 	line-height: 1.4;
 	margin-top: 4px;
 }
+/* Builder themes (Avada) restyle bare links; keep notice links inline with their sentence. */
+.flow-ew-classic .flow-ew-review-notice__desc a {
+	display: inline;
+	font-size: inherit;
+	font-weight: inherit;
+	line-height: inherit;
+	margin: 0;
+	padding: 0;
+}
+/* Builders that zero paragraph margins would butt the next label against it. */
+.flow-ew-classic .flow-ew-classic-open__desc {
+	margin-bottom: 12px;
+}
 .flow-ew-classic-self {
 	font-size: 13px;
 	margin-bottom: 12px;
@@ -603,6 +655,12 @@
 #flow-ew-classic.flow-ew-classic:not(.flow-ew-classic--elementor):not(.flow-ew-classic--bricks):not(.flow-ew-classic--breakdance):not(.flow-ew-classic--oxygen):not(.flow-ew-classic--avada):not(.flow-ew-classic--beaver) .flow-ew-classic__share-row {
 	--flow-ew-share-icon-size: 24px;
 }
+/* Same compact actions as the Gutenberg sidebar, so the link keeps its room. */
+#flow-ew-classic.flow-ew-classic:not(.flow-ew-classic--elementor):not(.flow-ew-classic--bricks):not(.flow-ew-classic--breakdance):not(.flow-ew-classic--oxygen):not(.flow-ew-classic--avada):not(.flow-ew-classic--beaver):not(.flow-ew-classic--divi) .flow-ew-classic__share-row {
+	--flow-ew-share-action-width: 32px;
+	--flow-ew-share-action-padding-x: 6px;
+	--flow-ew-share-icon-size: 20px;
+}
 #flow-ew-classic.flow-ew-classic:not(.flow-ew-classic--elementor):not(.flow-ew-classic--bricks):not(.flow-ew-classic--breakdance):not(.flow-ew-classic--oxygen):not(.flow-ew-classic--avada):not(.flow-ew-classic--beaver) .flow-ew-classic__share-copy.button,
 #flow-ew-classic.flow-ew-classic:not(.flow-ew-classic--elementor):not(.flow-ew-classic--bricks):not(.flow-ew-classic--breakdance):not(.flow-ew-classic--oxygen):not(.flow-ew-classic--avada):not(.flow-ew-classic--beaver) .flow-ew-classic__share-copy.button:hover,
 #flow-ew-classic.flow-ew-classic:not(.flow-ew-classic--elementor):not(.flow-ew-classic--bricks):not(.flow-ew-classic--breakdance):not(.flow-ew-classic--oxygen):not(.flow-ew-classic--avada):not(.flow-ew-classic--beaver) .flow-ew-classic__share-copy.button:focus {
@@ -611,9 +669,14 @@
 	padding: var(--flow-ew-share-action-padding-x, 8px) !important;
 	vertical-align: top;
 	color: var(--flow-ew-wp-charcoal-3, #40464c) !important;
-	border: 0 !important;
 	background: transparent !important;
 	box-shadow: none !important;
+}
+/* Divi draws its own divider on these buttons. */
+#flow-ew-classic.flow-ew-classic:not(.flow-ew-classic--elementor):not(.flow-ew-classic--bricks):not(.flow-ew-classic--breakdance):not(.flow-ew-classic--oxygen):not(.flow-ew-classic--avada):not(.flow-ew-classic--beaver):not(.flow-ew-classic--divi) .flow-ew-classic__share-copy.button,
+#flow-ew-classic.flow-ew-classic:not(.flow-ew-classic--elementor):not(.flow-ew-classic--bricks):not(.flow-ew-classic--breakdance):not(.flow-ew-classic--oxygen):not(.flow-ew-classic--avada):not(.flow-ew-classic--beaver):not(.flow-ew-classic--divi) .flow-ew-classic__share-copy.button:hover,
+#flow-ew-classic.flow-ew-classic:not(.flow-ew-classic--elementor):not(.flow-ew-classic--bricks):not(.flow-ew-classic--breakdance):not(.flow-ew-classic--oxygen):not(.flow-ew-classic--avada):not(.flow-ew-classic--beaver):not(.flow-ew-classic--divi) .flow-ew-classic__share-copy.button:focus {
+	border: 0 !important;
 }
 #flow-ew-classic.flow-ew-classic:not(.flow-ew-classic--elementor):not(.flow-ew-classic--bricks):not(.flow-ew-classic--breakdance):not(.flow-ew-classic--oxygen):not(.flow-ew-classic--avada):not(.flow-ew-classic--beaver) .flow-ew-classic__share-copy .flow-ew-share-icon,
 #flow-ew-classic.flow-ew-classic:not(.flow-ew-classic--elementor):not(.flow-ew-classic--bricks):not(.flow-ew-classic--breakdance):not(.flow-ew-classic--oxygen):not(.flow-ew-classic--avada):not(.flow-ew-classic--beaver) .flow-ew-classic__share-copy svg {
@@ -665,5 +728,20 @@
 .flow-ew-classic__pending-hint {
 	font-style: italic;
 	opacity: 0.75;
+}
+/* Builders draw their own divider on .flow-ew-classic__share-copy; this must outrank the border reset above. */
+#flow-ew-classic.flow-ew-classic:not(.flow-ew-classic--elementor):not(.flow-ew-classic--bricks):not(.flow-ew-classic--breakdance):not(.flow-ew-classic--oxygen):not(.flow-ew-classic--avada):not(.flow-ew-classic--beaver):not(.flow-ew-classic--divi) .flow-ew-classic__share-copy.flow-ew-classic__share-cancel.button,
+#flow-ew-classic.flow-ew-classic:not(.flow-ew-classic--elementor):not(.flow-ew-classic--bricks):not(.flow-ew-classic--breakdance):not(.flow-ew-classic--oxygen):not(.flow-ew-classic--avada):not(.flow-ew-classic--beaver):not(.flow-ew-classic--divi) .flow-ew-classic__share-copy.flow-ew-classic__share-cancel.button:hover,
+#flow-ew-classic.flow-ew-classic:not(.flow-ew-classic--elementor):not(.flow-ew-classic--bricks):not(.flow-ew-classic--breakdance):not(.flow-ew-classic--oxygen):not(.flow-ew-classic--avada):not(.flow-ew-classic--beaver):not(.flow-ew-classic--divi) .flow-ew-classic__share-copy.flow-ew-classic__share-cancel.button:focus {
+	border-right: 1px solid var(--flow-ew-wp-charcoal-5, #979aa0) !important;
+}
+.flow-ew-classic__toast {
+	margin-top: 10px;
+	padding: 6px 10px;
+	border-right: 3px solid #00a32a;
+	background: rgba(0, 163, 42, 0.12);
+	color: inherit;
+	font-size: 13px;
+	line-height: 1.4;
 }
 

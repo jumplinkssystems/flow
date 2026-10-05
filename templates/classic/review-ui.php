@@ -12,6 +12,7 @@
  * @var string               $reviewer_name
  * @var string               $pending_reviewer_name
  * @var string               $preview_url
+ * @var bool                 $can_cancel          The viewer may cancel the review.
  * @var string               $invite_email
  * @var array<int,array{id:int|string,name:string,is_email?:bool}> $reviewers
  * @var bool                 $solo                Self review only mode.
@@ -264,6 +265,11 @@ if ( false !== strpos( $root_class, 'flow-ew-classic--beaver' ) ) {
 				<button type="button" class="button flow-ew-classic__share-copy" data-url="<?php echo esc_attr( $preview_url ); ?>">
 					<svg class="flow-ew-share-icon flow-ew-share-icon--copy" viewBox="0 0 24 24" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><path fill="currentColor" d="M18 0H8C6.897 0 6 0.897 6 2V6H2C0.897 6 0 6.897 0 8V18C0 19.103 0.897 20 2 20H12C13.103 20 14 19.103 14 18V14H18C19.103 14 20 13.103 20 12V2C20 0.897 19.103 0 18 0ZM2 18V8H12L12.002 18H2ZM18 12H14V8C14 6.897 13.103 6 12 6H8V2H18V12Z" transform="translate(2 2)"/></svg>
 				</button>
+				<?php if ( $can_cancel ) : ?>
+				<button type="button" class="button flow-ew-classic__share-copy flow-ew-classic__share-cancel" data-action="cancel" aria-label="<?php esc_attr_e( 'Cancel review', 'jumplinks-editorial-workflow' ); ?>" title="<?php esc_attr_e( 'Cancel review', 'jumplinks-editorial-workflow' ); ?>">
+					<svg class="flow-ew-share-icon flow-ew-share-icon--cancel" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="2"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M9 9l6 6M15 9l-6 6"/></svg>
+				</button>
+				<?php endif; ?>
 				<a
 					href="<?php echo esc_url( $preview_url ); ?>"
 					target="_blank"

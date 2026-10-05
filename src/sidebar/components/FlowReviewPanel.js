@@ -10,6 +10,7 @@ import { isPublishBlocked } from '../../shared/is-publish-blocked';
 import { shouldShowSendForReview } from '../../shared/should-show-send-for-review';
 import ReviewerField from './ReviewerField';
 import RevisionShareBar from './RevisionShareBar';
+import CancelledReviews from './CancelledReviews';
 import OpenReviewControl from './OpenReviewControl';
 import SelfReviewControl from './SelfReviewControl';
 import ReviewModeNotice from './ReviewModeNotice';
@@ -100,6 +101,36 @@ export default function FlowReviewPanel() {
 			setLoading( false );
 		}
 	}, [ review ] ); // eslint-disable-line react-hooks/exhaustive-deps
+
+	const cancelReview = useCallback( async () => {
+		if ( ! review ) {
+			return;
+		}
+		setLoading( true );
+		try {
+			await apiFetch( {
+				url: `${ restUrl }/reviews/${ review.id }/cancel`,
+				method: 'POST',
+			} );
+			setReview( null );
+			createSuccessNotice( i18n.reviewCancelled, {
+				type: 'snackbar',
+				isDismissible: true,
+			} );
+		} catch ( err ) {
+			createErrorNotice( err?.message || i18n.cancelReviewFailed, {
+				isDismissible: true,
+			} );
+		} finally {
+			setLoading( false );
+		}
+	}, [ review ] ); // eslint-disable-line react-hooks/exhaustive-deps
+
+	const canCancelReview =
+		!! review &&
+		( currentUserCan.manageReviews ||
+			Number( review.requester_id ?? review.requester?.id ) ===
+				Number( currentUserId ) );
 
 	const requestChanges = useCallback( async () => {
 		if ( ! review ) {
@@ -377,8 +408,17 @@ export default function FlowReviewPanel() {
 							!! review.is_open ) && (
 							<RevisionShareBar
 								url={ review.revision_preview_url }
+								onCancel={
+									canCancelReview ? cancelReview : null
+								}
+								isBusy={ loading }
 							/>
 						) }
+					<CancelledReviews
+						reviewKey={
+							review ? `${ review.id }:${ review.status }` : ''
+						}
+					/>
 				</div>
 			</PanelRow>
 		</>

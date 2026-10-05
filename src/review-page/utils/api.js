@@ -22,3 +22,5 @@ export default function flowFetch( endpoint, options = {} ) {
 }
 
 export { pageData };
+
+export const isReviewReadOnly = () => !! pageData.isCancelled;

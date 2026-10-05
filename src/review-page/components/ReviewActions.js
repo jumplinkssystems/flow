@@ -17,6 +17,7 @@ export default function ReviewActions( {
 	actionStatus,
 	totalCommentCount,
 	doAction,
+	onCancelReview = null,
 } ) {
 	return (
 		<>
@@ -49,6 +50,20 @@ export default function ReviewActions( {
 					</div>
 				</div>
 			) }
+			{ onCancelReview ? (
+				<div className="flow-bar__actions">
+					<Button
+						className="flow-bar__btn--request-changes flow-bar__btn--cancel-review"
+						onClick={ onCancelReview }
+						disabled={ isBusy }
+					>
+						{ __(
+							'Cancel review',
+							'jumplinks-editorial-workflow'
+						) }
+					</Button>
+				</div>
+			) : null }
 			{ actionsSlot ? (
 				<div className="flow-bar__actions">{ actionsSlot }</div>
 			) : null }

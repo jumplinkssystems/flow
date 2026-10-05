@@ -14,22 +14,13 @@ export function alwaysHasAgent( useCase ) {
  * The screens a use case walks through, in order. The first screen (the
  * use-case cards) is always included so Back can return to it.
  *
- * @param {string}  useCase
- * @param {boolean} agentEnabled Answer to the "AI agent?" screen.
+ * @param {string} useCase
  * @return {string[]} Step keys.
  */
-export function pathFor( useCase, agentEnabled ) {
-	const agent = agentEnabled ? [ 'agent' ] : [];
+export function pathFor( useCase ) {
 	switch ( useCase ) {
 		case CLIENT:
-			return [
-				'useCase',
-				'types',
-				'extras',
-				'agentAsk',
-				...agent,
-				'done',
-			];
+			return [ 'useCase', 'types', 'extras', 'agent', 'done' ];
 		case BUILD_AI:
 			return [ 'useCase', 'agent', 'done' ];
 		case APPROVE_AI:
@@ -41,8 +32,7 @@ export function pathFor( useCase, agentEnabled ) {
 				'types',
 				'roles',
 				'extras',
-				'agentAsk',
-				...agent,
+				'agent',
 				'done',
 			];
 	}
@@ -80,9 +70,7 @@ export function previewSettings( answers, allPostTypes ) {
 		out.allowExternal =
 			useCase === CLIENT ? true : !! answers.allowExternal;
 		out.openReviews = useCase === EDITORIAL;
-		if ( useCase === EDITORIAL || useCase === CLIENT ) {
-			out.selfReview = false;
-		}
+		out.selfReview = !! answers.selfReview;
 		out.showReviewedBy = !! answers.showReviewedBy;
 		out.autoAssign = answers.autoAssign || null;
 	}

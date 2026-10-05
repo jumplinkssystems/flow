@@ -155,6 +155,7 @@ final class Comment_Presenter {
 			'parentId'      => (int) ( $c->parent_id ?? 0 ),
 			'isAgent'       => Settings::should_mark_agent_comments() && ! empty( $c->is_agent ),
 			'isResolved'    => (bool) ( $c->is_resolved ?? false ),
+			'revisionId'    => (int) ( $c->revision_id ?? 0 ),
 			'anchorText'    => $anchor_text ?: null,
 			'blockClientId' => ( $c->block_client_id ?? null ) ?: null,
 			'date'          => (string) wp_date(

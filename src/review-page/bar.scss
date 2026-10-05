@@ -221,6 +221,7 @@ textarea {
 		&--changes_requested { color: $badge-changes-text;  background: $badge-changes-bg;  border-color: $badge-changes-border; }
 		&--open_review       { color: $badge-open-text;     background: $badge-open-bg;     border-color: $badge-open-border; }
 		&--self_review       { color: $badge-self-text;     background: $badge-self-bg;     border-color: $badge-self-border; }
+		&--cancelled         { color: $badge-cancelled-text; background: $badge-cancelled-bg; border-color: $badge-cancelled-border; }
 	}
 
 	&__title {
@@ -297,6 +298,42 @@ textarea {
 		pointer-events: none;
 	}
 
+	&__latest-link {
+		font-size: 11px;
+		font-weight: 600;
+		color: $badge-approved-text;
+		text-decoration: underline;
+		white-space: nowrap;
+		// Its column sets pointer-events: none.
+		pointer-events: auto;
+
+		&:hover,
+		&:focus {
+			color: #36662b;
+		}
+	}
+
+	&__revisions-link {
+		margin: 0;
+		padding: 0;
+		border: 0;
+		background: none;
+		font-family: inherit;
+		font-size: 11px;
+		font-weight: 500;
+		color: var(--wp-admin-theme-color, #2271b1);
+		text-decoration: underline;
+		white-space: nowrap;
+		cursor: pointer;
+		// Its column sets pointer-events: none.
+		pointer-events: auto;
+
+		&:hover,
+		&:focus {
+			color: var(--wp-admin-theme-color-darker-10, #135e96);
+		}
+	}
+
 	&__freshness-row {
 		display: inline-flex;
 		align-items: center;
@@ -329,6 +366,11 @@ textarea {
 		&--debug {
 			color: $badge-review-text;
 			background: $badge-review-bg;
+		}
+
+		&--cancelled {
+			color: $badge-cancelled-text;
+			background: $badge-cancelled-bg;
 		}
 
 		&-icon {
@@ -399,6 +441,24 @@ textarea {
 			border-color: #ddd !important;
 			color: #8c8f94 !important;
 			opacity: 1 !important;
+		}
+	}
+
+	// Ending a review is destructive: same red as the editor's cancel icon.
+	&__btn--request-changes.flow-bar__btn--cancel-review.components-button {
+		border-color: #d63638 !important;
+		color: #d63638 !important;
+
+		&:hover:not(:disabled),
+		&:active:not(:disabled) {
+			background: #fcf0f1 !important;
+			border-color: #b32d2e !important;
+			color: #b32d2e !important;
+		}
+
+		&:focus:not(:disabled) {
+			box-shadow: 0 0 0 var(--wp-admin-border-width-focus, 2px) #fff,
+				0 0 0 calc(var(--wp-admin-border-width-focus, 2px) + 1px) #d63638 !important;
 		}
 	}
 

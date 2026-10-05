@@ -14,7 +14,7 @@ import {
 	getIframeDoc,
 	getIframeScale,
 } from '../utils/iframe-bridge';
-import { pageData } from '../utils/api';
+import { pageData, isReviewReadOnly } from '../utils/api';
 import { defaultCommentApi } from '../utils/comment-api';
 import CommentEditor from './CommentEditor';
 import { buildCommentTree } from '../utils/comment-tree';
@@ -419,6 +419,34 @@ export default function InlineThreadPopover( {
 		return () => window.cancelAnimationFrame( id );
 	}, [ thread, repositionToThreadAnchor ] );
 
+	// "View original" links carry the comment to reopen once its highlight exists.
+	useEffect( () => {
+		const url = new URL( window.location.href );
+		const target = Number( url.searchParams.get( 'flow_focus_comment' ) );
+		if ( ! target ) {
+			return undefined;
+		}
+		url.searchParams.delete( 'flow_focus_comment' );
+		window.history.replaceState( null, '', url.toString() );
+		let tries = 0;
+		let timer = 0;
+		const attempt = () => {
+			if ( findMarkElement( target ) ) {
+				window.dispatchEvent(
+					new CustomEvent( 'flow:scroll-to-highlight', {
+						detail: { commentId: target },
+					} )
+				);
+				return;
+			}
+			if ( ++tries < 40 ) {
+				timer = setTimeout( attempt, 300 );
+			}
+		};
+		attempt();
+		return () => clearTimeout( timer );
+	}, [] );
+
 	useEffect( () => {
 		window.addEventListener( 'flow:inline-comment-focus', showPopover );
 		window.addEventListener(
@@ -714,6 +742,7 @@ export default function InlineThreadPopover( {
 			<div className="flow-thread-popover__card">
 				<div className="flow-thread-popover__header-actions">
 					{ ! thread.isResolved &&
+						! isReviewReadOnly() &&
 						Number( pageData.currentUserId || 0 ) > 0 && (
 							<Button
 								icon={ commentResolveIcon }
@@ -796,7 +825,7 @@ export default function InlineThreadPopover( {
 					</div>
 				) }
 
-				{ ! replying && (
+				{ ! replying && ! isReviewReadOnly() && (
 					<div className="flow-thread-popover__actions">
 						<Button
 							className="flow-btn--text flow-thread-popover__reply-btn"

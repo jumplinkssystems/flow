@@ -4,7 +4,7 @@ Tags: client feedback, website feedback, content approval, site review, editoria
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.6.0
+Stable tag: 2.6.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -34,7 +34,7 @@ If your current process depends on long comment threads, scattered docs and emai
 
 = 🎯 Why agencies and freelancers use Flow =
 
-* **One link, no login.** Your client clicks and is in. No "how do I log in" call, no password reset at 11pm. The link stops working the moment you remove the reviewer or cancel the review.
+* **One link, no login.** Your client clicks and is in. No "how do I log in" call, no password reset at 11pm. Email invite links stop working the moment you remove the reviewer or cancel the review, and a cancelled review stays readable for your team.
 * **They review the real page.** Mobile, menus, fonts — what they see is what visitors get, so "the blue box on the phone" never needs a screenshot. They never touch the editor.
 * **Comments sit where the problem is.** Every comment is pinned to the exact words or image, with threaded replies, so nothing has to be described twice.
 * **A yes you can point to.** With Mandatory review on, WordPress will not publish until a reviewer clicks Approve, and the review records who did.
@@ -159,6 +159,10 @@ Freelance developers and agencies who want a structured way to share in-progress
 
 Yes. Enter your client's email address as the reviewer and Flow sends them a private magic link to the review page, with no WordPress account needed. They comment on the live page and approve or request changes. If you'd rather give them an account, assign a WordPress user with a reviewer role instead. Flow Pro adds public review links anyone can open, several external reviewers per post, and site-wide review.
 
+= How do I start a new review for a page? =
+
+Cancel the current one: click the × on the reviewer, the Cancel review button in the Current Review row, or the Cancel review button in the review page's top bar (shown to whoever requested the review). The old review becomes read-only, so its comments stay on record, and assigning a reviewer again starts a new review that begins empty. Open review is off on the new review until you turn it on again.
+
 = What's the difference between external reviewers, open review, and public review? =
 
 An external reviewer is a named person you invite by email. They get a private magic link tied to their address. Free includes one per post; Pro removes the limit. Open review (Free) is a link any logged-in user on your site can open and comment on. Public review (Pro) is a link anyone can open and comment on, with no WordPress account and no invite. Use an external reviewer when you need a specific person's sign-off, and public review when you want wider feedback.
@@ -196,6 +200,15 @@ No, and this is deliberate rather than an oversight. There is no approve ability
 9. Assign reviewer to page in Bricks
 
 == Changelog ==
+
+= 2.6.1 =
+* New: Cancel a review from the editor or the review page's top bar. Cancelled reviews stay read-only in a Review history list under Current Review, and assigning a reviewer again starts a fresh review. Removing the reviewer, turning off Open Review with nobody assigned, or (Pro) removing the last reviewer cancels too, after asking; an open review keeps running without a reviewer.
+* New: View revisions on the review page lists the page's saved revisions with their resolved comments, and View original on a resolved comment opens the page as it was when the comment was raised.
+* New (Pro): Self site review. With Self review on, or in Self review only mode, review your own site from Flow → Site Review, comment on any page including headers, menus and footers, and let your AI agent resolve the comments over MCP.
+* Improvement: The setup wizard offers Self review in Extras, asks about an AI agent and shows its settings on one screen, and ends with what to do next for your use case, including short clips and example requests for your agent.
+* Fix: Deleting a post now removes its review's invites and, in Pro, its roster and activity, so a later review can never inherit someone else's invite link; leftovers are cleaned up on update.
+* Fix: Picking a reviewer whose role is in Review Roles no longer fails when that role had lost its review permission, and an assigned reviewer whose role no longer qualifies still shows in Classic Editor and the builders.
+* Fix: Builder drawers: the Review button is back in the Bricks 2.4 toolbar, Avada styles no longer leak into the drawer, and notice links stay readable in Breakdance and Avada.
 
 = 2.6.0 =
 * Fix: The setup wizard now opens on the Flow dashboard after activation, stays closed once skipped, and can be reopened with Run setup again under Flow → Settings.

@@ -120,6 +120,6 @@ export function syncPublishGuardTooltip( el, blocked ) {
 /** @return {Element|null} */
 export function findBricksPublishControl() {
 	return document.querySelector(
-		'#bricks-toolbar li:has([data-name="publish"])'
+		':is(#bricks-toolbar, .bricks-toolbar) li:has([data-name="publish"])'
 	);
 }

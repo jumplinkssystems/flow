@@ -132,6 +132,14 @@ class ClassicEditor {
 			$reviewer_name = $invite_name;
 		}
 
+		// Keep an assigned reviewer selectable after their role stops qualifying.
+		if ( $reviewer_id > 0 && '' !== $reviewer_name && ! in_array( $reviewer_id, array_map( static fn ( array $r ): int => (int) $r['id'], $reviewers ), true ) ) {
+			$reviewers[] = [
+				'id'   => $reviewer_id,
+				'name' => $reviewer_name,
+			];
+		}
+
 		$pending_reviewer_name = '';
 		$pending_reviewer_id   = Auto_Assign_Reviewer::pending_reviewer_id( $post_id );
 		if ( $pending_reviewer_id > 0 ) {
@@ -160,6 +168,7 @@ class ClassicEditor {
 		}
 
 		$is_post_author = (int) $post->post_author === $current_user_id;
+		$can_cancel     = $review && Review::is_requester_or_manager( $review, $current_user_id );
 
 		$solo                = Settings::is_solo_mode();
 		$self_review_offered = Self_Review::is_offered_for( $post_id, $current_user_id );

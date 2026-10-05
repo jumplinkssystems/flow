@@ -179,6 +179,8 @@ class Settings {
 			2
 		);
 
+		add_action( 'init', [ self::class, 'ensure_reviewer_role_caps' ] );
+
 		// Sync reviewer caps when the option is updated.
 		add_action(
 			'update_option_' . self::OPTION_REVIEWER_ROLES,
@@ -528,6 +530,19 @@ class Settings {
 			add_option( $name, $value );
 		}
 		add_option( self::OPTION_REVIEW_MODE, self::review_mode() );
+	}
+
+	/**
+	 * Re-grants the review cap to Review Roles that lost it outside a settings
+	 * save, so the reviewer list (by role) and the assign check (by cap) agree.
+	 */
+	public static function ensure_reviewer_role_caps(): void {
+		foreach ( self::get_reviewer_roles() as $slug ) {
+			$role = get_role( $slug );
+			if ( $role && ! $role->has_cap( 'flow_review_posts' ) ) {
+				$role->add_cap( 'flow_review_posts', true );
+			}
+		}
 	}
 
 	public function sync_reviewer_role_caps( $old_value, $new_value ): void {

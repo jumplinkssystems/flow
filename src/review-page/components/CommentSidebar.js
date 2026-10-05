@@ -10,7 +10,7 @@ import { Button } from '@wordpress/components';
 import { closeSmall } from '@wordpress/icons';
 import { __, sprintf } from '@wordpress/i18n';
 import { applyFilters } from '@wordpress/hooks';
-import { pageData } from '../utils/api';
+import { pageData, isReviewReadOnly } from '../utils/api';
 import { mergeCommentLists } from '../utils/comment-sync';
 import { defaultCommentApi } from '../utils/comment-api';
 import {
@@ -253,9 +253,11 @@ function GeneralCommentsPanel( {
 	const threads =
 		threadFilter === 'resolved' ? resolvedThreads : activeThreads;
 
+	const readOnly = isReviewReadOnly();
+
 	return (
 		<>
-			{ showEditor && (
+			{ showEditor && ! readOnly && (
 				<div className="flow-sidebar__body">
 					{ applyFilters(
 						'flow_ew_comment_editor_extras',
@@ -274,10 +276,10 @@ function GeneralCommentsPanel( {
 						<CommentThread
 							key={ thread.id }
 							thread={ thread }
-							onEdit={ handleEdit }
-							onDelete={ handleDelete }
-							onReply={ handleReply }
-							onResolve={ handleResolve }
+							onEdit={ readOnly ? undefined : handleEdit }
+							onDelete={ readOnly ? undefined : handleDelete }
+							onReply={ readOnly ? undefined : handleReply }
+							onResolve={ readOnly ? undefined : handleResolve }
 						/>
 					) ) }
 				</div>

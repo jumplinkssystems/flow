@@ -31,6 +31,9 @@ final class Comment_Writer {
 	 * @return int|\WP_Error New comment id.
 	 */
 	public static function create( object $review, array $args ) {
+		if ( Review::is_cancelled( $review ) ) {
+			return new \WP_Error( 'flow_ew_review_cancelled', __( 'This review was cancelled.', 'jumplinks-editorial-workflow' ), [ 'status' => 403 ] );
+		}
 		$review_id = (int) $review->id;
 		$request   = $args['request'] ?? null;
 		$author_id = (int) ( $args['author_id'] ?? 0 );
@@ -115,6 +118,13 @@ final class Comment_Writer {
 			$insert_data['parent_id'] = (int) $parent->parent_id > 0
 				? (int) $parent->parent_id
 				: $parent_id;
+		}
+		// Revision dates can be backdated (builders stamp the previous save), so record which one this was raised on.
+		if ( ! $parent ) {
+			$revision_id = Review::newest_saved_revision_id( (int) $review->post_id );
+			if ( $revision_id > 0 ) {
+				$insert_data['revision_id'] = $revision_id;
+			}
 		}
 
 		$comment_id = DB::insert_comment( $insert_data );

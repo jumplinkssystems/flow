@@ -262,10 +262,10 @@ class Admin_Columns {
 		);
 	}
 
-	/** Self reviews are private and never a post's active review, so they cannot be filtered on. */
+	/** Self reviews and cancelled reviews are never a post's active review, so they cannot be filtered on. */
 	private static function filterable_status_labels(): array {
 		$labels = Review::status_labels();
-		unset( $labels[ Review::STATUS_SELF_REVIEW ] );
+		unset( $labels[ Review::STATUS_SELF_REVIEW ], $labels[ Review::STATUS_CANCELLED ] );
 		return $labels;
 	}
 }

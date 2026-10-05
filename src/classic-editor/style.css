@@ -1,4 +1,6 @@
 @import '../shared/review-notice.css';
+@import '../shared/share-cancel.css';
+@import '../shared/review-history.css';
 
 .flow-ew-classic {
 	position: relative;
@@ -394,6 +396,21 @@
 	margin-top: 4px;
 }
 
+/* Builder themes (Avada) restyle bare links; keep notice links inline with their sentence. */
+.flow-ew-classic .flow-ew-review-notice__desc a {
+	display: inline;
+	font-size: inherit;
+	font-weight: inherit;
+	line-height: inherit;
+	margin: 0;
+	padding: 0;
+}
+
+/* Builders that zero paragraph margins would butt the next label against it. */
+.flow-ew-classic .flow-ew-classic-open__desc {
+	margin-bottom: 12px;
+}
+
 .flow-ew-classic-self {
 	font-size: 13px;
 	margin-bottom: 12px;
@@ -577,6 +594,13 @@
 	--flow-ew-share-icon-size: 24px;
 }
 
+/* Same compact actions as the Gutenberg sidebar, so the link keeps its room. */
+#flow-ew-classic.flow-ew-classic:not(.flow-ew-classic--elementor):not(.flow-ew-classic--bricks):not(.flow-ew-classic--breakdance):not(.flow-ew-classic--oxygen):not(.flow-ew-classic--avada):not(.flow-ew-classic--beaver):not(.flow-ew-classic--divi) .flow-ew-classic__share-row {
+	--flow-ew-share-action-width: 32px;
+	--flow-ew-share-action-padding-x: 6px;
+	--flow-ew-share-icon-size: 20px;
+}
+
 #flow-ew-classic.flow-ew-classic:not(.flow-ew-classic--elementor):not(.flow-ew-classic--bricks):not(.flow-ew-classic--breakdance):not(.flow-ew-classic--oxygen):not(.flow-ew-classic--avada):not(.flow-ew-classic--beaver) .flow-ew-classic__share-copy.button,
 #flow-ew-classic.flow-ew-classic:not(.flow-ew-classic--elementor):not(.flow-ew-classic--bricks):not(.flow-ew-classic--breakdance):not(.flow-ew-classic--oxygen):not(.flow-ew-classic--avada):not(.flow-ew-classic--beaver) .flow-ew-classic__share-copy.button:hover,
 #flow-ew-classic.flow-ew-classic:not(.flow-ew-classic--elementor):not(.flow-ew-classic--bricks):not(.flow-ew-classic--breakdance):not(.flow-ew-classic--oxygen):not(.flow-ew-classic--avada):not(.flow-ew-classic--beaver) .flow-ew-classic__share-copy.button:focus {
@@ -585,9 +609,15 @@
 	padding: var(--flow-ew-share-action-padding-x, 8px) !important;
 	vertical-align: top;
 	color: var(--flow-ew-wp-charcoal-3, #40464c) !important;
-	border: 0 !important;
 	background: transparent !important;
 	box-shadow: none !important;
+}
+
+/* Divi draws its own divider on these buttons. */
+#flow-ew-classic.flow-ew-classic:not(.flow-ew-classic--elementor):not(.flow-ew-classic--bricks):not(.flow-ew-classic--breakdance):not(.flow-ew-classic--oxygen):not(.flow-ew-classic--avada):not(.flow-ew-classic--beaver):not(.flow-ew-classic--divi) .flow-ew-classic__share-copy.button,
+#flow-ew-classic.flow-ew-classic:not(.flow-ew-classic--elementor):not(.flow-ew-classic--bricks):not(.flow-ew-classic--breakdance):not(.flow-ew-classic--oxygen):not(.flow-ew-classic--avada):not(.flow-ew-classic--beaver):not(.flow-ew-classic--divi) .flow-ew-classic__share-copy.button:hover,
+#flow-ew-classic.flow-ew-classic:not(.flow-ew-classic--elementor):not(.flow-ew-classic--bricks):not(.flow-ew-classic--breakdance):not(.flow-ew-classic--oxygen):not(.flow-ew-classic--avada):not(.flow-ew-classic--beaver):not(.flow-ew-classic--divi) .flow-ew-classic__share-copy.button:focus {
+	border: 0 !important;
 }
 
 #flow-ew-classic.flow-ew-classic:not(.flow-ew-classic--elementor):not(.flow-ew-classic--bricks):not(.flow-ew-classic--breakdance):not(.flow-ew-classic--oxygen):not(.flow-ew-classic--avada):not(.flow-ew-classic--beaver) .flow-ew-classic__share-copy .flow-ew-share-icon,
@@ -647,4 +677,21 @@
 .flow-ew-classic__pending-hint {
 	font-style: italic;
 	opacity: 0.75;
+}
+
+/* Builders draw their own divider on .flow-ew-classic__share-copy; this must outrank the border reset above. */
+#flow-ew-classic.flow-ew-classic:not(.flow-ew-classic--elementor):not(.flow-ew-classic--bricks):not(.flow-ew-classic--breakdance):not(.flow-ew-classic--oxygen):not(.flow-ew-classic--avada):not(.flow-ew-classic--beaver):not(.flow-ew-classic--divi) .flow-ew-classic__share-copy.flow-ew-classic__share-cancel.button,
+#flow-ew-classic.flow-ew-classic:not(.flow-ew-classic--elementor):not(.flow-ew-classic--bricks):not(.flow-ew-classic--breakdance):not(.flow-ew-classic--oxygen):not(.flow-ew-classic--avada):not(.flow-ew-classic--beaver):not(.flow-ew-classic--divi) .flow-ew-classic__share-copy.flow-ew-classic__share-cancel.button:hover,
+#flow-ew-classic.flow-ew-classic:not(.flow-ew-classic--elementor):not(.flow-ew-classic--bricks):not(.flow-ew-classic--breakdance):not(.flow-ew-classic--oxygen):not(.flow-ew-classic--avada):not(.flow-ew-classic--beaver):not(.flow-ew-classic--divi) .flow-ew-classic__share-copy.flow-ew-classic__share-cancel.button:focus {
+	border-left: 1px solid var(--flow-ew-wp-charcoal-5, #979aa0) !important;
+}
+
+.flow-ew-classic__toast {
+	margin-top: 10px;
+	padding: 6px 10px;
+	border-left: 3px solid #00a32a;
+	background: rgba(0, 163, 42, 0.12);
+	color: inherit;
+	font-size: 13px;
+	line-height: 1.4;
 }

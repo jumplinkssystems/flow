@@ -147,8 +147,8 @@ body.flow-ew-avada-publish-blocked .flow-ew-avada-publish-blocked-control {
 }
 
 /* Match native Avada submenu chrome once mounted in the toolbar */
-.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav > li.flow-ew-avada-review .flow-ew-avada-drawer.submenu-trigger-target,
-.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav > li.flow-ew-avada-review .flow-ew-avada-drawer {
+.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav li.flow-ew-avada-review .flow-ew-avada-drawer.submenu-trigger-target,
+.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav li.flow-ew-avada-review .flow-ew-avada-drawer {
 	border-radius: 0 0 6px 6px !important;
 	overflow-x: hidden !important;
 	overflow-y: auto !important;
@@ -223,7 +223,7 @@ body.flow-ew-avada-publish-blocked .flow-ew-avada-publish-blocked-control {
 
 /* Avada toolbar styles target any ".fusion-toolbar-nav > li ul" and can
    override Flow combobox dropdown placement; re-pin the reviewer listbox. */
-.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav > li.flow-ew-avada-review .flow-ew-avada-drawer ul:not(.flow-ew-pro-reviewers-list) {
+.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav li.flow-ew-avada-review .flow-ew-avada-drawer ul:not(.flow-ew-pro-reviewers-list) {
 	left: auto !important;
 	margin: 0 !important;
 	position: static !important;
@@ -264,20 +264,20 @@ body.flow-ew-avada-publish-blocked .flow-ew-avada-publish-blocked-control {
 	box-sizing: border-box !important;
 }
 
-.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav > li.flow-ew-avada-review .flow-ew-avada-drawer .flow-ew-pro-reviewers-list,
-.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav > li.flow-ew-avada-review .flow-ew-avada-drawer .flow-ew-pro-reviewers-list li,
-.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav > li.flow-ew-avada-review .flow-ew-avada-drawer #flow-ew-classic-reviewer-slot,
-.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav > li.flow-ew-avada-review .flow-ew-avada-drawer .flow-ew-pro-multi-reviewer {
+.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav li.flow-ew-avada-review .flow-ew-avada-drawer .flow-ew-pro-reviewers-list,
+.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav li.flow-ew-avada-review .flow-ew-avada-drawer .flow-ew-pro-reviewers-list li,
+.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav li.flow-ew-avada-review .flow-ew-avada-drawer #flow-ew-classic-reviewer-slot,
+.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav li.flow-ew-avada-review .flow-ew-avada-drawer .flow-ew-pro-multi-reviewer {
 	position: static !important;
 	transform: none !important;
 	width: 100% !important;
 }
 
-.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav > li.flow-ew-avada-review .flow-ew-reviewer-combobox__wrap {
+.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav li.flow-ew-avada-review .flow-ew-reviewer-combobox__wrap {
 	position: relative !important;
 }
 
-.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav > li.flow-ew-avada-review .flow-ew-reviewer-combobox__list {
+.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav li.flow-ew-avada-review .flow-ew-reviewer-combobox__list {
 	position: static !important;
 	top: auto !important;
 	right: auto !important;
@@ -301,15 +301,15 @@ body.flow-ew-avada-publish-blocked .flow-ew-avada-publish-blocked-control {
 	width: 100% !important;
 }
 
-.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav > li.flow-ew-avada-review .flow-ew-reviewer-combobox__list:not([hidden]) {
+.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav li.flow-ew-avada-review .flow-ew-reviewer-combobox__list:not([hidden]) {
 	display: block !important;
 }
 
 /* In Avada the list items are present but UA `[hidden]` + toolbar overrides
    keep the autocomplete visually collapsed. Force-show while focused, but only
    when the list is actually open — never override `[hidden]` after selection. */
-.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav > li.flow-ew-avada-review .flow-ew-reviewer-combobox__wrap:focus-within .flow-ew-reviewer-combobox__list:not([hidden]),
-.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav > li.flow-ew-avada-review .flow-ew-classic__field--combobox:focus-within .flow-ew-reviewer-combobox__list:not([hidden]) {
+.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav li.flow-ew-avada-review .flow-ew-reviewer-combobox__wrap:focus-within .flow-ew-reviewer-combobox__list:not([hidden]),
+.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav li.flow-ew-avada-review .flow-ew-classic__field--combobox:focus-within .flow-ew-reviewer-combobox__list:not([hidden]) {
 	display: block !important;
 	opacity: 1 !important;
 	visibility: visible !important;
@@ -427,7 +427,7 @@ body.flow-ew-avada-publish-blocked .flow-ew-avada-publish-blocked-control {
 }
 
 /* Override Avada toolbar button defaults inside the Flow drawer */
-.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav > li.flow-ew-avada-review .flow-ew-avada-drawer .flow-ew-reviewer-combobox__input {
+.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav li.flow-ew-avada-review .flow-ew-avada-drawer .flow-ew-reviewer-combobox__input {
 	background: #3a424c !important;
 	border: 1px solid #505a66 !important;
 	color: #ffffff !important;
@@ -439,7 +439,7 @@ body.flow-ew-avada-publish-blocked .flow-ew-avada-publish-blocked-control {
 	padding: 0 32px 0 10px !important;
 }
 
-.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav > li.flow-ew-avada-review .flow-ew-avada-drawer .flow-ew-reviewer-combobox__clear {
+.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav li.flow-ew-avada-review .flow-ew-avada-drawer .flow-ew-reviewer-combobox__clear {
 	align-items: center !important;
 	background: transparent !important;
 	border: 0 !important;
@@ -462,47 +462,47 @@ body.flow-ew-avada-publish-blocked .flow-ew-avada-publish-blocked-control {
 	width: 24px !important;
 }
 
-.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav > li.flow-ew-avada-review .flow-ew-avada-drawer .flow-ew-reviewer-combobox__clear svg,
-.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav > li.flow-ew-avada-review .flow-ew-avada-drawer .flow-ew-reviewer-combobox__clear path {
+.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav li.flow-ew-avada-review .flow-ew-avada-drawer .flow-ew-reviewer-combobox__clear svg,
+.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav li.flow-ew-avada-review .flow-ew-avada-drawer .flow-ew-reviewer-combobox__clear path {
 	fill: #9aa8b7 !important;
 }
 
-.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav > li.flow-ew-avada-review .flow-ew-avada-drawer .flow-ew-reviewer-combobox__clear:hover,
-.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav > li.flow-ew-avada-review .flow-ew-avada-drawer .flow-ew-reviewer-combobox__clear:focus-visible {
+.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav li.flow-ew-avada-review .flow-ew-avada-drawer .flow-ew-reviewer-combobox__clear:hover,
+.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav li.flow-ew-avada-review .flow-ew-avada-drawer .flow-ew-reviewer-combobox__clear:focus-visible {
 	background: transparent !important;
 	color: #ffffff !important;
 }
 
-.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav > li.flow-ew-avada-review .flow-ew-avada-drawer .flow-ew-reviewer-combobox__clear:hover svg,
-.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav > li.flow-ew-avada-review .flow-ew-avada-drawer .flow-ew-reviewer-combobox__clear:hover path,
-.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav > li.flow-ew-avada-review .flow-ew-avada-drawer .flow-ew-reviewer-combobox__clear:focus-visible svg,
-.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav > li.flow-ew-avada-review .flow-ew-avada-drawer .flow-ew-reviewer-combobox__clear:focus-visible path {
+.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav li.flow-ew-avada-review .flow-ew-avada-drawer .flow-ew-reviewer-combobox__clear:hover svg,
+.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav li.flow-ew-avada-review .flow-ew-avada-drawer .flow-ew-reviewer-combobox__clear:hover path,
+.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav li.flow-ew-avada-review .flow-ew-avada-drawer .flow-ew-reviewer-combobox__clear:focus-visible svg,
+.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav li.flow-ew-avada-review .flow-ew-avada-drawer .flow-ew-reviewer-combobox__clear:focus-visible path {
 	fill: #ffffff !important;
 }
 
-.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav > li.flow-ew-avada-review .flow-ew-avada-drawer .flow-ew-reviewer-combobox__clear[hidden] {
+.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav li.flow-ew-avada-review .flow-ew-avada-drawer .flow-ew-reviewer-combobox__clear[hidden] {
 	display: none !important;
 }
 
-.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav > li.flow-ew-avada-review .flow-ew-avada-drawer .flow-ew-pro-reviewers-list .flow-ew-reviewer-card__remove {
+.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav li.flow-ew-avada-review .flow-ew-avada-drawer .flow-ew-pro-reviewers-list .flow-ew-reviewer-card__remove {
 	color: #9aa8b7 !important;
 }
 
-.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav > li.flow-ew-avada-review .flow-ew-avada-drawer .flow-ew-pro-reviewers-list .flow-ew-reviewer-card__remove svg,
-.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav > li.flow-ew-avada-review .flow-ew-avada-drawer .flow-ew-pro-reviewers-list .flow-ew-reviewer-card__remove path {
+.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav li.flow-ew-avada-review .flow-ew-avada-drawer .flow-ew-pro-reviewers-list .flow-ew-reviewer-card__remove svg,
+.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav li.flow-ew-avada-review .flow-ew-avada-drawer .flow-ew-pro-reviewers-list .flow-ew-reviewer-card__remove path {
 	fill: #9aa8b7 !important;
 }
 
-.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav > li.flow-ew-avada-review .flow-ew-avada-drawer .flow-ew-pro-reviewers-list .flow-ew-reviewer-card__remove:hover,
-.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav > li.flow-ew-avada-review .flow-ew-avada-drawer .flow-ew-pro-reviewers-list .flow-ew-reviewer-card__remove:focus-visible {
+.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav li.flow-ew-avada-review .flow-ew-avada-drawer .flow-ew-pro-reviewers-list .flow-ew-reviewer-card__remove:hover,
+.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav li.flow-ew-avada-review .flow-ew-avada-drawer .flow-ew-pro-reviewers-list .flow-ew-reviewer-card__remove:focus-visible {
 	color: #ffffff !important;
 	outline: none !important;
 }
 
-.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav > li.flow-ew-avada-review .flow-ew-avada-drawer .flow-ew-pro-reviewers-list .flow-ew-reviewer-card__remove:hover svg,
-.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav > li.flow-ew-avada-review .flow-ew-avada-drawer .flow-ew-pro-reviewers-list .flow-ew-reviewer-card__remove:hover path,
-.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav > li.flow-ew-avada-review .flow-ew-avada-drawer .flow-ew-pro-reviewers-list .flow-ew-reviewer-card__remove:focus-visible svg,
-.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav > li.flow-ew-avada-review .flow-ew-avada-drawer .flow-ew-pro-reviewers-list .flow-ew-reviewer-card__remove:focus-visible path {
+.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav li.flow-ew-avada-review .flow-ew-avada-drawer .flow-ew-pro-reviewers-list .flow-ew-reviewer-card__remove:hover svg,
+.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav li.flow-ew-avada-review .flow-ew-avada-drawer .flow-ew-pro-reviewers-list .flow-ew-reviewer-card__remove:hover path,
+.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav li.flow-ew-avada-review .flow-ew-avada-drawer .flow-ew-pro-reviewers-list .flow-ew-reviewer-card__remove:focus-visible svg,
+.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav li.flow-ew-avada-review .flow-ew-avada-drawer .flow-ew-pro-reviewers-list .flow-ew-reviewer-card__remove:focus-visible path {
 	fill: #ffffff !important;
 }
 
@@ -661,8 +661,8 @@ body.flow-ew-avada-publish-blocked .flow-ew-avada-publish-blocked-control {
 .flow-ew-avada-drawer .flow-ew-classic__btn[data-action='resubmit'],
 .fusion-builder-live .fusion-builder-live-toolbar .flow-ew-avada-drawer .flow-ew-classic__btn[data-action='send'],
 .fusion-builder-live .fusion-builder-live-toolbar .flow-ew-avada-drawer .flow-ew-classic__btn[data-action='resubmit'],
-.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav > li.flow-ew-avada-review .flow-ew-avada-drawer .flow-ew-classic__btn[data-action='send'],
-.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav > li.flow-ew-avada-review .flow-ew-avada-drawer .flow-ew-classic__btn[data-action='resubmit'] {
+.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav li.flow-ew-avada-review .flow-ew-avada-drawer .flow-ew-classic__btn[data-action='send'],
+.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav li.flow-ew-avada-review .flow-ew-avada-drawer .flow-ew-classic__btn[data-action='resubmit'] {
 	font-size: 13px !important;
 	font-weight: 600 !important;
 	height: var(--flow-ew-avada-field-height, 40px) !important;
@@ -731,7 +731,7 @@ body.flow-ew-avada-publish-blocked .flow-ew-avada-publish-blocked-control {
 }
 
 /* Override Avada toolbar's broad ".fusion-toolbar-nav > li a" rule */
-.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav > li.flow-ew-avada-review .flow-ew-avada-drawer .flow-ew-classic__share-link {
+.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav li.flow-ew-avada-review .flow-ew-avada-drawer .flow-ew-classic__share-link {
 	align-items: center !important;
 	border: 0 !important;
 	border-right: none !important;
@@ -809,7 +809,7 @@ body.flow-ew-avada-publish-blocked .flow-ew-avada-publish-blocked-control {
 
 .flow-ew-avada-drawer .flow-ew-classic__share-goto,
 .fusion-builder-live .fusion-builder-live-toolbar .flow-ew-avada-drawer .flow-ew-classic__share-goto,
-.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav > li.flow-ew-avada-review .flow-ew-avada-drawer .flow-ew-classic__share-goto {
+.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav li.flow-ew-avada-review .flow-ew-avada-drawer .flow-ew-classic__share-goto {
 	align-items: center !important;
 	align-self: stretch !important;
 	background: #000 !important;
@@ -922,3 +922,13 @@ body.flow-ew-avada-publish-blocked .flow-ew-avada-publish-blocked-control {
 	}
 }
 
+
+/* The toolbar's "> li a" rule (20px, flex, padding) also reaches notice links. */
+.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav li.flow-ew-avada-review .flow-ew-avada-drawer .flow-ew-review-notice__desc a {
+	display: inline;
+	padding: 0;
+	font-family: inherit;
+	font-size: inherit;
+	font-weight: inherit;
+	line-height: inherit;
+}

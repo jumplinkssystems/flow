@@ -10,6 +10,7 @@ import {
 } from '../utils/iframe-bridge';
 import { eventHitsShadowNode, eventInsidePortalUI } from '../utils/dom-helpers';
 import { defaultCommentApi } from '../utils/comment-api';
+import { isReviewReadOnly } from '../utils/api';
 import CommentEditor from './CommentEditor';
 
 function mediaTypeLabel( tagName ) {
@@ -156,7 +157,7 @@ export default function InlineCommentPopover( {
 
 	const handleMouseUp = useCallback(
 		( e ) => {
-			if ( editorOpenRef.current ) {
+			if ( editorOpenRef.current || isReviewReadOnly() ) {
 				return;
 			}
 
@@ -225,7 +226,7 @@ export default function InlineCommentPopover( {
 
 	const handleMediaClick = useCallback(
 		( e ) => {
-			if ( editorOpenRef.current ) {
+			if ( editorOpenRef.current || isReviewReadOnly() ) {
 				return;
 			}
 
@@ -340,7 +341,7 @@ export default function InlineCommentPopover( {
 	// Show the popover from whatever selection is currently committed to JS.
 	const showPopoverFromCurrentSelection = useCallback(
 		( sourceWindow ) => {
-			if ( editorOpenRef.current ) {
+			if ( editorOpenRef.current || isReviewReadOnly() ) {
 				return;
 			}
 			const selection = sourceWindow.getSelection();

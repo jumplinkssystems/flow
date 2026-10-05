@@ -15,6 +15,7 @@ class Plugin {
 				Activator::create_tables();
 				Activator::create_reviewer_role();
 				$this->migrate_reviewer_roles_option();
+				DB::delete_orphaned_review_rows();
 				Settings::seed_default_options();
 				update_option( 'flow_ew_db_version', FLOW_EW_DB_VERSION );
 			} finally {
@@ -197,6 +198,7 @@ class Plugin {
 				'manageReviews'  => current_user_can( 'flow_manage_reviews' ),
 			],
 			'activeReview'             => $active_review,
+			'cancelledReviews'         => $post_id ? Review::cancelled_history( $post_id ) : [],
 			'pendingReviewer'          => $pending_reviewer,
 			'debugMode'                => Settings::is_debug_mode(),
 			'reviewMandatory'          => Settings::is_mandatory(),
@@ -226,6 +228,16 @@ class Plugin {
 				'statusChangesReq'     => __( 'Changes Requested', 'jumplinks-editorial-workflow' ),
 				'statusApproved'       => __( 'Approved', 'jumplinks-editorial-workflow' ),
 				'statusOpenReview'     => __( 'Open Review', 'jumplinks-editorial-workflow' ),
+				'statusCancelled'      => __( 'Cancelled', 'jumplinks-editorial-workflow' ),
+				'cancelReview'         => __( 'Cancel review', 'jumplinks-editorial-workflow' ),
+				'cancelReviewTitle'    => __( 'Cancel this review?', 'jumplinks-editorial-workflow' ),
+				'cancelReviewBody'     => __( 'The review becomes read-only. Assigning a reviewer again starts a new review with no comments carried over.', 'jumplinks-editorial-workflow' ),
+				'keepReview'           => __( 'Keep review', 'jumplinks-editorial-workflow' ),
+				'reviewCancelled'      => __( 'Review cancelled.', 'jumplinks-editorial-workflow' ),
+				'reviewerRemoved'      => __( 'Reviewer removed.', 'jumplinks-editorial-workflow' ),
+				'cancelReviewFailed'   => __( 'Failed to cancel review.', 'jumplinks-editorial-workflow' ),
+				'cancelledReviews'     => __( 'Review history', 'jumplinks-editorial-workflow' ),
+				'loadMore'             => __( 'Load more', 'jumplinks-editorial-workflow' ),
 				'noReviewers'          => __( 'No eligible reviewers found.', 'jumplinks-editorial-workflow' ),
 				'publishGuardTooltip'  => __( 'Post can go live only after approval by a reviewer.', 'jumplinks-editorial-workflow' ),
 				'reviewer'             => __( 'Reviewer', 'jumplinks-editorial-workflow' ),

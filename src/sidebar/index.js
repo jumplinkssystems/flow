@@ -8,6 +8,7 @@ import FlowReviewPanel from './components/FlowReviewPanel';
 import PublishGuard from './components/PublishGuard';
 import FlowReviewerInfoPanel from './components/FlowReviewerInfoPanel';
 import '../shared/share-bar.css';
+import '../shared/review-history.css';
 import './index.css';
 import { getConfig } from '../shared/config';
 import SelfReviewOnlyPanel from './components/SelfReviewOnlyPanel';

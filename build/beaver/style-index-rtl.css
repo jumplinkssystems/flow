@@ -1,6 +1,12 @@
 /*!**************************************************************************************************************************************************************************!*\
   !*** css ./node_modules/css-loader/dist/cjs.js??ruleSet[1].rules[4].use[1]!./node_modules/postcss-loader/dist/cjs.js??ruleSet[1].rules[4].use[2]!./src/beaver/style.css ***!
   \**************************************************************************************************************************************************************************/
+/* Builders force the button's text colour, so the red goes on the stroke itself. */
+.flow-ew-share-icon--cancel path,
+.flow-ew-share-icon--cancel circle {
+	fill: none !important;
+	stroke: #d63638 !important;
+}
 /**
  * Shared Current Review share bar — Figma Frame 38 (Select reviewer).
  */
@@ -211,11 +217,14 @@
 .flow-ew-classic--builder-dark .flow-ew-review-notice--changes-requested .flow-ew-review-notice__desc {
 	color: var(--flow-status-text);
 }
-.flow-ew-classic--builder-dark .flow-ew-review-notice__link {
+.flow-ew-classic--builder-dark .flow-ew-review-notice__link,
+.flow-ew-classic--builder-dark .flow-ew-review-notice__desc a {
 	color: #ffd54d;
 }
 .flow-ew-classic--builder-dark .flow-ew-review-notice__link:hover,
-.flow-ew-classic--builder-dark .flow-ew-review-notice__link:focus {
+.flow-ew-classic--builder-dark .flow-ew-review-notice__link:focus,
+.flow-ew-classic--builder-dark .flow-ew-review-notice__desc a:hover,
+.flow-ew-classic--builder-dark .flow-ew-review-notice__desc a:focus {
 	color: #fffcf3;
 }
 /* Pro multi-reviewer status dot (inverse palette) */

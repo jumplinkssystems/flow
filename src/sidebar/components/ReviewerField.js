@@ -13,6 +13,7 @@ import { store as noticesStore } from '@wordpress/notices';
 import { __, sprintf } from '@wordpress/i18n';
 import apiFetch from '@wordpress/api-fetch';
 import InviteLinkCopy from './InviteLinkCopy';
+import CancelReviewModal from './CancelReviewModal';
 import { STORE_NAME } from '../store';
 import { getConfig } from '../../shared/config';
 import { isValidEmail } from '../../shared/assign-invite-email';
@@ -46,6 +47,7 @@ export default function ReviewerField() {
 	const [ isSaving, setIsSaving ] = useState( false );
 	const [ filterValue, setFilterValue ] = useState( '' );
 	const [ emailMode, setEmailMode ] = useState( false );
+	const [ confirmingRemove, setConfirmingRemove ] = useState( false );
 
 	const inviteEmail = review?.invite_email || review?.reviewer?.email || '';
 	const isEmailReviewer = !! ( inviteEmail || review?.reviewer?.is_email );
@@ -316,8 +318,9 @@ export default function ReviewerField() {
 		}
 		setIsSaving( true );
 		try {
+			// An open review keeps running without a reviewer; otherwise it is cancelled (204).
 			const data = await apiFetch( {
-				url: `${ restUrl }/reviews/${ review.id }/cancel`,
+				url: `${ restUrl }/reviews/${ review.id }/remove-reviewer`,
 				method: 'POST',
 			} );
 			setReview( data || null );
@@ -325,7 +328,7 @@ export default function ReviewerField() {
 			setEmailMode( false );
 			setFilterValue( '' );
 			createSuccessNotice(
-				__( '✔ Reviewer removed.', 'jumplinks-editorial-workflow' ),
+				data ? i18n.reviewerRemoved : i18n.reviewCancelled,
 				{ type: 'snackbar', isDismissible: true }
 			);
 		} catch ( err ) {
@@ -388,7 +391,11 @@ export default function ReviewerField() {
 								icon="no-alt"
 								label={ i18n.removeReviewer }
 								isSmall
-								onClick={ handleRemove }
+								onClick={ () =>
+									review?.is_open
+										? handleRemove()
+										: setConfirmingRemove( true )
+								}
 								disabled={ isSaving }
 								className="flow-ew-reviewer-card__remove"
 							/>
@@ -489,6 +496,12 @@ export default function ReviewerField() {
 							</div>
 						) }
 					</div>
+				) }
+				{ confirmingRemove && (
+					<CancelReviewModal
+						onConfirm={ handleRemove }
+						onClose={ () => setConfirmingRemove( false ) }
+					/>
 				) }
 			</div>
 		</PanelRow>

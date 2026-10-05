@@ -1,4 +1,4 @@
-/** @typedef {'copy' | 'copied' | 'external'} ShareBarIconName */
+/** @typedef {'copy' | 'copied' | 'external' | 'cancel'} ShareBarIconName */
 
 const iconClass = 'flow-ew-share-icon';
 const svgAttrs = ' viewBox="0 0 24 24" aria-hidden="true"';
@@ -16,6 +16,19 @@ const figmaExternalPath =
  * @return {string}
  */
 export function shareBarIconHtml( name ) {
+	if ( name === 'cancel' ) {
+		return (
+			'<svg class="' +
+			iconClass +
+			' flow-ew-share-icon--cancel"' +
+			svgAttrs +
+			'>' +
+			'<circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="2"/>' +
+			'<path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M9 9l6 6M15 9l-6 6"/>' +
+			'</svg>'
+		);
+	}
+
 	if ( name === 'copied' ) {
 		return (
 			'<svg class="' +
@@ -59,6 +72,32 @@ export function shareBarIconHtml( name ) {
  * @param {ShareBarIconName} name
  */
 export function ShareBarIcon( { name } ) {
+	if ( name === 'cancel' ) {
+		return (
+			<svg
+				className={ `${ iconClass } flow-ew-share-icon--cancel` }
+				viewBox="0 0 24 24"
+				aria-hidden="true"
+			>
+				<circle
+					cx="12"
+					cy="12"
+					r="8.5"
+					fill="none"
+					stroke="currentColor"
+					strokeWidth="2"
+				/>
+				<path
+					fill="none"
+					stroke="currentColor"
+					strokeWidth="2"
+					strokeLinecap="round"
+					d="M9 9l6 6M15 9l-6 6"
+				/>
+			</svg>
+		);
+	}
+
 	if ( name === 'copied' ) {
 		return (
 			<svg

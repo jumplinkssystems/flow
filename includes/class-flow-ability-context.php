@@ -98,6 +98,9 @@ class Ability_Context {
 			return 'assign_reviewer';
 		}
 		$status = (string) $review->status;
+		if ( Review::STATUS_CANCELLED === $status ) {
+			return 'assign_reviewer';
+		}
 		if ( Review::STATUS_PENDING === $status ) {
 			return 'send_for_review';
 		}

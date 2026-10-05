@@ -35,13 +35,34 @@ class DB {
 		$table = esc_sql( self::reviews_table() );
 		$row   = $wpdb->get_row( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
 			$wpdb->prepare(
-				"SELECT * FROM {$table} WHERE post_id = %d AND is_private = 0 ORDER BY updated_at DESC, id DESC LIMIT 1", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table from plugin prefix + literal name.
-				$post_id
+				"SELECT * FROM {$table} WHERE post_id = %d AND is_private = 0 AND status <> %s ORDER BY updated_at DESC, id DESC LIMIT 1", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table from plugin prefix + literal name.
+				$post_id,
+				Review::STATUS_CANCELLED
 			)
 		);
 
 		self::$active_cache[ $post_id ] = $row ?: null;
 		return self::$active_cache[ $post_id ];
+	}
+
+	/**
+	 * Cancelled reviews on a post, newest first, with their comment counts.
+	 *
+	 * @return object[]
+	 */
+	public static function get_cancelled_reviews( int $post_id, int $limit = 100 ): array {
+		global $wpdb;
+		$table    = esc_sql( self::reviews_table() );
+		$comments = esc_sql( self::comments_table() );
+		$rows     = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+			$wpdb->prepare(
+				"SELECT r.*, (SELECT COUNT(*) FROM {$comments} c WHERE c.review_id = r.id) AS comment_count FROM {$table} r WHERE r.post_id = %d AND r.is_private = 0 AND r.status = %s ORDER BY r.updated_at DESC, r.id DESC LIMIT %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tables from plugin prefix + literal names.
+				$post_id,
+				Review::STATUS_CANCELLED,
+				$limit
+			)
+		);
+		return is_array( $rows ) ? $rows : [];
 	}
 
 	/** The post's self review: a private channel the workflow queries never return. */
@@ -88,12 +109,12 @@ class DB {
 			AND r1.is_private = 0
 			AND r1.id = (
 				SELECT id FROM {$table} r2
-				WHERE r2.post_id = r1.post_id AND r2.is_private = 0
+				WHERE r2.post_id = r1.post_id AND r2.is_private = 0 AND r2.status <> %s
 				ORDER BY r2.updated_at DESC, r2.id DESC
 				LIMIT 1
 			)";
 		$rows = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
-			$wpdb->prepare( $sql, array_values( $ids ) ) // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+			$wpdb->prepare( $sql, array_merge( array_values( $ids ), [ Review::STATUS_CANCELLED ] ) ) // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 		);
 		foreach ( $ids as $post_id ) {
 			self::$active_cache[ $post_id ] = null;
@@ -126,11 +147,13 @@ class DB {
 			AND r1.is_private = 0
 			AND r1.id = (
 				SELECT id FROM {$table} r2
-				WHERE r2.post_id = r1.post_id AND r2.is_private = 0
+				WHERE r2.post_id = r1.post_id AND r2.is_private = 0 AND r2.status <> %s
 				ORDER BY r2.updated_at DESC, r2.id DESC
 				LIMIT 1
 			)";
-		$rows = $wpdb->get_col( $sql ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery,WordPress.DB.PreparedSQL.NotPrepared
+		$rows = $wpdb->get_col( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+			$wpdb->prepare( $sql, Review::STATUS_CANCELLED ) // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		);
 		return array_map( 'intval', (array) $rows );
 	}
 
@@ -156,12 +179,12 @@ class DB {
 			AND r1.is_private = 0
 			AND r1.id = (
 				SELECT id FROM {$table} r2
-				WHERE r2.post_id = r1.post_id AND r2.is_private = 0
+				WHERE r2.post_id = r1.post_id AND r2.is_private = 0 AND r2.status <> %s
 				ORDER BY r2.updated_at DESC, r2.id DESC
 				LIMIT 1
 			)";
 		$rows = $wpdb->get_col( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
-			$wpdb->prepare( $sql, $statuses ) // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+			$wpdb->prepare( $sql, array_merge( array_values( $statuses ), [ Review::STATUS_CANCELLED ] ) ) // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 		);
 		return array_map( 'intval', (array) $rows );
 	}
@@ -228,10 +251,12 @@ class DB {
 	}
 
 	/**
-	 * Cascade delete: every review row tied to the given post, plus all of
-	 * its review-comment rows. Hooked from `before_delete_post` so orphan
-	 * rows don't accumulate when posts are permanently deleted (the trash
-	 * state still keeps reviews intact — only force-delete cleans up).
+	 * Cascade delete: every review row tied to the given post, plus its
+	 * comments and email invites. Hooked from `before_delete_post` (trash keeps
+	 * reviews; only force-delete cleans up). Rows keyed by a review id must go
+	 * with it: a database that reuses ids would otherwise hand an old invite or
+	 * roster to an unrelated new review. Pro clears its rows on
+	 * `flow_ew_reviews_deleted`.
 	 *
 	 * @return int Number of review rows deleted.
 	 */
@@ -243,11 +268,35 @@ class DB {
 		$reviews_table  = self::reviews_table();
 		$comments_table = self::comments_table();
 
-		// Comments first so we don't leave dangling rows pointing at deleted reviews.
+		$review_ids = array_map(
+			'intval',
+			(array) $wpdb->get_col( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+				$wpdb->prepare( "SELECT id FROM {$reviews_table} WHERE post_id = %d", $post_id ) // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table from plugin prefix + literal name.
+			)
+		);
+
 		$wpdb->delete( $comments_table, [ 'post_id' => $post_id ], [ '%d' ] ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		foreach ( $review_ids as $review_id ) {
+			Email_Review_Invites_DB::delete_for_review( $review_id );
+		}
 		$count = (int) $wpdb->delete( $reviews_table, [ 'post_id' => $post_id ], [ '%d' ] ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		self::flush_active_review_cache();
+		if ( $review_ids ) {
+			do_action( 'flow_ew_reviews_deleted', $review_ids, $post_id );
+		}
 		return $count;
+	}
+
+	/** Comments and invites whose review row no longer exists. */
+	public static function delete_orphaned_review_rows(): void {
+		global $wpdb;
+		$reviews  = self::reviews_table();
+		$comments = self::comments_table();
+		$invites  = Email_Review_Invites_DB::table();
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- table literals only.
+		$wpdb->query( "DELETE c FROM {$comments} c LEFT JOIN {$reviews} r ON r.id = c.review_id WHERE r.id IS NULL" );
+		$wpdb->query( "DELETE i FROM {$invites} i LEFT JOIN {$reviews} r ON r.id = i.review_id WHERE r.id IS NULL" );
+		// phpcs:enable WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter
 	}
 
 	public static function update_review( int $id, array $data ): bool {
@@ -397,6 +446,7 @@ class DB {
 			'parent_id'       => '%d',
 			'is_resolved'     => '%d',
 			'is_agent'        => '%d',
+			'revision_id'     => '%d',
 			'created_at'      => '%s',
 			'updated_at'      => '%s',
 		];
@@ -562,6 +612,8 @@ class DB {
 		}
 		if ( '' !== $status ) {
 			$where[] = $wpdb->prepare( 'r.status = %s', $status );
+		} else {
+			$where[] = $wpdb->prepare( 'r.status <> %s', Review::STATUS_CANCELLED );
 		}
 		if ( null !== $is_open ) {
 			$where[] = $wpdb->prepare( 'r.is_open = %d', $is_open ? 1 : 0 );
@@ -615,9 +667,9 @@ class DB {
 				$placeholders = implode( ',', array_fill( 0, count( $extra_ids ), '%d' ) );
 				$rows         = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
 					$wpdb->prepare( // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber
-						"SELECT * FROM {$table} WHERE is_private = 0 AND (reviewer_id = %d OR requester_id = %d OR id IN ({$placeholders})) ORDER BY updated_at DESC LIMIT %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table + placeholders generated locally.
+						"SELECT * FROM {$table} WHERE is_private = 0 AND status <> %s AND (reviewer_id = %d OR requester_id = %d OR id IN ({$placeholders})) ORDER BY updated_at DESC LIMIT %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table + placeholders generated locally.
 						array_merge(
-							[ $participant_user_id, $participant_user_id ],
+							[ Review::STATUS_CANCELLED, $participant_user_id, $participant_user_id ],
 							$extra_ids,
 							[ $limit ]
 						)
@@ -626,7 +678,8 @@ class DB {
 			} else {
 				$rows = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
 					$wpdb->prepare(
-						"SELECT * FROM {$table} WHERE is_private = 0 AND (reviewer_id = %d OR requester_id = %d) ORDER BY updated_at DESC LIMIT %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+						"SELECT * FROM {$table} WHERE is_private = 0 AND status <> %s AND (reviewer_id = %d OR requester_id = %d) ORDER BY updated_at DESC LIMIT %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+						Review::STATUS_CANCELLED,
 						$participant_user_id,
 						$participant_user_id,
 						$limit
@@ -636,7 +689,8 @@ class DB {
 		} else {
 			$rows = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
 				$wpdb->prepare(
-					"SELECT * FROM {$table} WHERE is_private = 0 ORDER BY updated_at DESC LIMIT %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table from plugin prefix + literal name.
+					"SELECT * FROM {$table} WHERE is_private = 0 AND status <> %s ORDER BY updated_at DESC LIMIT %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table from plugin prefix + literal name.
+					Review::STATUS_CANCELLED,
 					$limit
 				)
 			);

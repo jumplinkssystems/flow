@@ -1,6 +1,12 @@
 /*!******************************************************************************************************************************************************************************!*\
   !*** css ./node_modules/css-loader/dist/cjs.js??ruleSet[1].rules[4].use[1]!./node_modules/postcss-loader/dist/cjs.js??ruleSet[1].rules[4].use[2]!./src/shared/share-bar.css ***!
   \******************************************************************************************************************************************************************************/
+/* Builders force the button's text colour, so the red goes on the stroke itself. */
+.flow-ew-share-icon--cancel path,
+.flow-ew-share-icon--cancel circle {
+	fill: none !important;
+	stroke: #d63638 !important;
+}
 /**
  * Shared Current Review share bar — Figma Frame 38 (Select reviewer).
  */
@@ -106,6 +112,47 @@
 	text-transform: uppercase;
 }
 
+
+/*!***********************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/css-loader/dist/cjs.js??ruleSet[1].rules[4].use[1]!./node_modules/postcss-loader/dist/cjs.js??ruleSet[1].rules[4].use[2]!./src/shared/review-history.css ***!
+  \***********************************************************************************************************************************************************************************/
+.flow-ew-history {
+	margin-top: 12px;
+}
+
+.flow-ew-history__list {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	list-style: none;
+	margin: 4px 0 0;
+	padding: 0;
+}
+
+.flow-ew-history__item {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0 4px;
+	margin: 0;
+	font-size: 13px;
+	line-height: 1.4;
+}
+
+.flow-ew-history__meta {
+	font-size: 12px;
+	opacity: 0.75;
+}
+
+.flow-ew-history .flow-ew-history__more {
+	margin-top: 14px;
+	padding: 0;
+	border: 0;
+	background: none;
+	color: inherit;
+	font-size: 13px;
+	text-decoration: underline;
+	cursor: pointer;
+}
 
 /*!***************************************************************************************************************************************************************************!*\
   !*** css ./node_modules/css-loader/dist/cjs.js??ruleSet[1].rules[4].use[1]!./node_modules/postcss-loader/dist/cjs.js??ruleSet[1].rules[4].use[2]!./src/sidebar/index.css ***!
@@ -578,6 +625,24 @@
 .flow-ew-self-review__goto .flow-ew-share-icon {
 	height: 16px;
 	width: 16px;
+}
+.flow-ew-confirm-modal .components-modal__content {
+	max-width: 420px;
+}
+.flow-ew-confirm-modal__actions {
+	display: flex;
+	justify-content: flex-end;
+	gap: 8px;
+	margin-top: 16px;
+}
+.flow-ew-share-bar__copy.flow-ew-share-bar__cancel.components-button {
+	border-left: 1px solid var(--flow-ew-wp-charcoal-5, #979aa0);
+}
+/* The sidebar is narrow: smaller actions leave room for the link. */
+.flow-ew-share-bar .flow-ew-share-bar__row {
+	--flow-ew-share-action-width: 32px;
+	--flow-ew-share-action-padding-x: 6px;
+	--flow-ew-share-icon-size: 20px;
 }
 
 

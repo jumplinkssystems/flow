@@ -13,6 +13,7 @@ class Review {
 	const STATUS_IN_REVIEW         = 'in_review';
 	const STATUS_CHANGES_REQUESTED = 'changes_requested';
 	const STATUS_APPROVED          = 'approved';
+	const STATUS_CANCELLED         = 'cancelled';
 
 	const STATUS_OPEN_REVIEW = 'open_review';
 	const STATUS_SELF_REVIEW = 'self_review';
@@ -28,6 +29,7 @@ class Review {
 			self::STATUS_IN_REVIEW         => __( 'In Review', 'jumplinks-editorial-workflow' ),
 			self::STATUS_CHANGES_REQUESTED => __( 'Changes Requested', 'jumplinks-editorial-workflow' ),
 			self::STATUS_APPROVED          => __( 'Approved', 'jumplinks-editorial-workflow' ),
+			self::STATUS_CANCELLED         => __( 'Cancelled', 'jumplinks-editorial-workflow' ),
 			self::STATUS_OPEN_REVIEW       => __( 'Open Review', 'jumplinks-editorial-workflow' ),
 			self::STATUS_SELF_REVIEW       => __( 'Self review', 'jumplinks-editorial-workflow' ),
 		];
@@ -50,6 +52,9 @@ class Review {
 	public static function display_status( object $review ): string {
 		if ( self::is_private( $review ) ) {
 			return self::STATUS_SELF_REVIEW;
+		}
+		if ( self::is_cancelled( $review ) ) {
+			return self::STATUS_CANCELLED;
 		}
 		if ( ! empty( $review->is_open ) && (int) ( $review->reviewer_id ?? 0 ) === 0 ) {
 			return self::STATUS_OPEN_REVIEW;
@@ -136,6 +141,44 @@ class Review {
 		return ! empty( $review->is_private );
 	}
 
+	public static function is_cancelled( object $review ): bool {
+		return self::STATUS_CANCELLED === (string) ( $review->status ?? '' );
+	}
+
+	/**
+	 * Cancelled reviews on a post for the editor's history list.
+	 *
+	 * @return array<int,array{id:int,url:string,date:string,meta:string}>
+	 */
+	public static function cancelled_history( int $post_id ): array {
+		$out = [];
+		foreach ( DB::get_cancelled_reviews( $post_id ) as $review ) {
+			$count = (int) ( $review->comment_count ?? 0 );
+			$time  = strtotime( (string) ( $review->updated_at ?? '' ) . ' UTC' );
+			$out[] = [
+				'id'   => (int) $review->id,
+				'url'  => self::get_preview_url(
+					(int) $review->id,
+					self::get_effective_preview_revision_id( $post_id, (int) ( $review->revision_id ?? 0 ) ),
+					$post_id
+				),
+				'date' => $time ? wp_date( get_option( 'date_format' ) . ' H:i', $time ) : '',
+				'meta' => sprintf(
+					/* translators: %d: number of comments on a cancelled review. */
+					_n( '%d comment', '%d comments', $count, 'jumplinks-editorial-workflow' ),
+					$count
+				),
+			];
+		}
+		return $out;
+	}
+
+	private static function assert_not_cancelled( object $review ): void {
+		if ( self::is_cancelled( $review ) ) {
+			throw new \RuntimeException( esc_html__( 'This review was cancelled.', 'jumplinks-editorial-workflow' ) );
+		}
+	}
+
 	/**
 	 * A self review is a private channel on the post: the workflow queries
 	 * never return it, so a client review can be started on the same post
@@ -213,6 +256,7 @@ class Review {
 		if ( ! self::is_requester_or_manager( $review, $user_id ) ) {
 			throw new \RuntimeException( esc_html__( 'You are not authorized to send this review.', 'jumplinks-editorial-workflow' ) );
 		}
+		self::assert_not_cancelled( $review );
 		$has_wp_reviewer = (int) ( $review->reviewer_id ?? 0 ) > 0;
 		$has_invite      = Email_Review_Invites_DB::count_for_review( $review_id ) > 0;
 		$is_open         = ! empty( $review->is_open );
@@ -276,6 +320,25 @@ class Review {
 		}
 
 		return $stored_revision_id > 0 ? $stored_revision_id : 0;
+	}
+
+	/** The post's newest saved revision, ignoring autosaves; 0 when it has none. */
+	public static function newest_saved_revision_id( int $post_id ): int {
+		// IDs, not dates: builders can backdate a revision to the previous save.
+		$revisions = wp_get_post_revisions(
+			$post_id,
+			[
+				'numberposts' => 5,
+				'orderby'     => 'ID',
+				'order'       => 'DESC',
+			]
+		);
+		foreach ( $revisions as $revision ) {
+			if ( ! wp_is_post_autosave( $revision ) ) {
+				return (int) $revision->ID;
+			}
+		}
+		return 0;
 	}
 
 	public static function get_preview_url( int $review_id, int $revision_id, int $post_id ): string {
@@ -353,28 +416,54 @@ class Review {
 		if ( ! self::is_requester_or_manager( $review, $user_id ) ) {
 			throw new \RuntimeException( esc_html__( 'You are not authorized to cancel this review.', 'jumplinks-editorial-workflow' ) );
 		}
-
-		if ( ! empty( $review->is_open ) ) {
-			DB::update_review(
-				$review_id,
-				[
-					'reviewer_id' => 0,
-					'status'      => self::STATUS_PENDING,
-				]
-			);
-			delete_post_meta( (int) $review->post_id, '_flow_reviewer_id' );
-			update_post_meta( (int) $review->post_id, '_flow_review_status', self::STATUS_PENDING );
-			// Same cleanup as full cancel — remove email invites so the UI is not
-			// stuck in External Email mode after clearing the assignee.
-			do_action( 'flow_ew_review_cancelled', $review_id, (int) $review->post_id, $user_id );
+		if ( self::is_cancelled( $review ) ) {
 			return;
 		}
 
-		DB::delete_review( $review_id );
+		DB::update_review(
+			$review_id,
+			[
+				'status'    => self::STATUS_CANCELLED,
+				'is_open'   => 0,
+				'is_public' => 0,
+			]
+		);
 		delete_post_meta( (int) $review->post_id, '_flow_reviewer_id' );
 		delete_post_meta( (int) $review->post_id, '_flow_review_status' );
 
 		do_action( 'flow_ew_review_cancelled', $review_id, (int) $review->post_id, $user_id );
+	}
+
+	/**
+	 * Unassigns the reviewer. An open review keeps running without one; any
+	 * other review has nothing left and is cancelled.
+	 */
+	public static function remove_reviewer( int $review_id, int $user_id ): void {
+		$review = DB::get_review( $review_id );
+		if ( ! $review ) {
+			throw new \InvalidArgumentException( esc_html__( 'Review not found.', 'jumplinks-editorial-workflow' ) );
+		}
+		if ( ! (bool) ( $review->is_open ?? false ) || ! self::is_open_review_feature_available() ) {
+			self::cancel( $review_id, $user_id );
+			return;
+		}
+		if ( ! self::is_requester_or_manager( $review, $user_id ) ) {
+			throw new \RuntimeException( esc_html__( 'You are not authorized to modify this review.', 'jumplinks-editorial-workflow' ) );
+		}
+		self::assert_not_cancelled( $review );
+
+		DB::update_review(
+			$review_id,
+			[
+				'reviewer_id' => 0,
+				'status'      => self::STATUS_PENDING,
+			]
+		);
+		Email_Review_Invites_DB::delete_for_review( $review_id );
+		delete_post_meta( (int) $review->post_id, '_flow_reviewer_id' );
+		delete_post_meta( (int) $review->post_id, '_flow_review_status' );
+
+		do_action( 'flow_ew_reviewer_removed', $review_id, (int) $review->post_id, $user_id );
 	}
 
 	public static function resubmit( int $review_id, int $user_id ): void {
@@ -392,6 +481,7 @@ class Review {
 		if ( ! self::is_post_author( $review, $user_id ) ) {
 			throw new \RuntimeException( esc_html__( 'You are not authorized to resubmit this review.', 'jumplinks-editorial-workflow' ) );
 		}
+		self::assert_not_cancelled( $review );
 
 		$revision_id = 0;
 		$revisions   = wp_get_post_revisions(
@@ -513,7 +603,7 @@ class Review {
 	}
 
 	public static function can_user_access_as_participant_or_open( object $review, int $user_id ): bool {
-		$is_open = (bool) ( $review->is_open ?? false ) && self::is_open_review_feature_available() && ! self::is_private( $review );
+		$is_open = (bool) ( $review->is_open ?? false ) && self::is_open_review_feature_available() && ! self::is_private( $review ) && ! self::is_cancelled( $review );
 		return self::is_user_review_participant( $review, $user_id ) || $is_open;
 	}
 
@@ -612,6 +702,7 @@ class Review {
 		if ( ! self::can_user_take_reviewer_action( $review, $user_id ) ) {
 			throw new \RuntimeException( esc_html__( 'You are not authorized to take action on this review.', 'jumplinks-editorial-workflow' ) );
 		}
+		self::assert_not_cancelled( $review );
 		return $review;
 	}
 }

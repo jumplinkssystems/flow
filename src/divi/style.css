@@ -514,3 +514,8 @@ html[data-app-color-mode='dark'] .flow-ew-divi-drawer {
 .flow-ew-divi-drawer .flow-ew-classic__share-copy--done svg {
 	color: #39b54a !important;
 }
+
+/* The link already draws the line before the first button. */
+.flow-ew-classic--divi .flow-ew-classic__share-link + .flow-ew-classic__share-copy {
+	border-left: 0 !important;
+}

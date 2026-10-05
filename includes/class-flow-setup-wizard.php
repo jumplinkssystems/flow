@@ -136,6 +136,7 @@ class Setup_Wizard {
 				'agentPrompt'      => Settings::agent_primer_prompt(),
 				'reviewerRoleSlug' => Activator::REVIEWER_ROLE,
 				'current'          => $this->current_answers(),
+				'next'             => self::next_steps_data(),
 				'choices'          => [
 					'postTypes' => $post_types,
 					'roles'     => Settings::get_reviewer_role_choices(),
@@ -143,6 +144,21 @@ class Setup_Wizard {
 				'i18n'             => $this->strings(),
 			]
 		);
+	}
+
+	/**
+	 * What the last screen needs to point people at their first review.
+	 *
+	 * @return array<string,mixed>
+	 */
+	private static function next_steps_data(): array {
+		return [
+			'newPostUrl'         => admin_url( 'post-new.php' ),
+			'addUserUrl'         => current_user_can( 'create_users' ) ? admin_url( 'user-new.php' ) : '',
+			'usersUrl'           => current_user_can( 'list_users' ) ? admin_url( 'users.php' ) : '',
+			'clientVideoWebm'    => Assets::asset_url( 'assets/invite-client.webm' ),
+			'editorialVideoWebm' => Assets::asset_url( 'assets/editorial-assign.webm' ),
+		];
 	}
 
 	/**
@@ -265,12 +281,39 @@ class Setup_Wizard {
 			'agentAskEditDesc'    => __( 'The agent works out everything it would change, describes it in your chat — which page, which wording, and anything it still needs from you — then waits for you to confirm before touching the site. This is an instruction Flow gives the agent, not something it can enforce: an agent that ignores it can still edit.', 'jumplinks-editorial-workflow' ),
 			'experimental'        => __( 'Experimental', 'jumplinks-editorial-workflow' ),
 
-			'doneTitle'           => __( 'You are all set', 'jumplinks-editorial-workflow' ),
-			'doneEditorial'       => __( 'Next: open a post and assign a reviewer in the Review panel, then click Send for review.', 'jumplinks-editorial-workflow' ),
-			'doneClient'          => __( 'Next: open a page, type your client\'s email address in the reviewer field, then click Send for review. They get the link by email.', 'jumplinks-editorial-workflow' ),
-			'doneAgent'           => __( 'Next: connect your AI agent to this site, then paste this prompt into it:', 'jumplinks-editorial-workflow' ),
-			'doneBuildAi'         => __( 'Open any page and click Review in the admin bar to leave comments for your agent.', 'jumplinks-editorial-workflow' ),
+			'doneTitle'           => __( 'You are all set. What to do next', 'jumplinks-editorial-workflow' ),
 			'doneDocs'            => __( 'Read the documentation', 'jumplinks-editorial-workflow' ),
+			'nextStart'           => __( 'Start your first review', 'jumplinks-editorial-workflow' ),
+			'nextRolesNone'       => __( 'Nobody can review yet: no user has one of the reviewer roles you picked.', 'jumplinks-editorial-workflow' ),
+			/* translators: 1: number of users who can review, 2: their roles, e.g. "Editor, Flow Reviewer" */
+			'nextRolesSome'       => __( 'Users who can review: %1$d (%2$s).', 'jumplinks-editorial-workflow' ),
+			'nextRolesHint'       => __( 'Give each reviewer one of these roles under Users.', 'jumplinks-editorial-workflow' ),
+			'nextAddUser'         => __( 'Add a user', 'jumplinks-editorial-workflow' ),
+			'nextManageUsers'     => __( 'Manage users', 'jumplinks-editorial-workflow' ),
+			'nextEditorial1'      => __( 'Open a post and find the Review panel.', 'jumplinks-editorial-workflow' ),
+			'nextEditorial2'      => __( 'Pick a reviewer, then click Send for review.', 'jumplinks-editorial-workflow' ),
+			'nextEditorial3'      => __( 'They get an email with the link, comment on the page, and approve it or request changes.', 'jumplinks-editorial-workflow' ),
+			'nextMandatory'       => __( 'Publishing stays locked until a reviewer approves.', 'jumplinks-editorial-workflow' ),
+			'nextClient1'         => __( 'Open a page and find the Review panel.', 'jumplinks-editorial-workflow' ),
+			'nextClient2'         => __( 'Type your client\'s email address in the Reviewer field and choose Invite.', 'jumplinks-editorial-workflow' ),
+			'nextClient3'         => __( 'Click Send for review. Your client gets the link by email and needs no account.', 'jumplinks-editorial-workflow' ),
+			'nextClientTip'       => __( 'Tip: invite your own email address first to see exactly what your client will see.', 'jumplinks-editorial-workflow' ),
+			'nextClientVideo'     => __( 'Inviting a client by email from the Review panel', 'jumplinks-editorial-workflow' ),
+			'nextEditorialVideo'  => __( 'Assigning a reviewer from the Review panel', 'jumplinks-editorial-workflow' ),
+			'nextPastePrompt'     => __( 'Paste this prompt into your AI agent to start:', 'jumplinks-editorial-workflow' ),
+			'nextAgentTitle'      => __( 'Work with your AI agent', 'jumplinks-editorial-workflow' ),
+			'nextTryAsking'       => __( 'Then try asking:', 'jumplinks-editorial-workflow' ),
+			'nextBuildAi1'        => __( 'Ask it to build or change a page. It works in your page builder and gives you a private review link.', 'jumplinks-editorial-workflow' ),
+			'nextBuildAi2'        => __( 'Open the link and click anything on the page to leave a comment, the way you would brief a designer.', 'jumplinks-editorial-workflow' ),
+			'nextBuildAi3'        => __( 'Tell it to fix your comments. It edits the page, resolves each comment it handled and tells you about anything unclear.', 'jumplinks-editorial-workflow' ),
+			'nextBuildAi4'        => __( 'Repeat until the page is right, then publish. Nobody else sees your comments.', 'jumplinks-editorial-workflow' ),
+			'nextBuildAiAsk1'     => __( 'Build a landing page for our summer offer and give me the review link.', 'jumplinks-editorial-workflow' ),
+			'nextBuildAiAsk2'     => __( 'I left comments on the Home page. Fix them.', 'jumplinks-editorial-workflow' ),
+			'nextApproveAi1'      => __( 'Ask it to write or update content and send it for review. It picks a reviewer from the roles you chose.', 'jumplinks-editorial-workflow' ),
+			'nextApproveAi2'      => __( 'The reviewer gets an email, comments on the page, and approves it or requests changes.', 'jumplinks-editorial-workflow' ),
+			'nextApproveAi3'      => __( 'Ask the agent to work through the feedback. It edits the content, resolves each comment it handled and resubmits.', 'jumplinks-editorial-workflow' ),
+			'nextApproveAiAsk1'   => __( 'Write a post announcing our new opening hours and send it for review.', 'jumplinks-editorial-workflow' ),
+			'nextApproveAiAsk2'   => __( 'The reviewer requested changes on the opening hours post. Apply them and resubmit.', 'jumplinks-editorial-workflow' ),
 			'doneChanges'         => __( 'Finish saves these changes:', 'jumplinks-editorial-workflow' ),
 			'doneNoChanges'       => __( 'Nothing changes: your settings already match this setup.', 'jumplinks-editorial-workflow' ),
 			/* translators: %s: the previous value of a setting */
@@ -283,6 +326,7 @@ class Setup_Wizard {
 			'modeSolo'            => __( 'Self review only', 'jumplinks-editorial-workflow' ),
 			'openReviewLabel'     => __( 'Open Review', 'jumplinks-editorial-workflow' ),
 			'selfReviewLabel'     => __( 'Self review', 'jumplinks-editorial-workflow' ),
+			'selfReviewDesc'      => __( 'Adds a "Self review" link to the admin bar and editor on every supported page. Comments you leave there are private: assigned reviewers and clients never see them, and connected AI agents can read and resolve them over MCP.', 'jumplinks-editorial-workflow' ),
 		];
 	}
 
@@ -327,6 +371,7 @@ class Setup_Wizard {
 						'post_types'              => $slugs,
 						'reviewer_roles'          => $slugs,
 						'allow_external'          => $bool,
+						'self_review'             => $bool,
 						'show_reviewed_by'        => $bool,
 						'auto_assign_reviewer_id' => $int,
 						'auto_assign_email'       => $string,

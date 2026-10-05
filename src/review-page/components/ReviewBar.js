@@ -31,8 +31,10 @@ import { useReviewCommentTotals } from '../utils/review-comment-totals';
 import { STATUS_LABELS } from '../../shared/status-labels';
 import alertWarningIcon from '../icons/alert-warning';
 import ViewDropdown from './ViewDropdown';
+import RevisionsDialog from './RevisionsDialog';
 import WpLogoButton from './WpLogoButton';
 import ReviewActions from './ReviewActions';
+import { useConfirmDialog } from '../hooks/use-confirm-dialog';
 import {
 	sameOriginIframeSrc,
 	stampCanvasMarkerOnLinks,
@@ -116,6 +118,7 @@ export default function ReviewBar( {
 		return () => clearTimeout( t );
 	}, [ actionStatus ] );
 	const [ isBusy, setIsBusy ] = useState( false );
+	const [ showRevisions, setShowRevisions ] = useState( false );
 	const [ revisionStatus, setRevisionStatus ] = useState(
 		initialRevisionStatus
 	);
@@ -469,18 +472,56 @@ export default function ReviewBar( {
 	} );
 	const myVote = myVoteState !== null ? myVoteState : currentStatus;
 	const isApproved = myVote === 'approved';
+	const isCancelled =
+		!! pageData.isCancelled || currentStatus === 'cancelled';
 	const canAuthorResubmit =
 		currentStatus === 'changes_requested' &&
 		currentUserIsPostAuthor &&
-		Number( reviewId ) > 0;
+		Number( reviewId ) > 0 &&
+		! isCancelled;
 
 	const canAdminOverride = debugMode && currentUserIsAdmin;
 	const isOpenReview = currentStatus === 'open_review';
 	// Email invitees act anonymously with a cookie session; WP users need login.
 	const canActFinal =
 		! isOpenReview &&
+		! isCancelled &&
 		( canAct || canAdminOverride ) &&
 		( isEmailInvitee || Number( currentUserId ) > 0 );
+
+	const { confirm, confirmDialog } = useConfirmDialog();
+	const cancelReview = useCallback( async () => {
+		const ok = await confirm( {
+			title: __( 'Cancel this review?', 'jumplinks-editorial-workflow' ),
+			message: __(
+				'The review becomes read-only. Assigning a reviewer again starts a new review with no comments carried over.',
+				'jumplinks-editorial-workflow'
+			),
+			confirmLabel: __( 'Cancel review', 'jumplinks-editorial-workflow' ),
+			cancelLabel: __( 'Keep review', 'jumplinks-editorial-workflow' ),
+		} );
+		if ( ! ok ) {
+			return;
+		}
+		setIsBusy( true );
+		try {
+			await flowFetch( `reviews/${ reviewId }/cancel`, {
+				method: 'POST',
+			} );
+			window.location.reload();
+		} catch ( err ) {
+			setActionStatus( {
+				type: 'error',
+				message:
+					err?.message ||
+					__(
+						'Failed to cancel review.',
+						'jumplinks-editorial-workflow'
+					),
+			} );
+			setIsBusy( false );
+		}
+	}, [ confirm, reviewId ] );
 
 	const resolvedTitle =
 		postTitle && String( postTitle ).trim()
@@ -618,43 +659,64 @@ export default function ReviewBar( {
 				) }
 			</div>
 
-			{ revisionStatus ||
+			{ isCancelled ||
+			revisionStatus ||
 			snapshotLabel ||
 			( debugMode && revisionStatus === 'latest' ) ? (
 				<div className="flow-bar__meta">
 					<div className="flow-bar__freshness-row">
-						{ revisionStatus ? (
+						{ isCancelled ? (
+							<span
+								className="flow-bar__freshness flow-bar__freshness--cancelled"
+								role="status"
+							>
+								{ __(
+									'This review was cancelled.',
+									'jumplinks-editorial-workflow'
+								) }
+							</span>
+						) : null }
+						{ revisionStatus && ! isCancelled ? (
 							<span
 								className={ `flow-bar__freshness flow-bar__freshness--${ revisionStatus }` }
 							>
-								{ revisionStatus === 'latest' ? (
-									__(
-										'You are viewing the latest content',
-										'jumplinks-editorial-workflow'
-									)
-								) : (
-									<>
-										{ __(
+								{ revisionStatus === 'latest'
+									? __(
+											'You are viewing the latest content',
+											'jumplinks-editorial-workflow'
+									  )
+									: __(
 											'Content may be outdated.',
 											'jumplinks-editorial-workflow'
-										) }
-										{ latestRevisionUrl && (
-											<>
-												{ ' ' }
-												<a
-													href={ latestRevisionUrl }
-													className="flow-bar__freshness-link"
-												>
-													{ __(
-														'View the latest version',
-														'jumplinks-editorial-workflow'
-													) }
-												</a>
-											</>
-										) }
-									</>
-								) }
+									  ) }
 							</span>
+						) : null }
+						{ revisionStatus === 'outdated' &&
+						! isCancelled &&
+						latestRevisionUrl ? (
+							<a
+								href={ latestRevisionUrl }
+								className="flow-bar__latest-link"
+							>
+								{ __(
+									'View the latest version',
+									'jumplinks-editorial-workflow'
+								) }
+							</a>
+						) : null }
+						{ revisionStatus &&
+						! isCancelled &&
+						Number( reviewId ) > 0 ? (
+							<button
+								type="button"
+								className="flow-bar__revisions-link"
+								onClick={ () => setShowRevisions( true ) }
+							>
+								{ __(
+									'View revisions',
+									'jumplinks-editorial-workflow'
+								) }
+							</button>
 						) : null }
 						{ debugMode && revisionStatus === 'latest' ? (
 							<span
@@ -718,8 +780,21 @@ export default function ReviewBar( {
 					actionStatus={ actionStatus }
 					totalCommentCount={ totalCommentCount }
 					doAction={ doAction }
+					onCancelReview={
+						pageData.canCancelReview && ! isCancelled
+							? cancelReview
+							: null
+					}
 				/>
 			</div>
+			{ confirmDialog }
+			{ showRevisions && (
+				<RevisionsDialog
+					reviewId={ reviewId }
+					viewingId={ pageData.revisionId }
+					onClose={ () => setShowRevisions( false ) }
+				/>
+			) }
 		</div>
 	);
 }

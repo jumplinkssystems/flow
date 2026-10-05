@@ -1,13 +1,13 @@
 @import '../shared/builder-review-notice-dark.css';
 
 /* Publish button lock (when mandatory review isn't approved) */
-body.flow-ew-bricks-publish-blocked #bricks-toolbar li:has( [data-name='publish'] ) {
+body.flow-ew-bricks-publish-blocked :is(#bricks-toolbar, .bricks-toolbar) li:has( [data-name='publish'] ) {
 	cursor: not-allowed !important;
 	opacity: 0.4 !important;
 }
 
-/* Toolbar trigger inside #bricks-toolbar */
-#bricks-toolbar li.flow-ew-bricks-review {
+/* Toolbar trigger inside the Bricks toolbar */
+:is(#bricks-toolbar, .bricks-toolbar) li.flow-ew-bricks-review {
 	margin-inline-start: 5px;
 	padding: 0;
 	width: auto;
@@ -50,7 +50,7 @@ body.flow-ew-bricks-publish-blocked #bricks-toolbar li:has( [data-name='publish'
 }
 
 /* Beat Bricks' global `#bricks-toolbar li svg { height: 17px }` rule. */
-#bricks-toolbar li.flow-ew-bricks-review .flow-ew-bricks-toggle__icon svg {
+:is(#bricks-toolbar, .bricks-toolbar) li.flow-ew-bricks-review .flow-ew-bricks-toggle__icon svg {
 	display: block;
 	height: 24px !important;
 	margin: 0;
@@ -89,15 +89,15 @@ body.flow-ew-bricks-publish-blocked #bricks-toolbar li:has( [data-name='publish'
 }
 
 /* Match other toolbar icons: Bricks yellow on hover/active for torso only. */
-#bricks-toolbar li.flow-ew-bricks-review:hover .flow-ew-jumplink-icon__torso,
-#bricks-toolbar li.flow-ew-bricks-review:focus-within .flow-ew-jumplink-icon__torso,
-#bricks-toolbar li.flow-ew-bricks-review .flow-ew-bricks-toggle.is-active .flow-ew-jumplink-icon__torso {
+:is(#bricks-toolbar, .bricks-toolbar) li.flow-ew-bricks-review:hover .flow-ew-jumplink-icon__torso,
+:is(#bricks-toolbar, .bricks-toolbar) li.flow-ew-bricks-review:focus-within .flow-ew-jumplink-icon__torso,
+:is(#bricks-toolbar, .bricks-toolbar) li.flow-ew-bricks-review .flow-ew-bricks-toggle.is-active .flow-ew-jumplink-icon__torso {
 	color: var( --builder-color-accent, #ffd54d ) !important;
 }
 
-#bricks-toolbar li.flow-ew-bricks-review:hover .flow-ew-bricks-toggle__icon svg,
-#bricks-toolbar li.flow-ew-bricks-review:focus-within .flow-ew-bricks-toggle__icon svg,
-#bricks-toolbar li.flow-ew-bricks-review .flow-ew-bricks-toggle.is-active .flow-ew-bricks-toggle__icon svg {
+:is(#bricks-toolbar, .bricks-toolbar) li.flow-ew-bricks-review:hover .flow-ew-bricks-toggle__icon svg,
+:is(#bricks-toolbar, .bricks-toolbar) li.flow-ew-bricks-review:focus-within .flow-ew-bricks-toggle__icon svg,
+:is(#bricks-toolbar, .bricks-toolbar) li.flow-ew-bricks-review .flow-ew-bricks-toggle.is-active .flow-ew-bricks-toggle__icon svg {
 	opacity: 1 !important;
 }
 
@@ -583,4 +583,13 @@ body.admin-bar .flow-ew-bricks-drawer {
 	cursor: not-allowed;
 	filter: none;
 	opacity: 0.5;
+}
+
+/* The classic reset (border: 0 !important) removes the copy divider here. */
+.flow-ew-classic--bricks .flow-ew-classic__share-cancel {
+	border-left: 1px solid #4e5c6a !important;
+}
+
+.flow-ew-classic--bricks .flow-ew-history__item a {
+	color: var( --builder-color-accent, #ffd54d );
 }

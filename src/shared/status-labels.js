@@ -11,6 +11,7 @@ export const STATUS_LABELS = {
 		'jumplinks-editorial-workflow'
 	),
 	approved: __( 'Approved', 'jumplinks-editorial-workflow' ),
+	cancelled: __( 'Cancelled', 'jumplinks-editorial-workflow' ),
 	open_review: __( 'Open Review', 'jumplinks-editorial-workflow' ),
 	self_review: __( 'Self review', 'jumplinks-editorial-workflow' ),
 };

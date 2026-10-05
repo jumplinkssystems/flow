@@ -16,12 +16,24 @@ import { mountWithRetry } from '../shared/mount-retry';
 		return;
 	}
 
+	// Bricks 2.4 renamed #bricks-toolbar to #bricks-toolbar-top.bricks-toolbar.
+	const TOOLBAR = '#bricks-toolbar, .bricks-toolbar';
+
+	function findSaveButton( root ) {
+		const save = root.querySelector( 'li.save' );
+		if ( save ) {
+			return save;
+		}
+		const publish = root.querySelector( '[data-name="publish"]' );
+		return publish ? publish.closest( 'li' ) : null;
+	}
+
 	function findToolbarEndGroup() {
-		const toolbar = document.getElementById( 'bricks-toolbar' );
+		const toolbar = document.querySelector( TOOLBAR );
 		if ( ! toolbar ) {
 			return null;
 		}
-		const saveBtn = toolbar.querySelector( 'li.save' );
+		const saveBtn = findSaveButton( toolbar );
 		if ( saveBtn && saveBtn.parentElement ) {
 			return saveBtn.parentElement;
 		}
@@ -42,8 +54,10 @@ import { mountWithRetry } from '../shared/mount-retry';
 			host.setAttribute( 'data-balloon', 'Review' );
 			host.setAttribute( 'data-balloon-pos', 'bottom' );
 
-			const saveBtn = group.querySelector( 'li.save' );
+			const saveBtn = findSaveButton( group );
 			if ( saveBtn ) {
+				// 2.4 orders toolbar items with flex `order`; match it to sit just before Save.
+				host.style.order = saveBtn.style.order;
 				group.insertBefore( host, saveBtn );
 			} else {
 				group.appendChild( host );
@@ -86,7 +100,10 @@ import { mountWithRetry } from '../shared/mount-retry';
 			if ( ! target || ! target.closest ) {
 				return;
 			}
-			if ( target.closest( '#bricks-toolbar [data-name="publish"]' ) ) {
+			if (
+				target.closest( '[data-name="publish"]' ) &&
+				target.closest( TOOLBAR )
+			) {
 				e.preventDefault();
 				e.stopImmediatePropagation();
 			}

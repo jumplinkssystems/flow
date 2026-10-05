@@ -123,12 +123,15 @@
 	color: var(--flow-status-text);
 }
 
-.flow-ew-classic--builder-dark .flow-ew-review-notice__link {
+.flow-ew-classic--builder-dark .flow-ew-review-notice__link,
+.flow-ew-classic--builder-dark .flow-ew-review-notice__desc a {
 	color: #ffd54d;
 }
 
 .flow-ew-classic--builder-dark .flow-ew-review-notice__link:hover,
-.flow-ew-classic--builder-dark .flow-ew-review-notice__link:focus {
+.flow-ew-classic--builder-dark .flow-ew-review-notice__link:focus,
+.flow-ew-classic--builder-dark .flow-ew-review-notice__desc a:hover,
+.flow-ew-classic--builder-dark .flow-ew-review-notice__desc a:focus {
 	color: #fffcf3;
 }
 

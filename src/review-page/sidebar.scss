@@ -451,6 +451,21 @@ textarea {
 			margin-right: 0 !important;
 		}
 	}
+
+	// Same yellow as the "Content may be outdated" notice it leads to.
+	&__issue-btn.components-button.has-icon.has-text {
+		color: $badge-review-text !important;
+
+		svg {
+			fill: currentColor;
+		}
+
+		&:hover:not(:disabled),
+		&:focus-visible:not(:disabled) {
+			background: $badge-review-bg !important;
+			color: $badge-review-text !important;
+		}
+	}
 }
 
 // =============================================================================

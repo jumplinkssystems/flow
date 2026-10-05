@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from '@wordpress/element';
 import { Button } from '@wordpress/components';
+import { backup } from '@wordpress/icons';
 import commentReplyIcon from '../icons/comment-reply';
 import { __, sprintf } from '@wordpress/i18n';
 import CommentCard from './CommentCard';
@@ -8,7 +9,24 @@ import {
 	releaseCommentBusy,
 } from '../utils/local-edit-registry';
 import CommentEditor from './CommentEditor';
+import { pageData } from '../utils/api';
 const COLLAPSED_REPLY_LIMIT = 1;
+
+// The page as it was when the comment was raised, or '' when already there or unknown.
+function issueUrl( thread ) {
+	const revisionId = Number( thread.revisionId || 0 );
+	if (
+		! thread.isResolved ||
+		! revisionId ||
+		revisionId === Number( pageData.revisionId || 0 )
+	) {
+		return '';
+	}
+	const url = new URL( window.location.href );
+	url.searchParams.set( 'flow_revision_id', String( revisionId ) );
+	url.searchParams.set( 'flow_focus_comment', String( thread.id ) );
+	return url.toString();
+}
 
 export default function CommentThread( {
 	thread,
@@ -153,6 +171,18 @@ export default function CommentThread( {
 					>
 						{ __( 'Reply', 'jumplinks-editorial-workflow' ) }
 					</Button>
+					{ issueUrl( thread ) && (
+						<Button
+							className="flow-btn--text flow-comment-thread__reply-btn flow-comment-thread__issue-btn"
+							icon={ backup }
+							href={ issueUrl( thread ) }
+						>
+							{ __(
+								'View original',
+								'jumplinks-editorial-workflow'
+							) }
+						</Button>
+					) }
 				</div>
 			) }
 
