@@ -80,7 +80,7 @@ function buildHintVideo( doc ) {
 	video.setAttribute(
 		'aria-label',
 		__(
-			'Highlighting text on a page and leaving a comment on it.',
+			'Highlighting text or pinning a spot on a page, and leaving a comment.',
 			'jumplinks-editorial-workflow'
 		)
 	);
@@ -149,7 +149,7 @@ export function installCommentableChrome( options = {} ) {
 	const text = doc.createElement( 'p' );
 	text.className = 'flow-review-info-notice__text';
 	text.textContent = __(
-		'Highlight text in the content preview, then choose "Add comment".',
+		'Highlight text or click any spot in the content preview, then choose "Add comment".',
 		'jumplinks-editorial-workflow'
 	);
 	body.appendChild( text );

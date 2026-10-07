@@ -126,6 +126,8 @@ export function rectToPageCoords( rect, inIframe ) {
 
 const HIGHLIGHT_CSS = `
 .flow-inline-highlight {
+	/* Highlights are <mark>s; keep the page's text colour, not the UA black. */
+	color: inherit;
 	background: rgba(255, 212, 59, 0.35);
 	/* box-shadow underline — same visual as border-bottom but doesn't push
 	   the line box, so wrapping text doesn't reflow when a highlight lands. */
@@ -163,10 +165,73 @@ iframe.flow-inline-highlight-media {
 .flow-inline-highlight-media.flow-inline-highlight--resolved ~ .flow-embed-overlay {
 	outline-color: rgba(130, 214, 142, 0.8);
 }
+/* Pins: comments dropped on a spot. The tip of the pin sits on the point. */
+.flow-inline-pin {
+	all: initial;
+	position: absolute;
+	z-index: 2147483000;
+	display: block;
+	width: 34px;
+	height: 42px;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	background: transparent;
+	line-height: 0;
+	cursor: pointer;
+	transform: translate(-50%, -100%);
+	transition: filter 0.2s ease;
+}
+.flow-inline-pin svg {
+	display: block;
+	width: 34px;
+	height: 42px;
+	filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.35));
+}
+.flow-inline-pin__body {
+	fill: #ffd43b;
+	stroke: #e69500;
+	stroke-width: 1;
+}
+.flow-inline-pin__dot {
+	fill: #e69500;
+}
+.flow-inline-pin:hover .flow-inline-pin__body {
+	fill: #ffc300;
+}
+.flow-inline-pin.flow-inline-highlight--active {
+	filter: drop-shadow(0 0 4px rgba(230, 149, 0, 0.9));
+}
+.flow-inline-pin.flow-inline-highlight--resolved .flow-inline-pin__body {
+	fill: #82d68e;
+	stroke: #458037;
+}
+.flow-inline-pin.flow-inline-highlight--resolved .flow-inline-pin__dot {
+	fill: #458037;
+}
+.flow-inline-pin--offer {
+	pointer-events: none;
+	opacity: 0.85;
+}
+html.flow-comments-hidden .flow-inline-highlight:not(.flow-inline-highlight--revealed) {
+	background: none;
+	box-shadow: none;
+	cursor: inherit;
+}
+html.flow-comments-hidden .flow-inline-highlight-media:not(.flow-inline-highlight--revealed) {
+	cursor: inherit;
+}
+html.flow-comments-hidden .flow-inline-highlight-media:not(.flow-inline-highlight--revealed) ~ .flow-embed-overlay {
+	outline: none;
+}
+html.flow-comments-hidden .flow-inline-pin:not(.flow-inline-pin--offer):not(.flow-inline-highlight--revealed) {
+	display: none;
+}
 a[href] {
 	cursor: text;
 	-webkit-user-select: text;
 	user-select: text;
+	-webkit-user-drag: none;
 }
 html.flow-clickable-links a[href] {
 	cursor: pointer;
@@ -182,10 +247,14 @@ html.flow-clickable-links a[href] {
 `;
 
 export function injectHighlightStyles( iframeDoc ) {
-	if ( ! iframeDoc?.head ) {
+	if (
+		! iframeDoc?.head ||
+		iframeDoc.head.querySelector( 'style[data-flow-highlight-styles]' )
+	) {
 		return;
 	}
 	const style = iframeDoc.createElement( 'style' );
+	style.dataset.flowHighlightStyles = '1';
 	style.textContent = HIGHLIGHT_CSS;
 	iframeDoc.head.appendChild( style );
 }

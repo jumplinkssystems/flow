@@ -153,6 +153,23 @@
 		}
 	}
 
+	// Placed left of the anchor: the caret moves to the right edge.
+	&--flipped &__btn {
+		&::before {
+			left: auto;
+			right: -6px;
+			border-left: 0;
+			border-bottom: 0;
+			border-top: 1px solid $popover-accent;
+			border-right: 1px solid $popover-accent;
+		}
+
+		&::after {
+			left: auto;
+			right: 0;
+		}
+	}
+
 	&__btn-label {
 		font-size: 18px;
 		line-height: 1.2;

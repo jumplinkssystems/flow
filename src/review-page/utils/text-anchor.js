@@ -1,3 +1,4 @@
+import { __ } from '@wordpress/i18n';
 import {
 	getActiveContentRoot,
 	getIframeDoc,
@@ -177,6 +178,102 @@ export function serializeMediaAnchor( mediaEl, labelText = '' ) {
 	};
 }
 
+const PIN_TEXT_LIMIT = 160;
+
+/**
+ * A pin is a click on a spot rather than a selection: the element under the
+ * pointer and where inside its box the click landed. `element` is never shown
+ * in the UI; it tells an AI agent what the reviewer pointed at.
+ *
+ * @param {Element}                        el
+ * @param {{clientX:number,clientY:number}} point
+ * @param {Element}                        [optionalRoot]
+ */
+export function serializePinAnchor( el, point, optionalRoot ) {
+	let target = el?.nodeType === Node.TEXT_NODE ? el.parentElement : el;
+	if ( ! target || target.nodeType !== Node.ELEMENT_NODE ) {
+		return null;
+	}
+	const doc = target.ownerDocument || document;
+	if ( target === doc.documentElement ) {
+		target = doc.body;
+	}
+	const isBody = target === doc.body;
+	const root = isBody
+		? doc.body
+		: optionalRoot || getContentRootForNode( target );
+	if ( ! root || ! root.contains( target ) ) {
+		return null;
+	}
+
+	const rect = target.getBoundingClientRect();
+	const fraction = ( value, start, size ) =>
+		size > 0
+			? Math.round(
+					Math.min( 1, Math.max( 0, ( value - start ) / size ) ) *
+						10000
+			  ) / 10000
+			: 0;
+	const visibleText = ( target.innerText || target.textContent || '' )
+		.replace( /\s+/g, ' ' )
+		.trim()
+		.slice( 0, PIN_TEXT_LIMIT );
+
+	const descriptor = {
+		type: 'pin',
+		nodePath: isBody ? '' : getCssPath( target, root ),
+		x: fraction( point.clientX, rect.left, rect.width ),
+		y: fraction( point.clientY, rect.top, rect.height ),
+		rootType: root === doc.body ? 'body' : 'content',
+		text: __( 'Pinned comment', 'jumplinks-editorial-workflow' ),
+		element: {
+			tag: target.tagName.toLowerCase(),
+			id: target.id || '',
+			classes: Array.from( target.classList ).slice( 0, 5 ),
+			text: visibleText,
+		},
+	};
+	if ( target.id ) {
+		descriptor.elementId = target.id;
+	}
+	return descriptor;
+}
+
+export function resolvePinNode( descriptor, optionalRoot ) {
+	if ( descriptor?.type !== 'pin' ) {
+		return null;
+	}
+	const doc = optionalRoot?.ownerDocument || getIframeDoc() || document;
+	const root =
+		descriptor.rootType === 'body'
+			? doc.body
+			: optionalRoot || getContentRootForDocument( doc );
+	if ( ! root ) {
+		return null;
+	}
+	if ( descriptor.elementId ) {
+		const byId = doc.getElementById( descriptor.elementId );
+		if ( byId && root.contains( byId ) ) {
+			return byId;
+		}
+	}
+	if ( ! descriptor.nodePath ) {
+		return descriptor.rootType === 'body' ? doc.body : null;
+	}
+	const exact = resolvePathToNode( descriptor.nodePath, root );
+	if ( exact ) {
+		return exact;
+	}
+	// A later highlight can wrap the element in a <mark>, which breaks the
+	// child combinator; retry as a descendant path, same tag at the end.
+	const loose = resolvePathToNode(
+		descriptor.nodePath.split( ' > ' ).join( ' ' ),
+		root
+	);
+	const lastTag = descriptor.nodePath.split( ' > ' ).pop().split( ':' )[ 0 ];
+	return loose && loose.tagName.toLowerCase() === lastTag ? loose : null;
+}
+
 function tryDeserializeFromPaths( descriptor, root ) {
 	const startEl = resolvePathToNode( descriptor.startPath, root );
 	const endEl = resolvePathToNode( descriptor.endPath, root );
@@ -323,6 +420,15 @@ export function resolveMediaNode( descriptor, optionalRoot ) {
 }
 
 export function deserializeRange( descriptor, optionalRoot ) {
+	if ( descriptor?.type === 'pin' ) {
+		const el = resolvePinNode( descriptor, optionalRoot );
+		if ( ! el ) {
+			return null;
+		}
+		const range = ( el.ownerDocument || document ).createRange();
+		range.selectNode( el );
+		return range;
+	}
 	const isMedia = MEDIA_TYPES.includes( descriptor?.type );
 	let root =
 		optionalRoot ||
@@ -346,6 +452,12 @@ export function deserializeRange( descriptor, optionalRoot ) {
 		return range;
 	}
 
+	// Look again only inside the element the comment was on: the same word in
+	// another section is a different spot, so the comment reads as outdated instead.
+	if ( descriptor?.startPath ) {
+		const scope = resolvePathToNode( descriptor.startPath, root );
+		return scope ? tryFuzzyTextSearch( descriptor, scope ) : null;
+	}
 	return tryFuzzyTextSearch( descriptor, root );
 }
 

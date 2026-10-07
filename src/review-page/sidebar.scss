@@ -888,6 +888,11 @@ textarea {
 	}
 }
 
+.flow-inline-thread--focused {
+	border-color: $color-accent !important;
+	box-shadow: 0 0 0 1px $color-accent;
+}
+
 .flow-inline-thread {
 	border: 1px solid $color-border;
 	border-radius: 4px;

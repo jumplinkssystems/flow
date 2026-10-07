@@ -6,10 +6,9 @@
  * review page's post-preview content lives inside a content iframe
  * (`#flow-template-frame`) created by ReviewBar. We scan THAT iframe's
  * contentDocument, not the main document — the only iframe in the main
- * document body is the content iframe itself, which we must never wrap. Each
- * media element gets wrapped in a `<span class="flow-embed-wrap">` that
- * matches its box exactly, plus an absolute-positioned `<span
- * class="flow-embed-overlay">` covering it. Iframes additionally get
+ * document body is the content iframe itself, which we must never wrap. Media
+ * stays where the theme put it; an absolute-positioned `<span
+ * class="flow-embed-overlay">` is placed over it. Iframes additionally get
  * `pointer-events: none` so YouTube/Vimeo can't capture the click first; for
  * img/video we skip that since their built-in click behavior is benign. The
  * InlineCommentPopover and highlight-manager click handlers resolve the
@@ -38,6 +37,7 @@ const OVERLAY_CSS = `
 	align-items: center;
 	background: transparent;
 	border: 0;
+	container: flow-embed / size;
 	cursor: pointer;
 	display: flex;
 	inset: 0;
@@ -114,6 +114,39 @@ const OVERLAY_CSS = `
 .flow-embed-overlay__play-pill svg,
 .flow-embed-overlay__link-pill svg {
 	display: block;
+}
+/* Small media can't hold the centred hint and a labelled corner pill side by
+   side: the pills drop to their icon (the label stays as tooltip and name),
+   then the hint goes, and on tiny media the icon tucks into the corner. */
+@container flow-embed (max-width: 260px) or (max-height: 110px) {
+	.flow-embed-overlay__play-pill,
+	.flow-embed-overlay__link-pill {
+		padding: 6px !important;
+		right: 6px !important;
+		top: 6px !important;
+	}
+	.flow-embed-overlay__play-pill span,
+	.flow-embed-overlay__link-pill span {
+		display: none;
+	}
+}
+@container flow-embed (max-width: 170px) or (max-height: 80px) {
+	.flow-embed-overlay__hint {
+		display: none;
+	}
+}
+@container flow-embed (max-width: 64px) or (max-height: 44px) {
+	.flow-embed-overlay__play-pill,
+	.flow-embed-overlay__link-pill {
+		padding: 3px !important;
+		right: 2px !important;
+		top: 2px !important;
+	}
+	.flow-embed-overlay__play-pill svg,
+	.flow-embed-overlay__link-pill svg {
+		height: 10px;
+		width: 10px;
+	}
 }
 /* Persistent comment pin shown only after Play has been activated. Sits in
    the top-right so the reviewer can still drop a comment while the native
@@ -254,6 +287,7 @@ function buildLinkPill( doc, href, target ) {
 		'aria-label',
 		__( 'Go to link', 'jumplinks-editorial-workflow' )
 	);
+	link.title = __( 'Go to link', 'jumplinks-editorial-workflow' );
 	link.innerHTML =
 		LINK_SVG +
 		'<span>' +
@@ -333,6 +367,7 @@ function createOverlay( doc, opts = {} ) {
 			'aria-label',
 			__( 'Play video', 'jumplinks-editorial-workflow' )
 		);
+		play.title = __( 'Play video', 'jumplinks-editorial-workflow' );
 		play.innerHTML =
 			PLAY_SVG +
 			'<span>' +
@@ -574,11 +609,9 @@ function wrapMedia( media ) {
 			overlay.style.left = '0';
 			parent.appendChild( overlay );
 		} else {
-			const wrap = doc.createElement( 'span' );
-			wrap.className = 'flow-embed-wrap';
-			parent.insertBefore( wrap, media );
-			wrap.appendChild( media );
-			wrap.appendChild( overlay );
+			// Left in place: a wrapper would break `width/height: 100%`
+			// embeds (maps sized to their box) by shrinking them to 300×150.
+			attachFloatingOverlay( media, overlay, parent, view );
 		}
 	} else if (
 		tag === 'IMG' &&

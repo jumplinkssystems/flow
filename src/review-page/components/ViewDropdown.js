@@ -4,11 +4,18 @@ import {
 	MenuItem,
 	Tooltip,
 } from '@wordpress/components';
-import { desktop, external } from '@wordpress/icons';
+import { useEffect, useState } from '@wordpress/element';
+import { check, desktop, external } from '@wordpress/icons';
 import { __ } from '@wordpress/i18n';
 import { applyFilters } from '@wordpress/hooks';
+import { SVG } from '@wordpress/primitives';
 
 import useDropdownToggleGuard from '../utils/use-dropdown-toggle-guard';
+import {
+	applyInlineCommentsVisibility,
+	areInlineCommentsHidden,
+	setInlineCommentsHidden,
+} from '../utils/comment-visibility';
 
 /**
  * View dropdown — Free renders the chrome and the "Preview in new tab" link.
@@ -16,8 +23,28 @@ import useDropdownToggleGuard from '../utils/use-dropdown-toggle-guard';
  * switcher) and `flow_ew_view_dropdown_icon` filter (device-aware trigger
  * icon). The wrapper carries the toggle guard from `useDropdownToggleGuard`.
  */
+// Holds the check mark's slot so the row keeps its height when unchecked.
+const blankIcon = (
+	<SVG xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" />
+);
+
 export default function ViewDropdown( { postUrl, device } ) {
 	const wrapperRef = useDropdownToggleGuard();
+	const [ commentsHidden, setCommentsHidden ] = useState(
+		areInlineCommentsHidden
+	);
+
+	// Each reload of the preview (device, revision, site navigation) needs it again.
+	useEffect( () => {
+		const onIframeReady = ( e ) =>
+			applyInlineCommentsVisibility(
+				e.detail?.iframe?.contentDocument || undefined
+			);
+		applyInlineCommentsVisibility();
+		window.addEventListener( 'flow:iframe-ready', onIframeReady );
+		return () =>
+			window.removeEventListener( 'flow:iframe-ready', onIframeReady );
+	}, [] );
 
 	const triggerIcon = applyFilters( 'flow_ew_view_dropdown_icon', desktop, {
 		device,
@@ -54,6 +81,23 @@ export default function ViewDropdown( { postUrl, device } ) {
 									device,
 								}
 							) }
+							<MenuGroup>
+								<MenuItem
+									role="menuitemcheckbox"
+									isSelected={ commentsHidden }
+									icon={ commentsHidden ? check : blankIcon }
+									onClick={ () => {
+										const next = ! commentsHidden;
+										setInlineCommentsHidden( next );
+										setCommentsHidden( next );
+									} }
+								>
+									{ __(
+										'Hide inline comments',
+										'jumplinks-editorial-workflow'
+									) }
+								</MenuItem>
+							</MenuGroup>
 							{ postUrl ? (
 								<MenuGroup>
 									<MenuItem

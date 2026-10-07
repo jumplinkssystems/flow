@@ -43,8 +43,9 @@ export default function CommentCard( {
 	const currentUserId = Number( pageData.currentUserId || 0 );
 	const isAnonymousViewer = currentUserId === 0;
 	const isOwn =
-		Number( comment.authorId ) > 0 &&
-		Number( comment.authorId ) === currentUserId;
+		( Number( comment.authorId ) > 0 &&
+			Number( comment.authorId ) === currentUserId ) ||
+		( Number( comment.authorId ) === 0 && !! comment.isOwnGuest );
 	const [ editing, setEditing ] = useState( false );
 	// A sync must not swap or remove a comment while it is being edited here.
 	useEffect( () => {

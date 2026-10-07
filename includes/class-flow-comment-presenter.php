@@ -149,6 +149,8 @@ final class Comment_Presenter {
 			'html'          => $c->comment_text,
 			'author'        => $display_name,
 			'authorId'      => $author_id,
+			// Per viewer: lets an external reviewer edit and delete their own.
+			'isOwnGuest'    => 0 === $author_id && Email_Review::viewer_owns_comment( $c ),
 			'avatarUrl'     => '' !== $avatar_identity
 				? (string) ( get_avatar_url( $avatar_identity, [ 'size' => 56 ] ) ?: '' )
 				: '',

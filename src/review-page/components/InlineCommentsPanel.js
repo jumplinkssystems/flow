@@ -19,6 +19,44 @@ import {
 } from '../utils/iframe-bridge';
 import { deserializeRange } from '../utils/text-anchor';
 
+let focusedThread = null;
+
+function clearFocusedThread() {
+	focusedThread?.classList.remove( 'flow-inline-thread--focused' );
+	focusedThread = null;
+}
+
+// Stays outlined until the next click anywhere, including inside the page frame.
+function isPinThread( thread ) {
+	try {
+		return JSON.parse( thread.blockClientId || '' )?.type === 'pin';
+	} catch {
+		return false;
+	}
+}
+
+function focusThread( el ) {
+	if ( ! el ) {
+		return;
+	}
+	clearFocusedThread();
+	el.scrollIntoView( { behavior: 'smooth', block: 'center' } );
+	el.classList.add( 'flow-inline-thread--focused' );
+	focusedThread = el;
+	const docs = [ document, getIframeDoc() ].filter( Boolean );
+	const onNextClick = () => {
+		docs.forEach( ( d ) =>
+			d.removeEventListener( 'pointerdown', onNextClick, true )
+		);
+		if ( focusedThread === el ) {
+			clearFocusedThread();
+		}
+	};
+	docs.forEach( ( d ) =>
+		d.addEventListener( 'pointerdown', onNextClick, true )
+	);
+}
+
 /**
  * @param {Object} [props]
  * @param {{
@@ -61,7 +99,8 @@ export default function InlineCommentsPanel( {
 				setOutdatedMap( {} );
 				return;
 			}
-			const root = resolveCommentContentRoot( doc );
+			// Builders like Bricks have no content wrapper; highlights fall back to the body too.
+			const root = resolveCommentContentRoot( doc ) || doc.body;
 			if ( ! root ) {
 				setOutdatedMap( {} );
 				return;
@@ -105,11 +144,11 @@ export default function InlineCommentsPanel( {
 			if ( ! commentId ) {
 				return;
 			}
-
-			const el = threadRefs.current[ commentId ];
-			if ( el ) {
-				el.scrollIntoView( { behavior: 'smooth', block: 'center' } );
-			}
+			// Wait for the sidebar to show the thread's tab; a hidden list cannot scroll.
+			setTimeout(
+				() => focusThread( threadRefs.current[ commentId ] ),
+				60
+			);
 		};
 		window.addEventListener( 'flow:inline-comment-focus', onFocus );
 		return () =>
@@ -323,13 +362,22 @@ export default function InlineCommentsPanel( {
 							'jumplinks-editorial-workflow'
 						) }
 					</li>
+					<li>
+						{ __(
+							'Click anywhere on the page to pin a comment to that spot.',
+							'jumplinks-editorial-workflow'
+						) }
+					</li>
 				</ul>
 			</div>
 		);
 	}
 
 	const renderThread = ( thread ) => {
-		const isOutdated = !! outdatedMap[ thread.id ];
+		// A resolved comment's text is expected to be gone; it keeps View original, not the warning.
+		const isOutdated = ! thread.isResolved && !! outdatedMap[ thread.id ];
+		// A pin points at a spot, not words: nothing to quote.
+		const isPin = isPinThread( thread );
 		return (
 			<div
 				key={ thread.id }
@@ -345,12 +393,29 @@ export default function InlineCommentsPanel( {
 				onClick={ ( event ) =>
 					handleThreadSurfaceClick( event, thread.id )
 				}
-				title={ __(
-					'Scroll to highlighted text',
-					'jumplinks-editorial-workflow'
-				) }
+				title={
+					isPin
+						? __(
+								'Scroll to pinned comment',
+								'jumplinks-editorial-workflow'
+						  )
+						: __(
+								'Scroll to highlighted text',
+								'jumplinks-editorial-workflow'
+						  )
+				}
 			>
-				{ thread.anchorText && (
+				{ isPin && isOutdated && (
+					<div className="flow-inline-anchor flow-inline-anchor--outdated">
+						<span className="flow-inline-anchor__hint">
+							{ __(
+								'Potentially outdated comment.',
+								'jumplinks-editorial-workflow'
+							) }
+						</span>
+					</div>
+				) }
+				{ ! isPin && thread.anchorText && (
 					<div
 						className={ [
 							'flow-inline-anchor',
@@ -384,6 +449,7 @@ export default function InlineCommentsPanel( {
 					onReply={ handleReply }
 					onResolve={ handleResolve }
 					suppressBodyExpandClick
+					isOutdated={ isOutdated }
 				/>
 			</div>
 		);

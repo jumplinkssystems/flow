@@ -61,7 +61,11 @@ class Ability_Context {
 	}
 
 	/**
-	 * @return array{text:string,type:string,src:string,rootType:string}
+	 * A pin (type "pin") is a spot the reviewer clicked rather than a passage,
+	 * so it also carries the element path, where inside the element it was
+	 * clicked, and what that element is.
+	 *
+	 * @return array{text:string,type:string,src:string,rootType:string,path?:string,x?:float,y?:float,element?:array{tag:string,id:string,classes:string[],text:string}}
 	 */
 	public static function location_from_descriptor( string $raw ): array {
 		$empty = [
@@ -78,12 +82,27 @@ class Ability_Context {
 			return $empty;
 		}
 
-		return [
+		$location = [
 			'text'     => isset( $decoded['text'] ) ? (string) $decoded['text'] : '',
 			'type'     => isset( $decoded['type'] ) ? (string) $decoded['type'] : '',
 			'src'      => isset( $decoded['src'] ) ? (string) $decoded['src'] : '',
 			'rootType' => isset( $decoded['rootType'] ) ? (string) $decoded['rootType'] : '',
 		];
+		if ( 'pin' !== $location['type'] ) {
+			return $location;
+		}
+
+		$element             = is_array( $decoded['element'] ?? null ) ? $decoded['element'] : [];
+		$location['path']    = isset( $decoded['nodePath'] ) ? (string) $decoded['nodePath'] : '';
+		$location['x']       = round( (float) ( $decoded['x'] ?? 0 ), 4 );
+		$location['y']       = round( (float) ( $decoded['y'] ?? 0 ), 4 );
+		$location['element'] = [
+			'tag'     => sanitize_key( (string) ( $element['tag'] ?? '' ) ),
+			'id'      => sanitize_text_field( (string) ( $element['id'] ?? '' ) ),
+			'classes' => array_values( array_map( 'sanitize_html_class', array_slice( (array) ( $element['classes'] ?? [] ), 0, 5 ) ) ),
+			'text'    => mb_substr( sanitize_text_field( (string) ( $element['text'] ?? '' ) ), 0, 160 ),
+		];
+		return $location;
 	}
 
 	/**

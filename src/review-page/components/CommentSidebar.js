@@ -335,6 +335,26 @@ export default function CommentSidebar( {
 	const pendingInlineResolvedRef = useRef( new Set() );
 	const scrollRef = useRef( null );
 	const [ activeTab, setActiveTab ] = useState( readStoredActiveTab );
+	const inlineCommentsRef = useRef( inlineComments );
+	inlineCommentsRef.current = inlineComments;
+	// Clicking a highlight shows its thread: resolved ones live on the Resolved tab.
+	useEffect( () => {
+		const onFocus = ( e ) => {
+			const id = Number( e.detail?.commentId || 0 );
+			// The highlight knows best: a resolve from the popover may not have reached this list yet.
+			let resolved = e.detail?.isResolved;
+			if ( undefined === resolved ) {
+				const comment = inlineCommentsRef.current.find(
+					( c ) => Number( c.id ) === id
+				);
+				resolved = !! comment?.isResolved;
+			}
+			setActiveTab( resolved ? 'resolved' : 'comments' );
+		};
+		window.addEventListener( 'flow:inline-comment-focus', onFocus );
+		return () =>
+			window.removeEventListener( 'flow:inline-comment-focus', onFocus );
+	}, [] );
 	const [ reviewUnresolved, setReviewUnresolved ] = useState( () =>
 		countUnresolvedCommentThreads( pageData.comments || [] )
 	);
@@ -521,17 +541,9 @@ export default function CommentSidebar( {
 			'flow:inline-comment-added',
 			onSwitchToComments
 		);
-		window.addEventListener(
-			'flow:inline-comment-focus',
-			onSwitchToComments
-		);
 		return () => {
 			window.removeEventListener(
 				'flow:inline-comment-added',
-				onSwitchToComments
-			);
-			window.removeEventListener(
-				'flow:inline-comment-focus',
 				onSwitchToComments
 			);
 		};

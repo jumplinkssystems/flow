@@ -18,53 +18,32 @@ export function installPreviewLinkGuard( doc ) {
 		return false;
 	};
 
-	// Keep rules aligned with enqueue_link_blocking() in class-flow-review-page.php.
+	// Stricter than enqueue_link_blocking() in class-flow-review-page.php:
+	// the preview is for reading and commenting, so no link may leave it or
+	// move it, including new tabs, mail, call and WhatsApp buttons. Only
+	// script links stay live, since themes use them for tabs and toggles.
 	const isSkippableAnchor = ( a ) => {
 		if ( ! a ) {
 			return true;
 		}
-		if ( a.target === '_blank' ) {
-			return true;
-		}
 		const href = ( a.getAttribute( 'href' ) || '' ).trim();
-		if ( href === '' ) {
-			return true;
-		}
-		const h = href.toLowerCase();
-		if ( h === '#' || href.startsWith( '#' ) ) {
-			return true;
-		}
-		if ( h.startsWith( 'javascript:' ) ) {
-			return true;
-		}
-		if (
-			h.startsWith( 'mailto:' ) ||
-			h.startsWith( 'tel:' ) ||
-			h.startsWith( 'sms:' )
-		) {
-			return true;
-		}
-		if ( h.startsWith( 'data:' ) ) {
-			return true;
-		}
-		return false;
+		return href === '' || href.toLowerCase().startsWith( 'javascript:' );
 	};
 
-	// Let a drag inside a link select its text instead of dragging the link;
-	// navigation is still blocked in onClick.
+	// Let a drag inside any link select its text instead of dragging the
+	// link, including mailto: and new-tab links that are allowed to open.
 	const onMouseDown = ( e ) => {
 		if ( e.button !== 0 || shouldIgnore( e ) ) {
 			return;
 		}
 		const a = anchorFromEvent( e );
-		if ( isSkippableAnchor( a ) ) {
-			return;
+		if ( a ) {
+			a.draggable = false;
 		}
-		a.draggable = false;
 	};
 
 	const onDragStart = ( e ) => {
-		if ( ! isSkippableAnchor( anchorFromEvent( e ) ) ) {
+		if ( anchorFromEvent( e ) ) {
 			e.preventDefault();
 		}
 	};
@@ -106,14 +85,8 @@ export function installPreviewLinkGuard( doc ) {
 	let restoreOpen = null;
 	if ( win && typeof win.open === 'function' ) {
 		const originalOpen = win.open.bind( win );
-		const guardedOpen = function ( url, target, features ) {
-			const t = ( target || '' ).toString().toLowerCase();
-			if ( t === '_blank' ) {
-				return originalOpen( url, target, features );
-			}
-			// Swallow; matches the "block top-level navigation" intent.
-			return null;
-		};
+		// Script-opened windows (chat and share buttons) are swallowed too.
+		const guardedOpen = () => null;
 		try {
 			win.open = guardedOpen;
 			restoreOpen = () => {
@@ -139,5 +112,62 @@ export function installPreviewLinkGuard( doc ) {
 		if ( restoreOpen ) {
 			restoreOpen();
 		}
+	};
+}
+
+// Site review keeps links live, but a drag that starts on one should select
+// its text like anywhere else, and releasing that drag must not navigate.
+export function installLinkDragSelect( doc ) {
+	if ( ! doc?.documentElement ) {
+		return () => {};
+	}
+	let press = null;
+
+	const onMouseDown = ( e ) => {
+		press = null;
+		if ( e.button !== 0 ) {
+			return;
+		}
+		const a =
+			typeof e.target?.closest === 'function'
+				? e.target.closest( 'a[href]' )
+				: null;
+		if ( ! a ) {
+			return;
+		}
+		a.draggable = false;
+		press = { x: e.clientX, y: e.clientY };
+	};
+
+	const onDragStart = ( e ) => {
+		if (
+			typeof e.target?.closest === 'function' &&
+			e.target.closest( 'a[href]' )
+		) {
+			e.preventDefault();
+		}
+	};
+
+	const onClick = ( e ) => {
+		if ( ! press ) {
+			return;
+		}
+		const moved =
+			Math.abs( e.clientX - press.x ) > 4 ||
+			Math.abs( e.clientY - press.y ) > 4;
+		press = null;
+		if ( moved ) {
+			e.preventDefault();
+			e.stopPropagation();
+		}
+	};
+
+	doc.addEventListener( 'mousedown', onMouseDown, true );
+	doc.addEventListener( 'dragstart', onDragStart, true );
+	doc.addEventListener( 'click', onClick, true );
+	return () => {
+		doc.removeEventListener( 'mousedown', onMouseDown, true );
+		doc.removeEventListener( 'dragstart', onDragStart, true );
+		doc.removeEventListener( 'click', onClick, true );
 	};
 }

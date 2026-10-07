@@ -13,10 +13,12 @@ import { pageData } from '../utils/api';
 const COLLAPSED_REPLY_LIMIT = 1;
 
 // The page as it was when the comment was raised, or '' when already there or unknown.
-function issueUrl( thread ) {
+// Resolved, or still open but its text is gone from this version (outdated).
+function issueUrl( thread, isOutdated ) {
 	const revisionId = Number( thread.revisionId || 0 );
 	if (
-		! thread.isResolved ||
+		! pageData.canViewRevisions ||
+		! ( thread.isResolved || isOutdated ) ||
 		! revisionId ||
 		revisionId === Number( pageData.revisionId || 0 )
 	) {
@@ -35,6 +37,7 @@ export default function CommentThread( {
 	onReply,
 	onResolve,
 	suppressBodyExpandClick = false,
+	isOutdated = false,
 } ) {
 	const replies = thread.replies || [];
 	const [ replyingTo, setReplyingTo ] = useState( null );
@@ -171,11 +174,11 @@ export default function CommentThread( {
 					>
 						{ __( 'Reply', 'jumplinks-editorial-workflow' ) }
 					</Button>
-					{ issueUrl( thread ) && (
+					{ issueUrl( thread, isOutdated ) && (
 						<Button
 							className="flow-btn--text flow-comment-thread__reply-btn flow-comment-thread__issue-btn"
 							icon={ backup }
-							href={ issueUrl( thread ) }
+							href={ issueUrl( thread, isOutdated ) }
 						>
 							{ __(
 								'View original',

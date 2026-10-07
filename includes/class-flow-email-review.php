@@ -141,6 +141,22 @@ class Email_Review {
 	}
 
 	/**
+	 * Whether the invitee on this request wrote the comment: guest comments
+	 * carry the invite address, which only the invite session can supply.
+	 */
+	public static function viewer_owns_comment( object $comment ): bool {
+		if ( 0 !== (int) ( $comment->author_id ?? 0 ) ) {
+			return false;
+		}
+		$email = Email_Review_Invites_DB::normalize_email( (string) ( $comment->author_email ?? '' ) );
+		if ( '' === $email ) {
+			return false;
+		}
+		$invite = self::current_invite_for_review( (int) ( $comment->review_id ?? 0 ) );
+		return null !== $invite && Email_Review_Invites_DB::normalize_email( (string) $invite->email ) === $email;
+	}
+
+	/**
 	 * Whether the current request may take reviewer actions (approve / changes) via invite cookie.
 	 */
 	public static function can_invite_take_action( object $review ): bool {

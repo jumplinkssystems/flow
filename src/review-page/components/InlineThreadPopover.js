@@ -90,7 +90,7 @@ function collectThreadFlat( all, rootId ) {
 }
 
 function findMarkElement( commentId ) {
-	const selector = `.${ HIGHLIGHT_CLASS }[data-comment-id="${ commentId }"], .${ MEDIA_HIGHLIGHT_CLASS }`;
+	const selector = `.${ HIGHLIGHT_CLASS }[data-comment-id="${ commentId }"], .${ MEDIA_HIGHLIGHT_CLASS }, .flow-inline-pin[data-comment-id="${ commentId }"]`;
 	const matches = ( el ) =>
 		Number( el.dataset.commentId ) === commentId ||
 		( el.dataset.commentIds || '' )
@@ -120,6 +120,8 @@ function markRectToViewport( rect, inIframe, popoverHeight = 320 ) {
 	let markTop;
 	let markBottom;
 	let left;
+	let visibleTop = 0;
+	let visibleBottom = window.innerHeight;
 	if ( ! inIframe ) {
 		markTop = rect.top;
 		markBottom = rect.bottom;
@@ -138,8 +140,11 @@ function markRectToViewport( rect, inIframe, popoverHeight = 320 ) {
 			markTop = iframeRect.top + rect.top * s;
 			markBottom = iframeRect.top + rect.bottom * s;
 			left = iframeRect.left + rect.left * s + ( rect.width * s ) / 2;
+			visibleTop = Math.max( 0, iframeRect.top );
+			visibleBottom = Math.min( window.innerHeight, iframeRect.bottom );
 		}
 	}
+	const offscreen = markBottom < visibleTop || markTop > visibleBottom;
 
 	const viewportBottom = window.innerHeight;
 	const fitsBelow = markBottom + GAP + popoverHeight <= viewportBottom - PAD;
@@ -159,7 +164,7 @@ function markRectToViewport( rect, inIframe, popoverHeight = 320 ) {
 		placement = 'below';
 	}
 
-	return { top, left, placement };
+	return { top, left, placement, offscreen };
 }
 
 /**
@@ -173,6 +178,13 @@ export default function InlineThreadPopover( {
 	api = defaultCommentApi,
 } = {} ) {
 	const [ thread, setThread ] = useState( null );
+	useEffect( () => {
+		window.dispatchEvent(
+			new CustomEvent( 'flow:inline-thread-state', {
+				detail: { open: !! thread, commentId: thread?.id || 0 },
+			} )
+		);
+	}, [ thread ] );
 	const [ position, setPosition ] = useState( null );
 	const [ replying, setReplying ] = useState( false );
 	// Replying to a resolved thread almost always means the fix was wrong, so
@@ -396,18 +408,22 @@ export default function InlineThreadPopover( {
 			popoverRef.current?.offsetHeight || 320
 		);
 		const left = clampCenterToViewport( next.left );
+		// Follows the mark off-screen instead of clinging to the viewport
+		// edge; a reply being written stays reachable.
+		const offscreen = next.offscreen && ! replying;
 		setPosition( ( prev ) => {
 			if (
 				prev &&
 				prev.top === next.top &&
 				prev.left === left &&
-				prev.placement === next.placement
+				prev.placement === next.placement &&
+				!! prev.offscreen === offscreen
 			) {
 				return prev;
 			}
-			return { ...next, left, anchorLeft: next.left };
+			return { ...next, left, anchorLeft: next.left, offscreen };
 		} );
-	}, [ thread, clampCenterToViewport ] );
+	}, [ thread, replying, clampCenterToViewport ] );
 
 	useEffect( () => {
 		if ( ! thread ) {
@@ -574,7 +590,7 @@ export default function InlineThreadPopover( {
 			}
 			const mark = closestFromEventTarget(
 				e.target,
-				`.${ HIGHLIGHT_CLASS }, .${ MEDIA_HIGHLIGHT_CLASS }`
+				`.${ HIGHLIGHT_CLASS }, .${ MEDIA_HIGHLIGHT_CLASS }, .flow-inline-pin`
 			);
 			if ( mark ) {
 				return;
@@ -732,6 +748,7 @@ export default function InlineThreadPopover( {
 				left: `${ position.left }px`,
 				transform: 'translateX(-50%)',
 				zIndex: 1_000_001,
+				visibility: position.offscreen ? 'hidden' : undefined,
 			} }
 		>
 			<span

@@ -134,6 +134,7 @@ function broadcast( payload ) {
 				detail: {
 					revisionStatus: review.revisionStatus,
 					latestRevisionUrl: review.latestRevisionUrl || '',
+					revisionCount: review.revisionCount,
 				},
 			} )
 		);

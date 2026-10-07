@@ -2,13 +2,26 @@ import { useState, useEffect, useCallback, useRef } from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
 import { Icon } from '@wordpress/components';
 import commentReplyIcon from '../icons/comment-reply';
-import { serializeRange, serializeMediaAnchor } from '../utils/text-anchor';
+import {
+	serializeRange,
+	serializeMediaAnchor,
+	serializePinAnchor,
+} from '../utils/text-anchor';
+import {
+	createPinElement,
+	placePinAtClientPoint,
+	removePin,
+} from '../utils/pin-marker';
 import {
 	getIframe,
 	getIframeScale,
 	resolveContentRootFor,
 } from '../utils/iframe-bridge';
-import { eventHitsShadowNode, eventInsidePortalUI } from '../utils/dom-helpers';
+import {
+	closestFromEventTarget,
+	eventHitsShadowNode,
+	eventInsidePortalUI,
+} from '../utils/dom-helpers';
 import { defaultCommentApi } from '../utils/comment-api';
 import { isReviewReadOnly } from '../utils/api';
 import CommentEditor from './CommentEditor';
@@ -21,6 +34,79 @@ function mediaTypeLabel( tagName ) {
 		return __( 'Embed', 'jumplinks-editorial-workflow' );
 	}
 	return __( 'Image', 'jumplinks-editorial-workflow' );
+}
+
+// A click on any of these does its own thing; it never drops a pin.
+const PIN_EXCLUDED =
+	'.flow-inline-highlight, .flow-inline-highlight-media, .flow-embed-overlay, .flow-embed-wrap, .flow-inline-pin, .flow-review-info-notice, img, video, iframe, input, textarea, select, [contenteditable]';
+// In a site review the reviewer browses the site, so its controls stay live.
+const PIN_EXCLUDED_BROWSING =
+	'a[href], button, [role="button"], summary, label';
+
+const PIN_OFFER_DELAY_MS = 200;
+
+// Text under the pointer (where the cursor is the I-beam) belongs to
+// highlighting; pins are for the spots around it.
+function isOverSelectableText( doc, x, y ) {
+	let node = null;
+	let offset = 0;
+	if ( typeof doc.caretPositionFromPoint === 'function' ) {
+		const pos = doc.caretPositionFromPoint( x, y );
+		node = pos?.offsetNode;
+		offset = pos?.offset || 0;
+	} else if ( typeof doc.caretRangeFromPoint === 'function' ) {
+		const range = doc.caretRangeFromPoint( x, y );
+		node = range?.startContainer;
+		offset = range?.startOffset || 0;
+	}
+	if ( ! node || node.nodeType !== 3 || ! node.data.trim() ) {
+		return false;
+	}
+	const view = doc.defaultView;
+	if (
+		node.parentElement &&
+		view?.getComputedStyle( node.parentElement ).userSelect === 'none'
+	) {
+		return false;
+	}
+	const range = doc.createRange();
+	for ( const i of [ offset - 1, offset ] ) {
+		if ( i < 0 || i >= node.length ) {
+			continue;
+		}
+		range.setStart( node, i );
+		range.setEnd( node, i + 1 );
+		for ( const rect of range.getClientRects() ) {
+			if (
+				x >= rect.left - 1 &&
+				x <= rect.right + 1 &&
+				y >= rect.top - 1 &&
+				y <= rect.bottom + 1
+			) {
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
+// A press and release on the same spot, left button, no modifier keys: a click,
+// not the start of a text selection.
+function isPlainClick( press, e ) {
+	const view = e?.view;
+	if ( ! press || ! view || press.view !== view || press.suppressPin ) {
+		return false;
+	}
+	if ( ! ( e instanceof view.MouseEvent ) || e.button !== 0 ) {
+		return false;
+	}
+	if ( e.ctrlKey || e.metaKey || e.shiftKey || e.altKey ) {
+		return false;
+	}
+	return (
+		Math.abs( e.clientX - press.x ) <= 4 &&
+		Math.abs( e.clientY - press.y ) <= 4
+	);
 }
 
 function rangeTouchesReviewInfoNotice( range, doc ) {
@@ -60,6 +146,31 @@ export default function InlineCommentPopover( {
 	const descriptorRef = useRef( null );
 	const popoverRef = useRef( null );
 	const iframeLocalRef = useRef( null );
+	const pressRef = useRef( null );
+	const pinOfferRef = useRef( null );
+	const threadOpenRef = useRef( false );
+
+	const pinOfferTimerRef = useRef( null );
+
+	const clearPinOffer = useCallback( () => {
+		clearTimeout( pinOfferTimerRef.current );
+		pinOfferTimerRef.current = null;
+		removePin( pinOfferRef.current );
+		pinOfferRef.current = null;
+	}, [] );
+
+	// A click that only closes an open thread must not also offer a pin.
+	useEffect( () => {
+		const onThreadState = ( e ) => {
+			threadOpenRef.current = !! e.detail?.open;
+		};
+		window.addEventListener( 'flow:inline-thread-state', onThreadState );
+		return () =>
+			window.removeEventListener(
+				'flow:inline-thread-state',
+				onThreadState
+			);
+	}, [] );
 
 	const getViewportBounds = useCallback( () => {
 		const PAD = 12;
@@ -119,17 +230,40 @@ export default function InlineCommentPopover( {
 		return Math.max( minTop, Math.min( top, maxTop ) );
 	}, [] );
 
+	// Right of the anchor, or flipped to its left when the right side has no
+	// room (a button in the far right corner); clamped only if neither fits.
+	const placeBeside = useCallback(
+		( anchorLeft, anchorRight, fallbackWidth ) => {
+			const GAP = 12;
+			const width = popoverRef.current?.offsetWidth || fallbackWidth;
+			const { minLeft, maxRight } = getViewportBounds();
+			const right = anchorRight + GAP;
+			if ( right + width <= maxRight ) {
+				return { left: right, flipped: false };
+			}
+			const left = anchorLeft - GAP - width;
+			if ( left >= minLeft ) {
+				return { left, flipped: true };
+			}
+			return {
+				left: clampLeftToViewport( right, fallbackWidth ),
+				flipped: false,
+			};
+		},
+		[ getViewportBounds, clampLeftToViewport ]
+	);
+
 	const positionNearRect = useCallback(
 		( rect, sourceWindow, openEditor = false ) => {
 			const iframe = iframeLocalRef.current;
 			const isInIframe = sourceWindow !== window && iframe;
 
-			const GAP = 12;
 			const reserveRight = openEditor ? 400 : 220;
 			const reserveHeight = openEditor ? 320 : 60;
 
 			let centerY;
-			let leftX;
+			let anchorLeft;
+			let anchorRight;
 			if ( isInIframe ) {
 				const iframeRect = iframe.getBoundingClientRect();
 				// rect lives in iframe-internal coords; the iframe is visually
@@ -137,22 +271,76 @@ export default function InlineCommentPopover( {
 				const s = getIframeScale();
 				centerY =
 					iframeRect.top + rect.top * s + ( rect.height * s ) / 2;
-				leftX = iframeRect.left + rect.right * s + GAP;
+				anchorLeft = iframeRect.left + rect.left * s;
+				anchorRight = iframeRect.left + rect.right * s;
 			} else {
 				centerY = rect.top + rect.height / 2;
-				leftX = rect.right + GAP;
+				anchorLeft = rect.left;
+				anchorRight = rect.right;
 			}
 
-			leftX = clampLeftToViewport( leftX, reserveRight );
+			const { left, flipped } = placeBeside(
+				anchorLeft,
+				anchorRight,
+				reserveRight
+			);
 			centerY = clampTopToViewport( centerY, reserveHeight );
 
-			setPosition( { top: centerY, left: leftX } );
+			setPosition( {
+				top: centerY,
+				left,
+				flipped,
+				anchorLeft,
+				anchorRight,
+			} );
 			if ( openEditor ) {
 				setEditorOpen( true );
 				editorOpenRef.current = true;
 			}
 		},
-		[ clampLeftToViewport, clampTopToViewport ]
+		[ placeBeside, clampTopToViewport ]
+	);
+
+	const offerPinAt = useCallback(
+		( e, sourceWindow ) => {
+			if ( sourceWindow === window || isReviewReadOnly() ) {
+				return;
+			}
+			const doc = sourceWindow.document;
+			if ( closestFromEventTarget( e.target, PIN_EXCLUDED ) ) {
+				return;
+			}
+			const browsing = doc.documentElement?.classList.contains(
+				'flow-clickable-links'
+			);
+			if (
+				browsing &&
+				closestFromEventTarget( e.target, PIN_EXCLUDED_BROWSING )
+			) {
+				return;
+			}
+			if ( isOverSelectableText( doc, e.clientX, e.clientY ) ) {
+				return;
+			}
+			const descriptor = serializePinAnchor( e.target, {
+				clientX: e.clientX,
+				clientY: e.clientY,
+			} );
+			if ( ! descriptor ) {
+				return;
+			}
+			clearPinOffer();
+			const offer = createPinElement( doc, {
+				offer: true,
+				label: descriptor.text,
+			} );
+			placePinAtClientPoint( offer, e.clientX, e.clientY );
+			pinOfferRef.current = offer;
+			rangeRef.current = null;
+			descriptorRef.current = descriptor;
+			positionNearRect( offer.getBoundingClientRect(), sourceWindow );
+		},
+		[ positionNearRect, clearPinOffer ]
 	);
 
 	const handleMouseUp = useCallback(
@@ -176,11 +364,16 @@ export default function InlineCommentPopover( {
 				return;
 			}
 
+			const press = pressRef.current;
+			pressRef.current = null;
+
 			requestAnimationFrame( () => {
 				if ( editorOpenRef.current ) {
 					return;
 				}
 
+				// Decided here, once the selection has settled: a drag that
+				// selected text is a highlight wherever it started.
 				const selection = sourceWindow.getSelection();
 				if (
 					! selection ||
@@ -190,6 +383,15 @@ export default function InlineCommentPopover( {
 					setPosition( null );
 					rangeRef.current = null;
 					descriptorRef.current = null;
+					if ( isPlainClick( press, e ) ) {
+						// Held back for the double-click interval so the first
+						// click of a word selection never flashes a pin.
+						clearTimeout( pinOfferTimerRef.current );
+						pinOfferTimerRef.current = setTimeout( () => {
+							pinOfferTimerRef.current = null;
+							offerPinAt( e, sourceWindow );
+						}, PIN_OFFER_DELAY_MS );
+					}
 					return;
 				}
 
@@ -216,12 +418,13 @@ export default function InlineCommentPopover( {
 				}
 
 				const rect = range.getBoundingClientRect();
+				clearPinOffer();
 				rangeRef.current = range.cloneRange();
 				descriptorRef.current = null;
 				positionNearRect( rect, sourceWindow );
 			} );
 		},
-		[ positionNearRect ]
+		[ positionNearRect, offerPinAt, clearPinOffer ]
 	);
 
 	const handleMediaClick = useCallback(
@@ -318,25 +521,35 @@ export default function InlineCommentPopover( {
 		[ positionNearRect ]
 	);
 
-	const handleMouseDown = useCallback( ( e ) => {
-		if ( eventHitsShadowNode( e, popoverRef.current ) ) {
-			return;
-		}
-		if ( eventInsidePortalUI( e ) ) {
-			return;
-		}
-		if ( editorOpenRef.current ) {
+	const handleMouseDown = useCallback(
+		( e ) => {
+			if ( eventHitsShadowNode( e, popoverRef.current ) ) {
+				return;
+			}
+			if ( eventInsidePortalUI( e ) ) {
+				return;
+			}
+			pressRef.current = {
+				x: e.clientX,
+				y: e.clientY,
+				view: e.view,
+				suppressPin: editorOpenRef.current || threadOpenRef.current,
+			};
+			clearPinOffer();
+			if ( editorOpenRef.current ) {
+				setPosition( null );
+				setEditorOpen( false );
+				editorOpenRef.current = false;
+				rangeRef.current = null;
+				descriptorRef.current = null;
+				return;
+			}
 			setPosition( null );
-			setEditorOpen( false );
-			editorOpenRef.current = false;
 			rangeRef.current = null;
 			descriptorRef.current = null;
-			return;
-		}
-		setPosition( null );
-		rangeRef.current = null;
-		descriptorRef.current = null;
-	}, [] );
+		},
+		[ clearPinOffer ]
+	);
 
 	// Show the popover from whatever selection is currently committed to JS.
 	const showPopoverFromCurrentSelection = useCallback(
@@ -367,11 +580,12 @@ export default function InlineCommentPopover( {
 				return;
 			}
 			const rect = range.getBoundingClientRect();
+			clearPinOffer();
 			rangeRef.current = range.cloneRange();
 			descriptorRef.current = null;
 			positionNearRect( rect, sourceWindow );
 		},
-		[ positionNearRect ]
+		[ positionNearRect, clearPinOffer ]
 	);
 
 	useEffect( () => {
@@ -535,6 +749,7 @@ export default function InlineCommentPopover( {
 			editorOpenRef.current = false;
 			rangeRef.current = null;
 			descriptorRef.current = null;
+			clearPinOffer();
 
 			detachIframe( iframeLocalRef.current || getIframe() );
 			iframeLocalRef.current = null;
@@ -557,17 +772,21 @@ export default function InlineCommentPopover( {
 			editorOpenRef.current = false;
 			rangeRef.current = null;
 			descriptorRef.current = null;
+			clearPinOffer();
 		};
-	}, [ handleMouseUp, handleMouseDown, handleMediaClick ] );
+	}, [ handleMouseUp, handleMouseDown, handleMediaClick, clearPinOffer ] );
 
 	const handleOpenEditor = useCallback( () => {
 		const range = rangeRef.current;
-		if ( ! range ) {
+		const offer = pinOfferRef.current;
+		if ( ! range && ! offer ) {
 			return;
 		}
 
-		const rangeDoc = range.startContainer.ownerDocument || document;
-		if ( rangeTouchesReviewInfoNotice( range, rangeDoc ) ) {
+		const rangeDoc = offer
+			? offer.ownerDocument
+			: range.startContainer.ownerDocument || document;
+		if ( range && rangeTouchesReviewInfoNotice( range, rangeDoc ) ) {
 			return;
 		}
 
@@ -593,37 +812,43 @@ export default function InlineCommentPopover( {
 		descriptorRef.current = descriptor;
 		editorOpenRef.current = true;
 
-		const rect = range.getBoundingClientRect();
+		const rect = ( offer || range ).getBoundingClientRect();
 		const iframe = iframeLocalRef.current;
 		const isInIframe = iframe && rangeDoc !== document;
 
-		const GAP = 12;
 		const reserveRight = 400;
 		const reserveHeight = 320;
 
 		let centerY;
-		let leftX;
+		let anchorLeft;
+		let anchorRight;
 		if ( isInIframe ) {
 			const iframeRect = iframe.getBoundingClientRect();
 			// rect lives in iframe-internal coords; the iframe is visually
 			// transform-scaled so multiply before adding the parent offset.
 			const s = getIframeScale();
 			centerY = iframeRect.top + rect.top * s + ( rect.height * s ) / 2;
-			leftX = iframeRect.left + rect.right * s + GAP;
+			anchorLeft = iframeRect.left + rect.left * s;
+			anchorRight = iframeRect.left + rect.right * s;
 		} else {
 			centerY = rect.top + rect.height / 2;
-			leftX = rect.right + GAP;
+			anchorLeft = rect.left;
+			anchorRight = rect.right;
 		}
 
-		leftX = clampLeftToViewport( leftX, reserveRight );
+		const { left, flipped } = placeBeside(
+			anchorLeft,
+			anchorRight,
+			reserveRight
+		);
 		centerY = clampTopToViewport( centerY, reserveHeight );
 
-		setPosition( { top: centerY, left: leftX } );
+		setPosition( { top: centerY, left, flipped, anchorLeft, anchorRight } );
 		setEditorOpen( true );
 
 		const sourceWindow = rangeDoc.defaultView || window;
 		sourceWindow.getSelection()?.removeAllRanges();
-	}, [ clampLeftToViewport, clampTopToViewport ] );
+	}, [ placeBeside, clampTopToViewport ] );
 
 	const handleSubmit = useCallback(
 		async ( html ) => {
@@ -632,6 +857,7 @@ export default function InlineCommentPopover( {
 				return;
 			}
 
+			clearPinOffer();
 			const comment = await api.postComment( {
 				html,
 				anchorText:
@@ -661,7 +887,7 @@ export default function InlineCommentPopover( {
 			rangeRef.current = null;
 			descriptorRef.current = null;
 		},
-		[ api ]
+		[ api, clearPinOffer ]
 	);
 
 	const handleCancel = useCallback( () => {
@@ -670,41 +896,73 @@ export default function InlineCommentPopover( {
 		editorOpenRef.current = false;
 		rangeRef.current = null;
 		descriptorRef.current = null;
-	}, [] );
+		clearPinOffer();
+	}, [ clearPinOffer ] );
 
 	const repositionPopover = useCallback( () => {
-		if ( ! rangeRef.current ) {
+		const anchor = pinOfferRef.current || rangeRef.current;
+		if ( ! anchor ) {
 			return;
 		}
-		const range = rangeRef.current;
-		const rangeDoc = range.startContainer?.ownerDocument || document;
-		const rect = range.getBoundingClientRect();
+		const rangeDoc = pinOfferRef.current
+			? pinOfferRef.current.ownerDocument
+			: anchor.startContainer?.ownerDocument || document;
+		const rect = anchor.getBoundingClientRect();
 		const iframe = iframeLocalRef.current;
 		const isInIframe = iframe && rangeDoc !== document;
 
-		const GAP = 12;
 		const reserveRight = editorOpenRef.current ? 400 : 220;
 		const reserveHeight = editorOpenRef.current ? 320 : 60;
 
 		let centerY;
-		let leftX;
+		let anchorLeft;
+		let anchorRight;
+		let anchorTop;
+		let anchorBottom;
+		let visibleTop = 0;
+		let visibleBottom = window.innerHeight;
 		if ( isInIframe ) {
 			const iframeRect = iframe.getBoundingClientRect();
 			// rect lives in iframe-internal coords; the iframe is visually
 			// transform-scaled so multiply before adding the parent offset.
 			const s = getIframeScale();
-			centerY = iframeRect.top + rect.top * s + ( rect.height * s ) / 2;
-			leftX = iframeRect.left + rect.right * s + GAP;
+			anchorTop = iframeRect.top + rect.top * s;
+			anchorBottom = iframeRect.top + rect.bottom * s;
+			visibleTop = Math.max( 0, iframeRect.top );
+			visibleBottom = Math.min( window.innerHeight, iframeRect.bottom );
+			centerY = anchorTop + ( rect.height * s ) / 2;
+			anchorLeft = iframeRect.left + rect.left * s;
+			anchorRight = iframeRect.left + rect.right * s;
 		} else {
+			anchorTop = rect.top;
+			anchorBottom = rect.bottom;
 			centerY = rect.top + rect.height / 2;
-			leftX = rect.right + GAP;
+			anchorLeft = rect.left;
+			anchorRight = rect.right;
 		}
 
-		leftX = clampLeftToViewport( leftX, reserveRight );
+		// The Add Comment button follows its anchor off-screen rather than
+		// clinging to the viewport edge; an open editor stays reachable.
+		const offscreen =
+			! editorOpenRef.current &&
+			( anchorBottom < visibleTop || anchorTop > visibleBottom );
+
+		const { left, flipped } = placeBeside(
+			anchorLeft,
+			anchorRight,
+			reserveRight
+		);
 		centerY = clampTopToViewport( centerY, reserveHeight );
 
-		setPosition( { top: centerY, left: leftX } );
-	}, [ clampLeftToViewport, clampTopToViewport ] );
+		setPosition( {
+			top: centerY,
+			left,
+			flipped,
+			anchorLeft,
+			anchorRight,
+			offscreen,
+		} );
+	}, [ placeBeside, clampTopToViewport ] );
 
 	useEffect( () => {
 		if ( ! position ) {
@@ -777,13 +1035,29 @@ export default function InlineCommentPopover( {
 			return;
 		}
 		const fallbackWidth = editorOpen ? 400 : 220;
-		const clampedLeft = clampLeftToViewport( position.left, fallbackWidth );
-		if ( Math.abs( clampedLeft - position.left ) > 0.5 ) {
-			setPosition( ( prev ) =>
-				prev ? { ...prev, left: clampedLeft } : prev
-			);
+		// Re-placed once the rendered width is known; it differs from the
+		// fallback with a translated label or once the editor opens.
+		const next =
+			undefined === position.anchorRight
+				? {
+						left: clampLeftToViewport(
+							position.left,
+							fallbackWidth
+						),
+						flipped: !! position.flipped,
+				  }
+				: placeBeside(
+						position.anchorLeft,
+						position.anchorRight,
+						fallbackWidth
+				  );
+		if (
+			Math.abs( next.left - position.left ) > 0.5 ||
+			next.flipped !== !! position.flipped
+		) {
+			setPosition( ( prev ) => ( prev ? { ...prev, ...next } : prev ) );
 		}
-	}, [ position, editorOpen, clampLeftToViewport ] );
+	}, [ position, editorOpen, clampLeftToViewport, placeBeside ] );
 
 	if ( ! position ) {
 		return null;
@@ -794,25 +1068,28 @@ export default function InlineCommentPopover( {
 			ref={ popoverRef }
 			className={ `flow-inline-popover${
 				editorOpen ? ' flow-inline-popover--editor' : ''
-			}` }
+			}${ position.flipped ? ' flow-inline-popover--flipped' : '' }` }
 			style={ {
 				position: 'fixed',
 				top: `${ position.top }px`,
 				left: `${ position.left }px`,
 				transform: 'translateY(-50%)',
 				zIndex: 1_000_001,
+				visibility: position.offscreen ? 'hidden' : undefined,
 			} }
 		>
 			{ editorOpen ? (
 				<div className="flow-inline-popover__editor-wrap">
-					<div className="flow-inline-popover__anchor-label">
-						&ldquo;
-						{ descriptorRef.current?.text?.length > 60
-							? descriptorRef.current.text.slice( 0, 60 ) +
-							  '\u2026'
-							: descriptorRef.current?.text }
-						&rdquo;
-					</div>
+					{ descriptorRef.current?.type !== 'pin' && (
+						<div className="flow-inline-popover__anchor-label">
+							&ldquo;
+							{ descriptorRef.current?.text?.length > 60
+								? descriptorRef.current.text.slice( 0, 60 ) +
+								  '\u2026'
+								: descriptorRef.current?.text }
+							&rdquo;
+						</div>
+					) }
 					<CommentEditor
 						autoFocus
 						onSubmit={ handleSubmit }

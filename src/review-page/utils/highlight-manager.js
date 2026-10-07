@@ -3,7 +3,15 @@ import {
 	wrapRange,
 	clearHighlight,
 	resolveMediaNode,
+	resolvePinNode,
 } from './text-anchor';
+import {
+	PIN_CLASS,
+	createPinElement,
+	observePinAnchor,
+	placePinOnAnchor,
+	removePin,
+} from './pin-marker';
 import { closestFromEventTarget } from './dom-helpers';
 import {
 	getIframeDoc,
@@ -14,10 +22,18 @@ import {
 	installCommentableChrome,
 	removeCommentableNotice,
 } from './commentable-chrome';
-import { installPreviewLinkGuard } from './preview-link-guard';
+import {
+	installLinkDragSelect,
+	installPreviewLinkGuard,
+} from './preview-link-guard';
+import { COMMENTS_HIDDEN_CLASS } from './comment-visibility';
 const HIGHLIGHT_CLASS = 'flow-inline-highlight';
 const MEDIA_HIGHLIGHT_CLASS = 'flow-inline-highlight-media';
 const ACTIVE_CLASS = 'flow-inline-highlight--active';
+// While inline comments are hidden, the one picked in the sidebar stays visible.
+const REVEALED_CLASS = 'flow-inline-highlight--revealed';
+let revealedCommentId = 0;
+let openThreadCommentId = 0;
 const RESOLVED_CLASS = 'flow-inline-highlight--resolved';
 
 let allComments = [];
@@ -32,7 +48,7 @@ function hasRootInlineComments( comments ) {
 function onHighlightClick( e ) {
 	let mark = closestFromEventTarget(
 		e.target,
-		`.${ HIGHLIGHT_CLASS }, .${ MEDIA_HIGHLIGHT_CLASS }`
+		`.${ HIGHLIGHT_CLASS }, .${ MEDIA_HIGHLIGHT_CLASS }, .${ PIN_CLASS }[data-comment-id]`
 	);
 
 	if ( ! mark ) {
@@ -52,6 +68,15 @@ function onHighlightClick( e ) {
 	if ( ! mark ) {
 		return;
 	}
+	// Hidden comments stay inert until the sidebar opens one.
+	if (
+		mark.ownerDocument.documentElement.classList.contains(
+			COMMENTS_HIDDEN_CLASS
+		) &&
+		! mark.classList.contains( REVEALED_CLASS )
+	) {
+		return;
+	}
 
 	let commentId = Number( mark.dataset.commentId );
 	if ( ! commentId ) {
@@ -67,7 +92,10 @@ function onHighlightClick( e ) {
 
 	window.dispatchEvent(
 		new CustomEvent( 'flow:inline-comment-focus', {
-			detail: { commentId },
+			detail: {
+				commentId,
+				isResolved: mark.classList.contains( RESOLVED_CLASS ),
+			},
 		} )
 	);
 }
@@ -93,7 +121,7 @@ function hasCommentId( el, commentId ) {
 }
 
 function queryHighlightedByCommentId( commentId ) {
-	const selector = `.${ HIGHLIGHT_CLASS }, .${ MEDIA_HIGHLIGHT_CLASS }`;
+	const selector = `.${ HIGHLIGHT_CLASS }, .${ MEDIA_HIGHLIGHT_CLASS }, .${ PIN_CLASS }[data-comment-id]`;
 	const all = queryHighlights( selector );
 	return all.filter( ( el ) => hasCommentId( el, commentId ) );
 }
@@ -132,8 +160,61 @@ function applyMediaHighlight( commentId, descriptor, optionalRoot ) {
 	return media;
 }
 
+function applyPinMarker( commentId, descriptor, optionalRoot ) {
+	const anchor = resolvePinNode( descriptor, optionalRoot );
+	if ( ! anchor ) {
+		return null;
+	}
+	const doc = anchor.ownerDocument;
+	const pin =
+		doc.querySelector(
+			`.${ PIN_CLASS }[data-comment-id="${ commentId }"]`
+		) ||
+		createPinElement( doc, {
+			commentId,
+			label: descriptor.text || '',
+		} );
+	pin.flowAnchor = anchor;
+	pin.flowDescriptor = descriptor;
+	const reposition = () =>
+		placePinOnAnchor( pin, pin.flowAnchor, descriptor.x, descriptor.y );
+	reposition();
+	observePinAnchor( pin, anchor, reposition );
+	return pin;
+}
+
+// Style-only writes, so this never retriggers the rewrap observer.
+function repositionPins( doc ) {
+	doc?.querySelectorAll( `.${ PIN_CLASS }[data-comment-id]` ).forEach(
+		( pin ) => {
+			if ( ! pin.flowAnchor?.isConnected ) {
+				const anchor = resolvePinNode( pin.flowDescriptor );
+				if ( ! anchor ) {
+					removePin( pin );
+					return;
+				}
+				pin.flowAnchor = anchor;
+				observePinAnchor( pin, anchor, () =>
+					placePinOnAnchor(
+						pin,
+						pin.flowAnchor,
+						pin.flowDescriptor.x,
+						pin.flowDescriptor.y
+					)
+				);
+			}
+			placePinOnAnchor(
+				pin,
+				pin.flowAnchor,
+				pin.flowDescriptor.x,
+				pin.flowDescriptor.y
+			);
+		}
+	);
+}
+
 function findMark( commentId ) {
-	const selector = `.${ HIGHLIGHT_CLASS }[data-comment-id="${ commentId }"], .${ MEDIA_HIGHLIGHT_CLASS }`;
+	const selector = `.${ HIGHLIGHT_CLASS }[data-comment-id="${ commentId }"], .${ MEDIA_HIGHLIGHT_CLASS }, .${ PIN_CLASS }[data-comment-id="${ commentId }"]`;
 	const iframeDoc = getIframeDoc();
 	if ( iframeDoc ) {
 		const inIframe = [ ...iframeDoc.querySelectorAll( selector ) ].find(
@@ -161,6 +242,10 @@ function handleAdd( e ) {
 		applyMediaHighlight( commentId, rangeDescriptor );
 		return;
 	}
+	if ( rangeDescriptor?.type === 'pin' ) {
+		applyPinMarker( commentId, rangeDescriptor );
+		return;
+	}
 
 	const range = deserializeRange( rangeDescriptor );
 	if ( range ) {
@@ -182,6 +267,9 @@ function handleResolve( e ) {
 
 function removeHighlightForComment( commentId ) {
 	clearHighlight( commentId );
+	queryHighlights(
+		`.${ PIN_CLASS }[data-comment-id="${ commentId }"]`
+	).forEach( removePin );
 	queryHighlights( `.${ MEDIA_HIGHLIGHT_CLASS }` ).forEach( ( media ) => {
 		if ( ! hasCommentId( media, commentId ) ) {
 			return;
@@ -205,11 +293,42 @@ function handleRemove( e ) {
 	removeHighlightForComment( commentId );
 }
 
+function applyRevealed() {
+	queryHighlights( `.${ REVEALED_CLASS }` ).forEach( ( el ) => {
+		if ( ! hasCommentId( el, revealedCommentId ) ) {
+			el.classList.remove( REVEALED_CLASS );
+		}
+	} );
+	if ( revealedCommentId ) {
+		queryHighlightedByCommentId( revealedCommentId ).forEach( ( el ) =>
+			el.classList.add( REVEALED_CLASS )
+		);
+	}
+}
+
+function setRevealed( commentId ) {
+	revealedCommentId = Number( commentId ) || 0;
+	applyRevealed();
+}
+
+function handleThreadState( e ) {
+	const commentId = Number( e.detail?.commentId ) || 0;
+	if ( e.detail?.open ) {
+		openThreadCommentId = commentId;
+		return;
+	}
+	if ( openThreadCommentId && openThreadCommentId === revealedCommentId ) {
+		setRevealed( 0 );
+	}
+	openThreadCommentId = 0;
+}
+
 function handleScrollTo( e ) {
 	const { commentId } = e.detail || {};
 	if ( ! commentId ) {
 		return;
 	}
+	setRevealed( commentId );
 
 	queryHighlights( `.${ ACTIVE_CLASS }` ).forEach( ( el ) =>
 		el.classList.remove( ACTIVE_CLASS )
@@ -240,7 +359,9 @@ function collectAnchoredCommentIds( contentRoot, doc ) {
 	}
 	for ( const scope of scopes ) {
 		scope
-			.querySelectorAll( `.${ HIGHLIGHT_CLASS }[data-comment-id]` )
+			.querySelectorAll(
+				`.${ HIGHLIGHT_CLASS }[data-comment-id], .${ PIN_CLASS }[data-comment-id]`
+			)
 			.forEach( ( el ) => ids.add( String( el.dataset.commentId ) ) );
 		scope
 			.querySelectorAll( `.${ MEDIA_HIGHLIGHT_CLASS }[data-comment-ids]` )
@@ -295,6 +416,13 @@ function wrapCommentsInRoot( contentRoot, comments ) {
 				}
 				continue;
 			}
+			if ( descriptor?.type === 'pin' ) {
+				const pin = applyPinMarker( c.id, descriptor, effectiveRoot );
+				if ( pin && c.isResolved ) {
+					pin.classList.add( RESOLVED_CLASS );
+				}
+				continue;
+			}
 			const range = deserializeRange( descriptor, effectiveRoot );
 			if ( range ) {
 				const mark = wrapRange( range, c.id );
@@ -332,6 +460,7 @@ function attachManagerToDoc( doc, options = {} ) {
 		linkGuardCleanup = installPreviewLinkGuard( doc );
 	} else if ( doc.documentElement ) {
 		doc.documentElement.classList.add( 'flow-clickable-links' );
+		linkGuardCleanup = installLinkDragSelect( doc );
 	}
 
 	const wrapRoot = resolveCommentContentRoot( doc ) || doc.body;
@@ -345,6 +474,8 @@ function attachManagerToDoc( doc, options = {} ) {
 	}
 
 	wrapCommentsInRoot( wrapRoot, allComments );
+	repositionPins( doc );
+	applyRevealed();
 
 	if ( withNotice ) {
 		installCommentableChrome( {
@@ -357,17 +488,43 @@ function attachManagerToDoc( doc, options = {} ) {
 		clearTimeout( rewrapTimer );
 		rewrapTimer = window.setTimeout( () => {
 			wrapCommentsInRoot( wrapRoot, allComments );
+			repositionPins( doc );
+			applyRevealed();
 		}, 150 );
 	};
 	const mo = new MutationObserver( scheduleRewrap );
 	mo.observe( wrapRoot, { childList: true, subtree: true } );
 
 	clickRoot.addEventListener( 'click', onHighlightClick );
+	const onPagePointerDown = ( e ) => {
+		if (
+			revealedCommentId &&
+			! closestFromEventTarget( e.target, `.${ REVEALED_CLASS }` )
+		) {
+			setRevealed( 0 );
+		}
+	};
+	doc.addEventListener( 'pointerdown', onPagePointerDown, true );
+
+	const view = doc.defaultView;
+	let resizeFrame = 0;
+	const onResize = () => {
+		if ( resizeFrame ) {
+			return;
+		}
+		resizeFrame = view.requestAnimationFrame( () => {
+			resizeFrame = 0;
+			repositionPins( doc );
+		} );
+	};
+	view?.addEventListener( 'resize', onResize );
 
 	return () => {
 		clearTimeout( rewrapTimer );
 		mo.disconnect();
 		clickRoot.removeEventListener( 'click', onHighlightClick );
+		doc.removeEventListener( 'pointerdown', onPagePointerDown, true );
+		view?.removeEventListener( 'resize', onResize );
 		if ( linkGuardCleanup ) {
 			linkGuardCleanup();
 		}
@@ -470,6 +627,7 @@ export function initHighlights( inlineComments, options = {} ) {
 	window.addEventListener( 'flow:highlight-resolve', handleResolve );
 	window.addEventListener( 'flow:highlight-remove', handleRemove );
 	window.addEventListener( 'flow:scroll-to-highlight', handleScrollTo );
+	window.addEventListener( 'flow:inline-thread-state', handleThreadState );
 	window.addEventListener( 'flow:iframe-ready', handleIframeReady );
 	window.addEventListener( 'flow:iframe-removed', handleIframeRemoved );
 	window.addEventListener( 'flow:inline-comment-added', handleCommentAdded );
@@ -514,6 +672,8 @@ function handleCommentsReset( e ) {
 		}
 	} );
 	wrapCommentsInRoot( wrapRoot, allComments );
+	repositionPins( doc );
+	applyRevealed();
 
 	// wrapCommentsInRoot skips ids that are already anchored, so a comment
 	// someone else resolved would otherwise keep its unresolved styling.

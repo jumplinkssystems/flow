@@ -99,6 +99,8 @@ export default function ReviewBar( {
 		comments = [],
 		inlineComments = [],
 		revisionStatus: initialRevisionStatus = null,
+		revisionCount: initialRevisionCount = 0,
+		canViewRevisions = false,
 		latestRevisionUrl: initialLatestRevisionUrl = '',
 		reviewers = [],
 		isEmailInvitee = false,
@@ -119,6 +121,9 @@ export default function ReviewBar( {
 	}, [ actionStatus ] );
 	const [ isBusy, setIsBusy ] = useState( false );
 	const [ showRevisions, setShowRevisions ] = useState( false );
+	const [ revisionCount, setRevisionCount ] = useState(
+		Number( initialRevisionCount ) || 0
+	);
 	const [ revisionStatus, setRevisionStatus ] = useState(
 		initialRevisionStatus
 	);
@@ -133,6 +138,9 @@ export default function ReviewBar( {
 			revisionStatusRef.current = next;
 			setRevisionStatus( next );
 			setLatestRevisionUrl( e.detail?.latestRevisionUrl || '' );
+			if ( undefined !== e.detail?.revisionCount ) {
+				setRevisionCount( Number( e.detail.revisionCount ) || 0 );
+			}
 			if ( 'outdated' === next ) {
 				// A newer version is exactly what the mount-time check counts
 				// as resubmittable activity; without this the author is told
@@ -706,7 +714,9 @@ export default function ReviewBar( {
 						) : null }
 						{ revisionStatus &&
 						! isCancelled &&
-						Number( reviewId ) > 0 ? (
+						canViewRevisions &&
+						Number( reviewId ) > 0 &&
+						revisionCount > 1 ? (
 							<button
 								type="button"
 								className="flow-bar__revisions-link"

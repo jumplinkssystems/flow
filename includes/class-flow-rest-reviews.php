@@ -812,9 +812,6 @@ class REST_Reviews extends \WP_REST_Controller {
 	}
 
 	public function comment_ownership_check( \WP_REST_Request $request ) {
-		if ( ! is_user_logged_in() ) {
-			return new \WP_Error( 'rest_forbidden', __( 'You must be logged in.', 'jumplinks-editorial-workflow' ), [ 'status' => 401 ] );
-		}
 		$comment = DB::get_comment( (int) $request->get_param( 'comment_id' ) );
 		if ( ! $comment ) {
 			return new \WP_Error( 'flow_ew_not_found', __( 'Comment not found.', 'jumplinks-editorial-workflow' ), [ 'status' => 404 ] );
@@ -829,6 +826,13 @@ class REST_Reviews extends \WP_REST_Controller {
 		}
 		if ( Review::is_cancelled( $review ) ) {
 			return new \WP_Error( 'flow_ew_review_cancelled', __( 'This review was cancelled.', 'jumplinks-editorial-workflow' ), [ 'status' => 403 ] );
+		}
+		if ( ! is_user_logged_in() ) {
+			// External reviewers may change what they wrote under their invite.
+			if ( Email_Review::viewer_owns_comment( $comment ) ) {
+				return true;
+			}
+			return new \WP_Error( 'rest_forbidden', __( 'You must be logged in.', 'jumplinks-editorial-workflow' ), [ 'status' => 401 ] );
 		}
 		if ( get_current_user_id() !== (int) $comment->author_id && ! current_user_can( 'flow_manage_reviews' ) ) {
 			return new \WP_Error( 'rest_forbidden', __( 'You cannot edit this comment.', 'jumplinks-editorial-workflow' ), [ 'status' => 403 ] );

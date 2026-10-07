@@ -4,7 +4,7 @@ Tags: client feedback, website feedback, content approval, site review, editoria
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.6.1
+Stable tag: 2.6.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -200,6 +200,24 @@ No, and this is deliberate rather than an oversight. There is no approve ability
 9. Assign reviewer to page in Bricks
 
 == Changelog ==
+
+= 2.6.2 =
+* New: Pin comments. Click a spot on the review page that has no text to highlight (backgrounds, empty space, button padding) to pin a comment there; clicks on text stay for highlighting. Pins follow their element through reflows and device sizes, turn green when resolved, and AI agents get the element and position over MCP. The review page tips card and the Pro site review welcome show pinning in a new clip.
+* New: Hide inline comments in the View menu shows the page without highlights and pins; picking a comment in the sidebar still shows that one. The choice is remembered per browser.
+* Fix: Highlighted text keeps the page's own text colour instead of turning black on dark sections.
+* Fix: Embeds sized to fill their box, such as maps, keep their full size on the review page instead of shrinking to 300×150.
+* Fix: Cookie banners, chat widgets and other theme or plugin output no longer show twice on the review page and in site reviews.
+* Fix: Call, WhatsApp, mail and new-tab buttons no longer open from the review page preview, the same as other links.
+* Fix: Commenting on something at the right edge of the page opens Add Comment on its left, pointing at it, instead of covering it.
+* Fix: On small images and videos, the Go to link and Play buttons shrink to their icon and the comment hint steps aside, so nothing overlaps.
+* Improvement: External reviewers invited by email can edit and delete their own comments, on the review page and (Pro) in site reviews.
+* Fix: Older Bricks revisions on the review page show the page as it was after that save, not the save before it.
+* Fix: Dragging across a button or link selects its text instead of dragging the link, on the review page and in site reviews, where a plain click still follows the link.
+* Improvement: View revisions now shows older layouts for Breakdance and Beaver Builder pages too (Beaver from new saves on), and on builder pages lists only revisions that carry a layout. The link only appears once the page has more than one revision.
+* Improvement: Comments whose text is gone from the current version show as outdated on every builder, and get a View original button that opens the version they were written on.
+* Fix: A comment whose text was removed no longer jumps to the same word in another part of the page; it stays anchored to where it was left.
+* Improvement: Clicking a highlighted comment on the page opens its thread in the sidebar on the right tab, Resolved included, and keeps it outlined until you click elsewhere.
+* Tweak: The review page's Cancel review button is red, matching the cancel icon in the editor.
 
 = 2.6.1 =
 * New: Cancel a review from the editor or the review page's top bar. Cancelled reviews stay read-only in a Review history list under Current Review, and assigning a reviewer again starts a fresh review. Removing the reviewer, turning off Open Review with nobody assigned, or (Pro) removing the last reviewer cancels too, after asking; an open review keeps running without a reviewer.

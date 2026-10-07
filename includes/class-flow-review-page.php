@@ -269,6 +269,7 @@ class ReviewPage {
 			add_filter(
 				'template_include',
 				static function (): string {
+					self::isolate_shell_hooks();
 					return (string) apply_filters(
 						'flow_ew_review_template',
 						FLOW_EW_PLUGIN_DIR . 'templates/review-preview.php'
@@ -355,15 +356,23 @@ class ReviewPage {
 			return;
 		}
 		$revision_id = (int) $snapshot->ID;
+		// Bricks copies its layout onto a revision before saving, so the layout
+		// as of revision N is the copy on the next one (or the live post).
+		$bricks_source = self::next_newer_revision_id( $post_id, $revision_id );
 		add_filter(
 			'get_post_metadata',
-			static function ( $value, $object_id, $meta_key ) use ( $revision_id, $post_id ) {
+			static function ( $value, $object_id, $meta_key ) use ( $revision_id, $post_id, $bricks_source ) {
 				if ( (int) $object_id !== $post_id ) {
 					return $value;
 				}
 				// Elementor's rendered-HTML cache would otherwise show the latest layout.
 				if ( '_elementor_element_cache' === $meta_key ) {
 					return [ '' ];
+				}
+				if ( '_bricks_page_content_2' === $meta_key ) {
+					return $bricks_source && metadata_exists( 'post', $bricks_source, $meta_key )
+						? [ get_post_meta( $bricks_source, $meta_key, true ) ]
+						: $value;
 				}
 				if ( in_array( $meta_key, self::REVISIONED_BUILDER_KEYS, true ) && metadata_exists( 'post', $revision_id, $meta_key ) ) {
 					return [ get_post_meta( $revision_id, $meta_key, true ) ];
@@ -373,6 +382,23 @@ class ReviewPage {
 			10,
 			3
 		);
+	}
+
+	/**
+	 * The revision saved right after $revision_id, or 0 when it is the newest.
+	 */
+	private static function next_newer_revision_id( int $post_id, int $revision_id ): int {
+		$newer = 0;
+		foreach ( wp_get_post_revisions( $post_id ) as $revision ) {
+			if ( wp_is_post_autosave( $revision ) ) {
+				continue;
+			}
+			if ( (int) $revision->ID === $revision_id ) {
+				return $newer;
+			}
+			$newer = (int) $revision->ID;
+		}
+		return 0;
 	}
 
 	private function setup_embed_mode( ?\WP_Post $snapshot, object $review ): void {
@@ -492,6 +518,67 @@ class ReviewPage {
 	 * `flow_ew_review_shell_keep_handles` filter — extensions can append their own
 	 * handle prefixes when they need to render something on the shell.
 	 */
+	/**
+	 * The shell only hosts Flow's bar and sidebar; the page itself renders in
+	 * the embed. Theme and plugin output printed straight onto the shell's
+	 * head, body-open and footer hooks (cookie banners, chat widgets, pixels)
+	 * would otherwise appear a second time over the preview, so only core
+	 * and Flow callbacks stay. Enqueued assets are handled separately by
+	 * dequeue_theme_assets_for_shell().
+	 */
+	public static function isolate_shell_hooks(): void {
+		global $wp_filter;
+		$kept_dirs = [
+			wp_normalize_path( ABSPATH . 'wp-includes' ),
+			wp_normalize_path( FLOW_EW_PLUGIN_DIR ),
+		];
+		foreach ( [ 'wp_head', 'wp_body_open', 'wp_footer' ] as $hook ) {
+			if ( ! isset( $wp_filter[ $hook ] ) || ! $wp_filter[ $hook ] instanceof \WP_Hook ) {
+				continue;
+			}
+			foreach ( $wp_filter[ $hook ]->callbacks as $priority => $callbacks ) {
+				foreach ( $callbacks as $callback ) {
+					$file = self::callback_file( $callback['function'] );
+					$keep = false;
+					foreach ( $kept_dirs as $dir ) {
+						if ( '' !== $file && 0 === strpos( $file, $dir ) ) {
+							$keep = true;
+							break;
+						}
+					}
+					/**
+					 * Whether a head/footer callback may run on the review shell.
+					 *
+					 * @param bool     $keep     True for core and Flow callbacks.
+					 * @param callable $callback The hooked callback.
+					 * @param string   $hook     wp_head, wp_body_open or wp_footer.
+					 */
+					if ( ! \apply_filters( 'flow_ew_review_shell_keep_callback', $keep, $callback['function'], $hook ) ) {
+						remove_action( $hook, $callback['function'], $priority );
+					}
+				}
+			}
+		}
+	}
+
+	/**
+	 * @param mixed $callback
+	 */
+	private static function callback_file( $callback ): string {
+		try {
+			if ( is_string( $callback ) && false !== strpos( $callback, '::' ) ) {
+				$callback = explode( '::', $callback, 2 );
+			}
+			$reflection = is_array( $callback )
+				? new \ReflectionMethod( $callback[0], (string) $callback[1] )
+				: new \ReflectionFunction( \Closure::fromCallable( $callback ) );
+		} catch ( \Throwable $e ) {
+			return '';
+		}
+		$file = $reflection->getFileName();
+		return is_string( $file ) ? wp_normalize_path( $file ) : '';
+	}
+
 	public function dequeue_theme_assets_for_shell(): void {
 		$keep_prefixes = [ 'flow-', 'wp-', 'jquery', 'react', 'regenerator', 'lodash' ];
 
@@ -599,8 +686,7 @@ class ReviewPage {
 			'currentUserId'      => $current_user_id,
 			// Seconds between comment sync polls; 0 turns polling off.
 			'syncInterval'       => max( 0, (int) apply_filters( 'flow_ew_comment_sync_interval', 15 ) ),
-			'hintVideoWebm'      => Assets::asset_url( 'assets/highlight.webm' ),
-			'hintVideoMp4'       => Assets::asset_url( 'assets/highlight.mp4' ),
+			'hintVideoWebm'      => Assets::asset_url( 'assets/comment-demo.webm' ),
 		];
 
 		$review = $review_id ? DB::get_review( $review_id ) : null;
@@ -762,19 +848,20 @@ class ReviewPage {
 			'reviewUpdatedAt'        => (string) ( $review->updated_at ?? '' ),
 			'reviewIteration'        => (int) ( $review->iteration ?? 1 ),
 			'revisionStatus'         => $revision_status,
+			'revisionCount'          => self::revision_count( (int) $review->post_id ),
+			// Same rule as the revisions endpoint; anonymous invitees can't list them.
+			'canViewRevisions'       => $current_user_id > 0 && Review::can_user_access_review( $review, $current_user_id ),
 			'latestRevisionUrl'      => $latest_rev_url,
 		];
 	}
 
 	/**
-	 * The page's saved revisions, newest first. Each carries this review's
-	 * comments raised while it was the latest content that have since been
-	 * resolved.
+	 * Revisions worth offering, newest first: no autosaves, and on a builder
+	 * page only those that carry the builder's layout.
 	 *
-	 * @return array<int,array{id:int,date:string,resolved:int,url:string,latest:bool,viewing:bool}>
+	 * @return \WP_Post[]
 	 */
-	public static function revision_list( object $review, int $viewing_rev ): array {
-		$post_id   = (int) $review->post_id;
+	private static function listable_revisions( int $post_id ): array {
 		$revisions = array_values(
 			array_filter(
 				wp_get_post_revisions(
@@ -794,13 +881,30 @@ class ReviewPage {
 				$revisions = array_values(
 					array_filter(
 						$revisions,
-						static fn ( $rev ) => '' !== (string) get_post_meta( $rev->ID, $layout_key, true )
+						static fn ( $rev ) => ! empty( get_post_meta( $rev->ID, $layout_key, true ) )
 					)
 				);
 				break;
 			}
 		}
-		$kept = array_slice( $revisions, 0, 30 );
+		return $revisions;
+	}
+
+	public static function revision_count( int $post_id ): int {
+		return count( self::listable_revisions( $post_id ) );
+	}
+
+	/**
+	 * The page's saved revisions, newest first. Each carries this review's
+	 * comments raised while it was the latest content that have since been
+	 * resolved.
+	 *
+	 * @return array<int,array{id:int,date:string,resolved:int,url:string,latest:bool,viewing:bool}>
+	 */
+	public static function revision_list( object $review, int $viewing_rev ): array {
+		$post_id   = (int) $review->post_id;
+		$revisions = self::listable_revisions( $post_id );
+		$kept      = array_slice( $revisions, 0, 30 );
 
 		$kept_ids    = array_map( static fn ( $rev ) => (int) $rev->ID, $kept );
 		$by_revision = [];
