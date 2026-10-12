@@ -73,13 +73,15 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _shared_is_publish_blocked__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ../shared/is-publish-blocked */ "./src/shared/is-publish-blocked.js");
 /* harmony import */ var _shared_publish_guard_ui__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ../shared/publish-guard-ui */ "./src/shared/publish-guard-ui.js");
 /* harmony import */ var _shared_share_bar_icons__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ../shared/share-bar-icons */ "./src/shared/share-bar-icons.js");
-/* harmony import */ var _shared_resolve_classic_root__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ../shared/resolve-classic-root */ "./src/shared/resolve-classic-root.js");
-/* harmony import */ var _shared_assign_invite_email__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ../shared/assign-invite-email */ "./src/shared/assign-invite-email.js");
-/* harmony import */ var _shared_review_notice_dom__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! ../shared/review-notice-dom */ "./src/shared/review-notice-dom.js");
-/* harmony import */ var _shared_should_show_send_for_review__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(/*! ../shared/should-show-send-for-review */ "./src/shared/should-show-send-for-review.js");
-/* harmony import */ var _shared_sync_reviewer_combobox_from_review__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__(/*! ../shared/sync-reviewer-combobox-from-review */ "./src/shared/sync-reviewer-combobox-from-review.js");
-/* harmony import */ var _shared_reviewer_email_entry__WEBPACK_IMPORTED_MODULE_15__ = __webpack_require__(/*! ../shared/reviewer-email-entry */ "./src/shared/reviewer-email-entry.js");
-/* harmony import */ var _shared_reviewer_combobox__WEBPACK_IMPORTED_MODULE_16__ = __webpack_require__(/*! ../shared/reviewer-combobox */ "./src/shared/reviewer-combobox.js");
+/* harmony import */ var _shared_confirm_cancel_review__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ../shared/confirm-cancel-review */ "./src/shared/confirm-cancel-review.js");
+/* harmony import */ var _shared_resolve_classic_root__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ../shared/resolve-classic-root */ "./src/shared/resolve-classic-root.js");
+/* harmony import */ var _shared_assign_invite_email__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! ../shared/assign-invite-email */ "./src/shared/assign-invite-email.js");
+/* harmony import */ var _shared_review_notice_dom__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(/*! ../shared/review-notice-dom */ "./src/shared/review-notice-dom.js");
+/* harmony import */ var _shared_should_show_send_for_review__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__(/*! ../shared/should-show-send-for-review */ "./src/shared/should-show-send-for-review.js");
+/* harmony import */ var _shared_sync_reviewer_combobox_from_review__WEBPACK_IMPORTED_MODULE_15__ = __webpack_require__(/*! ../shared/sync-reviewer-combobox-from-review */ "./src/shared/sync-reviewer-combobox-from-review.js");
+/* harmony import */ var _shared_reviewer_email_entry__WEBPACK_IMPORTED_MODULE_16__ = __webpack_require__(/*! ../shared/reviewer-email-entry */ "./src/shared/reviewer-email-entry.js");
+/* harmony import */ var _shared_reviewer_combobox__WEBPACK_IMPORTED_MODULE_17__ = __webpack_require__(/*! ../shared/reviewer-combobox */ "./src/shared/reviewer-combobox.js");
+
 
 
 
@@ -104,7 +106,7 @@ __webpack_require__.r(__webpack_exports__);
   if (!flowEW) {
     return;
   }
-  const classicRoot = (0,_shared_resolve_classic_root__WEBPACK_IMPORTED_MODULE_10__.resolveClassicRoot)();
+  const classicRoot = (0,_shared_resolve_classic_root__WEBPACK_IMPORTED_MODULE_11__.resolveClassicRoot)();
   if (!classicRoot) {
     // Elementor footer panel can appear after companion scripts; wait longer.
     if (attempt < 600) {
@@ -140,6 +142,7 @@ __webpack_require__.r(__webpack_exports__);
     };
     let review = activeReview;
     let loading = false;
+    let historyPending = false;
     const $ = (sel, ctx) => (ctx || document).querySelector(sel);
     const submitBox = $('#submitdiv');
     const reviewBox = $('#flow-ew-review');
@@ -159,7 +162,7 @@ __webpack_require__.r(__webpack_exports__);
       if (spinner) {
         spinner.classList.toggle('is-active', val);
       }
-      root.querySelectorAll('button, select, .flow-ew-reviewer-combobox__input').forEach(el => {
+      root.querySelectorAll('button:not(#flow-ew-classic-confirm button), select, .flow-ew-reviewer-combobox__input').forEach(el => {
         el.disabled = val;
       });
     }
@@ -188,10 +191,10 @@ __webpack_require__.r(__webpack_exports__);
       };
     }
     function refreshReviewNotices() {
-      (0,_shared_review_notice_dom__WEBPACK_IMPORTED_MODULE_12__.ensureReviewNotices)(noticeState());
+      (0,_shared_review_notice_dom__WEBPACK_IMPORTED_MODULE_13__.ensureReviewNotices)(noticeState());
     }
     function syncReviewNoticeVisibilityLocal() {
-      (0,_shared_review_notice_dom__WEBPACK_IMPORTED_MODULE_12__.syncReviewNoticeVisibility)(noticeState());
+      (0,_shared_review_notice_dom__WEBPACK_IMPORTED_MODULE_13__.syncReviewNoticeVisibility)(noticeState());
     }
     function setPublishGuardStyles(el, blocked) {
       (0,_shared_publish_guard_ui__WEBPACK_IMPORTED_MODULE_8__.applyPublishGuardControl)(el, blocked);
@@ -257,7 +260,7 @@ __webpack_require__.r(__webpack_exports__);
       const isReviewer = reviewerId === currentUserId;
       const hasPending = !!review.has_pending_reviewers;
       const hasInvite = !!(review.invite_email || review.reviewer && review.reviewer.is_email || Array.isArray(review.email_invites) && review.email_invites.length > 0);
-      if ((0,_shared_should_show_send_for_review__WEBPACK_IMPORTED_MODULE_13__.shouldShowSendForReview)(review) && currentUserCan.assignReviewer) {
+      if ((0,_shared_should_show_send_for_review__WEBPACK_IMPORTED_MODULE_14__.shouldShowSendForReview)(review) && currentUserCan.assignReviewer) {
         container.appendChild(makeButton(i18n.sendForReview, 'send', 'button-primary', !reviewerId && !hasInvite));
       }
       if (status === 'changes_requested' && !hasPending && currentUserId === Number(flowEW.postAuthorId || 0)) {
@@ -340,7 +343,10 @@ __webpack_require__.r(__webpack_exports__);
       div.className = 'flow-ew-history';
       div.id = 'flow-ew-history';
       div.innerHTML = '<span class="flow-ew-classic__share-label">' + (0,_shared_escape__WEBPACK_IMPORTED_MODULE_5__.escHtml)(i18n.cancelledReviews) + '</span><ul class="flow-ew-history__list">' + cancelledReviews.slice(0, historyVisible).map(function (item) {
-        return '<li class="flow-ew-history__item"><a href="' + (0,_shared_escape__WEBPACK_IMPORTED_MODULE_5__.escAttr)(item.url) + '" target="_blank" rel="noreferrer">' + (0,_shared_escape__WEBPACK_IMPORTED_MODULE_5__.escHtml)(item.date) + '</a>' + (item.meta ? '<span class="flow-ew-history__meta">- ' + (0,_shared_escape__WEBPACK_IMPORTED_MODULE_5__.escHtml)(item.meta) + '</span>' : '') + '</li>';
+        const tip = (0,_shared_escape__WEBPACK_IMPORTED_MODULE_5__.escAttr)(item.tooltip || '');
+        // No data-action: the delegated handler would act on the current review.
+        const restore = item.canRestore ? '<button type="button" class="flow-ew-history__restore" data-review-id="' + (0,_shared_escape__WEBPACK_IMPORTED_MODULE_5__.escAttr)(item.id) + '" aria-label="' + (0,_shared_escape__WEBPACK_IMPORTED_MODULE_5__.escAttr)(i18n.restoreReview) + '" title="' + (0,_shared_escape__WEBPACK_IMPORTED_MODULE_5__.escAttr)(i18n.restoreReview) + '">' + (0,_shared_share_bar_icons__WEBPACK_IMPORTED_MODULE_9__.shareBarIconHtml)('restore') + '</button>' : '';
+        return '<li class="flow-ew-history__item"><span class="flow-ew-history__dot flow-ew-history__dot--' + (0,_shared_escape__WEBPACK_IMPORTED_MODULE_5__.escAttr)(item.status || 'cancelled') + '" title="' + tip + '" aria-hidden="true"></span><a href="' + (0,_shared_escape__WEBPACK_IMPORTED_MODULE_5__.escAttr)(item.url) + '" target="_blank" rel="noreferrer" title="' + tip + '">' + (0,_shared_escape__WEBPACK_IMPORTED_MODULE_5__.escHtml)(item.date) + '</a>' + restore + (item.meta ? '<span class="flow-ew-history__meta">' + (0,_shared_escape__WEBPACK_IMPORTED_MODULE_5__.escHtml)(item.meta) + '</span>' : '') + '</li>';
       }).join('') + '</ul>';
       if (cancelledReviews.length > historyVisible) {
         const more = document.createElement('button');
@@ -363,10 +369,14 @@ __webpack_require__.r(__webpack_exports__);
         return;
       }
       lastHistoryKey = key;
+      historyPending = true;
+      renderHistory();
       api('/reviews/' + postId + '/cancelled', 'GET').then(function (list) {
         cancelledReviews = Array.isArray(list) ? list : [];
+      }).catch(function () {}).finally(function () {
+        historyPending = false;
         renderHistory();
-      }).catch(function () {});
+      });
     }
     let toastTimer = 0;
     function showToast(message) {
@@ -379,12 +389,7 @@ __webpack_require__.r(__webpack_exports__);
       toast.className = 'flow-ew-classic__toast';
       toast.setAttribute('role', 'status');
       toast.textContent = message;
-      const spinner = $('#flow-ew-classic-spinner');
-      if (spinner && root.contains(spinner)) {
-        root.insertBefore(toast, spinner);
-      } else {
-        root.appendChild(toast);
-      }
+      root.appendChild(toast);
       clearTimeout(toastTimer);
       toastTimer = setTimeout(function () {
         toast.remove();
@@ -422,7 +427,20 @@ __webpack_require__.r(__webpack_exports__);
       fullRender();
     });
     function syncClearBtn() {
-      (0,_shared_sync_reviewer_combobox_from_review__WEBPACK_IMPORTED_MODULE_14__.syncReviewerComboboxFromReview)(review, root);
+      (0,_shared_sync_reviewer_combobox_from_review__WEBPACK_IMPORTED_MODULE_15__.syncReviewerComboboxFromReview)(review, root);
+    }
+    function restoreReview(reviewId) {
+      if (loading || !reviewId || !cancelledReviews.some(item => Number(item.id) === reviewId)) {
+        return;
+      }
+      setLoading(true);
+      apiPost('/reviews/' + reviewId + '/restore').then(data => {
+        review = data || null;
+        cancelledReviews = cancelledReviews.filter(item => Number(item.id) !== reviewId);
+        fullRender();
+        syncClearBtn();
+        showToast(i18n.reviewRestored);
+      }).catch(err => showToast(err && err.message || i18n.restoreReviewFailed)).finally(() => setLoading(false));
     }
 
     // `remove-reviewer` keeps an open review running; `cancel` always ends it.
@@ -452,9 +470,9 @@ __webpack_require__.r(__webpack_exports__);
         if (input) {
           input.value = '';
           input.readOnly = false;
-          input.placeholder = (0,_shared_reviewer_email_entry__WEBPACK_IMPORTED_MODULE_15__.getReviewerPlaceholder)();
+          input.placeholder = (0,_shared_reviewer_email_entry__WEBPACK_IMPORTED_MODULE_16__.getReviewerPlaceholder)();
         }
-        (0,_shared_reviewer_email_entry__WEBPACK_IMPORTED_MODULE_15__.exitReviewerEmailEntryMode)(reviewerSelect, input, opts);
+        (0,_shared_reviewer_email_entry__WEBPACK_IMPORTED_MODULE_16__.exitReviewerEmailEntryMode)(reviewerSelect, input, opts);
         if (input) {
           input.dataset.flowLocked = '0';
         }
@@ -473,9 +491,8 @@ __webpack_require__.r(__webpack_exports__);
     // The reviewer ×: only asks first when removing the reviewer cancels the review.
     function removeReviewer() {
       const current = review || flowEW.activeReview;
-      if (current && !current.is_open &&
-      // eslint-disable-next-line no-alert
-      !window.confirm(i18n.cancelReviewBody)) {
+      if (current && !current.is_open) {
+        (0,_shared_confirm_cancel_review__WEBPACK_IMPORTED_MODULE_10__.confirmCancelReview)(() => clearAssignedReviewer('remove-reviewer'));
         return;
       }
       clearAssignedReviewer('remove-reviewer');
@@ -492,6 +509,90 @@ __webpack_require__.r(__webpack_exports__);
       e.stopPropagation();
       removeReviewer();
     }, true);
+
+    // Inline, not window.confirm: a native dialog let builders replay the press.
+    let onInlineConfirm = null;
+    function closeInlineConfirm() {
+      onInlineConfirm = null;
+      const box = $('#flow-ew-classic-confirm');
+      if (box) {
+        box.remove();
+      }
+    }
+    function askConfirm({
+      title,
+      body,
+      confirmLabel,
+      cancelLabel,
+      after
+    }, onConfirm) {
+      closeInlineConfirm();
+      const box = document.createElement('div');
+      box.id = 'flow-ew-classic-confirm';
+      box.className = 'flow-ew-classic__confirm';
+      box.setAttribute('role', 'alertdialog');
+      box.innerHTML = '<strong class="flow-ew-classic__confirm-title">' + (0,_shared_escape__WEBPACK_IMPORTED_MODULE_5__.escHtml)(title) + '</strong><p class="flow-ew-classic__confirm-body">' + (0,_shared_escape__WEBPACK_IMPORTED_MODULE_5__.escHtml)(body) + '</p><div class="flow-ew-classic__confirm-actions">' + '<button type="button" class="button button-primary flow-ew-classic__confirm-ok">' + (0,_shared_escape__WEBPACK_IMPORTED_MODULE_5__.escHtml)(confirmLabel) + '</button><button type="button" class="button flow-ew-classic__confirm-no">' + (0,_shared_escape__WEBPACK_IMPORTED_MODULE_5__.escHtml)(cancelLabel) + '</button></div>';
+      if (after && root.contains(after)) {
+        after.insertAdjacentElement('afterend', box);
+      } else {
+        root.appendChild(box);
+      }
+      onInlineConfirm = onConfirm;
+      box.scrollIntoView({
+        block: 'nearest'
+      });
+      box.querySelector('.flow-ew-classic__confirm-ok').focus();
+    }
+    document.addEventListener('flow-ew:confirm-cancel-review', function (e) {
+      if (!root.isConnected) {
+        return;
+      }
+      e.detail.handled = true;
+      askConfirm({
+        title: i18n.cancelReviewTitle,
+        body: i18n.cancelReviewBody,
+        confirmLabel: i18n.cancelReview,
+        cancelLabel: i18n.keepReview,
+        after: $('#flow-ew-share')
+      }, e.detail.onConfirm);
+    });
+    function onInlineConfirmPress(e) {
+      if ('click' === e.type && e.detail !== 0) {
+        // Pointer presses were handled on pointerdown.
+        if (e.target.closest('#flow-ew-classic-confirm button')) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+        return;
+      }
+      const btn = e.target.closest('.flow-ew-classic__confirm-ok, .flow-ew-classic__confirm-no');
+      if (!btn || !root.contains(btn)) {
+        return;
+      }
+      e.preventDefault();
+      e.stopPropagation();
+      const run = btn.classList.contains('flow-ew-classic__confirm-ok') ? onInlineConfirm : null;
+      closeInlineConfirm();
+      if (run) {
+        whenIdle(run);
+      }
+    }
+    document.addEventListener('pointerdown', onInlineConfirmPress, true);
+    document.addEventListener('click', onInlineConfirmPress, true);
+    document.addEventListener('keydown', function (e) {
+      if ('Escape' === e.key && onInlineConfirm) {
+        closeInlineConfirm();
+      }
+    });
+
+    // A confirm may close while the previous request or history refresh is still running.
+    function whenIdle(fn) {
+      if (loading || historyPending) {
+        window.setTimeout(() => whenIdle(fn), 50);
+        return;
+      }
+      fn();
+    }
     document.addEventListener('pointerdown', function (e) {
       const btn = e.target.closest('.flow-ew-classic__share-cancel');
       if (!btn || !root.contains(btn) || loading) {
@@ -499,11 +600,24 @@ __webpack_require__.r(__webpack_exports__);
       }
       e.preventDefault();
       e.stopPropagation();
-      // eslint-disable-next-line no-alert
-      if (!window.confirm(i18n.cancelReviewBody)) {
+      (0,_shared_confirm_cancel_review__WEBPACK_IMPORTED_MODULE_10__.confirmCancelReview)(() => clearAssignedReviewer());
+    }, true);
+
+    // Capture phase: builder canvases swallow clicks inside their panels.
+    document.addEventListener('pointerdown', function (e) {
+      const btn = e.target.closest('.flow-ew-history__restore');
+      if (!btn || !root.contains(btn)) {
         return;
       }
-      clearAssignedReviewer();
+      e.preventDefault();
+      e.stopPropagation();
+      const reviewId = parseInt(btn.dataset.reviewId, 10);
+      askConfirm({
+        title: i18n.restoreReviewTitle,
+        body: review ? i18n.restoreReviewBodyReplace : i18n.restoreReviewBody,
+        confirmLabel: i18n.restoreReview,
+        cancelLabel: i18n.cancelEdit
+      }, () => restoreReview(reviewId));
     }, true);
     let combobox = null;
     function invalidEmailMessage() {
@@ -535,7 +649,7 @@ __webpack_require__.r(__webpack_exports__);
     }
     function assignInviteEmail(email) {
       const trimmed = (email || '').trim().toLowerCase();
-      if (!(0,_shared_assign_invite_email__WEBPACK_IMPORTED_MODULE_11__.isValidEmail)(trimmed)) {
+      if (!(0,_shared_assign_invite_email__WEBPACK_IMPORTED_MODULE_12__.isValidEmail)(trimmed)) {
         showEmailError();
         return;
       }
@@ -628,7 +742,7 @@ __webpack_require__.r(__webpack_exports__);
     }
     const comboboxRoot = root.querySelector('#flow-ew-reviewer-combobox');
     const isBuilderContext = /flow-ew-classic--(elementor|bricks|breakdance|oxygen|avada|beaver|divi)/.test(root.className || '');
-    combobox = comboboxRoot ? (0,_shared_reviewer_combobox__WEBPACK_IMPORTED_MODULE_16__.initReviewerCombobox)(comboboxRoot, {
+    combobox = comboboxRoot ? (0,_shared_reviewer_combobox__WEBPACK_IMPORTED_MODULE_17__.initReviewerCombobox)(comboboxRoot, {
       assignInviteEmail,
       showEmailError,
       clearEmailError,
@@ -775,6 +889,7 @@ __webpack_require__.r(__webpack_exports__);
 __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _shared_resolve_classic_root__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../shared/resolve-classic-root */ "./src/shared/resolve-classic-root.js");
 /* harmony import */ var _shared_should_show_send_for_review__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../shared/should-show-send-for-review */ "./src/shared/should-show-send-for-review.js");
+/* harmony import */ var _shared_confirm_cancel_review__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../shared/confirm-cancel-review */ "./src/shared/confirm-cancel-review.js");
 /**
  * Open Review checkbox for the Classic Editor metabox (also reused by the
  * Elementor and Bricks drawers, which render the same panel HTML and load this
@@ -782,6 +897,7 @@ __webpack_require__.r(__webpack_exports__);
  * auto-creates a review with no reviewer assigned if one doesn't exist yet,
  * then opens it.
  */
+
 
 
 (function bootOpenReview(attempt) {
@@ -875,12 +991,17 @@ __webpack_require__.r(__webpack_exports__);
       }
       const wantOpen = checkbox.checked;
       // With nobody assigned, unticking cancels the review.
-      if (!wantOpen && currentReview && !(0,_shared_should_show_send_for_review__WEBPACK_IMPORTED_MODULE_1__.hasAssignedReviewer)(currentReview) &&
-      // eslint-disable-next-line no-alert
-      !window.confirm(flowEW.i18n.cancelReviewBody)) {
+      if (!wantOpen && currentReview && !(0,_shared_should_show_send_for_review__WEBPACK_IMPORTED_MODULE_1__.hasAssignedReviewer)(currentReview)) {
         checkbox.checked = true;
+        (0,_shared_confirm_cancel_review__WEBPACK_IMPORTED_MODULE_2__.confirmCancelReview)(() => {
+          checkbox.checked = false;
+          applyOpen(false);
+        });
         return;
       }
+      applyOpen(wantOpen);
+    });
+    function applyOpen(wantOpen) {
       loading = true;
       const ensureReview = currentReview ? Promise.resolve(currentReview) : jsonRequest(restUrl + '/reviews', {
         post_id: postId,
@@ -904,7 +1025,7 @@ __webpack_require__.r(__webpack_exports__);
       }).finally(function () {
         loading = false;
       });
-    });
+    }
     document.addEventListener('flow-ew:classic-render', function (e) {
       sync(e.detail && e.detail.review || null);
     });
@@ -1068,6 +1189,39 @@ function isValidEmail(value) {
 
 /***/ },
 
+/***/ "./src/shared/confirm-cancel-review.js"
+/*!*********************************************!*\
+  !*** ./src/shared/confirm-cancel-review.js ***!
+  \*********************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   confirmCancelReview: () => (/* binding */ confirmCancelReview)
+/* harmony export */ });
+/**
+ * Asks before an action cancels the review. The classic/builder panel answers
+ * with its inline confirmation; without one, the native dialog is the fallback.
+ *
+ * @param {Function} onConfirm
+ */
+function confirmCancelReview(onConfirm) {
+  const detail = {
+    onConfirm,
+    handled: false
+  };
+  document.dispatchEvent(new CustomEvent('flow-ew:confirm-cancel-review', {
+    detail
+  }));
+  if (!detail.handled &&
+  // eslint-disable-next-line no-alert
+  window.confirm(window.flowEW?.i18n?.cancelReviewBody || '')) {
+    onConfirm();
+  }
+}
+
+/***/ },
+
 /***/ "./src/shared/escape.js"
 /*!******************************!*\
   !*** ./src/shared/escape.js ***!
@@ -1086,6 +1240,87 @@ function escHtml(str) {
 }
 function escAttr(str) {
   return String(str).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+/***/ },
+
+/***/ "./src/shared/float-combobox-list.js"
+/*!*******************************************!*\
+  !*** ./src/shared/float-combobox-list.js ***!
+  \*******************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   floatComboboxList: () => (/* binding */ floatComboboxList)
+/* harmony export */ });
+/**
+ * Builder panels scroll or clip their content, which cut a reviewer list off
+ * at the panel edge. While the list is shown it is pinned to the viewport
+ * under its field instead, whatever code opens or closes it.
+ */
+const FLOAT_PROPS = ['position', 'top', 'left', 'right', 'bottom', 'width', 'max-height', 'z-index', 'transition'];
+function floatComboboxList(list, anchor) {
+  if (!list || !anchor || list.dataset.flowEwFloating === '1') {
+    return;
+  }
+  list.dataset.flowEwFloating = '1';
+  let listening = false;
+  const set = (prop, value) => list.style.setProperty(prop, value, 'important');
+  const place = () => {
+    const rect = anchor.getBoundingClientRect();
+    // A builder's `transition: all` would make the measurement below read
+    // a half-moved box.
+    set('transition', 'none');
+    set('position', 'fixed');
+    set('right', 'auto');
+    set('bottom', 'auto');
+    set('z-index', '1000000');
+    set('top', '0px');
+    set('left', '0px');
+    // A transformed ancestor makes `fixed` relative to itself, not the
+    // viewport; measure where 0,0 landed and correct for it.
+    const origin = list.getBoundingClientRect();
+    const top = rect.bottom + 4;
+    const room = window.innerHeight - top - 12;
+    set('top', top - origin.top + 'px');
+    set('left', rect.left - origin.left + 'px');
+    set('width', rect.width + 'px');
+    set('max-height', Math.max(120, Math.min(320, room)) + 'px');
+  };
+  const onViewportChange = e => {
+    // Scrolling the list itself must not re-place it.
+    if (!list.hidden && e?.target !== list) {
+      place();
+    }
+  };
+  const sync = () => {
+    // The classic editor's metabox does not clip; leave it as it was.
+    // Checked here: the list may not be in the page yet at setup.
+    if (!list.hidden && !list.closest('#flow-ew-review.postbox')) {
+      place();
+      // The drawer may still be animating in; place again once it settles.
+      window.requestAnimationFrame(() => !list.hidden && place());
+      window.setTimeout(() => !list.hidden && place(), 250);
+      if (!listening) {
+        window.addEventListener('scroll', onViewportChange, true);
+        window.addEventListener('resize', onViewportChange);
+        listening = true;
+      }
+      return;
+    }
+    FLOAT_PROPS.forEach(prop => list.style.removeProperty(prop));
+    if (listening) {
+      window.removeEventListener('scroll', onViewportChange, true);
+      window.removeEventListener('resize', onViewportChange);
+      listening = false;
+    }
+  };
+  new window.MutationObserver(sync).observe(list, {
+    attributes: true,
+    attributeFilter: ['hidden']
+  });
+  sync();
 }
 
 /***/ },
@@ -1246,12 +1481,15 @@ function bindInviteLinkCopy() {
   document.addEventListener('flow-ew:classic-render', function (event) {
     syncInviteLinkCopy(event && event.detail ? event.detail.review : null);
   });
+
+  // Capture phase: builder toolbars (Avada) stop clicks before they bubble up.
   document.addEventListener('click', function (event) {
     const button = event.target.closest && event.target.closest(CLICK_SELECTOR);
     if (!button || !button.dataset.url) {
       return;
     }
     event.preventDefault();
+    event.stopPropagation();
     const doneClass = button.classList.contains('flow-ew-reviewer-card__copy') ? 'flow-ew-reviewer-card__copy--done' : 'flow-ew-reviewer-combobox__copy--done';
     navigator.clipboard.writeText(button.dataset.url).then(() => {
       button.innerHTML = (0,_share_bar_icons__WEBPACK_IMPORTED_MODULE_0__.shareBarIconHtml)('copied');
@@ -1265,7 +1503,7 @@ function bindInviteLinkCopy() {
         button.setAttribute('title', copyLabel());
       }, 2000);
     });
-  });
+  }, true);
 }
 
 /***/ },
@@ -1346,10 +1584,14 @@ function hasAssignedReviewer(review, reviewerMeta = 0) {
 
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   MANDATORY_DISMISS_VALUE: () => (/* binding */ MANDATORY_DISMISS_VALUE),
 /* harmony export */   NO_REVIEW_ROLES_DISMISS_ATTR: () => (/* binding */ NO_REVIEW_ROLES_DISMISS_ATTR),
 /* harmony export */   NO_REVIEW_ROLES_DISMISS_VALUE: () => (/* binding */ NO_REVIEW_ROLES_DISMISS_VALUE),
 /* harmony export */   dismissNoReviewRolesNotice: () => (/* binding */ dismissNoReviewRolesNotice),
-/* harmony export */   isNoReviewRolesNoticeDismissed: () => (/* binding */ isNoReviewRolesNoticeDismissed)
+/* harmony export */   dismissNotice: () => (/* binding */ dismissNotice),
+/* harmony export */   isDismissibleNoticeValue: () => (/* binding */ isDismissibleNoticeValue),
+/* harmony export */   isNoReviewRolesNoticeDismissed: () => (/* binding */ isNoReviewRolesNoticeDismissed),
+/* harmony export */   isNoticeDismissed: () => (/* binding */ isNoticeDismissed)
 /* harmony export */ });
 /**
  * Persistence for the "No Review Roles Assigned" editor notice.
@@ -1373,6 +1615,40 @@ function dismissNoReviewRolesNotice() {
 }
 const NO_REVIEW_ROLES_DISMISS_ATTR = 'data-flow-ew-dismiss';
 const NO_REVIEW_ROLES_DISMISS_VALUE = 'no-review-roles';
+
+/**
+ * The "Review Mode set to Mandatory" notice is only a reminder, so it can be
+ * dismissed too; publishing stays blocked either way.
+ */
+const MANDATORY_DISMISS_VALUE = 'review-mandatory';
+const MANDATORY_DISMISS_KEY = 'flow_ew_dismiss_review_mandatory';
+const DISMISS_KEYS = {
+  [NO_REVIEW_ROLES_DISMISS_VALUE]: DISMISS_KEY,
+  [MANDATORY_DISMISS_VALUE]: MANDATORY_DISMISS_KEY
+};
+function isDismissibleNoticeValue(value) {
+  return Object.prototype.hasOwnProperty.call(DISMISS_KEYS, value || '');
+}
+function isNoticeDismissed(value) {
+  if (!isDismissibleNoticeValue(value)) {
+    return false;
+  }
+  try {
+    return window.localStorage.getItem(DISMISS_KEYS[value]) === '1';
+  } catch (_err) {
+    return false;
+  }
+}
+function dismissNotice(value) {
+  if (!isDismissibleNoticeValue(value)) {
+    return;
+  }
+  try {
+    window.localStorage.setItem(DISMISS_KEYS[value], '1');
+  } catch (_err) {
+    // ignore
+  }
+}
 
 /***/ },
 
@@ -1609,11 +1885,13 @@ function collectClassicRoots() {
   });
   return roots;
 }
-function isRolesDismissNotice(el) {
-  return el?.dataset?.flowEwDismiss === _no_review_roles_notice__WEBPACK_IMPORTED_MODULE_2__.NO_REVIEW_ROLES_DISMISS_VALUE;
+function dismissValue(el) {
+  const value = el?.dataset?.flowEwDismiss || '';
+  return (0,_no_review_roles_notice__WEBPACK_IMPORTED_MODULE_2__.isDismissibleNoticeValue)(value) ? value : '';
 }
 function wireDismissButton(notice) {
-  if (!notice || !isRolesDismissNotice(notice)) {
+  const value = dismissValue(notice);
+  if (!value) {
     return;
   }
   if (notice.dataset.flowEwDismissWired === '1') {
@@ -1631,8 +1909,8 @@ function wireDismissButton(notice) {
   }
   btn.addEventListener('click', event => {
     event.preventDefault();
-    (0,_no_review_roles_notice__WEBPACK_IMPORTED_MODULE_2__.dismissNoReviewRolesNotice)();
-    document.querySelectorAll(`.flow-ew-review-notice[data-flow-ew-dismiss="${_no_review_roles_notice__WEBPACK_IMPORTED_MODULE_2__.NO_REVIEW_ROLES_DISMISS_VALUE}"]`).forEach(el => {
+    (0,_no_review_roles_notice__WEBPACK_IMPORTED_MODULE_2__.dismissNotice)(value);
+    document.querySelectorAll(`.flow-ew-review-notice[data-flow-ew-dismiss="${value}"]`).forEach(el => {
       el.hidden = true;
     });
   });
@@ -1643,9 +1921,8 @@ function wireDismissButton(notice) {
  */
 function syncReviewNoticeVisibility(args) {
   const blocked = (0,_is_publish_blocked__WEBPACK_IMPORTED_MODULE_1__.isPublishBlocked)(args);
-  const rolesDismissed = (0,_no_review_roles_notice__WEBPACK_IMPORTED_MODULE_2__.isNoReviewRolesNoticeDismissed)();
   document.querySelectorAll('.flow-ew-review-notice').forEach(el => {
-    if (isRolesDismissNotice(el) && rolesDismissed) {
+    if ((0,_no_review_roles_notice__WEBPACK_IMPORTED_MODULE_2__.isNoticeDismissed)(dismissValue(el))) {
       el.hidden = true;
       return;
     }
@@ -1694,10 +1971,14 @@ function buildNoticeSpec(flowEW, review, publishBlocked) {
       descHtml: descParts.join(' ')
     };
   }
+  if ((0,_no_review_roles_notice__WEBPACK_IMPORTED_MODULE_2__.isNoticeDismissed)(_no_review_roles_notice__WEBPACK_IMPORTED_MODULE_2__.MANDATORY_DISMISS_VALUE)) {
+    return null;
+  }
   return {
     variant: 'in-review',
     role: 'note',
     publishGuardOnly: true,
+    dismiss: _no_review_roles_notice__WEBPACK_IMPORTED_MODULE_2__.MANDATORY_DISMISS_VALUE,
     title: i18n.reviewMandatoryTitle || 'Review Mode set to Mandatory',
     descHtml: i18n.reviewMandatoryDesc || i18n.publishGuardTooltip || 'Post can go live only after approval by a reviewer.'
   };
@@ -1712,6 +1993,8 @@ function renderNoticeElement(spec) {
   }
   if (spec.dismissableRoles) {
     div.dataset.flowEwDismiss = _no_review_roles_notice__WEBPACK_IMPORTED_MODULE_2__.NO_REVIEW_ROLES_DISMISS_VALUE;
+  } else if (spec.dismiss) {
+    div.dataset.flowEwDismiss = spec.dismiss;
   }
   div.innerHTML = '<p class="flow-ew-review-notice__title">' + (0,_escape__WEBPACK_IMPORTED_MODULE_0__.escHtml)(spec.title) + '</p>' + '<p class="flow-ew-review-notice__desc">' + spec.descHtml + '</p>';
   wireDismissButton(div);
@@ -1803,6 +2086,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ });
 /* harmony import */ var _assign_invite_email__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./assign-invite-email */ "./src/shared/assign-invite-email.js");
 /* harmony import */ var _reviewer_email_entry__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./reviewer-email-entry */ "./src/shared/reviewer-email-entry.js");
+/* harmony import */ var _float_combobox_list__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./float-combobox-list */ "./src/shared/float-combobox-list.js");
+
 
 
 
@@ -1859,6 +2144,7 @@ function initReviewerCombobox(root, opts = {}) {
     return null;
   }
   root.dataset.flowEwComboboxReady = '1';
+  (0,_float_combobox_list__WEBPACK_IMPORTED_MODULE_2__.floatComboboxList)(list, input.closest('.flow-ew-reviewer-combobox__wrap') || input);
   const options = Array.from(list.querySelectorAll('[role="option"]'));
   let activeIndex = -1;
   let emailEntryMode = false;
@@ -2328,7 +2614,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! react/jsx-runtime */ "react/jsx-runtime");
 /* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__);
 
-/** @typedef {'copy' | 'copied' | 'external' | 'cancel'} ShareBarIconName */
+/** @typedef {'copy' | 'copied' | 'external' | 'cancel' | 'restore'} ShareBarIconName */
 
 const iconClass = 'flow-ew-share-icon';
 const svgAttrs = ' viewBox="0 0 24 24" aria-hidden="true"';
@@ -2339,11 +2625,18 @@ const figmaCopyPath = 'M18 0H8C6.897 0 6 0.897 6 2V6H2C0.897 6 0 6.897 0 8V18C0 
 /** Figma 24px Icon/regular-arrow-up-right-stroke (Frame 38). */
 const figmaExternalPath = 'M9.71 9V0H0.71V2H6.3L0 8.29L1.42 9.71L7.71 3.41V9H9.71Z';
 
+/** Counter-clockwise arrow: bring an earlier review back. */
+const restoreArcPath = 'M4.5 12a7.5 7.5 0 1 0 2.2-5.3';
+const restoreHeadPath = 'M4.5 4.5v4.5H9';
+
 /**
  * @param {ShareBarIconName} name
  * @return {string}
  */
 function shareBarIconHtml(name) {
+  if (name === 'restore') {
+    return '<svg class="' + iconClass + ' flow-ew-share-icon--restore"' + svgAttrs + '>' + '<path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="' + restoreArcPath + '"/>' + '<path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="' + restoreHeadPath + '"/>' + '</svg>';
+  }
   if (name === 'cancel') {
     return '<svg class="' + iconClass + ' flow-ew-share-icon--cancel"' + svgAttrs + '>' + '<circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="2"/>' + '<path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M9 9l6 6M15 9l-6 6"/>' + '</svg>';
   }
@@ -2362,6 +2655,28 @@ function shareBarIconHtml(name) {
 function ShareBarIcon({
   name
 }) {
+  if (name === 'restore') {
+    return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("svg", {
+      className: `${iconClass} flow-ew-share-icon--restore`,
+      viewBox: "0 0 24 24",
+      "aria-hidden": "true",
+      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("path", {
+        fill: "none",
+        stroke: "currentColor",
+        strokeWidth: "2",
+        strokeLinecap: "round",
+        strokeLinejoin: "round",
+        d: restoreArcPath
+      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("path", {
+        fill: "none",
+        stroke: "currentColor",
+        strokeWidth: "2",
+        strokeLinecap: "round",
+        strokeLinejoin: "round",
+        d: restoreHeadPath
+      })]
+    });
+  }
   if (name === 'cancel') {
     return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("svg", {
       className: `${iconClass} flow-ew-share-icon--cancel`,

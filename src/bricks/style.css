@@ -593,3 +593,16 @@ body.admin-bar .flow-ew-bricks-drawer {
 .flow-ew-classic--bricks .flow-ew-history__item a {
 	color: var( --builder-color-accent, #ffd54d );
 }
+
+.flow-ew-classic--bricks .flow-ew-upsell-reviewer {
+	margin-bottom: 12px;
+}
+
+.flow-ew-classic--bricks .flow-ew-upsell-reviewer > a {
+	margin-top: 4px !important;
+}
+
+.flow-ew-classic--bricks .flow-ew-upsell-reviewer p,
+.flow-ew-classic--bricks .flow-ew-upsell-open-review p {
+	color: var( --builder-color-description, #8a99a8 ) !important;
+}

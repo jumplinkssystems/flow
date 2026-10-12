@@ -16,8 +16,15 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
  * @param {Object}   props.value
  * @param {Function} props.onChange
  * @param {boolean}  props.allowEmail
+ * @param {Object}   [props.action]   Extra button shown in the field, before Clear.
  */
-export default function UserPicker( { id, value, onChange, allowEmail } ) {
+export default function UserPicker( {
+	id,
+	value,
+	onChange,
+	allowEmail,
+	action = null,
+} ) {
 	const [ query, setQuery ] = useState( '' );
 	const [ results, setResults ] = useState( [] );
 	const request = useRef( 0 );
@@ -58,6 +65,7 @@ export default function UserPicker( { id, value, onChange, allowEmail } ) {
 		return (
 			<div className="flow-ew-wizard__picker-selected">
 				<span>{ value.email || value.name }</span>
+				{ action }
 				<Button
 					variant="secondary"
 					size="small"
@@ -90,17 +98,20 @@ export default function UserPicker( { id, value, onChange, allowEmail } ) {
 
 	return (
 		<div className="flow-ew-wizard__picker">
-			<input
-				id={ id }
-				type="search"
-				className="flow-ew-wizard__picker-input"
-				placeholder={
-					allowEmail ? i18n.searchUsersOrEmail : i18n.searchUsers
-				}
-				value={ query }
-				onChange={ ( event ) => setQuery( event.target.value ) }
-				autoComplete="off"
-			/>
+			<div className="flow-ew-wizard__picker-row">
+				<input
+					id={ id }
+					type="search"
+					className="flow-ew-wizard__picker-input"
+					placeholder={
+						allowEmail ? i18n.searchUsersOrEmail : i18n.searchUsers
+					}
+					value={ query }
+					onChange={ ( event ) => setQuery( event.target.value ) }
+					autoComplete="off"
+				/>
+				{ action }
+			</div>
 			{ options.length > 0 && (
 				<ul className="flow-ew-wizard__picker-results" role="listbox">
 					{ options.map( ( option ) => (

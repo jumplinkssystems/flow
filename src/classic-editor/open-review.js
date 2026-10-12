@@ -7,6 +7,7 @@
  */
 import { resolveClassicOpenSlot } from '../shared/resolve-classic-root';
 import { hasAssignedReviewer } from '../shared/should-show-send-for-review';
+import { confirmCancelReview } from '../shared/confirm-cancel-review';
 
 ( function bootOpenReview( attempt ) {
 	const { flowEW } = window;
@@ -112,13 +113,19 @@ import { hasAssignedReviewer } from '../shared/should-show-send-for-review';
 			if (
 				! wantOpen &&
 				currentReview &&
-				! hasAssignedReviewer( currentReview ) &&
-				// eslint-disable-next-line no-alert
-				! window.confirm( flowEW.i18n.cancelReviewBody )
+				! hasAssignedReviewer( currentReview )
 			) {
 				checkbox.checked = true;
+				confirmCancelReview( () => {
+					checkbox.checked = false;
+					applyOpen( false );
+				} );
 				return;
 			}
+			applyOpen( wantOpen );
+		} );
+
+		function applyOpen( wantOpen ) {
 			loading = true;
 
 			const ensureReview = currentReview
@@ -158,7 +165,7 @@ import { hasAssignedReviewer } from '../shared/should-show-send-for-review';
 				.finally( function () {
 					loading = false;
 				} );
-		} );
+		}
 
 		document.addEventListener( 'flow-ew:classic-render', function ( e ) {
 			sync( ( e.detail && e.detail.review ) || null );

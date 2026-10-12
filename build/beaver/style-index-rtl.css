@@ -503,12 +503,12 @@
 	font-size: 14px;
 	overflow: hidden;
 	transform-origin: top left;
-	will-change: transform;
 	z-index: 10000007;
 }
 body.flow-ew-beaver-review-is-showing .flow-ew-beaver-review-panel.is-open {
 	animation-duration: 0.15s;
-	animation-fill-mode: both;
+	/* Not "both": a transform left in place would trap the fixed reviewer list. */
+	animation-fill-mode: backwards;
 	animation-name: flow-ew-beaver-show-panel;
 	display: flex !important;
 }
@@ -1129,5 +1129,30 @@ body.fl-builder-ui-skin--dark .flow-ew-beaver-drawer .flow-ew-reviewer-combobox_
 	.flow-ew-beaver-review-panel .fl-builder--panel-arrow {
 		display: none;
 	}
+}
+/* Review history: Beaver-blue date links. */
+.flow-ew-beaver-drawer .flow-ew-history__item a {
+	color: var(--fl-builder-accent-color, #00a0d2);
+}
+.flow-ew-beaver-drawer .flow-ew-classic-open__desc {
+	color: var(--fl-builder-dim-color, #676f7a);
+}
+.flow-ew-beaver-drawer .flow-ew-upsell-reviewer {
+	margin: 0 0 14px;
+}
+.flow-ew-beaver-drawer .flow-ew-upsell-reviewer > a {
+	margin-top: 4px !important;
+}
+.flow-ew-beaver-drawer .flow-ew-reviewer-combobox__copy--done,
+.flow-ew-beaver-drawer .flow-ew-reviewer-combobox__copy--done:hover,
+.flow-ew-beaver-drawer .flow-ew-reviewer-card__copy--done,
+.flow-ew-beaver-drawer .flow-ew-reviewer-card__copy--done:hover {
+	color: #46b450 !important;
+}
+.flow-ew-beaver-drawer .flow-ew-history__restore {
+	color: #1d2327 !important;
+}
+body.fl-builder-ui-skin--dark .flow-ew-beaver-drawer .flow-ew-history__restore {
+	color: #e6eef8 !important;
 }
 

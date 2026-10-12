@@ -111,6 +111,37 @@
 	}
 }
 
+// Warning variant for non-destructive confirms (restore), like the panel's inline confirm.
+.flow-confirm-dialog__panel--warning {
+	color: $color-text;
+	background: $badge-review-bg;
+	border-color: $badge-review-border;
+	border-left-color: #dba617;
+
+	.flow-confirm-dialog__icon {
+		color: $badge-review-text;
+	}
+
+	.flow-confirm-dialog__confirm.components-button {
+		background: #dba617 !important;
+		border-color: #dba617 !important;
+		color: #1d2327 !important;
+
+		&:hover:not(:disabled),
+		&:active:not(:disabled) {
+			background: #c4950f !important;
+			border-color: #c4950f !important;
+			color: #1d2327 !important;
+		}
+
+		&:focus:not(:disabled) {
+			box-shadow: 0 0 0 var(--wp-admin-border-width-focus, 2px) #fff,
+				0 0 0 calc(var(--wp-admin-border-width-focus, 2px) + 1px)
+					#dba617 !important;
+		}
+	}
+}
+
 // Neutral variant for lists (Older revisions); same frame, no alert colours.
 .flow-confirm-dialog__panel--neutral {
 	color: $color-text;

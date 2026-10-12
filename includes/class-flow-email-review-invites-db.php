@@ -210,6 +210,46 @@ class Email_Review_Invites_DB extends Table_Gateway {
 	}
 
 	/**
+	 * Puts back invites saved when the review was cancelled. The original
+	 * jti/token_version are kept, so the reviewer's old link works again.
+	 *
+	 * @param array<int,array<string,mixed>> $rows
+	 */
+	public static function restore_rows( int $review_id, array $rows ): void {
+		if ( $review_id <= 0 ) {
+			return;
+		}
+		self::delete_for_review( $review_id );
+		global $wpdb;
+		$now      = current_time( 'mysql', true );
+		$statuses = [ self::STATUS_PENDING, self::STATUS_IN_REVIEW, self::STATUS_APPROVED, self::STATUS_CHANGES_REQUESTED ];
+		foreach ( $rows as $row ) {
+			$email = self::normalize_email( (string) ( $row['email'] ?? '' ) );
+			if ( '' === $email || ! is_email( $email ) ) {
+				continue;
+			}
+			$status = (string) ( $row['status'] ?? '' );
+			$jti    = (string) ( $row['cookie_jti'] ?? '' );
+			$data   = [
+				'review_id'     => $review_id,
+				'email'         => $email,
+				'display_name'  => (string) ( $row['display_name'] ?? '' ),
+				'status'        => in_array( $status, $statuses, true ) ? $status : self::STATUS_PENDING,
+				'cookie_jti'    => '' !== $jti ? $jti : self::generate_jti(),
+				'token_version' => max( 1, (int) ( $row['token_version'] ?? 1 ) ),
+				'created_at'    => (string) ( $row['created_at'] ?? $now ),
+				'updated_at'    => $now,
+			];
+			$format = [ '%d', '%s', '%s', '%s', '%s', '%d', '%s', '%s' ];
+			if ( ! empty( $row['decided_at'] ) ) {
+				$data['decided_at'] = (string) $row['decided_at'];
+				$format[]           = '%s';
+			}
+			$wpdb->insert( self::table(), $data, $format ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		}
+	}
+
+	/**
 	 * Keep only the given emails on the review (delete others). Upserts missing ones.
 	 *
 	 * @param string[] $emails

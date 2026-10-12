@@ -600,7 +600,7 @@ Loop
 10. Persist content, then flow/resubmit-review. You must be the post author.
 11. Repeat from step 6 until status is approved, then publish via builder/core tools if can_publish is true.
 
-Statuses: pending (assigned, not sent) → in_review (waiting on human) → changes_requested (your turn) → approved (publish allowed when mandatory). Humans may also cancel: a cancelled review is closed and read-only, and assigning a reviewer again starts a new review with a new review_id and no carried-over comments.
+Statuses: pending (assigned, not sent) → in_review (waiting on human) → changes_requested (your turn) → approved (publish allowed when mandatory). Humans may also cancel: a cancelled review is closed and read-only, and assigning a reviewer again starts a new review with a new review_id and no carried-over comments. A human can also restore a cancelled review from Review history: it comes back under its old review_id with its comments, reviewers and previous status, and the review that was running is cancelled. Re-read flow/get-review before acting after a restore.
 
 Never: approve or request-changes as the authoring agent; publish while can_publish is false; skip saving before send/resubmit; infer a requested change from selected_text; resolve a comment you did not act on.
 TEXT;

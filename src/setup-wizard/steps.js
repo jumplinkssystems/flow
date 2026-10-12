@@ -4,6 +4,7 @@ import {
 	__experimentalText as Text,
 } from '@wordpress/components';
 import UserPicker from './UserPicker';
+import { CreateAgentUserButton, CreateAgentUserForm } from './CreateAgentUser';
 import {
 	EDITORIAL,
 	CLIENT,
@@ -336,6 +337,7 @@ export function AgentStep( { answers, update, showErrors } ) {
 }
 
 function AgentSettings( { answers, update, showErrors, missingUser } ) {
+	const [ creatingAgentUser, setCreatingAgentUser ] = useState( false );
 	return (
 		<>
 			<CheckCard
@@ -361,7 +363,26 @@ function AgentSettings( { answers, update, showErrors, missingUser } ) {
 								update( { agentAuthor } )
 							}
 							allowEmail={ false }
+							action={
+								<CreateAgentUserButton
+									expanded={ creatingAgentUser }
+									onClick={ () =>
+										setCreatingAgentUser(
+											! creatingAgentUser
+										)
+									}
+								/>
+							}
 						/>
+						{ creatingAgentUser && (
+							<CreateAgentUserForm
+								onCreated={ ( agentAuthor ) => {
+									update( { agentAuthor } );
+									setCreatingAgentUser( false );
+								} }
+								onCancel={ () => setCreatingAgentUser( false ) }
+							/>
+						) }
 						<Text variant="muted" as="p">
 							{ i18n.agentAuthorDesc }
 						</Text>

@@ -803,8 +803,16 @@ body.flow-ew-avada-publish-blocked .flow-ew-avada-publish-blocked-control {
 }
 
 .flow-ew-avada-drawer .flow-ew-classic__share-copy--done,
-.flow-ew-avada-drawer .flow-ew-classic__share-copy--done svg {
+.flow-ew-avada-drawer .flow-ew-classic__share-copy--done svg,
+.fusion-builder-live .fusion-builder-live-toolbar .flow-ew-avada-drawer .flow-ew-classic__share-copy--done,
+.fusion-builder-live .fusion-builder-live-toolbar .flow-ew-avada-drawer .flow-ew-classic__share-copy--done svg {
 	color: #22c55e !important;
+}
+
+/* The copied checkmark is a stroke; the fill rule above turns it into a wedge. */
+.flow-ew-avada-drawer .flow-ew-classic__share-copy .flow-ew-share-icon--copied path {
+	fill: none !important;
+	stroke: currentColor !important;
 }
 
 .flow-ew-avada-drawer .flow-ew-classic__share-goto,
@@ -902,6 +910,10 @@ body.flow-ew-avada-publish-blocked .flow-ew-avada-publish-blocked-control {
 	text-transform: uppercase !important;
 }
 
+.flow-ew-avada-drawer [data-flow-ew-avada-upsell-reviewer][data-flow-ew-avada-upsell-reviewer] {
+	margin: 0 0 14px !important;
+}
+
 .flow-ew-avada-drawer [data-flow-ew-avada-upsell-open][data-flow-ew-avada-upsell-open] p,
 .flow-ew-avada-drawer [data-flow-ew-avada-upsell-reviewer][data-flow-ew-avada-upsell-reviewer] p {
 	color: #9aa4ad !important;
@@ -931,4 +943,77 @@ body.flow-ew-avada-publish-blocked .flow-ew-avada-publish-blocked-control {
 	font-size: inherit;
 	font-weight: inherit;
 	line-height: inherit;
+}
+
+/* Review history: Avada's toolbar styles every li/a inside it; undo that. */
+.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav li.flow-ew-avada-review .flow-ew-avada-drawer .flow-ew-history__list {
+	margin: 4px 0 0 !important;
+	padding: 0 !important;
+	list-style: none !important;
+}
+
+.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav li.flow-ew-avada-review .flow-ew-avada-drawer .flow-ew-history__item {
+	display: flex !important;
+	height: auto !important;
+	margin: 0 !important;
+	padding: 0 !important;
+	font-size: 13px !important;
+	line-height: 1.4 !important;
+	background: none !important;
+	border: 0 !important;
+}
+
+.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav li.flow-ew-avada-review .flow-ew-avada-drawer .flow-ew-history__item a {
+	display: inline !important;
+	height: auto !important;
+	margin: 0 !important;
+	padding: 0 !important;
+	background: none !important;
+	border: 0 !important;
+	color: #65bc7b !important;
+	font-size: 13px !important;
+	font-weight: 400 !important;
+	line-height: 1.4 !important;
+	text-decoration: underline !important;
+}
+
+.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav li.flow-ew-avada-review .flow-ew-avada-drawer .flow-ew-history__meta {
+	color: var(--flow-ew-dark-muted, #9aa8b7) !important;
+	font-size: 12px !important;
+}
+
+/* The self review "open" arrow picks up the toolbar's link padding otherwise. */
+.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav li.flow-ew-avada-review .flow-ew-avada-drawer .flow-ew-classic-self__goto {
+	display: inline-flex !important;
+	height: auto !important;
+	margin: 0 !important;
+	padding: 0 !important;
+	line-height: 0 !important;
+	border: 0 !important;
+	background: none !important;
+}
+
+.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav li.flow-ew-avada-review .flow-ew-avada-drawer .flow-ew-history__restore {
+	display: inline-flex !important;
+	width: 22px !important;
+	height: 22px !important;
+	margin: 0 !important;
+	padding: 0 !important;
+	background: none !important;
+	border: 0 !important;
+	color: inherit !important;
+}
+
+.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav li.flow-ew-avada-review .flow-ew-avada-drawer .flow-ew-history__dot {
+	display: inline-block !important;
+	padding: 0 !important;
+}
+
+/* Stroke-only icons: Avada's toolbar fills every path, which turns them into wedges. */
+.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav li.flow-ew-avada-review .flow-ew-avada-drawer .flow-ew-share-icon--copied path,
+.fusion-builder-live .fusion-builder-live-toolbar .fusion-toolbar-nav li.flow-ew-avada-review .flow-ew-avada-drawer .flow-ew-share-icon--restore path,
+.flow-ew-avada-drawer .flow-ew-share-icon--copied path,
+.flow-ew-avada-drawer .flow-ew-share-icon--restore path {
+	fill: none !important;
+	stroke: currentColor !important;
 }

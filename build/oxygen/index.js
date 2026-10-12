@@ -250,6 +250,87 @@ function debounce(fn, ms) {
 
 /***/ },
 
+/***/ "./src/shared/float-combobox-list.js"
+/*!*******************************************!*\
+  !*** ./src/shared/float-combobox-list.js ***!
+  \*******************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   floatComboboxList: () => (/* binding */ floatComboboxList)
+/* harmony export */ });
+/**
+ * Builder panels scroll or clip their content, which cut a reviewer list off
+ * at the panel edge. While the list is shown it is pinned to the viewport
+ * under its field instead, whatever code opens or closes it.
+ */
+const FLOAT_PROPS = ['position', 'top', 'left', 'right', 'bottom', 'width', 'max-height', 'z-index', 'transition'];
+function floatComboboxList(list, anchor) {
+  if (!list || !anchor || list.dataset.flowEwFloating === '1') {
+    return;
+  }
+  list.dataset.flowEwFloating = '1';
+  let listening = false;
+  const set = (prop, value) => list.style.setProperty(prop, value, 'important');
+  const place = () => {
+    const rect = anchor.getBoundingClientRect();
+    // A builder's `transition: all` would make the measurement below read
+    // a half-moved box.
+    set('transition', 'none');
+    set('position', 'fixed');
+    set('right', 'auto');
+    set('bottom', 'auto');
+    set('z-index', '1000000');
+    set('top', '0px');
+    set('left', '0px');
+    // A transformed ancestor makes `fixed` relative to itself, not the
+    // viewport; measure where 0,0 landed and correct for it.
+    const origin = list.getBoundingClientRect();
+    const top = rect.bottom + 4;
+    const room = window.innerHeight - top - 12;
+    set('top', top - origin.top + 'px');
+    set('left', rect.left - origin.left + 'px');
+    set('width', rect.width + 'px');
+    set('max-height', Math.max(120, Math.min(320, room)) + 'px');
+  };
+  const onViewportChange = e => {
+    // Scrolling the list itself must not re-place it.
+    if (!list.hidden && e?.target !== list) {
+      place();
+    }
+  };
+  const sync = () => {
+    // The classic editor's metabox does not clip; leave it as it was.
+    // Checked here: the list may not be in the page yet at setup.
+    if (!list.hidden && !list.closest('#flow-ew-review.postbox')) {
+      place();
+      // The drawer may still be animating in; place again once it settles.
+      window.requestAnimationFrame(() => !list.hidden && place());
+      window.setTimeout(() => !list.hidden && place(), 250);
+      if (!listening) {
+        window.addEventListener('scroll', onViewportChange, true);
+        window.addEventListener('resize', onViewportChange);
+        listening = true;
+      }
+      return;
+    }
+    FLOAT_PROPS.forEach(prop => list.style.removeProperty(prop));
+    if (listening) {
+      window.removeEventListener('scroll', onViewportChange, true);
+      window.removeEventListener('resize', onViewportChange);
+      listening = false;
+    }
+  };
+  new window.MutationObserver(sync).observe(list, {
+    attributes: true,
+    attributeFilter: ['hidden']
+  });
+  sync();
+}
+
+/***/ },
+
 /***/ "./src/shared/invite-link-copy.js"
 /*!****************************************!*\
   !*** ./src/shared/invite-link-copy.js ***!
@@ -406,12 +487,15 @@ function bindInviteLinkCopy() {
   document.addEventListener('flow-ew:classic-render', function (event) {
     syncInviteLinkCopy(event && event.detail ? event.detail.review : null);
   });
+
+  // Capture phase: builder toolbars (Avada) stop clicks before they bubble up.
   document.addEventListener('click', function (event) {
     const button = event.target.closest && event.target.closest(CLICK_SELECTOR);
     if (!button || !button.dataset.url) {
       return;
     }
     event.preventDefault();
+    event.stopPropagation();
     const doneClass = button.classList.contains('flow-ew-reviewer-card__copy') ? 'flow-ew-reviewer-card__copy--done' : 'flow-ew-reviewer-combobox__copy--done';
     navigator.clipboard.writeText(button.dataset.url).then(() => {
       button.innerHTML = (0,_share_bar_icons__WEBPACK_IMPORTED_MODULE_0__.shareBarIconHtml)('copied');
@@ -425,7 +509,7 @@ function bindInviteLinkCopy() {
         button.setAttribute('title', copyLabel());
       }, 2000);
     });
-  });
+  }, true);
 }
 
 /***/ },
@@ -487,6 +571,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ });
 /* harmony import */ var _assign_invite_email__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./assign-invite-email */ "./src/shared/assign-invite-email.js");
 /* harmony import */ var _reviewer_email_entry__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./reviewer-email-entry */ "./src/shared/reviewer-email-entry.js");
+/* harmony import */ var _float_combobox_list__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./float-combobox-list */ "./src/shared/float-combobox-list.js");
+
 
 
 
@@ -543,6 +629,7 @@ function initReviewerCombobox(root, opts = {}) {
     return null;
   }
   root.dataset.flowEwComboboxReady = '1';
+  (0,_float_combobox_list__WEBPACK_IMPORTED_MODULE_2__.floatComboboxList)(list, input.closest('.flow-ew-reviewer-combobox__wrap') || input);
   const options = Array.from(list.querySelectorAll('[role="option"]'));
   let activeIndex = -1;
   let emailEntryMode = false;
@@ -1012,7 +1099,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! react/jsx-runtime */ "react/jsx-runtime");
 /* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__);
 
-/** @typedef {'copy' | 'copied' | 'external' | 'cancel'} ShareBarIconName */
+/** @typedef {'copy' | 'copied' | 'external' | 'cancel' | 'restore'} ShareBarIconName */
 
 const iconClass = 'flow-ew-share-icon';
 const svgAttrs = ' viewBox="0 0 24 24" aria-hidden="true"';
@@ -1023,11 +1110,18 @@ const figmaCopyPath = 'M18 0H8C6.897 0 6 0.897 6 2V6H2C0.897 6 0 6.897 0 8V18C0 
 /** Figma 24px Icon/regular-arrow-up-right-stroke (Frame 38). */
 const figmaExternalPath = 'M9.71 9V0H0.71V2H6.3L0 8.29L1.42 9.71L7.71 3.41V9H9.71Z';
 
+/** Counter-clockwise arrow: bring an earlier review back. */
+const restoreArcPath = 'M4.5 12a7.5 7.5 0 1 0 2.2-5.3';
+const restoreHeadPath = 'M4.5 4.5v4.5H9';
+
 /**
  * @param {ShareBarIconName} name
  * @return {string}
  */
 function shareBarIconHtml(name) {
+  if (name === 'restore') {
+    return '<svg class="' + iconClass + ' flow-ew-share-icon--restore"' + svgAttrs + '>' + '<path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="' + restoreArcPath + '"/>' + '<path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="' + restoreHeadPath + '"/>' + '</svg>';
+  }
   if (name === 'cancel') {
     return '<svg class="' + iconClass + ' flow-ew-share-icon--cancel"' + svgAttrs + '>' + '<circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="2"/>' + '<path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M9 9l6 6M15 9l-6 6"/>' + '</svg>';
   }
@@ -1046,6 +1140,28 @@ function shareBarIconHtml(name) {
 function ShareBarIcon({
   name
 }) {
+  if (name === 'restore') {
+    return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("svg", {
+      className: `${iconClass} flow-ew-share-icon--restore`,
+      viewBox: "0 0 24 24",
+      "aria-hidden": "true",
+      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("path", {
+        fill: "none",
+        stroke: "currentColor",
+        strokeWidth: "2",
+        strokeLinecap: "round",
+        strokeLinejoin: "round",
+        d: restoreArcPath
+      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("path", {
+        fill: "none",
+        stroke: "currentColor",
+        strokeWidth: "2",
+        strokeLinecap: "round",
+        strokeLinejoin: "round",
+        d: restoreHeadPath
+      })]
+    });
+  }
   if (name === 'cancel') {
     return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("svg", {
       className: `${iconClass} flow-ew-share-icon--cancel`,

@@ -151,31 +151,37 @@ export function bindInviteLinkCopy() {
 		);
 	} );
 
-	document.addEventListener( 'click', function ( event ) {
-		const button =
-			event.target.closest && event.target.closest( CLICK_SELECTOR );
-		if ( ! button || ! button.dataset.url ) {
-			return;
-		}
-		event.preventDefault();
+	// Capture phase: builder toolbars (Avada) stop clicks before they bubble up.
+	document.addEventListener(
+		'click',
+		function ( event ) {
+			const button =
+				event.target.closest && event.target.closest( CLICK_SELECTOR );
+			if ( ! button || ! button.dataset.url ) {
+				return;
+			}
+			event.preventDefault();
+			event.stopPropagation();
 
-		const doneClass = button.classList.contains(
-			'flow-ew-reviewer-card__copy'
-		)
-			? 'flow-ew-reviewer-card__copy--done'
-			: 'flow-ew-reviewer-combobox__copy--done';
+			const doneClass = button.classList.contains(
+				'flow-ew-reviewer-card__copy'
+			)
+				? 'flow-ew-reviewer-card__copy--done'
+				: 'flow-ew-reviewer-combobox__copy--done';
 
-		navigator.clipboard.writeText( button.dataset.url ).then( () => {
-			button.innerHTML = shareBarIconHtml( 'copied' );
-			button.classList.add( doneClass );
-			button.setAttribute( 'aria-label', copiedLabel() );
-			button.setAttribute( 'title', copiedLabel() );
-			setTimeout( () => {
-				button.innerHTML = shareBarIconHtml( 'copy' );
-				button.classList.remove( doneClass );
-				button.setAttribute( 'aria-label', copyLabel() );
-				button.setAttribute( 'title', copyLabel() );
-			}, 2000 );
-		} );
-	} );
+			navigator.clipboard.writeText( button.dataset.url ).then( () => {
+				button.innerHTML = shareBarIconHtml( 'copied' );
+				button.classList.add( doneClass );
+				button.setAttribute( 'aria-label', copiedLabel() );
+				button.setAttribute( 'title', copiedLabel() );
+				setTimeout( () => {
+					button.innerHTML = shareBarIconHtml( 'copy' );
+					button.classList.remove( doneClass );
+					button.setAttribute( 'aria-label', copyLabel() );
+					button.setAttribute( 'title', copyLabel() );
+				}, 2000 );
+			} );
+		},
+		true
+	);
 }

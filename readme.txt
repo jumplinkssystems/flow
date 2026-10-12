@@ -4,7 +4,7 @@ Tags: client feedback, website feedback, content approval, site review, editoria
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.6.2
+Stable tag: 2.6.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -201,6 +201,16 @@ No, and this is deliberate rather than an oversight. There is no approve ability
 
 == Changelog ==
 
+= 2.6.3 =
+* New: Review history shows each cancelled review's status as a coloured dot, its reviewers, status and comment count on hover, and a Restore button that brings the review back with its comments, reviewers and status. The review that was running is cancelled and kept in the history, so you can switch back. Reviews cancelled before this update come back as pending.
+* New: Create the user AI comments are posted as straight from Settings → AI agent or the setup wizard, with a Create user button next to the field. It only needs a username and an email, and is made a Subscriber with a random password.
+* Fix: In the builder integrations, the reviewer list opens over the edge of the review panel instead of being cut off by it, and in Gutenberg it opens over Current review instead of pushing it down.
+* Fix: Review history in every builder shows the comment count on the right, with date links in each builder's own link colour. Avada's history links are no longer oversized, and in Beaver the Open review note matches Beaver's text colour.
+* Fix (Avada): The Self review description sits right under its checkbox, and opening the reviewer field no longer flashes a scrollbar.
+* Fix: Administrators and editors (anyone who can manage reviews) can open any review page, not only reviews they requested or were assigned to. Self reviews stay private.
+* Improvement: In the builder integrations and the Classic editor, the "Review Mode set to Mandatory" notice can be dismissed. It stays hidden in that browser; publishing is still blocked until approval.
+* Tweak: The Breakdance review panel is as tall as Oxygen's, and in Divi the Current review icons are smaller and its link uses Divi's link blue.
+
 = 2.6.2 =
 * New: Pin comments. Click a spot on the review page that has no text to highlight (backgrounds, empty space, button padding) to pin a comment there; clicks on text stay for highlighting. Pins follow their element through reflows and device sizes, turn green when resolved, and AI agents get the element and position over MCP. The review page tips card and the Pro site review welcome show pinning in a new clip.
 * New: Hide inline comments in the View menu shows the page without highlights and pins; picking a comment in the sidebar still shows that one. The choice is remembered per browser.
@@ -242,41 +252,5 @@ No, and this is deliberate rather than an oversight. There is no approve ability
 * Improvement: Automatic reviewer can now be an email address. New content gets that external reviewer invited on its first save, ready to send.
 * Change: Reviewers can now comment anywhere on the page, including the header, menu, footer and sidebar, not only the post content.
 * Fix: Text inside links and linked cards can be selected for a comment, text over a background image is no longer blocked by the image, and images revealed on scroll or loaded late can be commented on.
-
-= 2.5.3 =
-* New: Flow now works with Elementor and AI Engine's MCP server.
-* Fix: AI agents now post review comments as the account chosen under Settings.
-* Improvement: AI agents pick up changes to the AI agent settings without reconnecting.
-* Fix: An open review page now tells you when a newer version is saved, including for reviews that were never sent and brand-new posts.
-* Fix (Pro): Switching between Desktop, Tablet and Mobile in a review now reloads the page at that width.
-
-= 2.5.2 =
-* New: Settings → AI agent now hands you the prompts to give your agent, each with a copy button. An agent only picks up these rules by calling flow/get-instructions, so the first prompt tells it to do that after you change a setting. The rest are short examples for everyday jobs: resolving the comments on a post, getting an overview of the feedback on a page, and sending it back to the reviewer.
-* New (Pro): The site review screen now tells you which cookies your page cache has to let through. Reviewers arrive logged out, so a cache can hand them a copy of the site saved before the review existed; the Caching panel lists the exact cookie names to add to a do-not-cache list, names any caching plugin it finds, and links to the setup guide.
-* Improvement (Pro): Site review feedback now arrives live. When another reviewer comments while you have the review open, it shows up on its own instead of on your next reload, the way it already worked on a page review. Coming back to the tab or window refreshes it straight away, so you never look at a stale page while catching up.
-* Improvement: Anonymous reviewers can leave up to 10 comments a minute from one address, up from 5. The limit counts the address rather than the person, so two people reviewing from the same office or home network were reaching it between them.
-* New: Review links get through maintenance and coming-soon modes. Someone holding a valid review link lands on the page and comments as usual while the site is closed to everyone else, and every other visitor still meets the maintenance screen. Works with Bricks, Beaver Builder, Avada, Elementor, Breakdance, Oxygen and WooCommerce, with no setting to turn on.
-* New: Turn external reviewers off for page reviews. Under Settings → Workflow, "Disable external reviewers" hides the External Email option in the editor and turns away email invites at the API. It is off by default, and anyone already invited keeps the access they have.
-* New (Pro): Site review rounds. Once a reviewer has sent their feedback and you have applied it, send the site back to that reviewer for another look — from the Site Review screen, from the review bar while previewing, or through the flow/resubmit-site-review agent ability. Each reviewer is sent back individually, gets a fresh link, and their earlier comments stay in place. Agents see who to send back in resubmit_to, and a new site_review.resubmitted webhook event fires.
-* New (Pro): Add or remove reviewers after a site review has gone out. People you add get their invitation; someone you remove loses access immediately.
-* Improvement (Pro): The Site Review screen was rebuilt. The list is now what you land on, with status, how many reviewers have submitted, and the comment counts readable at a glance, plus filters, search, sorting and paging. Creating a review has its own screen, and every review has its own page with the reviewer roster, per-reviewer actions, and the feedback broken down by page.
-* Improvement (Pro): External reviewers are invited from the same Reviewers field as everyone else on the Site Review screen. Type an address and pick "Invite", instead of ticking a box and filling a second field. With "Disable external reviews" on, the option is not offered at all.
-* Improvement: The welcome popin no longer greets a reviewer who has already been through it. Anyone who gave their name or left feedback goes straight into the review, even on a different browser or device.
-* Fix (Pro): Clicking the "Invite {email}" suggestion in the Reviewers field now adds that external reviewer.
-
-= 2.5.1 =
-* New: AI agents can now write back. An agent connected over MCP can reply to a review comment to ask a clarifying question when your instruction is ambiguous, instead of guessing or going quiet.
-* New: An agent must now say what it changed when it resolves a comment. The explanation is posted into the thread, so every resolved piece of feedback carries its own record.
-* New: Two switches under Settings → AI agent control this separately, both on by default. "Resolve comments" decides whether an agent has to explain what it changed before a comment counts as resolved, and "Follow-up comments" decides whether it may ask you a question when your feedback is unclear. Turn either off and that ability disappears from the agent entirely.
-* New: "Ask before editing", marked Experimental and off by default. It sits with the other AI agent options, so it needs "Enable AI comments" and a chosen AI user. With it on, the agent works out what it would change and describes the plan in your chat — which page, which wording, and anything it still needs from you — then waits for your go-ahead before touching the site. It is an instruction Flow gives the agent rather than a lock: Flow never edits content itself, so it cannot physically block an edit.
-* Improvement: Tightened what agents are told about feedback. A highlighted passage only locates a comment and never states what to change, and a vague or non-actionable comment must be left unresolved and asked about rather than guessed at.
-* New: Reopen a resolved comment. Reply to a resolved thread and tick "Reopen this thread" to move it back to active.
-* New: Copy a reviewer's link straight from the site review screen.
-* Improvement: First-time reviewers now get a short looping clip showing how to highlight text and leave a comment.
-* Improvement: The review page hint moved out of the way. It is now a dismissible card in the bottom-left corner.
-* Improvement: Long comments are no longer cut off in the sidebar. A "Read more" toggle expands a comment or a reply in place, and collapses it again.
-* Improvement: Settings are easier to scan. The AI agent options have their own tab, and the notification settings moved to Extras next to the other occasional options.
-* Fix: Saving settings no longer throws you back to the first tab. Whichever tab you were on is carried through the save, so you land where you left off.
-
 
 Earlier versions: https://jumplinks.net/changelog/

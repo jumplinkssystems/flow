@@ -2,9 +2,10 @@ import { Button } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
 
 /**
- * Decision buttons on the right of the bar: the author's Resubmit, or the
- * reviewer's Request Changes / Approve / Revoke. Pro passes `actionsSlot` to
- * replace the whole cluster (Site Review's Send feedback / Exit review).
+ * Decision buttons on the right of the bar: the author's Resubmit or Restore
+ * (cancelled review), or the reviewer's Request Changes / Approve / Revoke.
+ * Pro passes `actionsSlot` to replace the whole cluster (Site Review's Send
+ * feedback / Exit review).
  */
 export default function ReviewActions( {
 	actionsSlot,
@@ -18,6 +19,7 @@ export default function ReviewActions( {
 	totalCommentCount,
 	doAction,
 	onCancelReview = null,
+	onRestoreReview = null,
 } ) {
 	return (
 		<>
@@ -59,6 +61,20 @@ export default function ReviewActions( {
 					>
 						{ __(
 							'Cancel review',
+							'jumplinks-editorial-workflow'
+						) }
+					</Button>
+				</div>
+			) : null }
+			{ onRestoreReview ? (
+				<div className="flow-bar__actions">
+					<Button
+						variant="primary"
+						onClick={ onRestoreReview }
+						disabled={ isBusy }
+					>
+						{ __(
+							'Restore this review',
 							'jumplinks-editorial-workflow'
 						) }
 					</Button>

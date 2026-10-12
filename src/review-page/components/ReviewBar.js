@@ -531,6 +531,48 @@ export default function ReviewBar( {
 		}
 	}, [ confirm, reviewId ] );
 
+	const restoreReview = useCallback( async () => {
+		const ok = await confirm( {
+			title: __( 'Restore this review?', 'jumplinks-editorial-workflow' ),
+			message: pageData.hasActiveReview
+				? __(
+						'The current review is cancelled and kept in Review history. This review comes back with its comments, reviewers and the status it had.',
+						'jumplinks-editorial-workflow'
+				  )
+				: __(
+						'This review comes back with its comments, reviewers and the status it had.',
+						'jumplinks-editorial-workflow'
+				  ),
+			confirmLabel: __(
+				'Restore this review',
+				'jumplinks-editorial-workflow'
+			),
+			cancelLabel: __( 'Cancel', 'jumplinks-editorial-workflow' ),
+			tone: 'warning',
+		} );
+		if ( ! ok ) {
+			return;
+		}
+		setIsBusy( true );
+		try {
+			await flowFetch( `reviews/${ reviewId }/restore`, {
+				method: 'POST',
+			} );
+			window.location.reload();
+		} catch ( err ) {
+			setActionStatus( {
+				type: 'error',
+				message:
+					err?.message ||
+					__(
+						'Could not restore the review. Please try again.',
+						'jumplinks-editorial-workflow'
+					),
+			} );
+			setIsBusy( false );
+		}
+	}, [ confirm, reviewId ] );
+
 	const resolvedTitle =
 		postTitle && String( postTitle ).trim()
 			? postTitle
@@ -793,6 +835,11 @@ export default function ReviewBar( {
 					onCancelReview={
 						pageData.canCancelReview && ! isCancelled
 							? cancelReview
+							: null
+					}
+					onRestoreReview={
+						pageData.canRestoreReview && isCancelled
+							? restoreReview
 							: null
 					}
 				/>

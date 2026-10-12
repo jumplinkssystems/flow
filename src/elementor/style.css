@@ -679,3 +679,15 @@
 	display: block;
 	margin-bottom: 14px;
 }
+
+.flow-ew-elementor-drawer .flow-ew-upsell-reviewer {
+	margin-bottom: 14px;
+}
+
+.flow-ew-elementor-drawer .flow-ew-upsell-reviewer > a {
+	margin-top: 4px !important;
+}
+
+.flow-ew-elementor-drawer .flow-ew-history__item a {
+	color: var(--e-a-color-primary-bold, var(--flow-ew-el-accent, #93003f));
+}

@@ -662,3 +662,23 @@ body.admin-bar .flow-ew-oxygen-drawer {
 	font-weight: 600 !important;
 	line-height: 1.4 !important;
 }
+
+.flow-ew-oxygen-drawer .flow-ew-upsell-reviewer {
+	margin-bottom: 10px;
+}
+
+.flow-ew-oxygen-drawer .flow-ew-upsell-reviewer > a {
+	margin-top: 4px !important;
+}
+
+.flow-ew-oxygen-drawer .flow-ew-upsell-reviewer p,
+.flow-ew-oxygen-drawer .flow-ew-upsell-open-review p {
+	color: var(--flow-ew-oxy-text, #fff) !important;
+}
+
+.flow-ew-oxygen-drawer .flow-ew-classic__share-link,
+.flow-ew-oxygen-drawer .flow-ew-classic__share-link:hover,
+.flow-ew-oxygen-drawer .flow-ew-classic__share-link:focus-visible,
+.flow-ew-oxygen-drawer .flow-ew-history__item a {
+	color: #9e9eff;
+}

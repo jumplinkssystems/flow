@@ -8,6 +8,7 @@ import { createRestClient } from './api';
 import { isPublishBlocked } from '../shared/is-publish-blocked';
 import { applyPublishGuardControl } from '../shared/publish-guard-ui';
 import { shareBarIconHtml } from '../shared/share-bar-icons';
+import { confirmCancelReview } from '../shared/confirm-cancel-review';
 import { resolveClassicRoot } from '../shared/resolve-classic-root';
 import { isValidEmail } from '../shared/assign-invite-email';
 import {
@@ -68,6 +69,7 @@ import { initReviewerCombobox } from '../shared/reviewer-combobox';
 
 		let review = activeReview;
 		let loading = false;
+		let historyPending = false;
 
 		const $ = ( sel, ctx ) => ( ctx || document ).querySelector( sel );
 
@@ -90,7 +92,7 @@ import { initReviewerCombobox } from '../shared/reviewer-combobox';
 				spinner.classList.toggle( 'is-active', val );
 			}
 			root.querySelectorAll(
-				'button, select, .flow-ew-reviewer-combobox__input'
+				'button:not(#flow-ew-classic-confirm button), select, .flow-ew-reviewer-combobox__input'
 			).forEach( ( el ) => {
 				el.disabled = val;
 			} );
@@ -407,14 +409,34 @@ import { initReviewerCombobox } from '../shared/reviewer-combobox';
 				cancelledReviews
 					.slice( 0, historyVisible )
 					.map( function ( item ) {
+						const tip = escAttr( item.tooltip || '' );
+						// No data-action: the delegated handler would act on the current review.
+						const restore = item.canRestore
+							? '<button type="button" class="flow-ew-history__restore" data-review-id="' +
+							  escAttr( item.id ) +
+							  '" aria-label="' +
+							  escAttr( i18n.restoreReview ) +
+							  '" title="' +
+							  escAttr( i18n.restoreReview ) +
+							  '">' +
+							  shareBarIconHtml( 'restore' ) +
+							  '</button>'
+							: '';
 						return (
-							'<li class="flow-ew-history__item"><a href="' +
+							'<li class="flow-ew-history__item"><span class="flow-ew-history__dot flow-ew-history__dot--' +
+							escAttr( item.status || 'cancelled' ) +
+							'" title="' +
+							tip +
+							'" aria-hidden="true"></span><a href="' +
 							escAttr( item.url ) +
-							'" target="_blank" rel="noreferrer">' +
+							'" target="_blank" rel="noreferrer" title="' +
+							tip +
+							'">' +
 							escHtml( item.date ) +
 							'</a>' +
+							restore +
 							( item.meta
-								? '<span class="flow-ew-history__meta">- ' +
+								? '<span class="flow-ew-history__meta">' +
 								  escHtml( item.meta ) +
 								  '</span>'
 								: '' ) +
@@ -444,12 +466,17 @@ import { initReviewerCombobox } from '../shared/reviewer-combobox';
 				return;
 			}
 			lastHistoryKey = key;
+			historyPending = true;
+			renderHistory();
 			api( '/reviews/' + postId + '/cancelled', 'GET' )
 				.then( function ( list ) {
 					cancelledReviews = Array.isArray( list ) ? list : [];
-					renderHistory();
 				} )
-				.catch( function () {} );
+				.catch( function () {} )
+				.finally( function () {
+					historyPending = false;
+					renderHistory();
+				} );
 		}
 
 		let toastTimer = 0;
@@ -463,12 +490,7 @@ import { initReviewerCombobox } from '../shared/reviewer-combobox';
 			toast.className = 'flow-ew-classic__toast';
 			toast.setAttribute( 'role', 'status' );
 			toast.textContent = message;
-			const spinner = $( '#flow-ew-classic-spinner' );
-			if ( spinner && root.contains( spinner ) ) {
-				root.insertBefore( toast, spinner );
-			} else {
-				root.appendChild( toast );
-			}
+			root.appendChild( toast );
 			clearTimeout( toastTimer );
 			toastTimer = setTimeout( function () {
 				toast.remove();
@@ -514,6 +536,35 @@ import { initReviewerCombobox } from '../shared/reviewer-combobox';
 
 		function syncClearBtn() {
 			syncReviewerComboboxFromReview( review, root );
+		}
+
+		function restoreReview( reviewId ) {
+			if (
+				loading ||
+				! reviewId ||
+				! cancelledReviews.some(
+					( item ) => Number( item.id ) === reviewId
+				)
+			) {
+				return;
+			}
+			setLoading( true );
+			apiPost( '/reviews/' + reviewId + '/restore' )
+				.then( ( data ) => {
+					review = data || null;
+					cancelledReviews = cancelledReviews.filter(
+						( item ) => Number( item.id ) !== reviewId
+					);
+					fullRender();
+					syncClearBtn();
+					showToast( i18n.reviewRestored );
+				} )
+				.catch( ( err ) =>
+					showToast(
+						( err && err.message ) || i18n.restoreReviewFailed
+					)
+				)
+				.finally( () => setLoading( false ) );
 		}
 
 		// `remove-reviewer` keeps an open review running; `cancel` always ends it.
@@ -577,12 +628,10 @@ import { initReviewerCombobox } from '../shared/reviewer-combobox';
 		// The reviewer ×: only asks first when removing the reviewer cancels the review.
 		function removeReviewer() {
 			const current = review || flowEW.activeReview;
-			if (
-				current &&
-				! current.is_open &&
-				// eslint-disable-next-line no-alert
-				! window.confirm( i18n.cancelReviewBody )
-			) {
+			if ( current && ! current.is_open ) {
+				confirmCancelReview( () =>
+					clearAssignedReviewer( 'remove-reviewer' )
+				);
 				return;
 			}
 			clearAssignedReviewer( 'remove-reviewer' );
@@ -607,6 +656,107 @@ import { initReviewerCombobox } from '../shared/reviewer-combobox';
 			true
 		);
 
+		// Inline, not window.confirm: a native dialog let builders replay the press.
+		let onInlineConfirm = null;
+		function closeInlineConfirm() {
+			onInlineConfirm = null;
+			const box = $( '#flow-ew-classic-confirm' );
+			if ( box ) {
+				box.remove();
+			}
+		}
+		function askConfirm(
+			{ title, body, confirmLabel, cancelLabel, after },
+			onConfirm
+		) {
+			closeInlineConfirm();
+			const box = document.createElement( 'div' );
+			box.id = 'flow-ew-classic-confirm';
+			box.className = 'flow-ew-classic__confirm';
+			box.setAttribute( 'role', 'alertdialog' );
+			box.innerHTML =
+				'<strong class="flow-ew-classic__confirm-title">' +
+				escHtml( title ) +
+				'</strong><p class="flow-ew-classic__confirm-body">' +
+				escHtml( body ) +
+				'</p><div class="flow-ew-classic__confirm-actions">' +
+				'<button type="button" class="button button-primary flow-ew-classic__confirm-ok">' +
+				escHtml( confirmLabel ) +
+				'</button><button type="button" class="button flow-ew-classic__confirm-no">' +
+				escHtml( cancelLabel ) +
+				'</button></div>';
+			if ( after && root.contains( after ) ) {
+				after.insertAdjacentElement( 'afterend', box );
+			} else {
+				root.appendChild( box );
+			}
+			onInlineConfirm = onConfirm;
+			box.scrollIntoView( { block: 'nearest' } );
+			box.querySelector( '.flow-ew-classic__confirm-ok' ).focus();
+		}
+
+		document.addEventListener(
+			'flow-ew:confirm-cancel-review',
+			function ( e ) {
+				if ( ! root.isConnected ) {
+					return;
+				}
+				e.detail.handled = true;
+				askConfirm(
+					{
+						title: i18n.cancelReviewTitle,
+						body: i18n.cancelReviewBody,
+						confirmLabel: i18n.cancelReview,
+						cancelLabel: i18n.keepReview,
+						after: $( '#flow-ew-share' ),
+					},
+					e.detail.onConfirm
+				);
+			}
+		);
+
+		function onInlineConfirmPress( e ) {
+			if ( 'click' === e.type && e.detail !== 0 ) {
+				// Pointer presses were handled on pointerdown.
+				if ( e.target.closest( '#flow-ew-classic-confirm button' ) ) {
+					e.preventDefault();
+					e.stopPropagation();
+				}
+				return;
+			}
+			const btn = e.target.closest(
+				'.flow-ew-classic__confirm-ok, .flow-ew-classic__confirm-no'
+			);
+			if ( ! btn || ! root.contains( btn ) ) {
+				return;
+			}
+			e.preventDefault();
+			e.stopPropagation();
+			const run = btn.classList.contains( 'flow-ew-classic__confirm-ok' )
+				? onInlineConfirm
+				: null;
+			closeInlineConfirm();
+			if ( run ) {
+				whenIdle( run );
+			}
+		}
+		document.addEventListener( 'pointerdown', onInlineConfirmPress, true );
+		document.addEventListener( 'click', onInlineConfirmPress, true );
+		document.addEventListener( 'keydown', function ( e ) {
+			if ( 'Escape' === e.key && onInlineConfirm ) {
+				closeInlineConfirm();
+			}
+		} );
+
+		// A confirm may close while the previous request or history refresh is still running.
+		function whenIdle( fn ) {
+			if ( loading || historyPending ) {
+				window.setTimeout( () => whenIdle( fn ), 50 );
+				return;
+			}
+			fn();
+		}
+
 		document.addEventListener(
 			'pointerdown',
 			function ( e ) {
@@ -618,11 +768,33 @@ import { initReviewerCombobox } from '../shared/reviewer-combobox';
 				}
 				e.preventDefault();
 				e.stopPropagation();
-				// eslint-disable-next-line no-alert
-				if ( ! window.confirm( i18n.cancelReviewBody ) ) {
+				confirmCancelReview( () => clearAssignedReviewer() );
+			},
+			true
+		);
+
+		// Capture phase: builder canvases swallow clicks inside their panels.
+		document.addEventListener(
+			'pointerdown',
+			function ( e ) {
+				const btn = e.target.closest( '.flow-ew-history__restore' );
+				if ( ! btn || ! root.contains( btn ) ) {
 					return;
 				}
-				clearAssignedReviewer();
+				e.preventDefault();
+				e.stopPropagation();
+				const reviewId = parseInt( btn.dataset.reviewId, 10 );
+				askConfirm(
+					{
+						title: i18n.restoreReviewTitle,
+						body: review
+							? i18n.restoreReviewBodyReplace
+							: i18n.restoreReviewBody,
+						confirmLabel: i18n.restoreReview,
+						cancelLabel: i18n.cancelEdit,
+					},
+					() => restoreReview( reviewId )
+				);
 			},
 			true
 		);

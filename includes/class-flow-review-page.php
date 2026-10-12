@@ -157,7 +157,8 @@ class ReviewPage {
 			if ( Review::is_private( $review ) ) {
 				return Review::can_user_access_private_review( $review, $user_id );
 			}
-			if ( Review::can_user_access_as_participant_or_open( $review, $user_id ) ) {
+			// Same rule as REST and comments: participants, open reviews and managers.
+			if ( Review::can_user_access_review( $review, $user_id ) ) {
 				return true;
 			}
 			if ( $post instanceof \WP_Post && (int) $post->post_author === $user_id ) {
@@ -704,6 +705,7 @@ class ReviewPage {
 		$post          = get_post( (int) $review->post_id );
 		$is_author     = ( $post instanceof \WP_Post ) && ( (int) $post->post_author === $current_user_id );
 		$cancelled     = Review::is_cancelled( $review );
+		$active_review = $cancelled ? DB::get_active_review( (int) $review->post_id ) : null;
 		$revision_id   = (int) ( $review->revision_id ?? 0 );
 		$snapshot      = self::snapshot_payload( $review, $revision_id );
 		$comment_lists = Comment_Presenter::list_for_review( $review );
@@ -737,6 +739,8 @@ class ReviewPage {
 				'requesterName'           => $requester_user ? $requester_user->display_name : '',
 				'currentUserIsRequester'  => (int) $review->requester_id === $current_user_id,
 				'canCancelReview'         => ! $cancelled && ! Review::is_private( $review ) && $current_user_id > 0 && (int) $review->requester_id === $current_user_id,
+				'canRestoreReview'        => $cancelled && Review::can_user_restore( $review, $current_user_id, $active_review ),
+				'hasActiveReview'         => null !== $active_review,
 				'reviewCreatedAt'         => (string) ( $review->created_at ?? '' ),
 			],
 			$review_state

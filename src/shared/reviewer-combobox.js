@@ -5,6 +5,7 @@ import {
 	getEmailPlaceholder,
 	isEmailComboboxOption,
 } from './reviewer-email-entry';
+import { floatComboboxList } from './float-combobox-list';
 
 /**
  * Close the reviewer listbox without touching its state (used by builders
@@ -60,6 +61,10 @@ export function initReviewerCombobox( root, opts = {} ) {
 		return null;
 	}
 	root.dataset.flowEwComboboxReady = '1';
+	floatComboboxList(
+		list,
+		input.closest( '.flow-ew-reviewer-combobox__wrap' ) || input
+	);
 
 	const options = Array.from( list.querySelectorAll( '[role="option"]' ) );
 	let activeIndex = -1;

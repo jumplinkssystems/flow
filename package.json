@@ -1,6 +1,6 @@
 {
   "name": "jumplinks-editorial-workflow",
-  "version": "2.6.2",
+  "version": "2.6.3",
   "description": "Jumplinks Flow – Client Feedback & Editorial Workflow",
   "scripts": {
     "test:php": "php vendor/bin/phpunit -c phpunit.xml.dist",
@@ -22,6 +22,13 @@
     "test:env:beaver": "bash scripts/test-env.sh beaver free",
     "test:env:divi": "bash scripts/test-env.sh divi free",
     "test:env:oxygen": "bash scripts/test-env.sh oxygen free",
+    "test:env:elementor:pro": "bash scripts/test-env.sh elementor pro",
+    "test:env:bricks:pro": "bash scripts/test-env.sh bricks pro",
+    "test:env:avada:pro": "bash scripts/test-env.sh avada pro",
+    "test:env:breakdance:pro": "bash scripts/test-env.sh breakdance pro",
+    "test:env:beaver:pro": "bash scripts/test-env.sh beaver pro",
+    "test:env:divi:pro": "bash scripts/test-env.sh divi pro",
+    "test:env:oxygen:pro": "bash scripts/test-env.sh oxygen pro",
     "test:free:all": "bash scripts/test-all-envs.sh free",
     "test:pro:all": "bash scripts/test-env.sh gutenberg pro",
     "test:free:all:sequential": "for e in gutenberg elementor bricks avada breakdance beaver divi oxygen; do bash scripts/test-env.sh $e free || exit 1; done",

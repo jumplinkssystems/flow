@@ -130,6 +130,7 @@ class REST_Reviews extends \WP_REST_Controller {
 				'request-changes' => 'request_changes_item',
 				'resubmit'        => 'resubmit_item',
 				'cancel'          => 'cancel_item',
+				'restore'         => 'restore_item',
 				'remove-reviewer' => 'remove_reviewer_item',
 				'send'            => 'send_item',
 				'open'            => 'open_item',
@@ -409,7 +410,7 @@ class REST_Reviews extends \WP_REST_Controller {
 	}
 
 	public function get_cancelled_items( $request ) {
-		return rest_ensure_response( Review::cancelled_history( (int) $request->get_param( 'post_id' ) ) );
+		return rest_ensure_response( Review::cancelled_history( (int) $request->get_param( 'post_id' ), get_current_user_id() ) );
 	}
 
 	public function approve_item( \WP_REST_Request $request ) {
@@ -434,6 +435,11 @@ class REST_Reviews extends \WP_REST_Controller {
 			return $result;
 		}
 		return new \WP_REST_Response( null, 204 );
+	}
+
+	/** The restored review; any review that was running is cancelled first. */
+	public function restore_item( $request ) {
+		return $this->dispatch_review_action( $request, [ Review::class, 'restore' ] );
 	}
 
 	/** 204 when removing the reviewer cancelled the review, else the still-open review. */

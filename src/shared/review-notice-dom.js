@@ -1,8 +1,11 @@
 import { escHtml } from './escape';
 import { isPublishBlocked } from './is-publish-blocked';
 import {
-	dismissNoReviewRolesNotice,
+	dismissNotice,
+	isDismissibleNoticeValue,
+	isNoticeDismissed,
 	isNoReviewRolesNoticeDismissed,
+	MANDATORY_DISMISS_VALUE,
 	NO_REVIEW_ROLES_DISMISS_VALUE,
 } from './no-review-roles-notice';
 import { resolveClassicRoot } from './resolve-classic-root';
@@ -21,12 +24,14 @@ function collectClassicRoots() {
 	return roots;
 }
 
-function isRolesDismissNotice( el ) {
-	return el?.dataset?.flowEwDismiss === NO_REVIEW_ROLES_DISMISS_VALUE;
+function dismissValue( el ) {
+	const value = el?.dataset?.flowEwDismiss || '';
+	return isDismissibleNoticeValue( value ) ? value : '';
 }
 
 function wireDismissButton( notice ) {
-	if ( ! notice || ! isRolesDismissNotice( notice ) ) {
+	const value = dismissValue( notice );
+	if ( ! value ) {
 		return;
 	}
 	if ( notice.dataset.flowEwDismissWired === '1' ) {
@@ -46,10 +51,10 @@ function wireDismissButton( notice ) {
 
 	btn.addEventListener( 'click', ( event ) => {
 		event.preventDefault();
-		dismissNoReviewRolesNotice();
+		dismissNotice( value );
 		document
 			.querySelectorAll(
-				`.flow-ew-review-notice[data-flow-ew-dismiss="${ NO_REVIEW_ROLES_DISMISS_VALUE }"]`
+				`.flow-ew-review-notice[data-flow-ew-dismiss="${ value }"]`
 			)
 			.forEach( ( el ) => {
 				el.hidden = true;
@@ -62,10 +67,9 @@ function wireDismissButton( notice ) {
  */
 export function syncReviewNoticeVisibility( args ) {
 	const blocked = isPublishBlocked( args );
-	const rolesDismissed = isNoReviewRolesNoticeDismissed();
 
 	document.querySelectorAll( '.flow-ew-review-notice' ).forEach( ( el ) => {
-		if ( isRolesDismissNotice( el ) && rolesDismissed ) {
+		if ( isNoticeDismissed( dismissValue( el ) ) ) {
 			el.hidden = true;
 			return;
 		}
@@ -123,10 +127,14 @@ function buildNoticeSpec( flowEW, review, publishBlocked ) {
 		};
 	}
 
+	if ( isNoticeDismissed( MANDATORY_DISMISS_VALUE ) ) {
+		return null;
+	}
 	return {
 		variant: 'in-review',
 		role: 'note',
 		publishGuardOnly: true,
+		dismiss: MANDATORY_DISMISS_VALUE,
 		title: i18n.reviewMandatoryTitle || 'Review Mode set to Mandatory',
 		descHtml:
 			i18n.reviewMandatoryDesc ||
@@ -146,6 +154,8 @@ function renderNoticeElement( spec ) {
 	}
 	if ( spec.dismissableRoles ) {
 		div.dataset.flowEwDismiss = NO_REVIEW_ROLES_DISMISS_VALUE;
+	} else if ( spec.dismiss ) {
+		div.dataset.flowEwDismiss = spec.dismiss;
 	}
 	div.innerHTML =
 		'<p class="flow-ew-review-notice__title">' +

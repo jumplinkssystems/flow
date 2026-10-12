@@ -131,16 +131,110 @@
 
 .flow-ew-history__item {
 	display: flex;
-	flex-wrap: wrap;
-	gap: 0 4px;
+	flex-wrap: nowrap;
+	align-items: center;
+	gap: 0 3px;
 	margin: 0;
 	font-size: 13px;
 	line-height: 1.4;
 }
 
+/* One line: the date gives way first, the full details are on hover. */
+
+.flow-ew-history__item > a {
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
 .flow-ew-history__meta {
+	flex-shrink: 0;
+	margin-right: auto;
+	padding-right: 2px;
 	font-size: 12px;
+	white-space: nowrap;
 	opacity: 0.75;
+}
+
+/* The status the review was left in when it was cancelled. */
+
+.flow-ew-history__dot {
+	flex-shrink: 0;
+	width: 8px;
+	height: 8px;
+	margin-left: 0;
+	border-radius: 50%;
+	background: var(--flow-status-cancelled-text, #50575e);
+	cursor: help;
+}
+
+.flow-ew-history__dot--pending {
+	background: var(--flow-status-pending-text, #5e777b);
+}
+
+.flow-ew-history__dot--in_review {
+	background: var(--flow-status-in_review-text, #957500);
+}
+
+.flow-ew-history__dot--changes_requested {
+	background: var(--flow-status-changes_requested-text, #c92122);
+}
+
+.flow-ew-history__dot--approved {
+	background: var(--flow-status-approved-text, #458037);
+}
+
+.flow-ew-history__dot--open_review {
+	background: var(--flow-status-open_review-text, #1579a5);
+}
+
+.flow-ew-history__restore,
+.flow-ew-history__restore.components-button {
+	flex-shrink: 0;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 20px;
+	min-width: 0;
+	height: 22px;
+	min-height: 0;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	background: none;
+	color: inherit;
+	line-height: 1;
+	cursor: pointer;
+}
+
+/* Text colour, not link colour: dark on light panels, light on dark ones. */
+
+.flow-ew-classic .flow-ew-history__restore {
+	color: inherit !important;
+}
+
+.flow-ew-history__restore .flow-ew-share-icon {
+	width: 16px;
+	height: 16px;
+	fill: none !important;
+}
+
+/* Builders (Avada) fill toolbar SVGs, which painted the arc's inside. */
+
+.flow-ew-history__restore .flow-ew-share-icon path {
+	fill: none !important;
+	stroke: currentColor !important;
+}
+
+.flow-ew-history__restore:hover,
+.flow-ew-history__restore:focus-visible {
+	opacity: 0.75;
+}
+
+.flow-ew-history__restore[disabled] {
+	cursor: default;
+	opacity: 0.4;
 }
 
 .flow-ew-history .flow-ew-history__more {
@@ -459,6 +553,23 @@
 .flow-ew-reviewer-combobox .components-combobox-control__input {
 	min-height: 24px;
 }
+/* The suggestions open over "Current review" instead of pushing it down. */
+.flow-ew-reviewer-combobox .components-combobox-control__suggestions-container {
+	position: relative;
+}
+.flow-ew-reviewer-combobox .components-form-token-field__suggestions-list {
+	position: absolute;
+	top: calc(100% + 4px);
+	right: -1px;
+	left: -1px;
+	z-index: 30;
+	max-height: 240px;
+	margin: 0;
+	background: #fff;
+	border: 1px solid #949494;
+	border-radius: var(--flow-ew-control-radius, 2px);
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
 .flow-ew-reviewer-invite-suggestion.components-button {
 	display: flex;
 	justify-content: flex-start;
@@ -533,7 +644,7 @@
 	padding: 0 var(--flow-ew-share-link-padding-x, 8px);
 	box-sizing: border-box;
 	border-left: 1px solid var(--flow-ew-wp-charcoal-5, #979aa0);
-	color: var(--flow-ew-wp-charcoal-3, #40464c);
+	color: var(--wp-admin-theme-color, #3858e9);
 	text-decoration: none;
 	overflow: hidden;
 }

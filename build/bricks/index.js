@@ -526,12 +526,15 @@ function bindInviteLinkCopy() {
   document.addEventListener('flow-ew:classic-render', function (event) {
     syncInviteLinkCopy(event && event.detail ? event.detail.review : null);
   });
+
+  // Capture phase: builder toolbars (Avada) stop clicks before they bubble up.
   document.addEventListener('click', function (event) {
     const button = event.target.closest && event.target.closest(CLICK_SELECTOR);
     if (!button || !button.dataset.url) {
       return;
     }
     event.preventDefault();
+    event.stopPropagation();
     const doneClass = button.classList.contains('flow-ew-reviewer-card__copy') ? 'flow-ew-reviewer-card__copy--done' : 'flow-ew-reviewer-combobox__copy--done';
     navigator.clipboard.writeText(button.dataset.url).then(() => {
       button.innerHTML = (0,_share_bar_icons__WEBPACK_IMPORTED_MODULE_0__.shareBarIconHtml)('copied');
@@ -545,7 +548,7 @@ function bindInviteLinkCopy() {
         button.setAttribute('title', copyLabel());
       }, 2000);
     });
-  });
+  }, true);
 }
 
 /***/ },
@@ -954,7 +957,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! react/jsx-runtime */ "react/jsx-runtime");
 /* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__);
 
-/** @typedef {'copy' | 'copied' | 'external' | 'cancel'} ShareBarIconName */
+/** @typedef {'copy' | 'copied' | 'external' | 'cancel' | 'restore'} ShareBarIconName */
 
 const iconClass = 'flow-ew-share-icon';
 const svgAttrs = ' viewBox="0 0 24 24" aria-hidden="true"';
@@ -965,11 +968,18 @@ const figmaCopyPath = 'M18 0H8C6.897 0 6 0.897 6 2V6H2C0.897 6 0 6.897 0 8V18C0 
 /** Figma 24px Icon/regular-arrow-up-right-stroke (Frame 38). */
 const figmaExternalPath = 'M9.71 9V0H0.71V2H6.3L0 8.29L1.42 9.71L7.71 3.41V9H9.71Z';
 
+/** Counter-clockwise arrow: bring an earlier review back. */
+const restoreArcPath = 'M4.5 12a7.5 7.5 0 1 0 2.2-5.3';
+const restoreHeadPath = 'M4.5 4.5v4.5H9';
+
 /**
  * @param {ShareBarIconName} name
  * @return {string}
  */
 function shareBarIconHtml(name) {
+  if (name === 'restore') {
+    return '<svg class="' + iconClass + ' flow-ew-share-icon--restore"' + svgAttrs + '>' + '<path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="' + restoreArcPath + '"/>' + '<path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="' + restoreHeadPath + '"/>' + '</svg>';
+  }
   if (name === 'cancel') {
     return '<svg class="' + iconClass + ' flow-ew-share-icon--cancel"' + svgAttrs + '>' + '<circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="2"/>' + '<path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M9 9l6 6M15 9l-6 6"/>' + '</svg>';
   }
@@ -988,6 +998,28 @@ function shareBarIconHtml(name) {
 function ShareBarIcon({
   name
 }) {
+  if (name === 'restore') {
+    return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("svg", {
+      className: `${iconClass} flow-ew-share-icon--restore`,
+      viewBox: "0 0 24 24",
+      "aria-hidden": "true",
+      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("path", {
+        fill: "none",
+        stroke: "currentColor",
+        strokeWidth: "2",
+        strokeLinecap: "round",
+        strokeLinejoin: "round",
+        d: restoreArcPath
+      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("path", {
+        fill: "none",
+        stroke: "currentColor",
+        strokeWidth: "2",
+        strokeLinecap: "round",
+        strokeLinejoin: "round",
+        d: restoreHeadPath
+      })]
+    });
+  }
   if (name === 'cancel') {
     return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("svg", {
       className: `${iconClass} flow-ew-share-icon--cancel`,

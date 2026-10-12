@@ -177,7 +177,8 @@ export function syncFreeUpsells( opts ) {
 				className,
 				builder,
 				type: 'reviewer',
-				linkMarginTop: '14px',
+				// Avada's combobox already leaves a gap below it.
+				linkMarginTop: inline ? '4px' : '14px',
 				inline,
 			} );
 		},

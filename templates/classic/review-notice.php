@@ -104,7 +104,10 @@ if ( $no_reviewers ) {
 	return;
 }
 ?>
-<div class="flow-ew-review-notice flow-ew-review-notice--in-review" role="note" data-flow-ew-publish-guard-only="1">
+<div class="flow-ew-review-notice flow-ew-review-notice--in-review" role="note" data-flow-ew-publish-guard-only="1" data-flow-ew-dismiss="review-mandatory">
+	<?php
+	echo $dismiss_btn; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped above.
+	?>
 	<p class="flow-ew-review-notice__title">
 		<?php esc_html_e( 'Review Mode set to Mandatory', 'jumplinks-editorial-workflow' ); ?>
 	</p>

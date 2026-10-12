@@ -246,6 +246,7 @@ final class Page_Cache {
 			'flow_ew_review_opened',
 			'flow_ew_review_closed',
 			'flow_ew_review_cancelled',
+			'flow_ew_review_restored',
 		];
 	}
 

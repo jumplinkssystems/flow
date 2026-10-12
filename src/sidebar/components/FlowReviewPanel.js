@@ -126,6 +126,27 @@ export default function FlowReviewPanel() {
 		}
 	}, [ review ] ); // eslint-disable-line react-hooks/exhaustive-deps
 
+	const restoreReview = useCallback( async ( reviewId ) => {
+		setLoading( true );
+		try {
+			const data = await apiFetch( {
+				url: `${ restUrl }/reviews/${ reviewId }/restore`,
+				method: 'POST',
+			} );
+			setReview( data || null );
+			createSuccessNotice( i18n.reviewRestored, {
+				type: 'snackbar',
+				isDismissible: true,
+			} );
+		} catch ( err ) {
+			createErrorNotice( err?.message || i18n.restoreReviewFailed, {
+				isDismissible: true,
+			} );
+		} finally {
+			setLoading( false );
+		}
+	}, [] ); // eslint-disable-line react-hooks/exhaustive-deps
+
 	const canCancelReview =
 		!! review &&
 		( currentUserCan.manageReviews ||
@@ -418,6 +439,9 @@ export default function FlowReviewPanel() {
 						reviewKey={
 							review ? `${ review.id }:${ review.status }` : ''
 						}
+						onRestore={ restoreReview }
+						isBusy={ loading }
+						hasActiveReview={ !! review }
 					/>
 				</div>
 			</PanelRow>

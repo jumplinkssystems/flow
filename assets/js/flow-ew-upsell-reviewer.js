@@ -3,7 +3,7 @@
  * `flow_ew_reviewer_field_extras`. Pro replaces the reviewer field via
  * `flow_ew_reviewer_field_slot`; this filter only renders when Free is active
  * and a reviewer (WP user or email invite) is already assigned. 2. Classic /
- * Elementor / Bricks — injects above the action buttons when a reviewer is
+ * Elementor / Bricks / Breakdance / Oxygen — injects above the action buttons when a reviewer is
  * selected.
  */
 ( function () {
@@ -118,10 +118,6 @@
 					'#flow-ew-beaver-drawer',
 					'.flow-ew-divi-drawer',
 					'#flow-ew-divi-drawer',
-					'.flow-ew-oxygen-drawer',
-					'#flow-ew-oxygen-drawer',
-					'.flow-ew-breakdance-drawer',
-					'#flow-ew-breakdance-drawer',
 				].join( ',' )
 			)
 		);

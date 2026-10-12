@@ -269,6 +269,7 @@ import { syncFreeUpsells } from '../shared/builder-upsell';
 				( window.flowEW && window.flowEW.activeReview ) || null
 			);
 
+			// Before Exit, so Divi's own buttons (and their menus) stay put.
 			const exitParent = exitWrapper.parentElement;
 			if (
 				exitParent &&

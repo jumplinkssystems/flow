@@ -2,12 +2,14 @@ import { useEffect, useRef } from '@wordpress/element';
 import { Button } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
 import alertErrorIcon from '../icons/alert-error';
+import alertWarningIcon from '../icons/alert-warning';
 
 export default function ConfirmDialog( {
 	title,
 	message,
 	confirmLabel = __( 'Delete', 'jumplinks-editorial-workflow' ),
 	cancelLabel = __( 'Cancel', 'jumplinks-editorial-workflow' ),
+	tone = 'error',
 	onConfirm,
 	onCancel,
 } ) {
@@ -36,7 +38,11 @@ export default function ConfirmDialog( {
 				onClick={ onCancel }
 			/>
 			<div
-				className="flow-confirm-dialog__panel"
+				className={ `flow-confirm-dialog__panel${
+					tone === 'warning'
+						? ' flow-confirm-dialog__panel--warning'
+						: ''
+				}` }
 				role="alertdialog"
 				aria-modal="true"
 				aria-labelledby="flow-confirm-dialog-title"
@@ -49,7 +55,9 @@ export default function ConfirmDialog( {
 						className="flow-confirm-dialog__icon"
 						aria-hidden="true"
 					>
-						{ alertErrorIcon }
+						{ tone === 'warning'
+							? alertWarningIcon
+							: alertErrorIcon }
 					</span>
 					<div className="flow-confirm-dialog__content">
 						<p

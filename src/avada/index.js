@@ -322,7 +322,8 @@ import { syncFreeUpsells } from '../shared/builder-upsell';
 		const proList = drawer.querySelector(
 			'#flow-ew-pro-multi-reviewer-listbox'
 		);
-		if ( proList ) {
+		// A list the shared helper floats over the drawer keeps its position.
+		if ( proList && proList.dataset.flowEwFloating !== '1' ) {
 			proList.style.setProperty( 'position', 'absolute', 'important' );
 			proList.style.setProperty( 'left', '0', 'important' );
 			proList.style.setProperty( 'right', '0', 'important' );
@@ -355,7 +356,7 @@ import { syncFreeUpsells } from '../shared/builder-upsell';
 
 		const singleInput = drawer.querySelector( '#flow-ew-reviewer-input' );
 		const singleList = drawer.querySelector( '#flow-ew-reviewer-listbox' );
-		if ( singleList ) {
+		if ( singleList && singleList.dataset.flowEwFloating !== '1' ) {
 			singleList.style.setProperty( 'position', 'absolute', 'important' );
 			singleList.style.setProperty( 'left', '0', 'important' );
 			singleList.style.setProperty( 'right', '0', 'important' );

@@ -786,12 +786,15 @@ function bindInviteLinkCopy() {
   document.addEventListener('flow-ew:classic-render', function (event) {
     syncInviteLinkCopy(event && event.detail ? event.detail.review : null);
   });
+
+  // Capture phase: builder toolbars (Avada) stop clicks before they bubble up.
   document.addEventListener('click', function (event) {
     const button = event.target.closest && event.target.closest(CLICK_SELECTOR);
     if (!button || !button.dataset.url) {
       return;
     }
     event.preventDefault();
+    event.stopPropagation();
     const doneClass = button.classList.contains('flow-ew-reviewer-card__copy') ? 'flow-ew-reviewer-card__copy--done' : 'flow-ew-reviewer-combobox__copy--done';
     navigator.clipboard.writeText(button.dataset.url).then(() => {
       button.innerHTML = (0,_share_bar_icons__WEBPACK_IMPORTED_MODULE_0__.shareBarIconHtml)('copied');
@@ -805,7 +808,7 @@ function bindInviteLinkCopy() {
         button.setAttribute('title', copyLabel());
       }, 2000);
     });
-  });
+  }, true);
 }
 
 /***/ },
@@ -886,10 +889,14 @@ function hasAssignedReviewer(review, reviewerMeta = 0) {
 
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   MANDATORY_DISMISS_VALUE: () => (/* binding */ MANDATORY_DISMISS_VALUE),
 /* harmony export */   NO_REVIEW_ROLES_DISMISS_ATTR: () => (/* binding */ NO_REVIEW_ROLES_DISMISS_ATTR),
 /* harmony export */   NO_REVIEW_ROLES_DISMISS_VALUE: () => (/* binding */ NO_REVIEW_ROLES_DISMISS_VALUE),
 /* harmony export */   dismissNoReviewRolesNotice: () => (/* binding */ dismissNoReviewRolesNotice),
-/* harmony export */   isNoReviewRolesNoticeDismissed: () => (/* binding */ isNoReviewRolesNoticeDismissed)
+/* harmony export */   dismissNotice: () => (/* binding */ dismissNotice),
+/* harmony export */   isDismissibleNoticeValue: () => (/* binding */ isDismissibleNoticeValue),
+/* harmony export */   isNoReviewRolesNoticeDismissed: () => (/* binding */ isNoReviewRolesNoticeDismissed),
+/* harmony export */   isNoticeDismissed: () => (/* binding */ isNoticeDismissed)
 /* harmony export */ });
 /**
  * Persistence for the "No Review Roles Assigned" editor notice.
@@ -913,6 +920,40 @@ function dismissNoReviewRolesNotice() {
 }
 const NO_REVIEW_ROLES_DISMISS_ATTR = 'data-flow-ew-dismiss';
 const NO_REVIEW_ROLES_DISMISS_VALUE = 'no-review-roles';
+
+/**
+ * The "Review Mode set to Mandatory" notice is only a reminder, so it can be
+ * dismissed too; publishing stays blocked either way.
+ */
+const MANDATORY_DISMISS_VALUE = 'review-mandatory';
+const MANDATORY_DISMISS_KEY = 'flow_ew_dismiss_review_mandatory';
+const DISMISS_KEYS = {
+  [NO_REVIEW_ROLES_DISMISS_VALUE]: DISMISS_KEY,
+  [MANDATORY_DISMISS_VALUE]: MANDATORY_DISMISS_KEY
+};
+function isDismissibleNoticeValue(value) {
+  return Object.prototype.hasOwnProperty.call(DISMISS_KEYS, value || '');
+}
+function isNoticeDismissed(value) {
+  if (!isDismissibleNoticeValue(value)) {
+    return false;
+  }
+  try {
+    return window.localStorage.getItem(DISMISS_KEYS[value]) === '1';
+  } catch (_err) {
+    return false;
+  }
+}
+function dismissNotice(value) {
+  if (!isDismissibleNoticeValue(value)) {
+    return;
+  }
+  try {
+    window.localStorage.setItem(DISMISS_KEYS[value], '1');
+  } catch (_err) {
+    // ignore
+  }
+}
 
 /***/ },
 
@@ -1149,11 +1190,13 @@ function collectClassicRoots() {
   });
   return roots;
 }
-function isRolesDismissNotice(el) {
-  return el?.dataset?.flowEwDismiss === _no_review_roles_notice__WEBPACK_IMPORTED_MODULE_2__.NO_REVIEW_ROLES_DISMISS_VALUE;
+function dismissValue(el) {
+  const value = el?.dataset?.flowEwDismiss || '';
+  return (0,_no_review_roles_notice__WEBPACK_IMPORTED_MODULE_2__.isDismissibleNoticeValue)(value) ? value : '';
 }
 function wireDismissButton(notice) {
-  if (!notice || !isRolesDismissNotice(notice)) {
+  const value = dismissValue(notice);
+  if (!value) {
     return;
   }
   if (notice.dataset.flowEwDismissWired === '1') {
@@ -1171,8 +1214,8 @@ function wireDismissButton(notice) {
   }
   btn.addEventListener('click', event => {
     event.preventDefault();
-    (0,_no_review_roles_notice__WEBPACK_IMPORTED_MODULE_2__.dismissNoReviewRolesNotice)();
-    document.querySelectorAll(`.flow-ew-review-notice[data-flow-ew-dismiss="${_no_review_roles_notice__WEBPACK_IMPORTED_MODULE_2__.NO_REVIEW_ROLES_DISMISS_VALUE}"]`).forEach(el => {
+    (0,_no_review_roles_notice__WEBPACK_IMPORTED_MODULE_2__.dismissNotice)(value);
+    document.querySelectorAll(`.flow-ew-review-notice[data-flow-ew-dismiss="${value}"]`).forEach(el => {
       el.hidden = true;
     });
   });
@@ -1183,9 +1226,8 @@ function wireDismissButton(notice) {
  */
 function syncReviewNoticeVisibility(args) {
   const blocked = (0,_is_publish_blocked__WEBPACK_IMPORTED_MODULE_1__.isPublishBlocked)(args);
-  const rolesDismissed = (0,_no_review_roles_notice__WEBPACK_IMPORTED_MODULE_2__.isNoReviewRolesNoticeDismissed)();
   document.querySelectorAll('.flow-ew-review-notice').forEach(el => {
-    if (isRolesDismissNotice(el) && rolesDismissed) {
+    if ((0,_no_review_roles_notice__WEBPACK_IMPORTED_MODULE_2__.isNoticeDismissed)(dismissValue(el))) {
       el.hidden = true;
       return;
     }
@@ -1234,10 +1276,14 @@ function buildNoticeSpec(flowEW, review, publishBlocked) {
       descHtml: descParts.join(' ')
     };
   }
+  if ((0,_no_review_roles_notice__WEBPACK_IMPORTED_MODULE_2__.isNoticeDismissed)(_no_review_roles_notice__WEBPACK_IMPORTED_MODULE_2__.MANDATORY_DISMISS_VALUE)) {
+    return null;
+  }
   return {
     variant: 'in-review',
     role: 'note',
     publishGuardOnly: true,
+    dismiss: _no_review_roles_notice__WEBPACK_IMPORTED_MODULE_2__.MANDATORY_DISMISS_VALUE,
     title: i18n.reviewMandatoryTitle || 'Review Mode set to Mandatory',
     descHtml: i18n.reviewMandatoryDesc || i18n.publishGuardTooltip || 'Post can go live only after approval by a reviewer.'
   };
@@ -1252,6 +1298,8 @@ function renderNoticeElement(spec) {
   }
   if (spec.dismissableRoles) {
     div.dataset.flowEwDismiss = _no_review_roles_notice__WEBPACK_IMPORTED_MODULE_2__.NO_REVIEW_ROLES_DISMISS_VALUE;
+  } else if (spec.dismiss) {
+    div.dataset.flowEwDismiss = spec.dismiss;
   }
   div.innerHTML = '<p class="flow-ew-review-notice__title">' + (0,_escape__WEBPACK_IMPORTED_MODULE_0__.escHtml)(spec.title) + '</p>' + '<p class="flow-ew-review-notice__desc">' + spec.descHtml + '</p>';
   wireDismissButton(div);
@@ -1499,7 +1547,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! react/jsx-runtime */ "react/jsx-runtime");
 /* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__);
 
-/** @typedef {'copy' | 'copied' | 'external' | 'cancel'} ShareBarIconName */
+/** @typedef {'copy' | 'copied' | 'external' | 'cancel' | 'restore'} ShareBarIconName */
 
 const iconClass = 'flow-ew-share-icon';
 const svgAttrs = ' viewBox="0 0 24 24" aria-hidden="true"';
@@ -1510,11 +1558,18 @@ const figmaCopyPath = 'M18 0H8C6.897 0 6 0.897 6 2V6H2C0.897 6 0 6.897 0 8V18C0 
 /** Figma 24px Icon/regular-arrow-up-right-stroke (Frame 38). */
 const figmaExternalPath = 'M9.71 9V0H0.71V2H6.3L0 8.29L1.42 9.71L7.71 3.41V9H9.71Z';
 
+/** Counter-clockwise arrow: bring an earlier review back. */
+const restoreArcPath = 'M4.5 12a7.5 7.5 0 1 0 2.2-5.3';
+const restoreHeadPath = 'M4.5 4.5v4.5H9';
+
 /**
  * @param {ShareBarIconName} name
  * @return {string}
  */
 function shareBarIconHtml(name) {
+  if (name === 'restore') {
+    return '<svg class="' + iconClass + ' flow-ew-share-icon--restore"' + svgAttrs + '>' + '<path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="' + restoreArcPath + '"/>' + '<path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="' + restoreHeadPath + '"/>' + '</svg>';
+  }
   if (name === 'cancel') {
     return '<svg class="' + iconClass + ' flow-ew-share-icon--cancel"' + svgAttrs + '>' + '<circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="2"/>' + '<path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M9 9l6 6M15 9l-6 6"/>' + '</svg>';
   }
@@ -1533,6 +1588,28 @@ function shareBarIconHtml(name) {
 function ShareBarIcon({
   name
 }) {
+  if (name === 'restore') {
+    return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("svg", {
+      className: `${iconClass} flow-ew-share-icon--restore`,
+      viewBox: "0 0 24 24",
+      "aria-hidden": "true",
+      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("path", {
+        fill: "none",
+        stroke: "currentColor",
+        strokeWidth: "2",
+        strokeLinecap: "round",
+        strokeLinejoin: "round",
+        d: restoreArcPath
+      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("path", {
+        fill: "none",
+        stroke: "currentColor",
+        strokeWidth: "2",
+        strokeLinecap: "round",
+        strokeLinejoin: "round",
+        d: restoreHeadPath
+      })]
+    });
+  }
   if (name === 'cancel') {
     return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("svg", {
       className: `${iconClass} flow-ew-share-icon--cancel`,

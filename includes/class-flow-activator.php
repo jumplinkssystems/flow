@@ -56,6 +56,7 @@ class Activator {
 			is_open        TINYINT(1) NOT NULL DEFAULT 0,
 			is_public      TINYINT(1) NOT NULL DEFAULT 0,
 			is_private     TINYINT(1) NOT NULL DEFAULT 0,
+			cancelled_from TEXT DEFAULT NULL,
 			created_at     DATETIME NOT NULL,
 			updated_at     DATETIME NOT NULL,
 			PRIMARY KEY  (id),

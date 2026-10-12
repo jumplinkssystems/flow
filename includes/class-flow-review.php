@@ -148,12 +148,31 @@ class Review {
 	/**
 	 * Cancelled reviews on a post for the editor's history list.
 	 *
-	 * @return array<int,array{id:int,url:string,date:string,meta:string}>
+	 * @return array<int,array<string,mixed>>
 	 */
-	public static function cancelled_history( int $post_id ): array {
+	public static function cancelled_history( int $post_id, int $user_id = 0 ): array {
+		$reviews = DB::get_cancelled_reviews( $post_id );
+		if ( empty( $reviews ) ) {
+			return [];
+		}
+		$active    = DB::get_active_review( $post_id );
+		$snapshots = [];
+		$user_ids  = [];
+		foreach ( $reviews as $review ) {
+			$snapshot                       = self::decode_cancel_snapshot( $review );
+			$snapshots[ (int) $review->id ] = $snapshot;
+			$user_ids[]                     = (int) ( $review->reviewer_id ?? 0 );
+			foreach ( (array) ( $snapshot['roster'] ?? [] ) as $row ) {
+				$user_ids[] = (int) ( $row['user_id'] ?? 0 );
+			}
+		}
+		$user_ids = array_values( array_unique( array_filter( $user_ids ) ) );
+		if ( ! empty( $user_ids ) && function_exists( 'cache_users' ) ) {
+			cache_users( $user_ids );
+		}
+
 		$out = [];
-		foreach ( DB::get_cancelled_reviews( $post_id ) as $review ) {
-			$count = (int) ( $review->comment_count ?? 0 );
+		foreach ( $reviews as $review ) {
 			$time  = strtotime( (string) ( $review->updated_at ?? '' ) . ' UTC' );
 			$out[] = [
 				'id'   => (int) $review->id,
@@ -163,14 +182,104 @@ class Review {
 					$post_id
 				),
 				'date' => $time ? wp_date( get_option( 'date_format' ) . ' H:i', $time ) : '',
-				'meta' => sprintf(
-					/* translators: %d: number of comments on a cancelled review. */
-					_n( '%d comment', '%d comments', $count, 'jumplinks-editorial-workflow' ),
-					$count
-				),
-			];
+			] + self::describe_history_item( $review, $snapshots[ (int) $review->id ], $user_id, $active );
 		}
 		return $out;
+	}
+
+	/**
+	 * What Review history shows for one cancelled review: the status it was
+	 * left in, who reviewed it, its comment count, and whether this user may
+	 * restore it.
+	 *
+	 * @param array<string,mixed> $snapshot
+	 * @return array<string,mixed>
+	 */
+	public static function describe_history_item( object $review, array $snapshot, int $user_id, ?object $active ): array {
+		$count       = (int) ( $review->comment_count ?? 0 );
+		$reviewer_id = (int) ( $snapshot['reviewer_id'] ?? $review->reviewer_id ?? 0 );
+		if ( [] === $snapshot ) {
+			$status = self::STATUS_CANCELLED;
+		} elseif ( ! empty( $snapshot['is_open'] ) && 0 === $reviewer_id ) {
+			$status = self::STATUS_OPEN_REVIEW;
+		} else {
+			$status = (string) ( $snapshot['status'] ?? self::STATUS_CANCELLED );
+		}
+
+		$names = [];
+		$ids   = [ $reviewer_id ];
+		foreach ( (array) ( $snapshot['roster'] ?? [] ) as $row ) {
+			$ids[] = (int) ( $row['user_id'] ?? 0 );
+		}
+		foreach ( array_unique( array_filter( $ids ) ) as $id ) {
+			$user = get_userdata( $id );
+			if ( $user ) {
+				$names[] = (string) $user->display_name;
+			}
+		}
+		foreach ( (array) ( $snapshot['invites'] ?? [] ) as $invite ) {
+			$name    = trim( (string) ( $invite['display_name'] ?? '' ) );
+			$names[] = '' !== $name ? $name : (string) ( $invite['email'] ?? '' );
+		}
+		$names = array_values( array_unique( array_filter( $names ) ) );
+
+		$comments = sprintf(
+			/* translators: %d: number of comments on a cancelled review. */
+			_n( '%d comment', '%d comments', $count, 'jumplinks-editorial-workflow' ),
+			$count
+		);
+		$label = self::status_label( $status );
+
+		$can_restore = self::can_user_restore( $review, $user_id, $active );
+
+		return [
+			'meta'         => $count > 0 ? $comments : '',
+			'status'       => $status,
+			'statusLabel'  => $label,
+			'reviewers'    => $names,
+			'commentCount' => $count,
+			'canRestore'   => $can_restore,
+			'tooltip'      => implode(
+				' · ',
+				array_filter(
+					[
+						$label,
+						$names ? sprintf(
+							/* translators: %s: comma-separated reviewer names. */
+							__( 'Reviewers: %s', 'jumplinks-editorial-workflow' ),
+							implode( ', ', $names )
+						) : '',
+						$comments,
+					]
+				)
+			),
+		];
+	}
+
+	/**
+	 * Restoring also cancels the running review, so the user must be able to cancel that one too.
+	 */
+	public static function can_user_restore( object $review, int $user_id, ?object $active ): bool {
+		return $user_id > 0
+			&& ! Settings::is_solo_mode()
+			&& ! self::is_private( $review )
+			&& self::is_requester_or_manager( $review, $user_id )
+			&& ( ! $active || self::is_requester_or_manager( $active, $user_id ) );
+	}
+
+	/**
+	 * What a cancel took away (status, open flags, invites and, from Pro, the
+	 * roster), saved on the row so a restore can put it back.
+	 *
+	 * @return array<string,mixed>
+	 */
+	public static function decode_cancel_snapshot( object $review ): array {
+		$raw = (string) ( $review->cancelled_from ?? '' );
+		if ( '' === $raw ) {
+			return [];
+		}
+		$data = json_decode( $raw, true );
+		return is_array( $data ) ? $data : [];
 	}
 
 	private static function assert_not_cancelled( object $review ): void {
@@ -420,18 +529,134 @@ class Review {
 			return;
 		}
 
+		// Taken before the cancel listeners delete invites and the Pro roster.
+		$snapshot = self::build_cancel_snapshot( $review, $user_id );
 		DB::update_review(
 			$review_id,
 			[
-				'status'    => self::STATUS_CANCELLED,
-				'is_open'   => 0,
-				'is_public' => 0,
+				'status'         => self::STATUS_CANCELLED,
+				'is_open'        => 0,
+				'is_public'      => 0,
+				'cancelled_from' => (string) wp_json_encode( $snapshot ),
 			]
 		);
 		delete_post_meta( (int) $review->post_id, '_flow_reviewer_id' );
 		delete_post_meta( (int) $review->post_id, '_flow_review_status' );
 
 		do_action( 'flow_ew_review_cancelled', $review_id, (int) $review->post_id, $user_id );
+	}
+
+	/**
+	 * @return array<string,mixed>
+	 */
+	private static function build_cancel_snapshot( object $review, int $user_id ): array {
+		$invites = [];
+		foreach ( Email_Review_Invites_DB::get_for_review( (int) $review->id ) as $row ) {
+			$invites[] = [
+				'email'         => (string) ( $row->email ?? '' ),
+				'display_name'  => (string) ( $row->display_name ?? '' ),
+				'status'        => (string) ( $row->status ?? Email_Review_Invites_DB::STATUS_PENDING ),
+				'cookie_jti'    => (string) ( $row->cookie_jti ?? '' ),
+				'token_version' => (int) ( $row->token_version ?? 1 ),
+				'decided_at'    => $row->decided_at ?? null,
+				'created_at'    => $row->created_at ?? null,
+			];
+		}
+		$snapshot = [
+			'v'            => 1,
+			'status'       => (string) $review->status,
+			'is_open'      => empty( $review->is_open ) ? 0 : 1,
+			'is_public'    => empty( $review->is_public ) ? 0 : 1,
+			'reviewer_id'  => (int) $review->reviewer_id,
+			'cancelled_by' => $user_id,
+			'cancelled_at' => current_time( 'mysql', true ),
+			'invites'      => $invites,
+		];
+		/**
+		 * Lets add-ons save what their cancel listeners are about to delete,
+		 * so a restore can bring it back (Pro adds the reviewer roster).
+		 *
+		 * @param array<string,mixed> $snapshot
+		 * @param object              $review
+		 * @param int                 $user_id
+		 */
+		return (array) \apply_filters( 'flow_ew_review_cancel_snapshot', $snapshot, $review, $user_id );
+	}
+
+	/**
+	 * Brings a cancelled review back as the current one, with the status,
+	 * reviewers and invites it had. Whatever review is running is cancelled
+	 * first and kept in the history.
+	 */
+	public static function restore( int $review_id, int $user_id ): void {
+		if ( Settings::is_solo_mode() ) {
+			throw new \InvalidArgumentException( esc_html__( 'Reviewers are not available in Self review only mode.', 'jumplinks-editorial-workflow' ) );
+		}
+		$review = DB::get_review( $review_id );
+		if ( ! $review ) {
+			throw new \InvalidArgumentException( esc_html__( 'Review not found.', 'jumplinks-editorial-workflow' ) );
+		}
+		if ( self::is_private( $review ) ) {
+			throw new \RuntimeException( esc_html__( 'This action is not available on a self review.', 'jumplinks-editorial-workflow' ) );
+		}
+		if ( ! self::is_cancelled( $review ) ) {
+			throw new \RuntimeException( esc_html__( 'Only a cancelled review can be restored.', 'jumplinks-editorial-workflow' ) );
+		}
+		if ( ! self::is_requester_or_manager( $review, $user_id ) ) {
+			throw new \RuntimeException( esc_html__( 'You are not authorized to restore this review.', 'jumplinks-editorial-workflow' ) );
+		}
+		$post_id = (int) $review->post_id;
+
+		// Its own permission check runs here, before the target is touched.
+		$active = DB::get_active_review( $post_id );
+		if ( $active && (int) $active->id !== $review_id ) {
+			self::cancel( (int) $active->id, $user_id );
+		}
+
+		$snapshot                 = self::decode_cancel_snapshot( $review );
+		$fields                   = self::restored_fields( $review, $snapshot );
+		$fields['cancelled_from'] = null;
+		DB::update_review( $review_id, $fields );
+
+		$reviewer_id = (int) ( $fields['reviewer_id'] ?? $review->reviewer_id );
+		if ( $reviewer_id > 0 ) {
+			update_post_meta( $post_id, '_flow_reviewer_id', $reviewer_id );
+		} else {
+			delete_post_meta( $post_id, '_flow_reviewer_id' );
+		}
+		if ( self::STATUS_PENDING === $fields['status'] ) {
+			delete_post_meta( $post_id, '_flow_review_status' );
+		} else {
+			update_post_meta( $post_id, '_flow_review_status', $fields['status'] );
+		}
+
+		Email_Review_Invites_DB::restore_rows( $review_id, (array) ( $snapshot['invites'] ?? [] ) );
+
+		do_action( 'flow_ew_review_restored', $review_id, $post_id, $user_id, $snapshot );
+	}
+
+	/**
+	 * Rows cancelled before snapshots existed come back as pending, open when
+	 * nobody was assigned (otherwise nobody could reach them).
+	 *
+	 * @param array<string,mixed> $snapshot
+	 * @return array<string,mixed>
+	 */
+	private static function restored_fields( object $review, array $snapshot ): array {
+		$status = (string) ( $snapshot['status'] ?? '' );
+		if ( ! in_array( $status, [ self::STATUS_PENDING, self::STATUS_IN_REVIEW, self::STATUS_CHANGES_REQUESTED, self::STATUS_APPROVED ], true ) ) {
+			$status = self::STATUS_PENDING;
+		}
+		$fields      = [ 'status' => $status ];
+		$reviewer_id = (int) $review->reviewer_id;
+		if ( $reviewer_id > 0 && ! get_userdata( $reviewer_id ) ) {
+			$reviewer_id           = 0;
+			$fields['reviewer_id'] = 0;
+		}
+		$open                = [] === $snapshot ? 0 === $reviewer_id : ! empty( $snapshot['is_open'] );
+		$fields['is_open']   = $open && self::is_open_review_feature_available() ? 1 : 0;
+		$fields['is_public'] = empty( $snapshot['is_public'] ) ? 0 : 1;
+		return $fields;
 	}
 
 	/**

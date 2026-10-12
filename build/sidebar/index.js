@@ -164,10 +164,14 @@ function hasAssignedReviewer(review, reviewerMeta = 0) {
 
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   MANDATORY_DISMISS_VALUE: () => (/* binding */ MANDATORY_DISMISS_VALUE),
 /* harmony export */   NO_REVIEW_ROLES_DISMISS_ATTR: () => (/* binding */ NO_REVIEW_ROLES_DISMISS_ATTR),
 /* harmony export */   NO_REVIEW_ROLES_DISMISS_VALUE: () => (/* binding */ NO_REVIEW_ROLES_DISMISS_VALUE),
 /* harmony export */   dismissNoReviewRolesNotice: () => (/* binding */ dismissNoReviewRolesNotice),
-/* harmony export */   isNoReviewRolesNoticeDismissed: () => (/* binding */ isNoReviewRolesNoticeDismissed)
+/* harmony export */   dismissNotice: () => (/* binding */ dismissNotice),
+/* harmony export */   isDismissibleNoticeValue: () => (/* binding */ isDismissibleNoticeValue),
+/* harmony export */   isNoReviewRolesNoticeDismissed: () => (/* binding */ isNoReviewRolesNoticeDismissed),
+/* harmony export */   isNoticeDismissed: () => (/* binding */ isNoticeDismissed)
 /* harmony export */ });
 /**
  * Persistence for the "No Review Roles Assigned" editor notice.
@@ -191,6 +195,40 @@ function dismissNoReviewRolesNotice() {
 }
 const NO_REVIEW_ROLES_DISMISS_ATTR = 'data-flow-ew-dismiss';
 const NO_REVIEW_ROLES_DISMISS_VALUE = 'no-review-roles';
+
+/**
+ * The "Review Mode set to Mandatory" notice is only a reminder, so it can be
+ * dismissed too; publishing stays blocked either way.
+ */
+const MANDATORY_DISMISS_VALUE = 'review-mandatory';
+const MANDATORY_DISMISS_KEY = 'flow_ew_dismiss_review_mandatory';
+const DISMISS_KEYS = {
+  [NO_REVIEW_ROLES_DISMISS_VALUE]: DISMISS_KEY,
+  [MANDATORY_DISMISS_VALUE]: MANDATORY_DISMISS_KEY
+};
+function isDismissibleNoticeValue(value) {
+  return Object.prototype.hasOwnProperty.call(DISMISS_KEYS, value || '');
+}
+function isNoticeDismissed(value) {
+  if (!isDismissibleNoticeValue(value)) {
+    return false;
+  }
+  try {
+    return window.localStorage.getItem(DISMISS_KEYS[value]) === '1';
+  } catch (_err) {
+    return false;
+  }
+}
+function dismissNotice(value) {
+  if (!isDismissibleNoticeValue(value)) {
+    return;
+  }
+  try {
+    window.localStorage.setItem(DISMISS_KEYS[value], '1');
+  } catch (_err) {
+    // ignore
+  }
+}
 
 /***/ },
 
@@ -331,7 +369,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! react/jsx-runtime */ "react/jsx-runtime");
 /* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__);
 
-/** @typedef {'copy' | 'copied' | 'external' | 'cancel'} ShareBarIconName */
+/** @typedef {'copy' | 'copied' | 'external' | 'cancel' | 'restore'} ShareBarIconName */
 
 const iconClass = 'flow-ew-share-icon';
 const svgAttrs = ' viewBox="0 0 24 24" aria-hidden="true"';
@@ -342,11 +380,18 @@ const figmaCopyPath = 'M18 0H8C6.897 0 6 0.897 6 2V6H2C0.897 6 0 6.897 0 8V18C0 
 /** Figma 24px Icon/regular-arrow-up-right-stroke (Frame 38). */
 const figmaExternalPath = 'M9.71 9V0H0.71V2H6.3L0 8.29L1.42 9.71L7.71 3.41V9H9.71Z';
 
+/** Counter-clockwise arrow: bring an earlier review back. */
+const restoreArcPath = 'M4.5 12a7.5 7.5 0 1 0 2.2-5.3';
+const restoreHeadPath = 'M4.5 4.5v4.5H9';
+
 /**
  * @param {ShareBarIconName} name
  * @return {string}
  */
 function shareBarIconHtml(name) {
+  if (name === 'restore') {
+    return '<svg class="' + iconClass + ' flow-ew-share-icon--restore"' + svgAttrs + '>' + '<path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="' + restoreArcPath + '"/>' + '<path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="' + restoreHeadPath + '"/>' + '</svg>';
+  }
   if (name === 'cancel') {
     return '<svg class="' + iconClass + ' flow-ew-share-icon--cancel"' + svgAttrs + '>' + '<circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="2"/>' + '<path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M9 9l6 6M15 9l-6 6"/>' + '</svg>';
   }
@@ -365,6 +410,28 @@ function shareBarIconHtml(name) {
 function ShareBarIcon({
   name
 }) {
+  if (name === 'restore') {
+    return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("svg", {
+      className: `${iconClass} flow-ew-share-icon--restore`,
+      viewBox: "0 0 24 24",
+      "aria-hidden": "true",
+      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("path", {
+        fill: "none",
+        stroke: "currentColor",
+        strokeWidth: "2",
+        strokeLinecap: "round",
+        strokeLinejoin: "round",
+        d: restoreArcPath
+      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)("path", {
+        fill: "none",
+        stroke: "currentColor",
+        strokeWidth: "2",
+        strokeLinecap: "round",
+        strokeLinejoin: "round",
+        d: restoreHeadPath
+      })]
+    });
+  }
   if (name === 'cancel') {
     return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("svg", {
       className: `${iconClass} flow-ew-share-icon--cancel`,
@@ -651,30 +718,49 @@ __webpack_require__.r(__webpack_exports__);
 const {
   i18n
 } = (0,_shared_config__WEBPACK_IMPORTED_MODULE_1__.getConfig)();
+
+/**
+ * Confirm dialog for cancelling a review. The labels can be swapped so the
+ * same dialog confirms restoring one from Review history.
+ *
+ * @param {Object}   props
+ * @param {Function} props.onConfirm
+ * @param {Function} props.onClose
+ * @param {string}   [props.title]
+ * @param {string}   [props.body]
+ * @param {string}   [props.confirmLabel]
+ * @param {string}   [props.cancelLabel]
+ * @param {boolean}  [props.isDestructive]
+ */
 function CancelReviewModal({
   onConfirm,
-  onClose
+  onClose,
+  title = i18n.cancelReviewTitle,
+  body = i18n.cancelReviewBody,
+  confirmLabel = i18n.cancelReview,
+  cancelLabel = i18n.keepReview,
+  isDestructive = true
 }) {
   return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsxs)(_wordpress_components__WEBPACK_IMPORTED_MODULE_0__.Modal, {
-    title: i18n.cancelReviewTitle,
+    title: title,
     onRequestClose: onClose,
     className: "flow-ew-confirm-modal",
     children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsx)("p", {
-      children: i18n.cancelReviewBody
+      children: body
     }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsxs)("div", {
       className: "flow-ew-confirm-modal__actions",
       children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_0__.Button, {
         variant: "tertiary",
         onClick: onClose,
-        children: i18n.keepReview
+        children: cancelLabel
       }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_0__.Button, {
         variant: "primary",
-        isDestructive: true,
+        isDestructive: isDestructive,
         onClick: () => {
           onClose();
           onConfirm();
         },
-        children: i18n.cancelReview
+        children: confirmLabel
       })]
     })]
   });
@@ -701,8 +787,12 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _wordpress_components__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! @wordpress/components */ "@wordpress/components");
 /* harmony import */ var _wordpress_components__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(_wordpress_components__WEBPACK_IMPORTED_MODULE_3__);
 /* harmony import */ var _shared_config__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../../shared/config */ "./src/shared/config.js");
-/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! react/jsx-runtime */ "react/jsx-runtime");
-/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5___default = /*#__PURE__*/__webpack_require__.n(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__);
+/* harmony import */ var _shared_share_bar_icons__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../../shared/share-bar-icons */ "./src/shared/share-bar-icons.js");
+/* harmony import */ var _CancelReviewModal__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./CancelReviewModal */ "./src/sidebar/components/CancelReviewModal.js");
+/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! react/jsx-runtime */ "react/jsx-runtime");
+/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7___default = /*#__PURE__*/__webpack_require__.n(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__);
+
+
 
 
 
@@ -716,11 +806,16 @@ const {
 } = flowEW;
 const PAGE_SIZE = 5;
 function CancelledReviews({
-  reviewKey
+  reviewKey,
+  onRestore = null,
+  isBusy = false,
+  hasActiveReview = false
 }) {
   const postId = (0,_wordpress_data__WEBPACK_IMPORTED_MODULE_1__.useSelect)(sel => sel('core/editor').getCurrentPostId(), []);
   const [items, setItems] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useState)(flowEW.cancelledReviews || []);
   const [visible, setVisible] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useState)(PAGE_SIZE);
+  const [confirmId, setConfirmId] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useState)(null);
+  const [isStale, setIsStale] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useState)(false);
   const lastKey = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useRef)(reviewKey);
 
   // A cancel swaps the active review, or (Pro roster) marks it cancelled.
@@ -729,37 +824,62 @@ function CancelledReviews({
       return;
     }
     lastKey.current = reviewKey;
+    setIsStale(true);
     _wordpress_api_fetch__WEBPACK_IMPORTED_MODULE_2___default()({
       url: `${restUrl}/reviews/${postId}/cancelled`
-    }).then(list => setItems(Array.isArray(list) ? list : [])).catch(() => {});
+    }).then(list => setItems(Array.isArray(list) ? list : [])).catch(() => {}).finally(() => setIsStale(false));
   }, [reviewKey, postId]);
   if (!items.length) {
     return null;
   }
-  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
+  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
     className: "flow-ew-history",
-    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("p", {
+    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("p", {
       className: "flow-ew-field-label flow-ew-share-bar__label",
       children: i18n.cancelledReviews
-    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("ul", {
+    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("ul", {
       className: "flow-ew-history__list",
-      children: items.slice(0, visible).map(item => /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("li", {
+      children: items.slice(0, visible).map(item => /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("li", {
         className: "flow-ew-history__item",
-        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("a", {
+        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("span", {
+          className: `flow-ew-history__dot flow-ew-history__dot--${item.status || 'cancelled'}`,
+          title: item.tooltip,
+          "aria-hidden": "true"
+        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("a", {
           href: item.url,
           target: "_blank",
           rel: "noreferrer",
+          title: item.tooltip,
           children: item.date
-        }), item.meta && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("span", {
+        }), item.canRestore && onRestore && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_3__.Button, {
+          size: "small",
+          variant: "tertiary",
+          className: "flow-ew-history__restore",
+          label: i18n.restoreReview,
+          showTooltip: true,
+          disabled: isBusy || isStale,
+          onClick: () => setConfirmId(item.id),
+          children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)(_shared_share_bar_icons__WEBPACK_IMPORTED_MODULE_5__.ShareBarIcon, {
+            name: "restore"
+          })
+        }), item.meta && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("span", {
           className: "flow-ew-history__meta",
-          children: ["- ", item.meta]
+          children: item.meta
         })]
       }, item.id))
-    }), items.length > visible && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_3__.Button, {
+    }), items.length > visible && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_3__.Button, {
       variant: "link",
       className: "flow-ew-history__more",
       onClick: () => setVisible(visible + PAGE_SIZE),
       children: i18n.loadMore
+    }), confirmId && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)(_CancelReviewModal__WEBPACK_IMPORTED_MODULE_6__["default"], {
+      title: i18n.restoreReviewTitle,
+      body: hasActiveReview ? i18n.restoreReviewBodyReplace : i18n.restoreReviewBody,
+      confirmLabel: i18n.restoreReview,
+      cancelLabel: i18n.cancelEdit,
+      isDestructive: false,
+      onConfirm: () => onRestore(confirmId),
+      onClose: () => setConfirmId(null)
     })]
   });
 }
@@ -914,6 +1034,27 @@ function FlowReviewPanel() {
       setLoading(false);
     }
   }, [review]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const restoreReview = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_1__.useCallback)(async reviewId => {
+    setLoading(true);
+    try {
+      const data = await _wordpress_api_fetch__WEBPACK_IMPORTED_MODULE_5___default()({
+        url: `${restUrl}/reviews/${reviewId}/restore`,
+        method: 'POST'
+      });
+      setReview(data || null);
+      createSuccessNotice(i18n.reviewRestored, {
+        type: 'snackbar',
+        isDismissible: true
+      });
+    } catch (err) {
+      createErrorNotice(err?.message || i18n.restoreReviewFailed, {
+        isDismissible: true
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const canCancelReview = !!review && (currentUserCan.manageReviews || Number(review.requester_id ?? review.requester?.id) === Number(currentUserId));
   const requestChanges = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_1__.useCallback)(async () => {
@@ -1128,7 +1269,10 @@ function FlowReviewPanel() {
           onCancel: canCancelReview ? cancelReview : null,
           isBusy: loading
         }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_17__.jsx)(_CancelledReviews__WEBPACK_IMPORTED_MODULE_12__["default"], {
-          reviewKey: review ? `${review.id}:${review.status}` : ''
+          reviewKey: review ? `${review.id}:${review.status}` : '',
+          onRestore: restoreReview,
+          isBusy: loading,
+          hasActiveReview: !!review
         })]
       })
     })]

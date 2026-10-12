@@ -1,4 +1,4 @@
-/** @typedef {'copy' | 'copied' | 'external' | 'cancel'} ShareBarIconName */
+/** @typedef {'copy' | 'copied' | 'external' | 'cancel' | 'restore'} ShareBarIconName */
 
 const iconClass = 'flow-ew-share-icon';
 const svgAttrs = ' viewBox="0 0 24 24" aria-hidden="true"';
@@ -11,11 +11,32 @@ const figmaCopyPath =
 const figmaExternalPath =
 	'M9.71 9V0H0.71V2H6.3L0 8.29L1.42 9.71L7.71 3.41V9H9.71Z';
 
+/** Counter-clockwise arrow: bring an earlier review back. */
+const restoreArcPath = 'M4.5 12a7.5 7.5 0 1 0 2.2-5.3';
+const restoreHeadPath = 'M4.5 4.5v4.5H9';
+
 /**
  * @param {ShareBarIconName} name
  * @return {string}
  */
 export function shareBarIconHtml( name ) {
+	if ( name === 'restore' ) {
+		return (
+			'<svg class="' +
+			iconClass +
+			' flow-ew-share-icon--restore"' +
+			svgAttrs +
+			'>' +
+			'<path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="' +
+			restoreArcPath +
+			'"/>' +
+			'<path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="' +
+			restoreHeadPath +
+			'"/>' +
+			'</svg>'
+		);
+	}
+
 	if ( name === 'cancel' ) {
 		return (
 			'<svg class="' +
@@ -72,6 +93,33 @@ export function shareBarIconHtml( name ) {
  * @param {ShareBarIconName} name
  */
 export function ShareBarIcon( { name } ) {
+	if ( name === 'restore' ) {
+		return (
+			<svg
+				className={ `${ iconClass } flow-ew-share-icon--restore` }
+				viewBox="0 0 24 24"
+				aria-hidden="true"
+			>
+				<path
+					fill="none"
+					stroke="currentColor"
+					strokeWidth="2"
+					strokeLinecap="round"
+					strokeLinejoin="round"
+					d={ restoreArcPath }
+				/>
+				<path
+					fill="none"
+					stroke="currentColor"
+					strokeWidth="2"
+					strokeLinecap="round"
+					strokeLinejoin="round"
+					d={ restoreHeadPath }
+				/>
+			</svg>
+		);
+	}
+
 	if ( name === 'cancel' ) {
 		return (
 			<svg

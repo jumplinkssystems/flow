@@ -917,6 +917,8 @@ html[data-app-color-mode='dark'] .flow-ew-divi-drawer {
 }
 
 .flow-ew-classic--divi .flow-ew-classic__share-row {
+	/* !important: the classic metabox rules (id-scoped) do not exclude Divi. */
+	--flow-ew-share-icon-size: 18px !important;
 	align-items: stretch;
 	background: transparent;
 	border: 1px solid var(--flow-ew-divi-border);
@@ -941,12 +943,13 @@ html[data-app-color-mode='dark'] .flow-ew-divi-drawer {
 
 .flow-ew-divi-drawer .flow-ew-classic--divi .flow-ew-classic__share-link,
 .flow-ew-divi-drawer .flow-ew-classic--divi .flow-ew-classic__share-link-text {
-	color: var(--flow-ew-divi-link, #326bff) !important;
+	/* Divi's link blue, the same as the Review history links. */
+	color: #2ea3f2 !important;
 }
 
 .flow-ew-divi-drawer .flow-ew-classic--divi .flow-ew-classic__share-link:hover,
 .flow-ew-divi-drawer .flow-ew-classic--divi .flow-ew-classic__share-link:focus-visible {
-	color: var(--flow-ew-divi-link-hover, #1959ff) !important;
+	color: #1f8dd6 !important;
 }
 
 .flow-ew-divi-drawer .flow-ew-classic__share-copy {

@@ -403,12 +403,16 @@
 	position: fixed;
 	top: calc(38px + var(--wp-admin--admin-bar--height, 0px));
 	right: 12px;
-	/* Match Elementor drawer: 360px wide, about half the viewport tall. */
+	/* 360px wide; as tall as Oxygen's panel: 3/4 of the space under the top bar. */
 	width: 360px;
 	min-width: 360px;
 	max-width: min(360px, calc(100vw - 24px));
-	height: 50vh;
-	max-height: 50vh;
+	height: calc(
+		(100vh - 38px - var(--wp-admin--admin-bar--height, 0px) - 18px) * 0.75
+	);
+	max-height: calc(
+		100vh - 38px - var(--wp-admin--admin-bar--height, 0px) - 18px
+	);
 	background: #1f232b;
 	border: 1px solid #3f4758;
 	border-radius: 8px;
@@ -896,6 +900,25 @@ body.admin-bar .flow-ew-breakdance-drawer {
 .flow-ew-breakdance-drawer .flow-ew-classic-open__row,
 .flow-ew-breakdance-drawer .flow-ew-classic-open__desc {
 	color: #e6eef8;
+}
+
+/* Review history links: the same light blue as the share link. */
+
+.flow-ew-breakdance-drawer .flow-ew-classic--breakdance .flow-ew-history__item a {
+	color: #93c5fd;
+}
+
+.flow-ew-breakdance-drawer .flow-ew-upsell-reviewer {
+	margin-bottom: 10px;
+}
+
+.flow-ew-breakdance-drawer .flow-ew-upsell-reviewer > a {
+	margin-top: 4px !important;
+}
+
+.flow-ew-breakdance-drawer .flow-ew-upsell-reviewer p,
+.flow-ew-breakdance-drawer .flow-ew-upsell-open-review p {
+	color: #e6eef8 !important;
 }
 
 

@@ -2,6 +2,137 @@
 /******/ 	"use strict";
 /******/ 	var __webpack_modules__ = ({
 
+/***/ "./src/setup-wizard/CreateAgentUser.js"
+/*!*********************************************!*\
+  !*** ./src/setup-wizard/CreateAgentUser.js ***!
+  \*********************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   CreateAgentUserButton: () => (/* binding */ CreateAgentUserButton),
+/* harmony export */   CreateAgentUserForm: () => (/* binding */ CreateAgentUserForm),
+/* harmony export */   canCreateAgentUser: () => (/* binding */ canCreateAgentUser)
+/* harmony export */ });
+/* harmony import */ var _wordpress_element__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @wordpress/element */ "@wordpress/element");
+/* harmony import */ var _wordpress_element__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_wordpress_element__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var _wordpress_components__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @wordpress/components */ "@wordpress/components");
+/* harmony import */ var _wordpress_components__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(_wordpress_components__WEBPACK_IMPORTED_MODULE_1__);
+/* harmony import */ var _wordpress_api_fetch__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @wordpress/api-fetch */ "@wordpress/api-fetch");
+/* harmony import */ var _wordpress_api_fetch__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(_wordpress_api_fetch__WEBPACK_IMPORTED_MODULE_2__);
+/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! react/jsx-runtime */ "react/jsx-runtime");
+/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__);
+
+
+
+
+const cfg = window.flowEWSetup || {};
+const i18n = cfg.i18n || {};
+const canCreateAgentUser = () => !!cfg.agentUserUrl;
+
+/**
+ * The "Create user" button that sits in the AI user field, before Clear.
+ *
+ * @param {Object}   props
+ * @param {Function} props.onClick
+ * @param {boolean}  props.expanded
+ */
+function CreateAgentUserButton({
+  onClick,
+  expanded
+}) {
+  if (!canCreateAgentUser()) {
+    return null;
+  }
+  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_1__.Button, {
+    variant: "secondary",
+    size: "small",
+    "aria-expanded": expanded,
+    "aria-controls": "flow-ew-wizard-create-user",
+    onClick: onClick,
+    children: i18n.agentUserSubmit
+  });
+}
+
+/**
+ * Inline "create a user for the AI" form: only the fields WordPress
+ * requires. The new account is handed to onCreated as `{ id, name }`, like a
+ * picked user.
+ *
+ * @param {Object}   props
+ * @param {Function} props.onCreated
+ * @param {Function} props.onCancel
+ */
+function CreateAgentUserForm({
+  onCreated,
+  onCancel
+}) {
+  const [login, setLogin] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useState)('flow-ai');
+  const [email, setEmail] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useState)('');
+  const [busy, setBusy] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useState)(false);
+  const [error, setError] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useState)('');
+  function submit() {
+    setBusy(true);
+    setError('');
+    _wordpress_api_fetch__WEBPACK_IMPORTED_MODULE_2___default()({
+      url: cfg.agentUserUrl,
+      method: 'POST',
+      headers: {
+        'X-WP-Nonce': cfg.nonce
+      },
+      data: {
+        username: login,
+        email
+      }
+    }).then(user => onCreated({
+      id: Number(user.id),
+      name: user.name
+    })).catch(err => setError(err?.message || '')).finally(() => setBusy(false));
+  }
+  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsxs)("div", {
+    id: "flow-ew-wizard-create-user",
+    className: "flow-ew-wizard__create-user",
+    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_1__.TextControl, {
+      __nextHasNoMarginBottom: true,
+      __next40pxDefaultSize: true,
+      label: i18n.agentUserLogin,
+      value: login,
+      onChange: setLogin,
+      autoComplete: "off"
+    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_1__.TextControl, {
+      __nextHasNoMarginBottom: true,
+      __next40pxDefaultSize: true,
+      type: "email",
+      label: i18n.agentUserEmail,
+      value: email,
+      onChange: setEmail,
+      autoComplete: "off"
+    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("p", {
+      className: "flow-ew-wizard__create-user-note",
+      children: i18n.agentUserNote
+    }), error ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("p", {
+      className: "flow-ew-wizard__field-error",
+      role: "alert",
+      children: error
+    }) : null, /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsxs)("div", {
+      className: "flow-ew-wizard__create-user-actions",
+      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_1__.Button, {
+        variant: "secondary",
+        isBusy: busy,
+        disabled: busy || !login.trim() || !email.trim(),
+        onClick: submit,
+        children: i18n.agentUserSubmit
+      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_1__.Button, {
+        variant: "link",
+        onClick: onCancel,
+        children: i18n.agentUserCancel
+      })]
+    })]
+  });
+}
+
+/***/ },
+
 /***/ "./src/setup-wizard/UserPicker.js"
 /*!****************************************!*\
   !*** ./src/setup-wizard/UserPicker.js ***!
@@ -37,12 +168,14 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
  * @param {Object}   props.value
  * @param {Function} props.onChange
  * @param {boolean}  props.allowEmail
+ * @param {Object}   [props.action]   Extra button shown in the field, before Clear.
  */
 function UserPicker({
   id,
   value,
   onChange,
-  allowEmail
+  allowEmail,
+  action = null
 }) {
   const [query, setQuery] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useState)('');
   const [results, setResults] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useState)([]);
@@ -82,7 +215,7 @@ function UserPicker({
       className: "flow-ew-wizard__picker-selected",
       children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("span", {
         children: value.email || value.name
-      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_1__.Button, {
+      }), action, /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_1__.Button, {
         variant: "secondary",
         size: "small",
         onClick: () => onChange(null),
@@ -112,14 +245,17 @@ function UserPicker({
   }
   return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsxs)("div", {
     className: "flow-ew-wizard__picker",
-    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("input", {
-      id: id,
-      type: "search",
-      className: "flow-ew-wizard__picker-input",
-      placeholder: allowEmail ? i18n.searchUsersOrEmail : i18n.searchUsers,
-      value: query,
-      onChange: event => setQuery(event.target.value),
-      autoComplete: "off"
+    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsxs)("div", {
+      className: "flow-ew-wizard__picker-row",
+      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("input", {
+        id: id,
+        type: "search",
+        className: "flow-ew-wizard__picker-input",
+        placeholder: allowEmail ? i18n.searchUsersOrEmail : i18n.searchUsers,
+        value: query,
+        onChange: event => setQuery(event.target.value),
+        autoComplete: "off"
+      }), action]
     }), options.length > 0 && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("ul", {
       className: "flow-ew-wizard__picker-results",
       role: "listbox",
@@ -532,9 +668,11 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _wordpress_components__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @wordpress/components */ "@wordpress/components");
 /* harmony import */ var _wordpress_components__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(_wordpress_components__WEBPACK_IMPORTED_MODULE_1__);
 /* harmony import */ var _UserPicker__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./UserPicker */ "./src/setup-wizard/UserPicker.js");
-/* harmony import */ var _paths__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./paths */ "./src/setup-wizard/paths.js");
-/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! react/jsx-runtime */ "react/jsx-runtime");
-/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4___default = /*#__PURE__*/__webpack_require__.n(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__);
+/* harmony import */ var _CreateAgentUser__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./CreateAgentUser */ "./src/setup-wizard/CreateAgentUser.js");
+/* harmony import */ var _paths__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./paths */ "./src/setup-wizard/paths.js");
+/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! react/jsx-runtime */ "react/jsx-runtime");
+/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5___default = /*#__PURE__*/__webpack_require__.n(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__);
+
 
 
 
@@ -551,11 +689,11 @@ function StepHeader({
   title,
   desc
 }) {
-  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.Fragment, {
-    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("h2", {
+  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.Fragment, {
+    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("h2", {
       className: "flow-ew-wizard__step-title",
       children: title
-    }), desc ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("p", {
+    }), desc ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("p", {
       className: "flow-ew-wizard__step-desc",
       children: desc
     }) : null]
@@ -568,17 +706,17 @@ function RadioCard({
   title,
   children
 }) {
-  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsxs)("label", {
+  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("label", {
     className: `flow-ew-wizard__option ${checked ? 'is-selected' : ''}`,
-    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("input", {
+    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("input", {
       type: "radio",
       name: name,
       checked: checked,
       onChange: onSelect
-    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsxs)("div", {
-      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("strong", {
+    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
+      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("strong", {
         children: title
-      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_1__.__experimentalText, {
+      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_1__.__experimentalText, {
         variant: "muted",
         as: "p",
         children: children
@@ -593,19 +731,19 @@ function CheckCard({
   badge,
   children
 }) {
-  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsxs)("label", {
+  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("label", {
     className: `flow-ew-wizard__option flow-ew-wizard__option--check ${checked ? 'is-selected' : ''}`,
-    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("input", {
+    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("input", {
       type: "checkbox",
       checked: checked,
       onChange: event => onChange(event.target.checked)
-    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsxs)("div", {
-      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsxs)("strong", {
-        children: [title, badge ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("span", {
+    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
+      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("strong", {
+        children: [title, badge ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("span", {
           className: "flow-ew-wizard__badge",
           children: badge
         }) : null]
-      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_1__.__experimentalText, {
+      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_1__.__experimentalText, {
         variant: "muted",
         as: "p",
         children: children
@@ -614,21 +752,21 @@ function CheckCard({
   });
 }
 const USE_CASE_COPY = {
-  [_paths__WEBPACK_IMPORTED_MODULE_3__.EDITORIAL]: ['editorialLabel', 'editorialDesc'],
-  [_paths__WEBPACK_IMPORTED_MODULE_3__.CLIENT]: ['clientLabel', 'clientDesc'],
-  [_paths__WEBPACK_IMPORTED_MODULE_3__.BUILD_AI]: ['buildAiLabel', 'buildAiDesc'],
-  [_paths__WEBPACK_IMPORTED_MODULE_3__.APPROVE_AI]: ['approveAiLabel', 'approveAiDesc']
+  [_paths__WEBPACK_IMPORTED_MODULE_4__.EDITORIAL]: ['editorialLabel', 'editorialDesc'],
+  [_paths__WEBPACK_IMPORTED_MODULE_4__.CLIENT]: ['clientLabel', 'clientDesc'],
+  [_paths__WEBPACK_IMPORTED_MODULE_4__.BUILD_AI]: ['buildAiLabel', 'buildAiDesc'],
+  [_paths__WEBPACK_IMPORTED_MODULE_4__.APPROVE_AI]: ['approveAiLabel', 'approveAiDesc']
 };
 function UseCaseStep({
   answers,
   update
 }) {
-  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsxs)("div", {
+  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
     className: "flow-ew-wizard__step",
-    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(StepHeader, {
+    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(StepHeader, {
       title: i18n.useCaseTitle,
       desc: i18n.useCaseDesc
-    }), _paths__WEBPACK_IMPORTED_MODULE_3__.USE_CASES.map(useCase => /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(RadioCard, {
+    }), _paths__WEBPACK_IMPORTED_MODULE_4__.USE_CASES.map(useCase => /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(RadioCard, {
       name: "flow-ew-use-case",
       checked: answers.useCase === useCase,
       onSelect: () => update({
@@ -643,12 +781,12 @@ function ModeStep({
   answers,
   update
 }) {
-  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsxs)("div", {
+  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
     className: "flow-ew-wizard__step",
-    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(StepHeader, {
+    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(StepHeader, {
       title: i18n.modeTitle,
       desc: i18n.modeDesc
-    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(RadioCard, {
+    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(RadioCard, {
       name: "flow-ew-mode",
       checked: answers.reviewMode !== 'mandatory',
       onSelect: () => update({
@@ -656,7 +794,7 @@ function ModeStep({
       }),
       title: i18n.modeOptional,
       children: i18n.modeOptionalDesc
-    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(RadioCard, {
+    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(RadioCard, {
       name: "flow-ew-mode",
       checked: answers.reviewMode === 'mandatory',
       onSelect: () => update({
@@ -673,7 +811,7 @@ function SelectAllToggle({
   onChange
 }) {
   const allChecked = all.length > 0 && all.every(s => value.includes(s));
-  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("button", {
+  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("button", {
     type: "button",
     className: "flow-ew-wizard__select-all",
     onClick: event => {
@@ -699,28 +837,28 @@ function PostTypesStep({
   const list = choices.postTypes || [];
   const value = answers.postTypes;
   if (list.length === 0) {
-    return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("div", {
+    return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
       className: "flow-ew-wizard__step",
-      children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(StepHeader, {
+      children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(StepHeader, {
         title: i18n.typesTitle,
         desc: i18n.typesEmpty
       })
     });
   }
-  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsxs)("div", {
+  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
     className: "flow-ew-wizard__step",
-    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(StepHeader, {
+    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(StepHeader, {
       title: i18n.typesTitle,
       desc: i18n.typesDesc
-    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(SelectAllToggle, {
+    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(SelectAllToggle, {
       all: list.map(pt => pt.slug),
       value: value,
       onChange: postTypes => update({
         postTypes
       })
-    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("div", {
+    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
       className: "flow-ew-wizard__check-list",
-      children: list.map(pt => /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_1__.CheckboxControl, {
+      children: list.map(pt => /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_1__.CheckboxControl, {
         label: `${pt.label}  (${pt.slug})`,
         checked: value.includes(pt.slug),
         onChange: on => update({
@@ -737,24 +875,24 @@ function RolesStep({
 }) {
   const list = choices.roles || [];
   const value = answers.reviewerRoles;
-  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsxs)("div", {
+  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
     className: "flow-ew-wizard__step",
-    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(StepHeader, {
+    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(StepHeader, {
       title: i18n.rolesTitle,
       desc: i18n.rolesDesc
-    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(SelectAllToggle, {
+    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(SelectAllToggle, {
       all: list.map(r => r.slug),
       value: value,
       onChange: reviewerRoles => update({
         reviewerRoles
       })
-    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("div", {
+    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
       className: "flow-ew-wizard__check-list flow-ew-wizard__check-list--roles",
-      children: list.map(r => /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsxs)(_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.Fragment, {
-        children: [r.slug === reviewerRoleSlug ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("div", {
+      children: list.map(r => /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)(_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.Fragment, {
+        children: [r.slug === reviewerRoleSlug ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
           className: "flow-ew-wizard__roles-divider",
           "aria-hidden": "true"
-        }) : null, /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_1__.CheckboxControl, {
+        }) : null, /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_1__.CheckboxControl, {
           label: r.label,
           help: r.description || undefined,
           checked: value.includes(r.slug),
@@ -771,28 +909,28 @@ function ExtrasStep({
   answers,
   update
 }) {
-  const isClient = answers.useCase === _paths__WEBPACK_IMPORTED_MODULE_3__.CLIENT;
+  const isClient = answers.useCase === _paths__WEBPACK_IMPORTED_MODULE_4__.CLIENT;
   const allowEmail = isClient || answers.allowExternal;
-  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsxs)("div", {
+  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
     className: "flow-ew-wizard__step",
-    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(StepHeader, {
+    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(StepHeader, {
       title: i18n.extrasTitle,
       desc: i18n.extrasDesc
-    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(CheckCard, {
+    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(CheckCard, {
       checked: !!answers.selfReview,
       onChange: selfReview => update({
         selfReview
       }),
       title: i18n.selfReviewLabel,
       children: i18n.selfReviewDesc
-    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(CheckCard, {
+    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(CheckCard, {
       checked: !!answers.showReviewedBy,
       onChange: showReviewedBy => update({
         showReviewedBy
       }),
       title: i18n.reviewedByLabel,
       children: i18n.reviewedByDesc
-    }), !isClient && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(CheckCard, {
+    }), !isClient && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(CheckCard, {
       checked: !!answers.allowExternal,
       onChange: allowExternal => update({
         allowExternal,
@@ -800,20 +938,20 @@ function ExtrasStep({
       }),
       title: i18n.externalLabel,
       children: i18n.externalDesc
-    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsxs)("div", {
+    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
       className: "flow-ew-wizard__field",
-      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("label", {
+      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("label", {
         className: "flow-ew-wizard__field-label",
         htmlFor: "flow-ew-wizard-auto-assign",
         children: i18n.autoAssignLabel
-      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(_UserPicker__WEBPACK_IMPORTED_MODULE_2__["default"], {
+      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(_UserPicker__WEBPACK_IMPORTED_MODULE_2__["default"], {
         id: "flow-ew-wizard-auto-assign",
         value: answers.autoAssign,
         onChange: autoAssign => update({
           autoAssign
         }),
         allowEmail: allowEmail
-      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_1__.__experimentalText, {
+      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_1__.__experimentalText, {
         variant: "muted",
         as: "p",
         children: allowEmail ? i18n.autoAssignEmailDesc : i18n.autoAssignDesc
@@ -826,15 +964,15 @@ function AgentStep({
   update,
   showErrors
 }) {
-  const optional = !(0,_paths__WEBPACK_IMPORTED_MODULE_3__.alwaysHasAgent)(answers.useCase);
+  const optional = !(0,_paths__WEBPACK_IMPORTED_MODULE_4__.alwaysHasAgent)(answers.useCase);
   const missingUser = answers.agentComments && !answers.agentAuthor;
-  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsxs)("div", {
+  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
     className: "flow-ew-wizard__step",
-    children: [optional ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.Fragment, {
-      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(StepHeader, {
+    children: [optional ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.Fragment, {
+      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(StepHeader, {
         title: i18n.agentAskTitle,
         desc: i18n.agentAskDesc
-      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(CheckCard, {
+      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(CheckCard, {
         checked: !!answers.agentEnabled,
         onChange: agentEnabled => update({
           agentEnabled
@@ -842,10 +980,10 @@ function AgentStep({
         title: i18n.agentAskLabel,
         children: i18n.agentAskHelp
       })]
-    }) : /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(StepHeader, {
+    }) : /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(StepHeader, {
       title: i18n.agentTitle,
       desc: i18n.agentDesc
-    }), (!optional || answers.agentEnabled) && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(AgentSettings, {
+    }), (!optional || answers.agentEnabled) && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(AgentSettings, {
       answers: answers,
       update: update,
       showErrors: showErrors,
@@ -859,59 +997,72 @@ function AgentSettings({
   showErrors,
   missingUser
 }) {
-  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.Fragment, {
-    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(CheckCard, {
+  const [creatingAgentUser, setCreatingAgentUser] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useState)(false);
+  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.Fragment, {
+    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(CheckCard, {
       checked: !!answers.agentComments,
       onChange: agentComments => update({
         agentComments
       }),
       title: i18n.agentCommentsLabel,
       children: i18n.agentCommentsDesc
-    }), answers.agentComments && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.Fragment, {
-      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsxs)("div", {
+    }), answers.agentComments && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.Fragment, {
+      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
         className: "flow-ew-wizard__field",
-        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("label", {
+        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("label", {
           className: "flow-ew-wizard__field-label",
           htmlFor: "flow-ew-wizard-agent-user",
           children: i18n.agentAuthorLabel
-        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(_UserPicker__WEBPACK_IMPORTED_MODULE_2__["default"], {
+        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(_UserPicker__WEBPACK_IMPORTED_MODULE_2__["default"], {
           id: "flow-ew-wizard-agent-user",
           value: answers.agentAuthor,
           onChange: agentAuthor => update({
             agentAuthor
           }),
-          allowEmail: false
-        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_1__.__experimentalText, {
+          allowEmail: false,
+          action: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(_CreateAgentUser__WEBPACK_IMPORTED_MODULE_3__.CreateAgentUserButton, {
+            expanded: creatingAgentUser,
+            onClick: () => setCreatingAgentUser(!creatingAgentUser)
+          })
+        }), creatingAgentUser && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(_CreateAgentUser__WEBPACK_IMPORTED_MODULE_3__.CreateAgentUserForm, {
+          onCreated: agentAuthor => {
+            update({
+              agentAuthor
+            });
+            setCreatingAgentUser(false);
+          },
+          onCancel: () => setCreatingAgentUser(false)
+        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_1__.__experimentalText, {
           variant: "muted",
           as: "p",
           children: i18n.agentAuthorDesc
-        }), showErrors && missingUser ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("p", {
+        }), showErrors && missingUser ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("p", {
           className: "flow-ew-wizard__field-error",
           role: "alert",
           children: i18n.agentAuthorRequired
         }) : null]
-      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(CheckCard, {
+      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(CheckCard, {
         checked: !!answers.agentResolveNotes,
         onChange: agentResolveNotes => update({
           agentResolveNotes
         }),
         title: i18n.agentResolveLabel,
         children: i18n.agentResolveDesc
-      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(CheckCard, {
+      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(CheckCard, {
         checked: !!answers.agentFollowup,
         onChange: agentFollowup => update({
           agentFollowup
         }),
         title: i18n.agentFollowupLabel,
         children: i18n.agentFollowupDesc
-      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(CheckCard, {
+      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(CheckCard, {
         checked: !!answers.agentMarker,
         onChange: agentMarker => update({
           agentMarker
         }),
         title: i18n.agentMarkerLabel,
         children: i18n.agentMarkerDesc
-      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(CheckCard, {
+      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(CheckCard, {
         checked: !!answers.agentAskBeforeEditing,
         onChange: agentAskBeforeEditing => update({
           agentAskBeforeEditing
@@ -926,7 +1077,7 @@ function AgentSettings({
 
 /** True when the agent screen would refuse to continue. */
 function agentStepBlocked(answers) {
-  if (!(0,_paths__WEBPACK_IMPORTED_MODULE_3__.alwaysHasAgent)(answers.useCase) && !answers.agentEnabled) {
+  if (!(0,_paths__WEBPACK_IMPORTED_MODULE_4__.alwaysHasAgent)(answers.useCase) && !answers.agentEnabled) {
     return false;
   }
   return !!answers.agentComments && !answers.agentAuthor;
@@ -950,11 +1101,11 @@ function PromptBox({
   prompt
 }) {
   const [copied, setCopied] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useState)(false);
-  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsxs)("div", {
+  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
     className: "flow-ew-wizard__prompt",
-    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("code", {
+    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("code", {
       children: prompt
-    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("button", {
+    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("button", {
       type: "button",
       className: "button flow-ew-wizard__prompt-copy",
       onClick: () => copyText(prompt).then(() => {
@@ -992,7 +1143,7 @@ function personLabel(person) {
 /** Rows of what Finish changes compared with what the site has now. */
 function changes(answers) {
   const current = cfg.current || {};
-  const next = (0,_paths__WEBPACK_IMPORTED_MODULE_3__.previewSettings)(answers, (choices.postTypes || []).map(pt => pt.slug));
+  const next = (0,_paths__WEBPACK_IMPORTED_MODULE_4__.previewSettings)(answers, (choices.postTypes || []).map(pt => pt.slug));
   let currentAutoAssign = current.autoAssignReviewer || null;
   if (!currentAutoAssign && current.autoAssignEmail) {
     currentAutoAssign = {
@@ -1014,9 +1165,9 @@ function startUrl(answers, preferPage) {
 function Steps({
   items
 }) {
-  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("ol", {
+  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("ol", {
     className: "flow-ew-wizard__next-steps",
-    children: items.filter(Boolean).map(text => /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("li", {
+    children: items.filter(Boolean).map(text => /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("li", {
       children: text
     }, text))
   });
@@ -1024,8 +1175,8 @@ function Steps({
 function StartButton({
   href
 }) {
-  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("p", {
-    children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("a", {
+  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("p", {
+    children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("a", {
       className: "button button-primary",
       href: href,
       children: i18n.nextStart
@@ -1040,19 +1191,19 @@ function ReviewerCheck({
   const picked = (choices.roles || []).filter(role => (answers.reviewerRoles || []).includes(role.slug));
   const total = picked.reduce((sum, role) => sum + Number(role.userCount || 0), 0);
   const names = picked.map(role => String(role.label).replace(/ \(\d+\)$/, '')).join(', ');
-  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsxs)("div", {
+  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
     className: `flow-ew-wizard__check flow-ew-wizard__check--${total > 0 ? 'ok' : 'warn'}`,
-    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsxs)("p", {
+    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("p", {
       children: [total > 0 ? String(i18n.nextRolesSome).replace('%1$d', String(total)).replace('%2$s', names) : i18n.nextRolesNone, ' ', i18n.nextRolesHint]
-    }), (next.addUserUrl || next.usersUrl) && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsxs)("p", {
+    }), (next.addUserUrl || next.usersUrl) && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("p", {
       className: "flow-ew-wizard__check-actions",
-      children: [next.addUserUrl && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("a", {
+      children: [next.addUserUrl && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("a", {
         className: "button",
         href: next.addUserUrl,
         target: "_blank",
         rel: "noreferrer",
         children: i18n.nextAddUser
-      }), next.usersUrl && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("a", {
+      }), next.usersUrl && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("a", {
         className: "button button-link",
         href: next.usersUrl,
         target: "_blank",
@@ -1069,7 +1220,7 @@ function Clip({
   if (!src) {
     return null;
   }
-  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("video", {
+  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("video", {
     className: "flow-ew-wizard__video",
     src: src,
     autoPlay: true,
@@ -1083,15 +1234,15 @@ function AgentPrompt({
   first,
   title
 }) {
-  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsxs)("div", {
+  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
     className: `flow-ew-wizard__agent${first ? ' flow-ew-wizard__agent--first' : ''}`,
-    children: [title && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("p", {
+    children: [title && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("p", {
       className: "flow-ew-wizard__next-title",
       children: title
-    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("p", {
+    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("p", {
       className: "flow-ew-wizard__step-desc",
       children: i18n.nextPastePrompt
-    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(PromptBox, {
+    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(PromptBox, {
       prompt: cfg.agentPrompt
     })]
   });
@@ -1099,11 +1250,11 @@ function AgentPrompt({
 function AskExamples({
   items
 }) {
-  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.Fragment, {
-    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("p", {
+  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.Fragment, {
+    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("p", {
       className: "flow-ew-wizard__step-desc",
       children: i18n.nextTryAsking
-    }), items.map(text => /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(PromptBox, {
+    }), items.map(text => /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(PromptBox, {
       prompt: text
     }, text))]
   });
@@ -1111,13 +1262,13 @@ function AskExamples({
 function AiNextSteps({
   useCase
 }) {
-  const build = useCase === _paths__WEBPACK_IMPORTED_MODULE_3__.BUILD_AI;
-  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.Fragment, {
-    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(AgentPrompt, {
+  const build = useCase === _paths__WEBPACK_IMPORTED_MODULE_4__.BUILD_AI;
+  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.Fragment, {
+    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(AgentPrompt, {
       first: build
-    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(Steps, {
+    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(Steps, {
       items: build ? [i18n.nextBuildAi1, i18n.nextBuildAi2, i18n.nextBuildAi3, i18n.nextBuildAi4] : [i18n.nextApproveAi1, i18n.nextApproveAi2, i18n.nextApproveAi3, i18n.nextMandatory]
-    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(AskExamples, {
+    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(AskExamples, {
       items: build ? [i18n.nextBuildAiAsk1, i18n.nextBuildAiAsk2] : [i18n.nextApproveAiAsk1, i18n.nextApproveAiAsk2]
     })]
   });
@@ -1128,40 +1279,40 @@ function NextSteps({
   const {
     useCase
   } = answers;
-  if ((0,_paths__WEBPACK_IMPORTED_MODULE_3__.alwaysHasAgent)(useCase)) {
-    return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsxs)("div", {
+  if ((0,_paths__WEBPACK_IMPORTED_MODULE_4__.alwaysHasAgent)(useCase)) {
+    return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
       className: "flow-ew-wizard__next",
-      children: [useCase === _paths__WEBPACK_IMPORTED_MODULE_3__.APPROVE_AI && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(ReviewerCheck, {
+      children: [useCase === _paths__WEBPACK_IMPORTED_MODULE_4__.APPROVE_AI && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(ReviewerCheck, {
         answers: answers
-      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(AiNextSteps, {
+      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(AiNextSteps, {
         useCase: useCase
       })]
     });
   }
-  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsxs)("div", {
+  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
     className: "flow-ew-wizard__next",
-    children: [useCase === _paths__WEBPACK_IMPORTED_MODULE_3__.EDITORIAL && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.Fragment, {
-      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(ReviewerCheck, {
+    children: [useCase === _paths__WEBPACK_IMPORTED_MODULE_4__.EDITORIAL && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.Fragment, {
+      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(ReviewerCheck, {
         answers: answers
-      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(Steps, {
+      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(Steps, {
         items: [i18n.nextEditorial1, i18n.nextEditorial2, i18n.nextEditorial3, answers.reviewMode === 'mandatory' ? i18n.nextMandatory : '']
-      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(Clip, {
+      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(Clip, {
         src: next.editorialVideoWebm,
         label: i18n.nextEditorialVideo
       })]
-    }), useCase === _paths__WEBPACK_IMPORTED_MODULE_3__.CLIENT && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.Fragment, {
-      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(Steps, {
+    }), useCase === _paths__WEBPACK_IMPORTED_MODULE_4__.CLIENT && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.Fragment, {
+      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(Steps, {
         items: [i18n.nextClient1, i18n.nextClient2, i18n.nextClient3]
-      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(Clip, {
+      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(Clip, {
         src: next.clientVideoWebm,
         label: i18n.nextClientVideo
-      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("p", {
+      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("p", {
         className: "flow-ew-wizard__step-desc",
         children: i18n.nextClientTip
       })]
-    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(StartButton, {
-      href: startUrl(answers, useCase === _paths__WEBPACK_IMPORTED_MODULE_3__.CLIENT)
-    }), answers.agentEnabled && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(AgentPrompt, {
+    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(StartButton, {
+      href: startUrl(answers, useCase === _paths__WEBPACK_IMPORTED_MODULE_4__.CLIENT)
+    }), answers.agentEnabled && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(AgentPrompt, {
       title: i18n.nextAgentTitle
     })]
   });
@@ -1170,30 +1321,30 @@ function DoneStep({
   answers
 }) {
   const rows = cfg.completed ? changes(answers) : [];
-  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsxs)("div", {
+  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
     className: "flow-ew-wizard__step",
-    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(StepHeader, {
+    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(StepHeader, {
       title: i18n.doneTitle
-    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(NextSteps, {
+    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(NextSteps, {
       answers: answers
-    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("p", {
+    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("p", {
       className: "flow-ew-wizard__docs",
-      children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("a", {
+      children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("a", {
         href: cfg.docsUrl,
         target: "_blank",
         rel: "noreferrer",
         children: i18n.doneDocs
       })
-    }), cfg.completed && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsxs)("div", {
+    }), cfg.completed && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
       className: "flow-ew-wizard__changes",
-      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("p", {
+      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("p", {
         className: "flow-ew-wizard__changes-title",
         children: rows.length ? i18n.doneChanges : i18n.doneNoChanges
-      }), rows.length > 0 && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("ul", {
-        children: rows.map(([key, label, value, was]) => /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsxs)("li", {
-          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsxs)("strong", {
+      }), rows.length > 0 && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("ul", {
+        children: rows.map(([key, label, value, was]) => /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("li", {
+          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("strong", {
             children: [label, ":"]
-          }), " ", value, ' ', /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("span", {
+          }), " ", value, ' ', /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("span", {
             className: "flow-ew-wizard__was",
             children: String(i18n.was || '(was %s)').replace('%s', was)
           })]

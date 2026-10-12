@@ -137,6 +137,7 @@ class Settings {
 		add_action( 'admin_enqueue_scripts', [ $this, 'enqueue_settings_assets' ] );
 		add_action( 'admin_menu', [ $this, 'add_docs_menu_item' ], 5 );
 		( new Setup_Wizard( $this ) )->boot();
+		( new Agent_User() )->boot();
 
 		add_filter(
 			'flow_ew_should_send_email_notification',
@@ -1425,12 +1426,45 @@ JS;
 			<?php esc_html_e( 'Choose the user AI comments are posted as before turning them on.', 'jumplinks-editorial-workflow' ); ?>
 		</p>
 		<?php
+		$can_create = Agent_User::can_create();
 		$this->render_user_combobox(
 			'flow-ew-agent-author',
 			self::OPTION_AGENT_COMMENT_AUTHOR,
 			self::get_agent_comment_author_id(),
-			__( 'Agent comments are posted under this user\'s name and avatar. Leave empty to stop agents writing anything. Anyone who can comment on a review can cause a comment to appear as this user, so pick an account you are happy to lend.', 'jumplinks-editorial-workflow' )
+			__( 'Agent comments are posted under this user\'s name and avatar. Leave empty to stop agents writing anything. Anyone who can comment on a review can cause a comment to appear as this user, so pick an account you are happy to lend.', 'jumplinks-editorial-workflow' ),
+			'',
+			'',
+			$can_create ? 'flow-ew-agent-user-dialog' : ''
 		);
+		if ( $can_create ) {
+			$this->render_agent_user_create_dialog();
+		}
+	}
+
+	/**
+	 * "Create a user for the AI" popup. Not a <form>: it sits inside the
+	 * settings form, so it posts over REST and fills the picker.
+	 */
+	private function render_agent_user_create_dialog(): void {
+		?>
+		<dialog id="flow-ew-agent-user-dialog" class="flow-ew-dialog" data-flow-ew-agent-user-create data-picker="flow-ew-agent-author" aria-labelledby="flow-ew-agent-user-dialog-title">
+			<h2 id="flow-ew-agent-user-dialog-title" class="flow-ew-dialog__title"><?php esc_html_e( 'Create a user for the AI', 'jumplinks-editorial-workflow' ); ?></h2>
+			<p>
+				<label for="flow-ew-agent-user-login"><?php esc_html_e( 'Username', 'jumplinks-editorial-workflow' ); ?></label><br>
+				<input type="text" id="flow-ew-agent-user-login" class="regular-text" value="flow-ai" autocomplete="off" />
+			</p>
+			<p>
+				<label for="flow-ew-agent-user-email"><?php esc_html_e( 'Email', 'jumplinks-editorial-workflow' ); ?></label><br>
+				<input type="email" id="flow-ew-agent-user-email" class="regular-text" autocomplete="off" />
+			</p>
+			<p class="description"><?php esc_html_e( 'Created as a Subscriber with a random password: it only lends its name and avatar to AI comments.', 'jumplinks-editorial-workflow' ); ?></p>
+			<p class="flow-ew-agent-user-create__error" role="alert" hidden></p>
+			<div class="flow-ew-dialog__actions">
+				<button type="button" class="button-link flow-ew-agent-user-create__cancel"><?php esc_html_e( 'Cancel', 'jumplinks-editorial-workflow' ); ?></button>
+				<button type="button" class="button button-primary flow-ew-agent-user-create__submit"><?php esc_html_e( 'Create user', 'jumplinks-editorial-workflow' ); ?></button>
+			</div>
+		</dialog>
+		<?php
 	}
 
 	public function render_agent_resolve_notes_field(): void {
@@ -1476,7 +1510,7 @@ JS;
 	/**
 	 * @param string $email_option When set, a typed email address can be chosen instead of a user and is saved here.
 	 */
-	private function render_user_combobox( string $base_id, string $option_name, int $user_id, string $description, string $email_option = '', string $email = '' ): void {
+	private function render_user_combobox( string $base_id, string $option_name, int $user_id, string $description, string $email_option = '', string $email = '', string $create_dialog = '' ): void {
 		$user = $user_id > 0 ? get_userdata( $user_id ) : false;
 		if ( ! $user ) {
 			$user_id = 0;
@@ -1521,6 +1555,14 @@ JS;
 						aria-expanded="false"
 						aria-controls="<?php echo esc_attr( $base_id . '-results' ); ?>"
 					/>
+					<?php if ( '' !== $create_dialog ) : ?>
+						<button
+							type="button"
+							class="button flow-ew-user-combobox__create"
+							data-flow-ew-dialog="<?php echo esc_attr( $create_dialog ); ?>"
+							aria-haspopup="dialog"
+						><?php esc_html_e( 'Create user', 'jumplinks-editorial-workflow' ); ?></button>
+					<?php endif; ?>
 					<button
 						type="button"
 						class="button flow-ew-user-combobox__clear"
@@ -1757,6 +1799,34 @@ JS;
 			hidden.value='0';if(emailField){emailField.value='';}selected.hidden=true;selected.innerHTML='';clear.hidden=true;input.value='';close();input.focus();
 		});
 		document.addEventListener('click',function(event){if(!root.contains(event.target))close();});
+		root.addEventListener('flow-ew:select-user',function(event){if(event.detail&&event.detail.id){select(event.detail);}});
+	});
+})();
+(function(){
+	if(!window.wp||!window.wp.apiFetch)return;
+	var dialog=document.querySelector('[data-flow-ew-agent-user-create]');
+	if(!dialog||typeof dialog.showModal!=='function')return;
+	var opener=document.querySelector('[data-flow-ew-dialog="'+dialog.id+'"]');
+	var login=dialog.querySelector('#flow-ew-agent-user-login');
+	var email=dialog.querySelector('#flow-ew-agent-user-email');
+	var error=dialog.querySelector('.flow-ew-agent-user-create__error');
+	var submit=dialog.querySelector('.flow-ew-agent-user-create__submit');
+	var cancel=dialog.querySelector('.flow-ew-agent-user-create__cancel');
+	var picker=document.getElementById(dialog.getAttribute('data-picker'));
+	if(opener){opener.addEventListener('click',function(){error.hidden=true;dialog.showModal();login.focus();login.select();});}
+	cancel.addEventListener('click',function(){dialog.close();});
+	dialog.addEventListener('close',function(){if(opener){opener.focus();}});
+	// Enter here must not submit the surrounding settings form.
+	[login,email].forEach(function(input){input.addEventListener('keydown',function(event){if(event.key==='Enter'){event.preventDefault();submit.click();}});});
+	submit.addEventListener('click',function(){
+		error.hidden=true;submit.disabled=true;
+		window.wp.apiFetch({path:'/flow/v1/agent-user',method:'POST',data:{username:login.value,email:email.value}})
+			.then(function(user){
+				if(picker){picker.dispatchEvent(new CustomEvent('flow-ew:select-user',{detail:user}));}
+				email.value='';dialog.close();
+			})
+			.catch(function(err){error.textContent=(err&&err.message)||'';error.hidden=!error.textContent;})
+			.finally(function(){submit.disabled=false;});
 	});
 })();
 JS;
