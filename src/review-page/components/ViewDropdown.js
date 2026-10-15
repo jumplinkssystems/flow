@@ -28,6 +28,10 @@ const blankIcon = (
 	<SVG xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" />
 );
 
+// Matches $mobile-bp: a phone has no use for device previews or a new tab.
+const isMobileViewport = () =>
+	!! window.matchMedia?.( '(max-width: 782px)' )?.matches;
+
 export default function ViewDropdown( { postUrl, device } ) {
 	const wrapperRef = useDropdownToggleGuard();
 	const [ commentsHidden, setCommentsHidden ] = useState(
@@ -61,7 +65,10 @@ export default function ViewDropdown( { postUrl, device } ) {
 					icon={ triggerIcon }
 					label={ __( 'View', 'jumplinks-editorial-workflow' ) }
 					className="flow-bar__view-dropdown"
-					popoverProps={ { placement: 'bottom-end' } }
+					popoverProps={ {
+						placement: 'bottom-end',
+						className: 'flow-bar__view-dropdown-popover',
+					} }
 					toggleProps={ {
 						size: 'compact',
 						// The built-in tooltip anchors to the document while the
@@ -73,14 +80,15 @@ export default function ViewDropdown( { postUrl, device } ) {
 				>
 					{ ( { onClose } ) => (
 						<>
-							{ applyFilters(
-								'flow_ew_view_dropdown_extras',
-								null,
-								{
-									onClose,
-									device,
-								}
-							) }
+							{ ! isMobileViewport() &&
+								applyFilters(
+									'flow_ew_view_dropdown_extras',
+									null,
+									{
+										onClose,
+										device,
+									}
+								) }
 							<MenuGroup>
 								<MenuItem
 									role="menuitemcheckbox"
@@ -98,7 +106,7 @@ export default function ViewDropdown( { postUrl, device } ) {
 									) }
 								</MenuItem>
 							</MenuGroup>
-							{ postUrl ? (
+							{ postUrl && ! isMobileViewport() ? (
 								<MenuGroup>
 									<MenuItem
 										href={ postUrl }

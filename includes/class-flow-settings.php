@@ -18,27 +18,28 @@ class Settings {
 	const MODE_MANDATORY = 'mandatory';
 	const MODE_SOLO      = 'solo';
 
-	const OPTION_SHOW_REVIEWED_BY      = 'flow_ew_show_reviewed_by';
-	const OPTION_REVIEWER_ROLES        = 'flow_ew_reviewer_roles';
-	const OPTION_AUTO_ASSIGN_REVIEWER  = 'flow_ew_auto_assign_reviewer_id';
-	const OPTION_AUTO_ASSIGN_EMAIL     = 'flow_ew_auto_assign_reviewer_email';
-	const OPTION_DEBUG_MODE            = 'flow_ew_debug_mode';
-	const OPTION_DISABLE_OPEN_REVIEWS  = 'flow_ew_disable_open_reviews';
-	const OPTION_SELF_REVIEW           = 'flow_ew_self_review';
-	const OPTION_DISABLE_EXTERNAL      = 'flow_ew_disable_external_reviewers';
-	const OPTION_DISABLE_NOTIFICATIONS = 'flow_ew_disable_notifications';
-	const OPTION_SUPPORTED_POST_TYPES  = 'flow_ew_supported_post_types';
-	const OPTION_SHOW_UPGRADE_HINTS    = 'flow_ew_show_upgrade_hints';
-	const OPTION_SETUP_COMPLETED       = 'flow_ew_setup_completed';
-	const OPTION_USE_CASE              = 'flow_ew_use_case';
-	const OPTION_AGENT_COMMENTS        = 'flow_ew_agent_comments_enabled';
-	const OPTION_AGENT_COMMENT_AUTHOR  = 'flow_ew_agent_comment_author_id';
-	const OPTION_AGENT_COMMENT_MARKER  = 'flow_ew_agent_comment_marker';
-	const OPTION_AGENT_RESOLVE_NOTES   = 'flow_ew_agent_resolve_notes';
-	const OPTION_AGENT_FOLLOWUP        = 'flow_ew_agent_followup';
-	const OPTION_AGENT_ASK_BEFORE_EDIT = 'flow_ew_agent_ask_before_edit';
-	const OPTION_GROUP                 = 'flow_ew_settings';
-	const PAGE_SLUG                    = 'jumplinks-editorial-workflow';
+	const OPTION_SHOW_REVIEWED_BY         = 'flow_ew_show_reviewed_by';
+	const OPTION_REVIEWER_ROLES           = 'flow_ew_reviewer_roles';
+	const OPTION_AUTO_ASSIGN_REVIEWER     = 'flow_ew_auto_assign_reviewer_id';
+	const OPTION_AUTO_ASSIGN_EMAIL        = 'flow_ew_auto_assign_reviewer_email';
+	const OPTION_DEBUG_MODE               = 'flow_ew_debug_mode';
+	const OPTION_DISABLE_OPEN_REVIEWS     = 'flow_ew_disable_open_reviews';
+	const OPTION_SELF_REVIEW              = 'flow_ew_self_review';
+	const OPTION_DISABLE_EXTERNAL         = 'flow_ew_disable_external_reviewers';
+	const OPTION_DISABLE_REVIEWER_RESOLVE = 'flow_ew_disable_reviewer_resolve';
+	const OPTION_DISABLE_NOTIFICATIONS    = 'flow_ew_disable_notifications';
+	const OPTION_SUPPORTED_POST_TYPES     = 'flow_ew_supported_post_types';
+	const OPTION_SHOW_UPGRADE_HINTS       = 'flow_ew_show_upgrade_hints';
+	const OPTION_SETUP_COMPLETED          = 'flow_ew_setup_completed';
+	const OPTION_USE_CASE                 = 'flow_ew_use_case';
+	const OPTION_AGENT_COMMENTS           = 'flow_ew_agent_comments_enabled';
+	const OPTION_AGENT_COMMENT_AUTHOR     = 'flow_ew_agent_comment_author_id';
+	const OPTION_AGENT_COMMENT_MARKER     = 'flow_ew_agent_comment_marker';
+	const OPTION_AGENT_RESOLVE_NOTES      = 'flow_ew_agent_resolve_notes';
+	const OPTION_AGENT_FOLLOWUP           = 'flow_ew_agent_followup';
+	const OPTION_AGENT_ASK_BEFORE_EDIT    = 'flow_ew_agent_ask_before_edit';
+	const OPTION_GROUP                    = 'flow_ew_settings';
+	const PAGE_SLUG                       = 'jumplinks-editorial-workflow';
 
 	/** @var string[] */
 	const DEFAULT_SUPPORTED_POST_TYPES = [ 'post', 'page' ];
@@ -416,6 +417,10 @@ class Settings {
 		return (bool) get_option( self::OPTION_DISABLE_EXTERNAL, false );
 	}
 
+	public static function reviewers_can_resolve(): bool {
+		return ! (bool) get_option( self::OPTION_DISABLE_REVIEWER_RESOLVE, false );
+	}
+
 	public static function is_self_review_enabled(): bool {
 		return self::is_solo_mode() || (bool) get_option( self::OPTION_SELF_REVIEW, false );
 	}
@@ -517,15 +522,16 @@ class Settings {
 	 */
 	public static function seed_default_options(): void {
 		$defaults = [
-			self::OPTION_MANDATORY             => false,
-			self::OPTION_SHOW_REVIEWED_BY      => false,
-			self::OPTION_DEBUG_MODE            => false,
-			self::OPTION_DISABLE_OPEN_REVIEWS  => false,
-			self::OPTION_SELF_REVIEW           => false,
-			self::OPTION_DISABLE_EXTERNAL      => false,
-			self::OPTION_DISABLE_NOTIFICATIONS => false,
-			self::OPTION_SHOW_UPGRADE_HINTS    => true,
-			self::OPTION_SUPPORTED_POST_TYPES  => self::DEFAULT_SUPPORTED_POST_TYPES,
+			self::OPTION_MANDATORY                => false,
+			self::OPTION_SHOW_REVIEWED_BY         => false,
+			self::OPTION_DEBUG_MODE               => false,
+			self::OPTION_DISABLE_OPEN_REVIEWS     => false,
+			self::OPTION_SELF_REVIEW              => false,
+			self::OPTION_DISABLE_EXTERNAL         => false,
+			self::OPTION_DISABLE_REVIEWER_RESOLVE => false,
+			self::OPTION_DISABLE_NOTIFICATIONS    => false,
+			self::OPTION_SHOW_UPGRADE_HINTS       => true,
+			self::OPTION_SUPPORTED_POST_TYPES     => self::DEFAULT_SUPPORTED_POST_TYPES,
 		];
 		foreach ( $defaults as $name => $value ) {
 			add_option( $name, $value );
@@ -687,6 +693,16 @@ class Settings {
 
 		register_setting(
 			self::OPTION_GROUP,
+			self::OPTION_DISABLE_REVIEWER_RESOLVE,
+			[
+				'type'              => 'boolean',
+				'default'           => false,
+				'sanitize_callback' => 'rest_sanitize_boolean',
+			]
+		);
+
+		register_setting(
+			self::OPTION_GROUP,
 			self::OPTION_DISABLE_EXTERNAL,
 			[
 				'type'              => 'boolean',
@@ -830,6 +846,15 @@ class Settings {
 			self::OPTION_DISABLE_EXTERNAL,
 			__( 'External reviewers', 'jumplinks-editorial-workflow' ),
 			[ $this, 'render_disable_external_reviewers_field' ],
+			self::PAGE_SLUG,
+			'flow_ew_general',
+			[ 'class' => 'flow-ew-solo-hidden' ]
+		);
+
+		add_settings_field(
+			self::OPTION_DISABLE_REVIEWER_RESOLVE,
+			__( 'Resolve comments', 'jumplinks-editorial-workflow' ),
+			[ $this, 'render_reviewers_resolve_field' ],
 			self::PAGE_SLUG,
 			'flow_ew_general',
 			[ 'class' => 'flow-ew-solo-hidden' ]
@@ -1637,6 +1662,15 @@ JS;
 			__( 'Hide the Open Review toggle in the editor and lock review pages to assigned participants only. Existing open reviews stop accepting public-link visitors immediately.', 'jumplinks-editorial-workflow' )
 		);
 		\do_action( 'flow_ew_after_open_review_field' );
+	}
+
+	public function render_reviewers_resolve_field(): void {
+		$this->render_checkbox(
+			self::OPTION_DISABLE_REVIEWER_RESOLVE,
+			! self::reviewers_can_resolve(),
+			__( 'Disable reviewers resolving comments.', 'jumplinks-editorial-workflow' ),
+			__( 'Assigned reviewers and external reviewers can no longer mark comment threads as resolved. The author, the person who requested the review and editors still can, and reviewers can always reopen a thread.', 'jumplinks-editorial-workflow' )
+		);
 	}
 
 	public function render_self_review_field(): void {

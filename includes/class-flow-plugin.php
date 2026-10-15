@@ -198,6 +198,7 @@ class Plugin {
 				'manageReviews'  => current_user_can( 'flow_manage_reviews' ),
 			],
 			'activeReview'             => $active_review,
+			'recentInviteEmails'       => current_user_can( 'flow_assign_reviewer' ) ? Email_Review::recent_invite_emails( $current_user_id ) : [],
 			'cancelledReviews'         => $post_id ? Review::cancelled_history( $post_id, $current_user_id ) : [],
 			'pendingReviewer'          => $pending_reviewer,
 			'debugMode'                => Settings::is_debug_mode(),

@@ -71,6 +71,7 @@ export function previewSettings( answers, allPostTypes ) {
 			useCase === CLIENT ? true : !! answers.allowExternal;
 		out.openReviews = useCase === EDITORIAL;
 		out.selfReview = !! answers.selfReview;
+		out.disableReviewerResolve = !! answers.disableReviewerResolve;
 		out.showReviewedBy = !! answers.showReviewedBy;
 		out.autoAssign = answers.autoAssign || null;
 	}

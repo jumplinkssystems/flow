@@ -1,3 +1,5 @@
+import { isHiddenTarget } from './reveal-hidden-target';
+
 /**
  * Pin markers: comments dropped on a spot of the page rather than on selected
  * text. A pin is a button appended to the page body and positioned over the
@@ -71,6 +73,8 @@ export function placePinAtClientPoint( pin, clientX, clientY ) {
 
 export function placePinOnAnchor( pin, anchor, x, y ) {
 	const rect = anchor.getBoundingClientRect();
+	// A pin on a closed accordion or tab would float at its zero-size box.
+	pin.style.visibility = isHiddenTarget( anchor ) ? 'hidden' : '';
 	placePinAtClientPoint(
 		pin,
 		rect.left + Number( x || 0 ) * rect.width,

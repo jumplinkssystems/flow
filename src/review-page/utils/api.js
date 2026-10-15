@@ -24,3 +24,24 @@ export default function flowFetch( endpoint, options = {} ) {
 export { pageData };
 
 export const isReviewReadOnly = () => !! pageData.isCancelled;
+
+// Localized as "1" / "". Site review chrome sends no flag yet and keeps the logged-in-only rule.
+export const canResolveComments = () => {
+	if ( isReviewReadOnly() ) {
+		return false;
+	}
+	if ( 'canResolveComments' in pageData ) {
+		return [ true, 1, '1' ].includes( pageData.canResolveComments );
+	}
+	return Number( pageData.currentUserId || 0 ) > 0;
+};
+
+export const canReopenComments = () => {
+	if ( isReviewReadOnly() ) {
+		return false;
+	}
+	if ( 'canReopenComments' in pageData ) {
+		return [ true, 1, '1' ].includes( pageData.canReopenComments );
+	}
+	return canResolveComments();
+};

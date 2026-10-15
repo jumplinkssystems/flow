@@ -803,6 +803,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   getExternalEmailLabel: () => (/* binding */ getExternalEmailLabel),
 /* harmony export */   getReviewerPlaceholder: () => (/* binding */ getReviewerPlaceholder),
 /* harmony export */   isEmailComboboxOption: () => (/* binding */ isEmailComboboxOption),
+/* harmony export */   isRecentEmailOption: () => (/* binding */ isRecentEmailOption),
 /* harmony export */   isValidEmail: () => (/* reexport safe */ _assign_invite_email__WEBPACK_IMPORTED_MODULE_0__.isValidEmail),
 /* harmony export */   shouldHideReviewerAutocomplete: () => (/* binding */ shouldHideReviewerAutocomplete)
 /* harmony export */ });
@@ -820,6 +821,9 @@ __webpack_require__.r(__webpack_exports__);
 
 function isEmailComboboxOption(li) {
   return !!(li && (li.dataset.isEmail === '1' || li.dataset.value === 'email'));
+}
+function isRecentEmailOption(li) {
+  return !!(li && li.dataset.recentEmail);
 }
 function getEmailPlaceholder() {
   const i18n = window.flowEW && window.flowEW.i18n || {};
@@ -892,16 +896,26 @@ function shouldHideReviewerAutocomplete(select, input, emailEntryMode) {
 /**
  * Filter combobox options. The email row shows as "External Email" when the
  * query is empty, or as "Invite {email}" only when the query is a valid address.
+ * While an address is being typed (`emailEntry`) only remembered addresses and
+ * the Invite row show.
  *
  * @param {HTMLElement[]} options
  * @param {string} q
- * @param {{ emailOnly?: boolean }} [opts]
+ * @param {{ emailOnly?: boolean, emailEntry?: boolean }} [opts]
  */
 function filterReviewerComboboxOptions(options, q, opts) {
   const needle = String(q || '').toLowerCase().trim();
   const emailOnly = !!(opts && opts.emailOnly);
+  const emailEntry = !!(opts && opts.emailEntry);
   const externalLabel = getExternalEmailLabel();
   (options || []).forEach(function (li) {
+    if (isRecentEmailOption(li)) {
+      const email = li.dataset.recentEmail;
+      const show = email !== needle && (!needle || email.includes(needle));
+      li.hidden = !show;
+      li.style.display = show ? '' : 'none';
+      return;
+    }
     if (isEmailComboboxOption(li)) {
       // No WP users — type the address directly; never a lone email row.
       if (emailOnly) {
@@ -911,7 +925,7 @@ function filterReviewerComboboxOptions(options, q, opts) {
         li.textContent = li.dataset.label || externalLabel;
         return;
       }
-      if (!needle) {
+      if (!needle && !emailEntry) {
         li.hidden = false;
         li.style.display = '';
         // External Email above WP users — keep separator border.
@@ -935,7 +949,7 @@ function filterReviewerComboboxOptions(options, q, opts) {
       return;
     }
     const labelLower = String(li.dataset.label || externalLabel).trim().toLowerCase();
-    const show = !needle || labelLower.includes(needle);
+    const show = !emailEntry && (!needle || labelLower.includes(needle));
     li.hidden = !show;
     li.style.display = show ? '' : 'none';
   });

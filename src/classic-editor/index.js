@@ -22,6 +22,7 @@ import {
 	getReviewerPlaceholder,
 } from '../shared/reviewer-email-entry';
 import { initReviewerCombobox } from '../shared/reviewer-combobox';
+import { rememberInviteEmails } from '../shared/recent-invite-emails';
 
 ( function bootClassicEditor( attempt ) {
 	const { flowEW } = window;
@@ -869,6 +870,7 @@ import { initReviewerCombobox } from '../shared/reviewer-combobox';
 			apiPost( '/reviews', { post_id: postId, invite_email: trimmed } )
 				.then( ( data ) => {
 					review = data;
+					rememberInviteEmails( trimmed );
 					if ( combobox ) {
 						combobox.setEmailEntryMode( false );
 					}

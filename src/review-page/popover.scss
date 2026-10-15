@@ -170,6 +170,47 @@
 		}
 	}
 
+	// Phones: the button sits under the selection, so the caret points up from
+	// the top centre (whichever side the desktop placement chose).
+	&--below &__btn,
+	&--below#{&}--flipped &__btn {
+		&::before {
+			top: -6px;
+			right: auto;
+			left: 50%;
+			border: 0;
+			border-left: 1px solid $popover-accent;
+			border-top: 1px solid $popover-accent;
+			transform: translateX(-50%) rotate(45deg);
+		}
+
+		&::after {
+			top: 0;
+			right: auto;
+			left: 50%;
+			width: 14px;
+			height: 1px;
+			transform: translateX(-50%);
+		}
+	}
+
+	// Moved above the selection for lack of room: the caret points down.
+	&--below#{&}--above &__btn {
+		&::before {
+			top: auto;
+			bottom: -6px;
+			border-left: 0;
+			border-top: 0;
+			border-right: 1px solid $popover-accent;
+			border-bottom: 1px solid $popover-accent;
+		}
+
+		&::after {
+			top: auto;
+			bottom: 0;
+		}
+	}
+
 	&__btn-label {
 		font-size: 18px;
 		line-height: 1.2;
@@ -1006,5 +1047,17 @@
 
 	input {
 		margin: 0;
+	}
+}
+
+// Phones: the editor sits under the selection and uses the screen width.
+.flow-inline-popover--below.flow-inline-popover--editor {
+	width: calc(100vw - 16px);
+	max-width: calc(100vw - 16px);
+
+	.flow-inline-popover__editor-wrap {
+		box-sizing: border-box;
+		width: 100%;
+		max-width: none;
 	}
 }

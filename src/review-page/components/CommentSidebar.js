@@ -22,6 +22,7 @@ import CommentThread from './CommentThread';
 import InlineCommentsPanel from './InlineCommentsPanel';
 import { buildCommentTree } from '../utils/comment-tree';
 import { useConfirmDialog } from '../hooks/use-confirm-dialog';
+import { isSameReviewPage } from '../../shared/same-review-page';
 
 const SIDEBAR_TABS = [
 	{
@@ -289,6 +290,38 @@ function GeneralCommentsPanel( {
 	);
 }
 
+/**
+ * Site review: general threads belong to the page they were started on.
+ * Replies follow their thread wherever they were written.
+ *
+ * @param {Array}  comments
+ * @param {string} pageUrl  Page in view; empty on a single-post review.
+ * @return {Array} Comments of threads started on that page.
+ */
+function generalCommentsForPage( comments, pageUrl ) {
+	if ( ! pageUrl ) {
+		return comments;
+	}
+	const byId = new Map( comments.map( ( c ) => [ Number( c.id ), c ] ) );
+	const rootOf = ( c ) => {
+		let node = c;
+		const seen = new Set();
+		while (
+			node &&
+			Number( node.parentId || 0 ) > 0 &&
+			! seen.has( node.id )
+		) {
+			seen.add( node.id );
+			node = byId.get( Number( node.parentId ) ) || null;
+		}
+		return node || c;
+	};
+	return comments.filter( ( c ) => {
+		const root = rootOf( c );
+		return ! root.url || isSameReviewPage( root.url, pageUrl );
+	} );
+}
+
 function tabCountLabel( tabName, count ) {
 	/* translators: %d: number of unresolved comment threads */
 	const unresolved = __(
@@ -326,8 +359,21 @@ export default function CommentSidebar( {
 	reviewIntro = null,
 } = {} ) {
 	const hostRef = useRef( null );
-	const [ generalComments, setGeneralComments ] = useState(
+	const [ allGeneralComments, setGeneralComments ] = useState(
 		() => pageData.comments || []
+	);
+	const [ pageUrl, setPageUrl ] = useState(
+		() => window.flowCommentsPageUrl || ''
+	);
+	useEffect( () => {
+		const onPage = ( e ) => setPageUrl( e.detail?.url || '' );
+		window.addEventListener( 'flow:comments-page-url', onPage );
+		return () =>
+			window.removeEventListener( 'flow:comments-page-url', onPage );
+	}, [] );
+	const generalComments = useMemo(
+		() => generalCommentsForPage( allGeneralComments, pageUrl ),
+		[ allGeneralComments, pageUrl ]
 	);
 	const [ inlineComments, setInlineComments ] = useState(
 		() => pageData.inlineComments || []
@@ -536,6 +582,24 @@ export default function CommentSidebar( {
 	}, [] );
 
 	useEffect( () => {
+		const onToggleTab = ( e ) => {
+			const tab = e.detail?.tab;
+			if (
+				e.detail?.open &&
+				( 'comments' === tab || 'resolved' === tab )
+			) {
+				setActiveTab( tab );
+			}
+		};
+		window.addEventListener( 'flow:comments-sidebar-toggle', onToggleTab );
+		return () =>
+			window.removeEventListener(
+				'flow:comments-sidebar-toggle',
+				onToggleTab
+			);
+	}, [] );
+
+	useEffect( () => {
 		const onSwitchToComments = () => setActiveTab( 'comments' );
 		window.addEventListener(
 			'flow:inline-comment-added',
@@ -632,6 +696,9 @@ export default function CommentSidebar( {
 		}
 	}, [ generalComments, inlineComments ] );
 
+	// Extensions (site review) can pin actions to the bottom; shown on mobile only.
+	const sidebarFooter = applyFilters( 'flow_ew_review_sidebar_footer', null );
+
 	return (
 		<div className="flow-sidebar" ref={ hostRef }>
 			<div className="flow-sidebar__tablist-and-close">
@@ -725,6 +792,11 @@ export default function CommentSidebar( {
 						</div>
 					</div>
 				</div>
+				{ sidebarFooter ? (
+					<div className="flow-sidebar__footer">
+						{ sidebarFooter }
+					</div>
+				) : null }
 			</div>
 		</div>
 	);

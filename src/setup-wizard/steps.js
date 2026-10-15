@@ -254,6 +254,15 @@ export function ExtrasStep( { answers, update } ) {
 				{ i18n.selfReviewDesc }
 			</CheckCard>
 			<CheckCard
+				checked={ !! answers.disableReviewerResolve }
+				onChange={ ( disableReviewerResolve ) =>
+					update( { disableReviewerResolve } )
+				}
+				title={ i18n.disableReviewerResolveLabel }
+			>
+				{ i18n.disableReviewerResolveDesc }
+			</CheckCard>
+			<CheckCard
 				checked={ !! answers.showReviewedBy }
 				onChange={ ( showReviewedBy ) => update( { showReviewedBy } ) }
 				title={ i18n.reviewedByLabel }
@@ -561,6 +570,12 @@ function changes( answers ) {
 			i18n.selfReviewLabel,
 			onOff( next.selfReview ),
 			onOff( current.selfReview ),
+		],
+		[
+			'disableReviewerResolve',
+			i18n.disableReviewerResolveLabel,
+			onOff( next.disableReviewerResolve ),
+			onOff( current.disableReviewerResolve ),
 		],
 		[
 			'showReviewedBy',

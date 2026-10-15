@@ -9,7 +9,7 @@ import {
 	releaseCommentBusy,
 } from '../utils/local-edit-registry';
 import CommentEditor from './CommentEditor';
-import { pageData } from '../utils/api';
+import { pageData, canReopenComments } from '../utils/api';
 const COLLAPSED_REPLY_LIMIT = 1;
 
 // The page as it was when the comment was raised, or '' when already there or unknown.
@@ -60,7 +60,11 @@ export default function CommentThread( {
 
 	const handleReplySubmit = useCallback(
 		async ( html ) => {
-			await onReply( replyingTo, html, thread.isResolved && reopen );
+			await onReply(
+				replyingTo,
+				html,
+				thread.isResolved && reopen && canReopenComments()
+			);
 			setReplyingTo( null );
 			setReopen( true );
 		},
@@ -194,7 +198,7 @@ export default function CommentThread( {
 					className="flow-comment-thread__reply-editor"
 					ref={ replyEditorRef }
 				>
-					{ thread.isResolved && (
+					{ thread.isResolved && canReopenComments() && (
 						<label className="flow-comment-thread__reopen">
 							<input
 								type="checkbox"

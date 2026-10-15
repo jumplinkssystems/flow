@@ -299,6 +299,14 @@ export default function InlineCommentsPanel( {
 	);
 
 	const handleAnchorClick = useCallback( ( commentId ) => {
+		// On phones the panel covers the page, so close it to show the comment.
+		if ( window.matchMedia?.( '(max-width: 782px)' )?.matches ) {
+			window.dispatchEvent(
+				new CustomEvent( 'flow:comments-sidebar-toggle', {
+					detail: { open: false },
+				} )
+			);
+		}
 		window.dispatchEvent(
 			new CustomEvent( 'flow:scroll-to-highlight', {
 				detail: { commentId },

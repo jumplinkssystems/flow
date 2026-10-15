@@ -18,6 +18,10 @@ export function isEmailComboboxOption( li ) {
 	);
 }
 
+export function isRecentEmailOption( li ) {
+	return !! ( li && li.dataset.recentEmail );
+}
+
 export function getEmailPlaceholder() {
 	const i18n = ( window.flowEW && window.flowEW.i18n ) || {};
 	return i18n.emailPlaceholder || 'name@example.com';
@@ -95,19 +99,30 @@ export function shouldHideReviewerAutocomplete(
 /**
  * Filter combobox options. The email row shows as "External Email" when the
  * query is empty, or as "Invite {email}" only when the query is a valid address.
+ * While an address is being typed (`emailEntry`) only remembered addresses and
+ * the Invite row show.
  *
  * @param {HTMLElement[]} options
  * @param {string} q
- * @param {{ emailOnly?: boolean }} [opts]
+ * @param {{ emailOnly?: boolean, emailEntry?: boolean }} [opts]
  */
 export function filterReviewerComboboxOptions( options, q, opts ) {
 	const needle = String( q || '' )
 		.toLowerCase()
 		.trim();
 	const emailOnly = !! ( opts && opts.emailOnly );
+	const emailEntry = !! ( opts && opts.emailEntry );
 	const externalLabel = getExternalEmailLabel();
 
 	( options || [] ).forEach( function ( li ) {
+		if ( isRecentEmailOption( li ) ) {
+			const email = li.dataset.recentEmail;
+			const show =
+				email !== needle && ( ! needle || email.includes( needle ) );
+			li.hidden = ! show;
+			li.style.display = show ? '' : 'none';
+			return;
+		}
 		if ( isEmailComboboxOption( li ) ) {
 			// No WP users — type the address directly; never a lone email row.
 			if ( emailOnly ) {
@@ -119,7 +134,7 @@ export function filterReviewerComboboxOptions( options, q, opts ) {
 				li.textContent = li.dataset.label || externalLabel;
 				return;
 			}
-			if ( ! needle ) {
+			if ( ! needle && ! emailEntry ) {
 				li.hidden = false;
 				li.style.display = '';
 				// External Email above WP users — keep separator border.
@@ -148,7 +163,8 @@ export function filterReviewerComboboxOptions( options, q, opts ) {
 		const labelLower = String( li.dataset.label || externalLabel )
 			.trim()
 			.toLowerCase();
-		const show = ! needle || labelLower.includes( needle );
+		const show =
+			! emailEntry && ( ! needle || labelLower.includes( needle ) );
 		li.hidden = ! show;
 		li.style.display = show ? '' : 'none';
 	} );

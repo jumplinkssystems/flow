@@ -85,9 +85,10 @@ final class Setup_Presets {
 				? false
 				: ! rest_sanitize_boolean( $in['allow_external'] ?? true );
 
-			$out[ Settings::OPTION_DISABLE_OPEN_REVIEWS ] = self::EDITORIAL !== $use_case;
-			$out[ Settings::OPTION_SELF_REVIEW ]          = rest_sanitize_boolean( $in['self_review'] ?? false );
-			$out[ Settings::OPTION_SHOW_REVIEWED_BY ]     = rest_sanitize_boolean( $in['show_reviewed_by'] ?? false );
+			$out[ Settings::OPTION_DISABLE_OPEN_REVIEWS ]     = self::EDITORIAL !== $use_case;
+			$out[ Settings::OPTION_SELF_REVIEW ]              = rest_sanitize_boolean( $in['self_review'] ?? false );
+			$out[ Settings::OPTION_DISABLE_REVIEWER_RESOLVE ] = rest_sanitize_boolean( $in['disable_reviewer_resolve'] ?? false );
+			$out[ Settings::OPTION_SHOW_REVIEWED_BY ]         = rest_sanitize_boolean( $in['show_reviewed_by'] ?? false );
 
 			$reviewer_id                                  = $settings->sanitize_auto_assign_reviewer( $in['auto_assign_reviewer_id'] ?? 0 );
 			$out[ Settings::OPTION_AUTO_ASSIGN_REVIEWER ] = $reviewer_id;

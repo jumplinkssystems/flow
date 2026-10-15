@@ -4,7 +4,10 @@ import {
 	filterReviewerComboboxOptions,
 	getEmailPlaceholder,
 	isEmailComboboxOption,
+	isRecentEmailOption,
 } from './reviewer-email-entry';
+import { getRecentInviteEmails } from './recent-invite-emails';
+import { INVITE_PREFIX } from './invite-value';
 import { floatComboboxList } from './float-combobox-list';
 
 /**
@@ -66,8 +69,37 @@ export function initReviewerCombobox( root, opts = {} ) {
 		input.closest( '.flow-ew-reviewer-combobox__wrap' ) || input
 	);
 
-	const options = Array.from( list.querySelectorAll( '[role="option"]' ) );
+	let options = [];
 	let activeIndex = -1;
+
+	function syncRecentOptions() {
+		list.querySelectorAll( '[data-recent-email]' ).forEach( ( li ) =>
+			li.remove()
+		);
+		const emailRow = Array.from(
+			list.querySelectorAll( '[role="option"]' )
+		).find( isEmailComboboxOption );
+		// Remembered addresses only make sense where an invite is allowed.
+		if ( emailRow ) {
+			let after = emailRow;
+			getRecentInviteEmails().forEach( function ( email ) {
+				const li = document.createElement( 'li' );
+				li.className =
+					'flow-ew-reviewer-combobox__option flow-ew-reviewer-combobox__option--recent';
+				li.setAttribute( 'role', 'option' );
+				li.tabIndex = -1;
+				li.dataset.value = INVITE_PREFIX + email;
+				li.dataset.label = email;
+				li.dataset.isEmail = '0';
+				li.dataset.recentEmail = email;
+				li.textContent = email;
+				after.after( li );
+				after = li;
+			} );
+		}
+		options = Array.from( list.querySelectorAll( '[role="option"]' ) );
+	}
+	syncRecentOptions();
 	let emailEntryMode = false;
 
 	function emit( name, detail ) {
@@ -77,7 +109,7 @@ export function initReviewerCombobox( root, opts = {} ) {
 	function onlyEmailAvailable() {
 		// No WP users left to pick — type an email directly.
 		return ! options.some( function ( li ) {
-			return ! isEmailComboboxOption( li );
+			return ! isEmailComboboxOption( li ) && ! isRecentEmailOption( li );
 		} );
 	}
 
@@ -96,6 +128,7 @@ export function initReviewerCombobox( root, opts = {} ) {
 	function filterOptions( q ) {
 		filterReviewerComboboxOptions( options, q, {
 			emailOnly: onlyEmailAvailable(),
+			emailEntry: inEmailMode(),
 		} );
 	}
 
@@ -114,12 +147,11 @@ export function initReviewerCombobox( root, opts = {} ) {
 			if ( visibleOptions().length === 0 ) {
 				openList = false;
 			}
-		} else if (
-			openList &&
-			( emailEntryMode ||
-				select.value === 'email' ||
-				visibleOptions().length === 0 )
-		) {
+		} else if ( openList && inEmailMode() ) {
+			// While typing an address, only remembered matches open the list.
+			filterOptions( typed );
+			openList = visibleOptions().length > 0;
+		} else if ( openList && visibleOptions().length === 0 ) {
 			openList = false;
 		}
 		list.hidden = ! openList;
@@ -137,6 +169,16 @@ export function initReviewerCombobox( root, opts = {} ) {
 
 	function chooseOption( li ) {
 		if ( ! li || li.hidden ) {
+			return;
+		}
+		if ( isRecentEmailOption( li ) ) {
+			emailEntryMode = true;
+			select.value = 'email';
+			input.value = li.dataset.recentEmail;
+			setOpen( false );
+			activeIndex = -1;
+			clearEmailError();
+			assignInviteEmail( li.dataset.recentEmail );
 			return;
 		}
 		const id = li.dataset.value;
@@ -194,10 +236,7 @@ export function initReviewerCombobox( root, opts = {} ) {
 		if ( input.disabled || input.readOnly ) {
 			return;
 		}
-		if ( inEmailMode() ) {
-			setOpen( false );
-			return;
-		}
+		syncRecentOptions();
 		filterOptions( input.value );
 		setOpen( true );
 	} );
@@ -230,7 +269,7 @@ export function initReviewerCombobox( root, opts = {} ) {
 			}
 			emailEntryMode = true;
 			select.value = 'email';
-			setOpen( false );
+			setOpen( true );
 			activeIndex = -1;
 			if ( ! typed ) {
 				clearEmailError();
@@ -315,8 +354,7 @@ export function initReviewerCombobox( root, opts = {} ) {
 
 		if ( e.key === 'ArrowDown' ) {
 			e.preventDefault();
-			if ( treatAsEmail ) {
-				setOpen( false );
+			if ( treatAsEmail && list.hidden ) {
 				return;
 			}
 			const vis = visibleOptions();

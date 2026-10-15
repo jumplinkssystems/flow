@@ -241,5 +241,13 @@ iframe.flow-inline-highlight-media {
   pointer-events: none;
   transition: opacity 0.15s ease;
 }
+@media (max-width: 782px) {
+  .components-popover.flow-bar__view-dropdown-popover {
+    transform: none !important;
+    top: 68px !important;
+    left: auto !important;
+    right: 8px !important;
+  }
+}
 
 /*# sourceMappingURL=style-index.css.map*/

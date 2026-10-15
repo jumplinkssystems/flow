@@ -760,6 +760,43 @@ class Review {
 		return $post instanceof \WP_Post && (int) $post->post_author === $user_id;
 	}
 
+	/**
+	 * The author, the requester and managers always may; reviewers (including
+	 * email invitees) only while Settings → Workflow → Resolve comments is on.
+	 */
+	public static function can_user_resolve_comments( object $review, int $user_id ): bool {
+		if ( ! self::can_user_reopen_comments( $review, $user_id ) ) {
+			return false;
+		}
+		if ( self::is_private( $review ) || ! Settings::reviewers_can_resolve() ) {
+			return $user_id > 0 && (
+				self::is_private( $review )
+				|| self::is_requester_or_manager( $review, $user_id )
+				|| self::is_post_author( $review, $user_id )
+			);
+		}
+		return true;
+	}
+
+	/**
+	 * Reopening is never restricted by the setting: any reviewer may bring a
+	 * thread back when the fix is not right.
+	 */
+	public static function can_user_reopen_comments( object $review, int $user_id ): bool {
+		if ( self::is_cancelled( $review ) ) {
+			return false;
+		}
+		if ( self::is_private( $review ) ) {
+			return $user_id > 0 && self::can_user_access_private_review( $review, $user_id );
+		}
+		if ( $user_id > 0 ) {
+			return self::is_requester_or_manager( $review, $user_id )
+				|| self::is_post_author( $review, $user_id )
+				|| self::can_user_access_review( $review, $user_id );
+		}
+		return Email_Review::can_invite_take_action( $review );
+	}
+
 	public static function is_requester_or_manager( object $review, int $user_id ): bool {
 		return $user_id > 0
 			&& (

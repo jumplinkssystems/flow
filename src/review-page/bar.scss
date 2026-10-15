@@ -136,7 +136,7 @@ textarea {
 		svg { fill: currentColor; }
 	}
 
-	&__wp-logo:hover &__wp-logo-icon,
+	&__wp-logo:not(&__wp-logo--static):hover &__wp-logo-icon,
 	&__wp-logo:focus-within &__wp-logo-icon {
 		clip-path: inset(22% round 2px);
 	}
@@ -500,16 +500,6 @@ textarea {
 	margin: 0;
 }
 
-// Mobile: the bar is already cramped with the title, status badge and
-// action buttons — drop the View dropdown entirely (its only Free-side
-// item, "Preview in new tab", is rarely needed on a phone anyway).
-// We target our own wrapper class — `flow-bar__view-dropdown` is on the
-// inner DropdownMenu, which doesn't always land on the outermost node.
-@media (max-width: $mobile-bp) {
-	.flow-bar__view-dropdown-wrap {
-		display: none !important;
-	}
-}
 
 // Wide-laptop (up to $wide-bp): the centred freshness/snapshot meta
 // risks overlapping a long title, so pop it out of absolute centre and
@@ -635,6 +625,85 @@ textarea {
 		&__btn--revoke.components-button {
 			padding-left: 10px !important;
 			padding-right: 10px !important;
+		}
+	}
+}
+
+// Mobile: the panel and view buttons are square 48px targets with larger icons.
+@media (max-width: $mobile-bp) {
+	.flow-bar {
+		gap: 2px;
+	}
+
+	.flow-bar .flow-bar__comments-toggle.components-button,
+	.flow-bar .flow-bar__activity-toggle.components-button,
+	.flow-bar .flow-bar__view-dropdown .components-button {
+		justify-content: center;
+		width: 48px;
+		min-width: 48px;
+		height: 48px;
+		padding: 0 !important;
+
+		svg {
+			width: 32px;
+			height: 32px;
+			margin: 0;
+		}
+	}
+
+	.flow-bar__right,
+	.flow-bar__actions {
+		gap: 4px !important;
+	}
+}
+
+// Site review actions sit side by side; on mobile they move to the
+// bottom of the comments panel instead.
+.flow-bar__action-stack {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+@media (max-width: $mobile-bp) {
+	.flow-bar__action-stack {
+		display: none;
+	}
+}
+
+// Page review actions: inline in the bar on desktop. On mobile they leave
+// the bar and pin to the bottom of the open comments panel (80% wide), the
+// same place the site review puts Send feedback / Exit review.
+.flow-bar__action-group {
+	display: contents;
+}
+
+@media (max-width: $mobile-bp) {
+	.flow-bar:not(.flow-bar--site-review) .flow-bar__action-group {
+		display: none;
+	}
+
+	.flow-bar--comments-open:not(.flow-bar--site-review) .flow-bar__action-group {
+		position: fixed;
+		right: 0;
+		bottom: var(--flow-ew-upsell-bar-height, 0px);
+		width: 80vw;
+		display: flex;
+		gap: 8px;
+		padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
+		border-top: 1px solid $color-border;
+		background: $color-bg-white;
+
+		.flow-bar__actions {
+			flex: 1 1 auto;
+			display: flex;
+			gap: 8px;
+		}
+
+		.components-button {
+			flex: 1 1 0;
+			justify-content: center;
+			height: 40px;
 		}
 	}
 }

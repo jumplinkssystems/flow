@@ -795,7 +795,7 @@ class REST_Reviews extends \WP_REST_Controller {
 		}
 
 		if ( $has_resolved ) {
-			$participant_check = $this->comment_participant_check( $request );
+			$participant_check = $this->comment_participant_check( $request, rest_sanitize_boolean( $request->get_param( 'resolved' ) ) );
 			if ( true !== $participant_check ) {
 				return $participant_check;
 			}
@@ -846,7 +846,7 @@ class REST_Reviews extends \WP_REST_Controller {
 		return true;
 	}
 
-	public function comment_participant_check( \WP_REST_Request $request ) {
+	public function comment_participant_check( \WP_REST_Request $request, bool $resolving = true ) {
 		$comment = DB::get_comment( (int) $request->get_param( 'comment_id' ) );
 		if ( ! $comment ) {
 			return new \WP_Error( 'flow_ew_not_found', __( 'Comment not found.', 'jumplinks-editorial-workflow' ), [ 'status' => 404 ] );
@@ -864,13 +864,15 @@ class REST_Reviews extends \WP_REST_Controller {
 			return new \WP_Error( 'flow_ew_review_cancelled', __( 'This review was cancelled.', 'jumplinks-editorial-workflow' ), [ 'status' => 403 ] );
 		}
 
+		$user_id = get_current_user_id();
+		$allowed = $resolving
+			? Review::can_user_resolve_comments( $review, $user_id )
+			: Review::can_user_reopen_comments( $review, $user_id );
+		if ( $allowed ) {
+			return true;
+		}
 		if ( ! is_user_logged_in() ) {
 			return new \WP_Error( 'rest_forbidden', __( 'You must be logged in.', 'jumplinks-editorial-workflow' ), [ 'status' => 401 ] );
-		}
-
-		$user_id = get_current_user_id();
-		if ( Review::can_user_access_review( $review, $user_id ) ) {
-			return true;
 		}
 
 		return new \WP_Error( 'rest_forbidden', __( 'You are not a participant in this review.', 'jumplinks-editorial-workflow' ), [ 'status' => 403 ] );

@@ -332,3 +332,14 @@ iframe.flow-inline-highlight-media {
 	pointer-events: none;
 	transition: opacity 0.15s ease;
 }
+
+// The View menu renders in the page, not the bar. On mobile it hangs from the
+// bar's right edge like the panels, instead of from the narrow trigger.
+@media (max-width: 782px) {
+	.components-popover.flow-bar__view-dropdown-popover {
+		transform: none !important;
+		top: 68px !important;
+		left: auto !important;
+		right: 8px !important;
+	}
+}

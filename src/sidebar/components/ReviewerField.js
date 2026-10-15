@@ -17,7 +17,16 @@ import CancelReviewModal from './CancelReviewModal';
 import { STORE_NAME } from '../store';
 import { getConfig } from '../../shared/config';
 import { isValidEmail } from '../../shared/assign-invite-email';
-import { EMAIL_SENTINEL, parseInviteValue } from '../../shared/invite-value';
+import {
+	EMAIL_SENTINEL,
+	INVITE_PREFIX,
+	parseInviteValue,
+} from '../../shared/invite-value';
+import {
+	getRecentInviteEmails,
+	rememberInviteEmails,
+} from '../../shared/recent-invite-emails';
+import RecentInviteSuggestions from './RecentInviteSuggestions';
 
 const flowEW = getConfig();
 const { restUrl, postId, currentUserCan, i18n, pendingReviewer } = flowEW;
@@ -47,6 +56,7 @@ export default function ReviewerField() {
 	const [ isSaving, setIsSaving ] = useState( false );
 	const [ filterValue, setFilterValue ] = useState( '' );
 	const [ emailMode, setEmailMode ] = useState( false );
+	const [ emailFocused, setEmailFocused ] = useState( false );
 	const [ confirmingRemove, setConfirmingRemove ] = useState( false );
 
 	const inviteEmail = review?.invite_email || review?.reviewer?.email || '';
@@ -122,18 +132,27 @@ export default function ReviewerField() {
 		i18n?.externalEmail ||
 		__( 'External Email', 'jumplinks-editorial-workflow' );
 
+	const recentKey = getRecentInviteEmails().join( ',' );
 	const comboboxOptions = useMemo( () => {
-		// Combobox is only used to pick a WP user or "External Email".
-		// Email typing uses TextControl (no autocomplete while composing).
+		// Combobox is only used to pick a WP user, "External Email" or a
+		// remembered address. Email typing uses TextControl.
 		const options = [ ...userOptions ];
 		if ( externalAllowed ) {
-			options.unshift( {
-				value: EMAIL_SENTINEL,
-				label: externalEmailLabel,
-			} );
+			options.unshift(
+				{
+					value: EMAIL_SENTINEL,
+					label: externalEmailLabel,
+				},
+				...( recentKey ? recentKey.split( ',' ) : [] ).map(
+					( email ) => ( {
+						value: INVITE_PREFIX + email,
+						label: email,
+					} )
+				)
+			);
 		}
 		return options;
-	}, [ userOptions, externalEmailLabel, externalAllowed ] );
+	}, [ userOptions, externalEmailLabel, externalAllowed, recentKey ] );
 
 	const renderSuggestion = useCallback( ( { item } ) => {
 		if ( item.value === EMAIL_SENTINEL ) {
@@ -171,6 +190,7 @@ export default function ReviewerField() {
 					data: { post_id: postId, invite_email: trimmed },
 				} );
 				setReview( data );
+				rememberInviteEmails( trimmed );
 				setIsEditing( false );
 				setEmailMode( false );
 				setFilterValue( '' );
@@ -439,22 +459,46 @@ export default function ReviewerField() {
 					>
 						{ inEmailMode ? (
 							<>
-								<TextControl
-									className="flow-ew-reviewer-combobox__control"
-									hideLabelFromVision
-									label={ i18n.selectReviewer }
-									placeholder={ __(
-										'name@example.com',
-										'jumplinks-editorial-workflow'
-									) }
-									value={ filterValue }
-									onChange={ handleFilterChange }
-									disabled={ isSaving }
-									type="email"
-									autoComplete="email"
-									__next40pxDefaultSize
-									__nextHasNoMarginBottom
-								/>
+								<div className="flow-ew-email-entry">
+									<TextControl
+										className="flow-ew-reviewer-combobox__control"
+										hideLabelFromVision
+										label={ i18n.selectReviewer }
+										placeholder={ __(
+											'name@example.com',
+											'jumplinks-editorial-workflow'
+										) }
+										value={ filterValue }
+										onChange={ handleFilterChange }
+										onFocus={ () =>
+											setEmailFocused( true )
+										}
+										onBlur={ () =>
+											setEmailFocused( false )
+										}
+										disabled={ isSaving }
+										type="email"
+										autoComplete="email"
+										__next40pxDefaultSize
+										__nextHasNoMarginBottom
+									/>
+									{ externalAllowed &&
+										emailFocused &&
+										! isValidEmail(
+											filterValue.trim()
+										) && (
+											<RecentInviteSuggestions
+												query={ filterValue }
+												exclude={
+													inviteEmail
+														? [ inviteEmail ]
+														: []
+												}
+												onPick={ assignEmail }
+												disabled={ isSaving }
+											/>
+										) }
+								</div>
 								{ inviteSuggestionLabel ? (
 									<Button
 										variant="secondary"

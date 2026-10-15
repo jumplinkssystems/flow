@@ -4,7 +4,7 @@ Tags: client feedback, website feedback, content approval, site review, editoria
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.6.3
+Stable tag: 2.6.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -201,6 +201,18 @@ No, and this is deliberate rather than an oversight. There is no approve ability
 
 == Changelog ==
 
+= 2.6.4 =
+* New: Reviewers, including people invited by email, can resolve comment threads. Turn it off under Settings → Workflow → "Disable reviewers resolving comments"; reviewers can always reopen a thread.
+* New: The reviewer field suggests the last 5 email addresses you invited.
+* Improvement: Mobile interface improvements: panels take 80% of the screen, larger bar buttons, review actions at the bottom of the comments panel, the comment box opens under the selected text, and picking a page or comment closes the panel.
+* Improvement: Clearer confirmations for Send feedback and Exit review in site reviews (Pro).
+* Fix: Clicking a comment inside a closed accordion, toggle or tab opens it and scrolls to the comment, for all supported builders and popular block plugins, and accordion or tab titles that are links (Avada, Bootstrap) open on the review page.
+* Fix: Comment overlays on linked images, logos and Woodmart cards; no overlay on background images.
+* Fix: Reviewers who are not logged in see Flow in the site's language.
+* Fix: The Flow logo no longer links to jumplinks.net for reviewers who are not logged in.
+* Fix: In site reviews (Pro), replies stay in their thread after a reload, and general comments show only on the page they were added on.
+* Fix: Email reviewers can reopen a thread when they reply, and the post author can resolve comments on their own post.
+
 = 2.6.3 =
 * New: Review history shows each cancelled review's status as a coloured dot, its reviewers, status and comment count on hover, and a Restore button that brings the review back with its comments, reviewers and status. The review that was running is cancelled and kept in the history, so you can switch back. Reviews cancelled before this update come back as pending.
 * New: Create the user AI comments are posted as straight from Settings → AI agent or the setup wizard, with a Create user button next to the field. It only needs a username and an email, and is made a Subscriber with a random password.
@@ -228,29 +240,5 @@ No, and this is deliberate rather than an oversight. There is no approve ability
 * Fix: A comment whose text was removed no longer jumps to the same word in another part of the page; it stays anchored to where it was left.
 * Improvement: Clicking a highlighted comment on the page opens its thread in the sidebar on the right tab, Resolved included, and keeps it outlined until you click elsewhere.
 * Tweak: The review page's Cancel review button is red, matching the cancel icon in the editor.
-
-= 2.6.1 =
-* New: Cancel a review from the editor or the review page's top bar. Cancelled reviews stay read-only in a Review history list under Current Review, and assigning a reviewer again starts a fresh review. Removing the reviewer, turning off Open Review with nobody assigned, or (Pro) removing the last reviewer cancels too, after asking; an open review keeps running without a reviewer.
-* New: View revisions on the review page lists the page's saved revisions with their resolved comments, and View original on a resolved comment opens the page as it was when the comment was raised.
-* New (Pro): Self site review. With Self review on, or in Self review only mode, review your own site from Flow → Site Review, comment on any page including headers, menus and footers, and let your AI agent resolve the comments over MCP.
-* Improvement: The setup wizard offers Self review in Extras, asks about an AI agent and shows its settings on one screen, and ends with what to do next for your use case, including short clips and example requests for your agent.
-* Fix: Deleting a post now removes its review's invites and, in Pro, its roster and activity, so a later review can never inherit someone else's invite link; leftovers are cleaned up on update.
-* Fix: Picking a reviewer whose role is in Review Roles no longer fails when that role had lost its review permission, and an assigned reviewer whose role no longer qualifies still shows in Classic Editor and the builders.
-* Fix: Builder drawers: the Review button is back in the Bricks 2.4 toolbar, Avada styles no longer leak into the drawer, and notice links stay readable in Breakdance and Avada.
-
-= 2.6.0 =
-* Fix: The setup wizard now opens on the Flow dashboard after activation, stays closed once skipped, and can be reopened with Run setup again under Flow → Settings.
-* Improvement: Review invite emails now tell your client no account or password is needed and how to leave comments, and replies go to the person who sent the review.
-* New: A Documentation link in the Flow menu and on the Plugins screen.
-* Improvement: An empty Flow dashboard now walks you through sending your first page for review instead of showing a blank list, and the request to rate Flow waits until you have used it for a week or approved five reviews.
-* Improvement: The "No Review Roles Assigned" notice now says you can still invite a reviewer by email.
-* Change: You can now invite your own email address as an external reviewer, the quickest way to see what your client will see.
-* Improvement: The public review upgrade hint under the reviewer field now explains what it adds: one link anyone can open and comment on, with no invite needed.
-* New: Self review. Turn it on under Flow → Settings and every supported page gets a private "Self review" link in the admin bar and editor where you can leave comments for yourself or your AI agent. Assigned reviewers and clients never see them, and agents connected over MCP get the link and the comments through flow/get-review.
-* New: Review mode "Self review only" for people building sites alone or with an AI agent. Flow keeps just the private review on every page: reviewers, open review, notifications, the dashboard widget and the Review column are switched off, the Flow dashboard lists pages with self-review comments, and connected agents get a shorter loop with no reviewer steps. Pro webhooks stay available and send self-review comment events, so an automation can react when you leave a comment.
-* New: The setup wizard starts from how you will use Flow (Editorial workflow, Client feedback, Build with AI, Approve AI-written content), sets itself up for it, asks only what is left, and ends with the next step. Re-running it shows what will change before saving.
-* Improvement: Automatic reviewer can now be an email address. New content gets that external reviewer invited on its first save, ready to send.
-* Change: Reviewers can now comment anywhere on the page, including the header, menu, footer and sidebar, not only the post content.
-* Fix: Text inside links and linked cards can be selected for a comment, text over a background image is no longer blocked by the image, and images revealed on scroll or loaded late can be commented on.
 
 Earlier versions: https://jumplinks.net/changelog/

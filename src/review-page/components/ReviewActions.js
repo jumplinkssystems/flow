@@ -52,129 +52,134 @@ export default function ReviewActions( {
 					</div>
 				</div>
 			) }
-			{ onCancelReview ? (
-				<div className="flow-bar__actions">
-					<Button
-						className="flow-bar__btn--request-changes flow-bar__btn--cancel-review"
-						onClick={ onCancelReview }
-						disabled={ isBusy }
-					>
-						{ __(
-							'Cancel review',
-							'jumplinks-editorial-workflow'
-						) }
-					</Button>
-				</div>
-			) : null }
-			{ onRestoreReview ? (
-				<div className="flow-bar__actions">
-					<Button
-						variant="primary"
-						onClick={ onRestoreReview }
-						disabled={ isBusy }
-					>
-						{ __(
-							'Restore this review',
-							'jumplinks-editorial-workflow'
-						) }
-					</Button>
-				</div>
-			) : null }
-			{ actionsSlot ? (
-				<div className="flow-bar__actions">{ actionsSlot }</div>
-			) : null }
-			{ ! actionsSlot && canAuthorResubmit ? (
-				<div className="flow-bar__actions">
-					<Button
-						variant="primary"
-						onClick={ () =>
-							doAction(
-								'resubmit',
-								__(
-									'✓ Resubmitted for review.',
-									'jumplinks-editorial-workflow'
-								),
-								'in_review'
-							)
-						}
-						disabled={ isBusy || ! hasAuthorResubmitActivity }
-					>
-						{ __(
-							'Resubmit for review',
-							'jumplinks-editorial-workflow'
-						) }
-					</Button>
-				</div>
-			) : null }
-
-			{ ! actionsSlot && canActFinal ? (
-				<div className="flow-bar__actions">
-					{ ! isApproved ? (
+			<div className="flow-bar__action-group">
+				{ onCancelReview ? (
+					<div className="flow-bar__actions">
 						<Button
-							className="flow-bar__btn--request-changes"
-							onClick={ () =>
-								doAction(
-									'request-changes',
-									__(
-										'✓ Changes requested — author notified.',
-										'jumplinks-editorial-workflow'
-									),
-									'changes_requested'
-								)
-							}
-							disabled={
-								isBusy ||
-								totalCommentCount === 0 ||
-								myVote === 'changes_requested'
-							}
+							className="flow-bar__btn--request-changes flow-bar__btn--cancel-review"
+							onClick={ onCancelReview }
+							disabled={ isBusy }
 						>
 							{ __(
-								'Request Changes',
+								'Cancel review',
 								'jumplinks-editorial-workflow'
 							) }
 						</Button>
-					) : null }
-					{ isApproved ? (
+					</div>
+				) : null }
+				{ onRestoreReview ? (
+					<div className="flow-bar__actions">
 						<Button
-							variant="secondary"
+							variant="primary"
+							onClick={ onRestoreReview }
+							disabled={ isBusy }
+						>
+							{ __(
+								'Restore this review',
+								'jumplinks-editorial-workflow'
+							) }
+						</Button>
+					</div>
+				) : null }
+				{ actionsSlot ? (
+					<div className="flow-bar__actions">{ actionsSlot }</div>
+				) : null }
+				{ ! actionsSlot && canAuthorResubmit ? (
+					<div className="flow-bar__actions">
+						<Button
+							variant="primary"
 							onClick={ () =>
 								doAction(
-									'revoke-approval',
+									'resubmit',
 									__(
-										'Approval revoked.',
+										'✓ Resubmitted for review.',
 										'jumplinks-editorial-workflow'
 									),
 									'in_review'
 								)
 							}
-							disabled={ isBusy }
-							className="flow-bar__btn--revoke"
+							disabled={ isBusy || ! hasAuthorResubmitActivity }
 						>
 							{ __(
-								'Revoke Approval',
+								'Resubmit for review',
 								'jumplinks-editorial-workflow'
 							) }
 						</Button>
-					) : (
-						<Button
-							variant="primary"
-							onClick={ () =>
-								doAction(
-									'approve',
-									__(
-										'✓ Approval recorded.',
-										'jumplinks-editorial-workflow'
-									),
-									'approved'
-								)
-							}
-							disabled={ isBusy }
-						>
-							{ __( 'Approve', 'jumplinks-editorial-workflow' ) }
-						</Button>
-					) }
-				</div>
-			) : null }
+					</div>
+				) : null }
+
+				{ ! actionsSlot && canActFinal ? (
+					<div className="flow-bar__actions">
+						{ ! isApproved ? (
+							<Button
+								className="flow-bar__btn--request-changes"
+								onClick={ () =>
+									doAction(
+										'request-changes',
+										__(
+											'✓ Changes requested — author notified.',
+											'jumplinks-editorial-workflow'
+										),
+										'changes_requested'
+									)
+								}
+								disabled={
+									isBusy ||
+									totalCommentCount === 0 ||
+									myVote === 'changes_requested'
+								}
+							>
+								{ __(
+									'Request Changes',
+									'jumplinks-editorial-workflow'
+								) }
+							</Button>
+						) : null }
+						{ isApproved ? (
+							<Button
+								variant="secondary"
+								onClick={ () =>
+									doAction(
+										'revoke-approval',
+										__(
+											'Approval revoked.',
+											'jumplinks-editorial-workflow'
+										),
+										'in_review'
+									)
+								}
+								disabled={ isBusy }
+								className="flow-bar__btn--revoke"
+							>
+								{ __(
+									'Revoke Approval',
+									'jumplinks-editorial-workflow'
+								) }
+							</Button>
+						) : (
+							<Button
+								variant="primary"
+								onClick={ () =>
+									doAction(
+										'approve',
+										__(
+											'✓ Approval recorded.',
+											'jumplinks-editorial-workflow'
+										),
+										'approved'
+									)
+								}
+								disabled={ isBusy }
+							>
+								{ __(
+									'Approve',
+									'jumplinks-editorial-workflow'
+								) }
+							</Button>
+						) }
+					</div>
+				) : null }
+			</div>
 		</>
 	);
 }

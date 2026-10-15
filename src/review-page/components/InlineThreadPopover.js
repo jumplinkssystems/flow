@@ -14,7 +14,12 @@ import {
 	getIframeDoc,
 	getIframeScale,
 } from '../utils/iframe-bridge';
-import { pageData, isReviewReadOnly } from '../utils/api';
+import {
+	pageData,
+	isReviewReadOnly,
+	canResolveComments,
+	canReopenComments,
+} from '../utils/api';
 import { defaultCommentApi } from '../utils/comment-api';
 import CommentEditor from './CommentEditor';
 import { buildCommentTree } from '../utils/comment-tree';
@@ -704,7 +709,7 @@ export default function InlineThreadPopover( {
 				} )
 			);
 
-			if ( thread.isResolved && reopen ) {
+			if ( thread.isResolved && reopen && canReopenComments() ) {
 				await api.updateComment( thread.id, { resolved: false } );
 				const tid = Number( thread.id );
 				// Update the ref before rebuilding: the rebuild reads from it.
@@ -758,20 +763,18 @@ export default function InlineThreadPopover( {
 			/>
 			<div className="flow-thread-popover__card">
 				<div className="flow-thread-popover__header-actions">
-					{ ! thread.isResolved &&
-						! isReviewReadOnly() &&
-						Number( pageData.currentUserId || 0 ) > 0 && (
-							<Button
-								icon={ commentResolveIcon }
-								size="small"
-								className="flow-thread-popover__resolve-icon"
-								label={ __(
-									'Mark as resolved',
-									'jumplinks-editorial-workflow'
-								) }
-								onClick={ handleResolve }
-							/>
-						) }
+					{ ! thread.isResolved && canResolveComments() && (
+						<Button
+							icon={ commentResolveIcon }
+							size="small"
+							className="flow-thread-popover__resolve-icon"
+							label={ __(
+								'Mark as resolved',
+								'jumplinks-editorial-workflow'
+							) }
+							onClick={ handleResolve }
+						/>
+					) }
 					<Button
 						icon={ closeSmall }
 						className="flow-thread-popover__close"
@@ -815,7 +818,7 @@ export default function InlineThreadPopover( {
 
 				{ replying && (
 					<div className="flow-thread-popover__reply-editor">
-						{ thread.isResolved && (
+						{ thread.isResolved && canReopenComments() && (
 							<label className="flow-thread-popover__reopen">
 								<input
 									type="checkbox"

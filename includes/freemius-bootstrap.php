@@ -269,6 +269,7 @@ if ( ! function_exists( 'flow_fs' ) ) {
 				'flow_ew_setup_completed',
 				'flow_ew_use_case',
 				'flow_ew_disable_external_reviewers',
+				'flow_ew_disable_reviewer_resolve',
 				'flow_ew_show_reviewed_by',
 				'flow_ew_auto_assign_reviewer_id',
 				'flow_ew_auto_assign_reviewer_email',
@@ -291,6 +292,7 @@ if ( ! function_exists( 'flow_fs' ) ) {
 			// Per-post review meta written on every reviewed post.
 			delete_post_meta_by_key( '_flow_reviewer_id' );
 			delete_post_meta_by_key( '_flow_review_status' );
+			delete_metadata( 'user', 0, 'flow_ew_recent_invite_emails', '', true );
 
 			$flow_ew_caps  = array( 'flow_assign_reviewer', 'flow_review_posts', 'flow_manage_reviews' );
 			$flow_ew_roles = array( 'author', 'editor', 'administrator' );

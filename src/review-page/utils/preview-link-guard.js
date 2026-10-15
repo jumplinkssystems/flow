@@ -21,13 +21,21 @@ export function installPreviewLinkGuard( doc ) {
 	// Stricter than enqueue_link_blocking() in class-flow-review-page.php:
 	// the preview is for reading and commenting, so no link may leave it or
 	// move it, including new tabs, mail, call and WhatsApp buttons. Only
-	// script links stay live, since themes use them for tabs and toggles.
+	// script links and in-page toggles (accordions, tabs) stay live.
 	const isSkippableAnchor = ( a ) => {
 		if ( ! a ) {
 			return true;
 		}
 		const href = ( a.getAttribute( 'href' ) || '' ).trim();
-		return href === '' || href.toLowerCase().startsWith( 'javascript:' );
+		if ( href === '' || href.toLowerCase().startsWith( 'javascript:' ) ) {
+			return true;
+		}
+		return (
+			href.startsWith( '#' ) &&
+			a.matches(
+				'[data-toggle], [data-bs-toggle], [aria-controls], [aria-expanded], [role="button"], [role="tab"]'
+			)
+		);
 	};
 
 	// Let a drag inside any link select its text instead of dragging the
@@ -53,6 +61,12 @@ export function installPreviewLinkGuard( doc ) {
 			return;
 		}
 		const a = anchorFromEvent( e );
+		// A bare "#" link goes nowhere: themes use it for tabs (Divi), so keep
+		// their handler and only stop the jump to the top.
+		if ( a && ( a.getAttribute( 'href' ) || '' ).trim() === '#' ) {
+			e.preventDefault();
+			return;
+		}
 		if ( isSkippableAnchor( a ) ) {
 			return;
 		}

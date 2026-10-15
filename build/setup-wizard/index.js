@@ -338,6 +338,7 @@ function initialAnswers() {
     reviewerRoles: Array.isArray(current.reviewerRoles) ? current.reviewerRoles : [],
     allowExternal: current.allowExternal !== false,
     selfReview: false,
+    disableReviewerResolve: !!current.disableReviewerResolve,
     showReviewedBy: !!current.showReviewedBy,
     autoAssign,
     agentEnabled: !!current.agentComments,
@@ -358,6 +359,7 @@ function payload(answers) {
     reviewer_roles: answers.reviewerRoles,
     allow_external: answers.allowExternal,
     self_review: answers.selfReview,
+    disable_reviewer_resolve: answers.disableReviewerResolve,
     show_reviewed_by: answers.showReviewedBy,
     auto_assign_reviewer_id: auto && auto.id ? auto.id : 0,
     auto_assign_email: auto && auto.email ? auto.email : '',
@@ -634,6 +636,7 @@ function previewSettings(answers, allPostTypes) {
     out.allowExternal = useCase === CLIENT ? true : !!answers.allowExternal;
     out.openReviews = useCase === EDITORIAL;
     out.selfReview = !!answers.selfReview;
+    out.disableReviewerResolve = !!answers.disableReviewerResolve;
     out.showReviewedBy = !!answers.showReviewedBy;
     out.autoAssign = answers.autoAssign || null;
   }
@@ -924,6 +927,13 @@ function ExtrasStep({
       title: i18n.selfReviewLabel,
       children: i18n.selfReviewDesc
     }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(CheckCard, {
+      checked: !!answers.disableReviewerResolve,
+      onChange: disableReviewerResolve => update({
+        disableReviewerResolve
+      }),
+      title: i18n.disableReviewerResolveLabel,
+      children: i18n.disableReviewerResolveDesc
+    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(CheckCard, {
       checked: !!answers.showReviewedBy,
       onChange: showReviewedBy => update({
         showReviewedBy
@@ -1150,7 +1160,7 @@ function changes(answers) {
       email: current.autoAssignEmail
     };
   }
-  const rows = [['reviewMode', i18n.modeTitle, MODE_LABELS()[next.reviewMode], MODE_LABELS()[current.reviewMode]], ['postTypes', i18n.typesTitle, listLabel(next.postTypes, choices.postTypes), listLabel(current.postTypes, choices.postTypes)], ['reviewerRoles', i18n.rolesTitle, listLabel(next.reviewerRoles, choices.roles), listLabel(current.reviewerRoles, choices.roles)], ['allowExternal', i18n.externalLabel, onOff(next.allowExternal), onOff(current.allowExternal)], ['openReviews', i18n.openReviewLabel, onOff(next.openReviews), onOff(current.openReviews)], ['selfReview', i18n.selfReviewLabel, onOff(next.selfReview), onOff(current.selfReview)], ['showReviewedBy', i18n.reviewedByLabel, onOff(next.showReviewedBy), onOff(current.showReviewedBy)], ['autoAssign', i18n.autoAssignLabel, personLabel(next.autoAssign), personLabel(currentAutoAssign)], ['agentComments', i18n.agentCommentsLabel, onOff(next.agentComments), onOff(current.agentComments)], ['agentAuthor', i18n.agentAuthorLabel, personLabel(next.agentAuthor), personLabel(current.agentAuthor)]];
+  const rows = [['reviewMode', i18n.modeTitle, MODE_LABELS()[next.reviewMode], MODE_LABELS()[current.reviewMode]], ['postTypes', i18n.typesTitle, listLabel(next.postTypes, choices.postTypes), listLabel(current.postTypes, choices.postTypes)], ['reviewerRoles', i18n.rolesTitle, listLabel(next.reviewerRoles, choices.roles), listLabel(current.reviewerRoles, choices.roles)], ['allowExternal', i18n.externalLabel, onOff(next.allowExternal), onOff(current.allowExternal)], ['openReviews', i18n.openReviewLabel, onOff(next.openReviews), onOff(current.openReviews)], ['selfReview', i18n.selfReviewLabel, onOff(next.selfReview), onOff(current.selfReview)], ['disableReviewerResolve', i18n.disableReviewerResolveLabel, onOff(next.disableReviewerResolve), onOff(current.disableReviewerResolve)], ['showReviewedBy', i18n.reviewedByLabel, onOff(next.showReviewedBy), onOff(current.showReviewedBy)], ['autoAssign', i18n.autoAssignLabel, personLabel(next.autoAssign), personLabel(currentAutoAssign)], ['agentComments', i18n.agentCommentsLabel, onOff(next.agentComments), onOff(current.agentComments)], ['agentAuthor', i18n.agentAuthorLabel, personLabel(next.agentAuthor), personLabel(current.agentAuthor)]];
   return rows.filter(([key,, value, was]) => key in next && value !== was);
 }
 const next = cfg.next || {};

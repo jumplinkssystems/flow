@@ -81,6 +81,21 @@ export default function ReviewBar( {
 	actionsSlot = null,
 } = {} ) {
 	const isSiteReview = mode === 'site-review';
+	const barRef = useRef( null );
+
+	// On mobile the page review's actions sit over the bottom of the open
+	// comments panel; tell the panel how much room to leave for them.
+	useEffect( () => {
+		const group = barRef.current?.querySelector(
+			'.flow-bar__action-group'
+		);
+		const hasActions =
+			! isSiteReview && !! group?.querySelector( 'button' );
+		document.documentElement.style.setProperty(
+			'--flow-ew-mobile-actions-height',
+			hasActions ? '64px' : '0px'
+		);
+	} );
 	const {
 		postTitle = '',
 		postTypeLabel = '',
@@ -382,10 +397,33 @@ export default function ReviewBar( {
 			if ( typeof e.detail?.open !== 'boolean' ) {
 				return;
 			}
-			isExternalCommentsToggleRef.current = true;
-			setCommentsOpen( e.detail.open );
+			const next = e.detail.open;
+			// Only a real change re-runs the broadcast effect that clears this flag.
+			setCommentsOpen( ( prev ) => {
+				if ( prev !== next ) {
+					isExternalCommentsToggleRef.current = true;
+				}
+				return next;
+			} );
+			// On mobile both panels are full screen: show one at a time.
+			if ( e.detail.open && isMobileViewport() ) {
+				window.dispatchEvent(
+					new CustomEvent( 'flow:activity-sidebar-toggle', {
+						detail: { open: false, auto: true },
+					} )
+				);
+			}
 		};
-		const onActivityToggle = ( e ) => setActivityOpen( e.detail.open );
+		const onActivityToggle = ( e ) => {
+			setActivityOpen( e.detail.open );
+			if ( e.detail.open && isMobileViewport() ) {
+				window.dispatchEvent(
+					new CustomEvent( 'flow:comments-sidebar-toggle', {
+						detail: { open: false },
+					} )
+				);
+			}
+		};
 		const onStatusChange = ( e ) => {
 			setCurrentStatus( e.detail.status || '' );
 			if ( Object.prototype.hasOwnProperty.call( e.detail, 'myVote' ) ) {
@@ -615,7 +653,12 @@ export default function ReviewBar( {
 	);
 
 	return (
-		<div className="flow-bar">
+		<div
+			ref={ barRef }
+			className={ `flow-bar${
+				isSiteReview ? ' flow-bar--site-review' : ''
+			}${ commentsOpen ? ' flow-bar--comments-open' : '' }` }
+		>
 			<div className="flow-bar__left">
 				<WpLogoButton
 					wpLogoUrl={ wpLogoUrl }

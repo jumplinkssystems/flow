@@ -27,30 +27,38 @@ final class I18n {
 	/** @var bool|null Memoised: the locale filter runs on every get_locale() call and the request markers never change. */
 	private static ?bool $is_review_request = null;
 
+	private static bool $resolving_anonymous_locale = false;
+
 	public static function boot(): void {
 		add_filter( 'pre_load_script_translations', [ self::class, 'filter_script_translations' ], 10, 4 );
-		add_filter( 'locale', [ self::class, 'force_english_for_anonymous_review' ], 0 );
-		add_filter( 'determine_locale', [ self::class, 'force_english_for_anonymous_review' ], 0 );
+		add_filter( 'locale', [ self::class, 'anonymous_review_locale' ], 0 );
+		add_filter( 'determine_locale', [ self::class, 'anonymous_review_locale' ], 0 );
 	}
 
 	/**
-	 * Anonymous review/site-review visitors don't have a known language
-	 * preference, and the site's default locale is rarely what an external
-	 * reviewer reads in. Force `en_US` for those requests so the chrome and
-	 * inline comments are at least in the lingua franca rather than whatever
-	 * the site happens to publish in.
+	 * Logged-out reviewers (email invitees, public and site-review visitors)
+	 * see the review page in the site's language, like the content they review.
+	 * `flow_ew_anonymous_review_locale` can change that, e.g. to 'en_US'.
+	 * Logged-in users keep their own account language; admin is untouched.
 	 *
-	 * Logged-in users keep their per-account locale; admin requests are
-	 * untouched.
+	 * @param string $locale
+	 * @return string
 	 */
-	public static function force_english_for_anonymous_review( $locale ) {
+	public static function anonymous_review_locale( $locale ) {
 		if ( is_admin() || ! self::is_review_request() ) {
 			return $locale;
 		}
 		if ( function_exists( 'is_user_logged_in' ) && is_user_logged_in() ) {
 			return $locale;
 		}
-		return 'en_US';
+		// A filter callback that calls get_locale() would re-enter this one.
+		if ( self::$resolving_anonymous_locale ) {
+			return $locale;
+		}
+		self::$resolving_anonymous_locale = true;
+		$filtered                         = \apply_filters( 'flow_ew_anonymous_review_locale', $locale );
+		self::$resolving_anonymous_locale = false;
+		return is_string( $filtered ) && '' !== $filtered ? $filtered : $locale;
 	}
 
 	/** Free review entry URL, Pro site-review entry URL, or an active site-review session cookie. */

@@ -2,7 +2,7 @@ import { useState, useCallback, useRef, useEffect } from '@wordpress/element';
 import { Button } from '@wordpress/components';
 import { chevronUp, closeSmall } from '@wordpress/icons';
 import { __ } from '@wordpress/i18n';
-import { pageData, isReviewReadOnly } from '../utils/api';
+import { pageData, isReviewReadOnly, canResolveComments } from '../utils/api';
 import {
 	markCommentBusy,
 	releaseCommentBusy,
@@ -41,7 +41,6 @@ export default function CommentCard( {
 	isReply = false,
 } ) {
 	const currentUserId = Number( pageData.currentUserId || 0 );
-	const isAnonymousViewer = currentUserId === 0;
 	const isOwn =
 		( Number( comment.authorId ) > 0 &&
 			Number( comment.authorId ) === currentUserId ) ||
@@ -201,7 +200,7 @@ export default function CommentCard( {
 							/>
 						) }
 					{ ! menuOpen &&
-						! isAnonymousViewer &&
+						canResolveComments() &&
 						showResolveInActions &&
 						onResolve &&
 						! comment.isResolved && (

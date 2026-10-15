@@ -1,4 +1,10 @@
-import { useState, useEffect, useCallback, useRef } from '@wordpress/element';
+import {
+	useState,
+	useEffect,
+	useLayoutEffect,
+	useCallback,
+	useRef,
+} from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
 import { Icon } from '@wordpress/components';
 import commentReplyIcon from '../icons/comment-reply';
@@ -26,6 +32,9 @@ import { defaultCommentApi } from '../utils/comment-api';
 import { isReviewReadOnly } from '../utils/api';
 import CommentEditor from './CommentEditor';
 
+// Matches $bar-height: the popover never slides under the review bar.
+const BAR_HEIGHT = 64;
+
 function mediaTypeLabel( tagName ) {
 	if ( tagName === 'VIDEO' ) {
 		return __( 'Video', 'jumplinks-editorial-workflow' );
@@ -37,8 +46,10 @@ function mediaTypeLabel( tagName ) {
 }
 
 // A click on any of these does its own thing; it never drops a pin.
-const PIN_EXCLUDED =
-	'.flow-inline-highlight, .flow-inline-highlight-media, .flow-embed-overlay, .flow-embed-wrap, .flow-inline-pin, .flow-review-info-notice, img, video, iframe, input, textarea, select, [contenteditable]';
+// Section backgrounds (`data-flow-background-media`) are pinned on, not commented as media.
+const MEDIA =
+	'img:not([data-flow-background-media]), video:not([data-flow-background-media])';
+const PIN_EXCLUDED = `.flow-inline-highlight, .flow-inline-highlight-media, .flow-embed-overlay, .flow-embed-wrap, .flow-inline-pin, .flow-review-info-notice, ${ MEDIA }, iframe, input, textarea, select, [contenteditable]`;
 // In a site review the reviewer browses the site, so its controls stay live.
 const PIN_EXCLUDED_BROWSING =
 	'a[href], button, [role="button"], summary, label';
@@ -145,6 +156,10 @@ export default function InlineCommentPopover( {
 	const rangeRef = useRef( null );
 	const descriptorRef = useRef( null );
 	const popoverRef = useRef( null );
+	const [ shiftY, setShiftY ] = useState( 0 );
+	// Phones: no room beside the selection, so sit under it (or above).
+	const [ mobilePos, setMobilePos ] = useState( null );
+	const [ popoverHeight, setPopoverHeight ] = useState( 0 );
 	const iframeLocalRef = useRef( null );
 	const pressRef = useRef( null );
 	const pinOfferRef = useRef( null );
@@ -264,6 +279,8 @@ export default function InlineCommentPopover( {
 			let centerY;
 			let anchorLeft;
 			let anchorRight;
+			let anchorTop;
+			let anchorBottom;
 			if ( isInIframe ) {
 				const iframeRect = iframe.getBoundingClientRect();
 				// rect lives in iframe-internal coords; the iframe is visually
@@ -273,10 +290,14 @@ export default function InlineCommentPopover( {
 					iframeRect.top + rect.top * s + ( rect.height * s ) / 2;
 				anchorLeft = iframeRect.left + rect.left * s;
 				anchorRight = iframeRect.left + rect.right * s;
+				anchorTop = iframeRect.top + rect.top * s;
+				anchorBottom = iframeRect.top + rect.bottom * s;
 			} else {
 				centerY = rect.top + rect.height / 2;
 				anchorLeft = rect.left;
 				anchorRight = rect.right;
+				anchorTop = rect.top;
+				anchorBottom = rect.bottom;
 			}
 
 			const { left, flipped } = placeBeside(
@@ -292,6 +313,8 @@ export default function InlineCommentPopover( {
 				flipped,
 				anchorLeft,
 				anchorRight,
+				anchorTop,
+				anchorBottom,
 			} );
 			if ( openEditor ) {
 				setEditorOpen( true );
@@ -355,7 +378,7 @@ export default function InlineCommentPopover( {
 
 			const sourceWindow = e?.view || window;
 			const mediaTarget = e?.target?.closest?.(
-				'img,video,.flow-embed-overlay'
+				`${ MEDIA }, .flow-embed-overlay`
 			);
 			if (
 				mediaTarget &&
@@ -454,7 +477,7 @@ export default function InlineCommentPopover( {
 						'img, video, iframe'
 				  ) ||
 				  null
-				: e.target.closest?.( 'img,video' );
+				: e.target.closest?.( MEDIA );
 
 			if ( ! media ) {
 				return;
@@ -822,6 +845,8 @@ export default function InlineCommentPopover( {
 		let centerY;
 		let anchorLeft;
 		let anchorRight;
+		let anchorTop;
+		let anchorBottom;
 		if ( isInIframe ) {
 			const iframeRect = iframe.getBoundingClientRect();
 			// rect lives in iframe-internal coords; the iframe is visually
@@ -830,10 +855,14 @@ export default function InlineCommentPopover( {
 			centerY = iframeRect.top + rect.top * s + ( rect.height * s ) / 2;
 			anchorLeft = iframeRect.left + rect.left * s;
 			anchorRight = iframeRect.left + rect.right * s;
+			anchorTop = iframeRect.top + rect.top * s;
+			anchorBottom = iframeRect.top + rect.bottom * s;
 		} else {
 			centerY = rect.top + rect.height / 2;
 			anchorLeft = rect.left;
 			anchorRight = rect.right;
+			anchorTop = rect.top;
+			anchorBottom = rect.bottom;
 		}
 
 		const { left, flipped } = placeBeside(
@@ -843,7 +872,15 @@ export default function InlineCommentPopover( {
 		);
 		centerY = clampTopToViewport( centerY, reserveHeight );
 
-		setPosition( { top: centerY, left, flipped, anchorLeft, anchorRight } );
+		setPosition( {
+			top: centerY,
+			left,
+			flipped,
+			anchorLeft,
+			anchorRight,
+			anchorTop,
+			anchorBottom,
+		} );
 		setEditorOpen( true );
 
 		const sourceWindow = rangeDoc.defaultView || window;
@@ -960,6 +997,8 @@ export default function InlineCommentPopover( {
 			flipped,
 			anchorLeft,
 			anchorRight,
+			anchorTop,
+			anchorBottom,
 			offscreen,
 		} );
 	}, [ placeBeside, clampTopToViewport ] );
@@ -1059,6 +1098,79 @@ export default function InlineCommentPopover( {
 		}
 	}, [ position, editorOpen, clampLeftToViewport, placeBeside ] );
 
+	// The editor grows as the reviewer types; track its height.
+	useEffect( () => {
+		const el = popoverRef.current;
+		if ( ! el || typeof window.ResizeObserver !== 'function' ) {
+			return;
+		}
+		const observer = new window.ResizeObserver( () =>
+			setPopoverHeight( el.offsetHeight )
+		);
+		observer.observe( el );
+		return () => observer.disconnect();
+	}, [ position ? 1 : 0 ] ); // eslint-disable-line react-hooks/exhaustive-deps
+
+	// Keep the whole popover between the review bar and the bottom edge.
+	useLayoutEffect( () => {
+		const el = popoverRef.current;
+		if ( ! el || ! position ) {
+			return;
+		}
+		const half = el.offsetHeight / 2;
+		const minTop = BAR_HEIGHT + 8 + half;
+		const maxTop = Math.max( minTop, window.innerHeight - 8 - half );
+		const clamped = Math.min( Math.max( position.top, minTop ), maxTop );
+		const next = clamped - position.top;
+		if ( Math.abs( next - shiftY ) > 0.5 ) {
+			setShiftY( next );
+		}
+	}, [ position, popoverHeight, editorOpen, shiftY ] );
+
+	useLayoutEffect( () => {
+		const el = popoverRef.current;
+		const mobile = !! window.matchMedia?.( '(max-width: 782px)' )?.matches;
+		if (
+			! el ||
+			! position ||
+			! mobile ||
+			undefined === position.anchorBottom
+		) {
+			if ( mobilePos ) {
+				setMobilePos( null );
+			}
+			return;
+		}
+		const h = el.offsetHeight;
+		const w = el.offsetWidth;
+		const minTop = BAR_HEIGHT + 8;
+		const maxTop = Math.max( minTop, window.innerHeight - 8 - h );
+		let top = position.anchorBottom + 8;
+		let above = false;
+		if ( top > maxTop && position.anchorTop - 8 - h >= minTop ) {
+			top = position.anchorTop - 8 - h;
+			above = true;
+		}
+		top = Math.min( Math.max( top, minTop ), maxTop );
+		// Centred under the selection so the caret points at it.
+		const anchorCenter =
+			( position.anchorLeft +
+				( position.anchorRight ?? position.anchorLeft ) ) /
+			2;
+		const left = Math.min(
+			Math.max( 8, anchorCenter - w / 2 ),
+			Math.max( 8, window.innerWidth - 8 - w )
+		);
+		if (
+			! mobilePos ||
+			mobilePos.above !== above ||
+			Math.abs( mobilePos.top - top ) > 0.5 ||
+			Math.abs( mobilePos.left - left ) > 0.5
+		) {
+			setMobilePos( { top, left, above } );
+		}
+	}, [ position, popoverHeight, editorOpen, mobilePos ] );
+
 	if ( ! position ) {
 		return null;
 	}
@@ -1068,12 +1180,14 @@ export default function InlineCommentPopover( {
 			ref={ popoverRef }
 			className={ `flow-inline-popover${
 				editorOpen ? ' flow-inline-popover--editor' : ''
+			}${ mobilePos ? ' flow-inline-popover--below' : '' }${
+				mobilePos?.above ? ' flow-inline-popover--above' : ''
 			}${ position.flipped ? ' flow-inline-popover--flipped' : '' }` }
 			style={ {
 				position: 'fixed',
-				top: `${ position.top }px`,
-				left: `${ position.left }px`,
-				transform: 'translateY(-50%)',
+				top: `${ mobilePos ? mobilePos.top : position.top + shiftY }px`,
+				left: `${ mobilePos ? mobilePos.left : position.left }px`,
+				transform: mobilePos ? 'none' : 'translateY(-50%)',
 				zIndex: 1_000_001,
 				visibility: position.offscreen ? 'hidden' : undefined,
 			} }

@@ -17,6 +17,10 @@ class Email_Review {
 	/** Sentinel option value in reviewer lists (not a WP user id). */
 	const SENTINEL_OPTION = 'email';
 
+	const META_RECENT_INVITES = 'flow_ew_recent_invite_emails';
+
+	const RECENT_INVITES_LIMIT = 5;
+
 	public function boot(): void {
 		( new Email_Review_Link() )->boot();
 
@@ -62,6 +66,73 @@ class Email_Review {
 	}
 
 	/**
+	 * Addresses this user invited before, newest first, offered again in the reviewer picker.
+	 *
+	 * @return string[]
+	 */
+	public static function recent_invite_emails( int $user_id ): array {
+		if ( $user_id <= 0 || Settings::are_external_reviewers_disabled() ) {
+			return [];
+		}
+		$stored = get_user_meta( $user_id, self::META_RECENT_INVITES, true );
+		if ( ! is_array( $stored ) ) {
+			return [];
+		}
+		$emails = array_map( static fn( $e ): string => Email_Review_Invites_DB::normalize_email( (string) $e ), $stored );
+		return array_slice( array_values( array_unique( array_filter( $emails, 'is_email' ) ) ), 0, self::RECENT_INVITES_LIMIT );
+	}
+
+	/**
+	 * @param string[] $emails
+	 */
+	public static function remember_invite_emails( int $user_id, array $emails ): void {
+		if ( $user_id <= 0 ) {
+			return;
+		}
+		$fresh = [];
+		foreach ( $emails as $email ) {
+			$email = Email_Review_Invites_DB::normalize_email( (string) $email );
+			if ( '' !== $email && is_email( $email ) ) {
+				$fresh[] = $email;
+			}
+		}
+		if ( empty( $fresh ) ) {
+			return;
+		}
+		$stored = get_user_meta( $user_id, self::META_RECENT_INVITES, true );
+		$merged = array_values( array_unique( array_merge( array_reverse( $fresh ), is_array( $stored ) ? $stored : [] ) ) );
+		update_user_meta( $user_id, self::META_RECENT_INVITES, array_slice( $merged, 0, self::RECENT_INVITES_LIMIT ) );
+	}
+
+	public static function forget_invite_email( string $email ): int {
+		$email = Email_Review_Invites_DB::normalize_email( $email );
+		if ( '' === $email ) {
+			return 0;
+		}
+		$forgotten = 0;
+		$user_ids  = get_users(
+			[
+				'meta_key'     => self::META_RECENT_INVITES, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
+				'meta_value'   => $email, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value
+				'meta_compare' => 'LIKE',
+				'fields'       => 'ID',
+			]
+		);
+		foreach ( $user_ids as $user_id ) {
+			$stored = get_user_meta( (int) $user_id, self::META_RECENT_INVITES, true );
+			if ( ! is_array( $stored ) ) {
+				continue;
+			}
+			$kept = array_values( array_filter( $stored, static fn( $e ): bool => Email_Review_Invites_DB::normalize_email( (string) $e ) !== $email ) );
+			if ( count( $kept ) !== count( $stored ) ) {
+				update_user_meta( (int) $user_id, self::META_RECENT_INVITES, $kept );
+				++$forgotten;
+			}
+		}
+		return $forgotten;
+	}
+
+	/**
 	 * Assign a single email invite on Free (replaces any prior invite + clears WP reviewer).
 	 *
 	 * @throws \InvalidArgumentException When email invalid.
@@ -99,6 +170,7 @@ class Email_Review {
 		}
 
 		delete_post_meta( $post_id, '_flow_reviewer_id' );
+		self::remember_invite_emails( $requester_id, [ $email ] );
 		do_action( 'flow_ew_email_invite_assigned', $review_id, $post_id, $email, $requester_id );
 
 		return $review_id;

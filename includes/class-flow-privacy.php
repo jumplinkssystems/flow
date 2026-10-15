@@ -153,6 +153,7 @@ final class Privacy {
 		$removed = 0;
 
 		$removed += Email_Review_Invites_DB::delete_all_for_email( $email );
+		$removed += Email_Review::forget_invite_email( $email );
 		$removed += DB::anonymize_comments_by_author_email( $email );
 
 		if ( self::pro_active() ) {

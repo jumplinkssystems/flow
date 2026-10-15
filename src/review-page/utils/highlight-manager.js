@@ -27,6 +27,7 @@ import {
 	installPreviewLinkGuard,
 } from './preview-link-guard';
 import { COMMENTS_HIDDEN_CLASS } from './comment-visibility';
+import { isHiddenTarget, revealHiddenTarget } from './reveal-hidden-target';
 const HIGHLIGHT_CLASS = 'flow-inline-highlight';
 const MEDIA_HIGHLIGHT_CLASS = 'flow-inline-highlight-media';
 const ACTIVE_CLASS = 'flow-inline-highlight--active';
@@ -339,9 +340,22 @@ function handleScrollTo( e ) {
 		return;
 	}
 
-	found.mark.classList.add( ACTIVE_CLASS );
-	found.mark.scrollIntoView( { behavior: 'smooth', block: 'center' } );
-	setTimeout( () => found.mark.classList.remove( ACTIVE_CLASS ), 2000 );
+	const { mark } = found;
+	const scroll = () => {
+		mark.classList.add( ACTIVE_CLASS );
+		mark.scrollIntoView( { behavior: 'smooth', block: 'center' } );
+		setTimeout( () => mark.classList.remove( ACTIVE_CLASS ), 2000 );
+	};
+	// Comments inside a closed accordion or tab: open it first.
+	const target = mark.flowAnchor || mark;
+	if ( isHiddenTarget( target ) ) {
+		revealHiddenTarget( target ).then( () => {
+			repositionPins( mark.ownerDocument );
+			scroll();
+		} );
+		return;
+	}
+	scroll();
 }
 
 /**

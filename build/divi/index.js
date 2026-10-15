@@ -999,6 +999,29 @@ function bindInviteLinkCopy() {
 
 /***/ },
 
+/***/ "./src/shared/invite-value.js"
+/*!************************************!*\
+  !*** ./src/shared/invite-value.js ***!
+  \************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   EMAIL_SENTINEL: () => (/* binding */ EMAIL_SENTINEL),
+/* harmony export */   INVITE_PREFIX: () => (/* binding */ INVITE_PREFIX),
+/* harmony export */   parseInviteValue: () => (/* binding */ parseInviteValue)
+/* harmony export */ });
+const EMAIL_SENTINEL = 'email';
+const INVITE_PREFIX = 'invite:';
+function parseInviteValue(val) {
+  if (typeof val !== 'string' || !val.startsWith(INVITE_PREFIX)) {
+    return '';
+  }
+  return val.slice(INVITE_PREFIX.length);
+}
+
+/***/ },
+
 /***/ "./src/shared/is-publish-blocked.js"
 /*!******************************************!*\
   !*** ./src/shared/is-publish-blocked.js ***!
@@ -1306,6 +1329,75 @@ function syncPublishGuardTooltip(el, blocked) {
 /** @return {Element|null} */
 function findBricksPublishControl() {
   return document.querySelector(':is(#bricks-toolbar, .bricks-toolbar) li:has([data-name="publish"])');
+}
+
+/***/ },
+
+/***/ "./src/shared/recent-invite-emails.js"
+/*!********************************************!*\
+  !*** ./src/shared/recent-invite-emails.js ***!
+  \********************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   getRecentInviteEmails: () => (/* binding */ getRecentInviteEmails),
+/* harmony export */   matchRecentInviteEmails: () => (/* binding */ matchRecentInviteEmails),
+/* harmony export */   rememberInviteEmails: () => (/* binding */ rememberInviteEmails)
+/* harmony export */ });
+const LIMIT = 5;
+function normalize(email) {
+  return String(email || '').trim().toLowerCase();
+}
+
+/**
+ * Addresses the current user invited before, newest first.
+ *
+ * @return {string[]}
+ */
+function getRecentInviteEmails() {
+  const raw = window.flowEW && window.flowEW.recentInviteEmails;
+  const list = Array.isArray(raw) ? raw : Object.values(raw && typeof raw === 'object' ? raw : {});
+  return list.map(normalize).filter(Boolean);
+}
+
+/**
+ * Keep the page's list in step with the server so the address is offered
+ * again without a reload.
+ *
+ * @param {string|string[]} emails
+ */
+function rememberInviteEmails(emails) {
+  if (!window.flowEW) {
+    return;
+  }
+  const fresh = (Array.isArray(emails) ? emails : [emails]).map(normalize).filter(Boolean);
+  if (!fresh.length) {
+    return;
+  }
+  const merged = [];
+  fresh.reverse().concat(getRecentInviteEmails()).forEach(function (email) {
+    if (merged.indexOf(email) === -1) {
+      merged.push(email);
+    }
+  });
+  window.flowEW.recentInviteEmails = merged.slice(0, LIMIT);
+}
+
+/**
+ * Remembered addresses containing the typed text, minus ones already used.
+ * An exact match is left to the "Invite {email}" row.
+ *
+ * @param {string}   query
+ * @param {string[]} [exclude]
+ * @return {string[]}
+ */
+function matchRecentInviteEmails(query, exclude) {
+  const needle = normalize(query);
+  const skip = (exclude || []).map(normalize);
+  return getRecentInviteEmails().filter(function (email) {
+    return skip.indexOf(email) === -1 && email !== needle && (!needle || email.indexOf(needle) !== -1);
+  });
 }
 
 /***/ },
@@ -1621,7 +1713,11 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ });
 /* harmony import */ var _assign_invite_email__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./assign-invite-email */ "./src/shared/assign-invite-email.js");
 /* harmony import */ var _reviewer_email_entry__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./reviewer-email-entry */ "./src/shared/reviewer-email-entry.js");
-/* harmony import */ var _float_combobox_list__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./float-combobox-list */ "./src/shared/float-combobox-list.js");
+/* harmony import */ var _recent_invite_emails__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./recent-invite-emails */ "./src/shared/recent-invite-emails.js");
+/* harmony import */ var _invite_value__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./invite-value */ "./src/shared/invite-value.js");
+/* harmony import */ var _float_combobox_list__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./float-combobox-list */ "./src/shared/float-combobox-list.js");
+
+
 
 
 
@@ -1679,9 +1775,32 @@ function initReviewerCombobox(root, opts = {}) {
     return null;
   }
   root.dataset.flowEwComboboxReady = '1';
-  (0,_float_combobox_list__WEBPACK_IMPORTED_MODULE_2__.floatComboboxList)(list, input.closest('.flow-ew-reviewer-combobox__wrap') || input);
-  const options = Array.from(list.querySelectorAll('[role="option"]'));
+  (0,_float_combobox_list__WEBPACK_IMPORTED_MODULE_4__.floatComboboxList)(list, input.closest('.flow-ew-reviewer-combobox__wrap') || input);
+  let options = [];
   let activeIndex = -1;
+  function syncRecentOptions() {
+    list.querySelectorAll('[data-recent-email]').forEach(li => li.remove());
+    const emailRow = Array.from(list.querySelectorAll('[role="option"]')).find(_reviewer_email_entry__WEBPACK_IMPORTED_MODULE_1__.isEmailComboboxOption);
+    // Remembered addresses only make sense where an invite is allowed.
+    if (emailRow) {
+      let after = emailRow;
+      (0,_recent_invite_emails__WEBPACK_IMPORTED_MODULE_2__.getRecentInviteEmails)().forEach(function (email) {
+        const li = document.createElement('li');
+        li.className = 'flow-ew-reviewer-combobox__option flow-ew-reviewer-combobox__option--recent';
+        li.setAttribute('role', 'option');
+        li.tabIndex = -1;
+        li.dataset.value = _invite_value__WEBPACK_IMPORTED_MODULE_3__.INVITE_PREFIX + email;
+        li.dataset.label = email;
+        li.dataset.isEmail = '0';
+        li.dataset.recentEmail = email;
+        li.textContent = email;
+        after.after(li);
+        after = li;
+      });
+    }
+    options = Array.from(list.querySelectorAll('[role="option"]'));
+  }
+  syncRecentOptions();
   let emailEntryMode = false;
   function emit(name, detail) {
     root.dispatchEvent(new CustomEvent(name, {
@@ -1691,7 +1810,7 @@ function initReviewerCombobox(root, opts = {}) {
   function onlyEmailAvailable() {
     // No WP users left to pick — type an email directly.
     return !options.some(function (li) {
-      return !(0,_reviewer_email_entry__WEBPACK_IMPORTED_MODULE_1__.isEmailComboboxOption)(li);
+      return !(0,_reviewer_email_entry__WEBPACK_IMPORTED_MODULE_1__.isEmailComboboxOption)(li) && !(0,_reviewer_email_entry__WEBPACK_IMPORTED_MODULE_1__.isRecentEmailOption)(li);
     });
   }
   function inEmailMode() {
@@ -1704,7 +1823,8 @@ function initReviewerCombobox(root, opts = {}) {
   }
   function filterOptions(q) {
     (0,_reviewer_email_entry__WEBPACK_IMPORTED_MODULE_1__.filterReviewerComboboxOptions)(options, q, {
-      emailOnly: onlyEmailAvailable()
+      emailOnly: onlyEmailAvailable(),
+      emailEntry: inEmailMode()
     });
   }
   function visibleOptions() {
@@ -1721,7 +1841,11 @@ function initReviewerCombobox(root, opts = {}) {
       if (visibleOptions().length === 0) {
         openList = false;
       }
-    } else if (openList && (emailEntryMode || select.value === 'email' || visibleOptions().length === 0)) {
+    } else if (openList && inEmailMode()) {
+      // While typing an address, only remembered matches open the list.
+      filterOptions(typed);
+      openList = visibleOptions().length > 0;
+    } else if (openList && visibleOptions().length === 0) {
       openList = false;
     }
     list.hidden = !openList;
@@ -1740,6 +1864,16 @@ function initReviewerCombobox(root, opts = {}) {
   }
   function chooseOption(li) {
     if (!li || li.hidden) {
+      return;
+    }
+    if ((0,_reviewer_email_entry__WEBPACK_IMPORTED_MODULE_1__.isRecentEmailOption)(li)) {
+      emailEntryMode = true;
+      select.value = 'email';
+      input.value = li.dataset.recentEmail;
+      setOpen(false);
+      activeIndex = -1;
+      clearEmailError();
+      assignInviteEmail(li.dataset.recentEmail);
       return;
     }
     const id = li.dataset.value;
@@ -1802,10 +1936,7 @@ function initReviewerCombobox(root, opts = {}) {
     if (input.disabled || input.readOnly) {
       return;
     }
-    if (inEmailMode()) {
-      setOpen(false);
-      return;
-    }
+    syncRecentOptions();
     filterOptions(input.value);
     setOpen(true);
   });
@@ -1837,7 +1968,7 @@ function initReviewerCombobox(root, opts = {}) {
       }
       emailEntryMode = true;
       select.value = 'email';
-      setOpen(false);
+      setOpen(true);
       activeIndex = -1;
       if (!typed) {
         clearEmailError();
@@ -1912,8 +2043,7 @@ function initReviewerCombobox(root, opts = {}) {
     const treatAsEmail = inEmailMode() || (0,_assign_invite_email__WEBPACK_IMPORTED_MODULE_0__.isValidEmail)(typed) || typed.includes('@');
     if (e.key === 'ArrowDown') {
       e.preventDefault();
-      if (treatAsEmail) {
-        setOpen(false);
+      if (treatAsEmail && list.hidden) {
         return;
       }
       const vis = visibleOptions();
@@ -1995,6 +2125,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   getExternalEmailLabel: () => (/* binding */ getExternalEmailLabel),
 /* harmony export */   getReviewerPlaceholder: () => (/* binding */ getReviewerPlaceholder),
 /* harmony export */   isEmailComboboxOption: () => (/* binding */ isEmailComboboxOption),
+/* harmony export */   isRecentEmailOption: () => (/* binding */ isRecentEmailOption),
 /* harmony export */   isValidEmail: () => (/* reexport safe */ _assign_invite_email__WEBPACK_IMPORTED_MODULE_0__.isValidEmail),
 /* harmony export */   shouldHideReviewerAutocomplete: () => (/* binding */ shouldHideReviewerAutocomplete)
 /* harmony export */ });
@@ -2012,6 +2143,9 @@ __webpack_require__.r(__webpack_exports__);
 
 function isEmailComboboxOption(li) {
   return !!(li && (li.dataset.isEmail === '1' || li.dataset.value === 'email'));
+}
+function isRecentEmailOption(li) {
+  return !!(li && li.dataset.recentEmail);
 }
 function getEmailPlaceholder() {
   const i18n = window.flowEW && window.flowEW.i18n || {};
@@ -2084,16 +2218,26 @@ function shouldHideReviewerAutocomplete(select, input, emailEntryMode) {
 /**
  * Filter combobox options. The email row shows as "External Email" when the
  * query is empty, or as "Invite {email}" only when the query is a valid address.
+ * While an address is being typed (`emailEntry`) only remembered addresses and
+ * the Invite row show.
  *
  * @param {HTMLElement[]} options
  * @param {string} q
- * @param {{ emailOnly?: boolean }} [opts]
+ * @param {{ emailOnly?: boolean, emailEntry?: boolean }} [opts]
  */
 function filterReviewerComboboxOptions(options, q, opts) {
   const needle = String(q || '').toLowerCase().trim();
   const emailOnly = !!(opts && opts.emailOnly);
+  const emailEntry = !!(opts && opts.emailEntry);
   const externalLabel = getExternalEmailLabel();
   (options || []).forEach(function (li) {
+    if (isRecentEmailOption(li)) {
+      const email = li.dataset.recentEmail;
+      const show = email !== needle && (!needle || email.includes(needle));
+      li.hidden = !show;
+      li.style.display = show ? '' : 'none';
+      return;
+    }
     if (isEmailComboboxOption(li)) {
       // No WP users — type the address directly; never a lone email row.
       if (emailOnly) {
@@ -2103,7 +2247,7 @@ function filterReviewerComboboxOptions(options, q, opts) {
         li.textContent = li.dataset.label || externalLabel;
         return;
       }
-      if (!needle) {
+      if (!needle && !emailEntry) {
         li.hidden = false;
         li.style.display = '';
         // External Email above WP users — keep separator border.
@@ -2127,7 +2271,7 @@ function filterReviewerComboboxOptions(options, q, opts) {
       return;
     }
     const labelLower = String(li.dataset.label || externalLabel).trim().toLowerCase();
-    const show = !needle || labelLower.includes(needle);
+    const show = !emailEntry && (!needle || labelLower.includes(needle));
     li.hidden = !show;
     li.style.display = show ? '' : 'none';
   });

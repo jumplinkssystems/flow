@@ -263,6 +263,50 @@
 	width: 100%;
 }
 
+/* Remembered addresses open over "Current review" like the reviewer list. */
+.flow-ew-email-entry {
+	position: relative;
+}
+
+.flow-ew-recent-invites {
+	position: absolute;
+	top: calc(100% + 4px);
+	left: 0;
+	right: 0;
+	z-index: 30;
+	max-height: 240px;
+	overflow-y: auto;
+	margin: 0;
+	padding: 4px 0;
+	list-style: none;
+	background: #fff;
+	border: 1px solid #949494;
+	border-radius: var(--flow-ew-control-radius, 2px);
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.flow-ew-recent-invites li {
+	margin: 0;
+}
+
+.flow-ew-recent-invites__item.components-button {
+	justify-content: flex-start;
+	width: 100%;
+	height: auto;
+	min-height: 32px;
+	padding: 6px 12px;
+	color: #1e1e1e;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.flow-ew-recent-invites__item.components-button:hover,
+.flow-ew-recent-invites__item.components-button:focus {
+	background: #f0f0f0;
+	color: #1e1e1e;
+}
+
 /* External Email is always the first suggestion — keep it bold + separated. */
 .flow-ew-reviewer-combobox .components-form-token-field__suggestions-list > li:first-child,
 .flow-ew-reviewer-combobox .components-combobox-control__suggestions-container [role="option"]:first-child,

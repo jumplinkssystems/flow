@@ -481,6 +481,95 @@ function watchHighlightChanges( iframe, overlay ) {
 	return obs;
 }
 
+const BACKGROUND_MEDIA_CLASS =
+	/(^|\s)wp-block-cover__(image|video)-background(\s|$)/;
+
+/**
+ * An image or video laid behind a section's content (cover blocks, builder
+ * hero backgrounds): positioned, filling its container, with text on top.
+ * It gets no overlay, so reviewers pin comments on the section instead.
+ *
+ * @param {HTMLElement} media
+ * @param {Window}      view
+ * @return {boolean} Whether the media is a section background.
+ */
+export function isBackgroundMedia( media, view ) {
+	if ( media.tagName !== 'IMG' && media.tagName !== 'VIDEO' ) {
+		return false;
+	}
+	if ( BACKGROUND_MEDIA_CLASS.test( media.className || '' ) ) {
+		return true;
+	}
+	const cs = view.getComputedStyle( media );
+	if ( cs.position !== 'absolute' && cs.position !== 'fixed' ) {
+		return false;
+	}
+	const container = media.offsetParent || media.parentElement;
+	if ( ! container ) {
+		return false;
+	}
+	const mr = media.getBoundingClientRect();
+	const cr = container.getBoundingClientRect();
+	if (
+		! cr.width ||
+		! cr.height ||
+		mr.width < cr.width * 0.9 ||
+		mr.height < cr.height * 0.9
+	) {
+		return false;
+	}
+	return ( container.innerText || '' ).trim().length > 0;
+}
+
+/**
+ * A link stretched over the image instead of wrapping it (Woodmart's
+ * `.wd-fill`, "whole card is clickable" themes). It sits above the overlay,
+ * so the image could not be commented on.
+ *
+ * @param {HTMLElement} media
+ * @param {Window}      view
+ * @return {HTMLAnchorElement|null} The covering link, if any.
+ */
+function findCoveringLink( media, view ) {
+	const mr = media.getBoundingClientRect();
+	if ( ! mr.width || ! mr.height ) {
+		return null;
+	}
+	let scope = media.parentElement;
+	for ( let depth = 0; scope && depth < 3; depth++ ) {
+		for ( const link of scope.querySelectorAll( 'a[href]' ) ) {
+			if ( link.contains( media ) ) {
+				continue;
+			}
+			const position = view.getComputedStyle( link ).position;
+			if ( position !== 'absolute' && position !== 'fixed' ) {
+				continue;
+			}
+			const lr = link.getBoundingClientRect();
+			const overlapW =
+				Math.min( lr.right, mr.right ) - Math.max( lr.left, mr.left );
+			const overlapH =
+				Math.min( lr.bottom, mr.bottom ) - Math.max( lr.top, mr.top );
+			if ( overlapW >= mr.width * 0.9 && overlapH >= mr.height * 0.9 ) {
+				return link;
+			}
+		}
+		scope = scope.parentElement;
+	}
+	return null;
+}
+
+function rectsMatch( a, b ) {
+	const ar = a.getBoundingClientRect();
+	const br = b.getBoundingClientRect();
+	return (
+		Math.abs( ar.left - br.left ) < 1.5 &&
+		Math.abs( ar.top - br.top ) < 1.5 &&
+		Math.abs( ar.width - br.width ) < 1.5 &&
+		Math.abs( ar.height - br.height ) < 1.5
+	);
+}
+
 function wrapMedia( media ) {
 	if ( media.dataset[ WRAPPED_FLAG ] ) {
 		return;
@@ -534,14 +623,27 @@ function wrapMedia( media ) {
 
 	media.dataset[ WRAPPED_FLAG ] = '1';
 
+	if ( isBackgroundMedia( media, view ) ) {
+		media.dataset.flowBackgroundMedia = '1';
+		return;
+	}
+
 	const cs = view.getComputedStyle( media );
 	const isPositioned = cs.position === 'absolute' || cs.position === 'fixed';
 
 	// Image-in-link detection (site-review only). On the per-post review
 	// chrome the link guard intercepts navigation globally, so this is
 	// strictly a site-review concern.
+	const coveringLink = tag === 'IMG' ? findCoveringLink( media, view ) : null;
+	if ( coveringLink ) {
+		// Clicks reach the overlay; in a site review its link pill navigates.
+		coveringLink.style.setProperty( 'pointer-events', 'none', 'important' );
+		coveringLink.dataset.flowCoveringLink = '1';
+	}
 	const linkAncestor =
-		tag === 'IMG' && isSiteReviewMode() ? media.closest( 'a[href]' ) : null;
+		tag === 'IMG' && isSiteReviewMode()
+			? media.closest( 'a[href]' ) || coveringLink
+			: null;
 	const linkHref = linkAncestor
 		? ( linkAncestor.getAttribute( 'href' ) || '' ).trim()
 		: '';
@@ -617,7 +719,9 @@ function wrapMedia( media ) {
 		tag === 'IMG' &&
 		parent.children.length === 1 &&
 		parent.firstElementChild === media &&
-		parent instanceof view.HTMLElement
+		parent instanceof view.HTMLElement &&
+		// An inline link is one text line tall, not the image's height.
+		rectsMatch( parent, media )
 	) {
 		// Snug parent: the image is the parent's only child (Elementor's
 		// `.elementor-post__thumbnail`, theme card thumbnails, image-in-
