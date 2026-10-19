@@ -394,6 +394,7 @@
 			border-bottom: none;
 		}
 
+
 		.flow-comment-editor__link-input {
 			flex: 1;
 			height: 28px;
@@ -688,6 +689,14 @@
 
 	&__reply-header {
 		margin-bottom: 4px;
+		padding-right: 36px;
+	}
+
+	&__reply-actions {
+		position: absolute;
+		top: 6px;
+		right: 0;
+		display: flex;
 	}
 
 	&__avatar {
@@ -778,6 +787,7 @@
 	}
 
 	&__reply {
+		position: relative;
 		padding: 8px 0 4px;
 
 		&:last-child {
@@ -988,6 +998,7 @@
 		border-bottom: none;
 	}
 
+
 	.flow-comment-editor__link-input {
 		flex: 1;
 		height: 28px;
@@ -1059,5 +1070,39 @@
 		box-sizing: border-box;
 		width: 100%;
 		max-width: none;
+	}
+}
+
+// Site styles copied into the panel must not resize comment text.
+.ProseMirror,
+.ProseMirror p {
+	font-size: inherit;
+}
+
+// ProseMirror's base CSS goes into the page <head>, which a shadow root
+// never sees. Without pre-wrap a trailing space (after a mention) collapses.
+.ProseMirror {
+	white-space: pre-wrap;
+	white-space: break-spaces;
+	word-wrap: break-word;
+	font-variant-ligatures: none;
+	font-feature-settings: 'liga' 0;
+}
+
+.ProseMirror [contenteditable='false'] {
+	white-space: normal;
+}
+
+.ProseMirror pre {
+	white-space: pre-wrap;
+}
+
+// iOS Safari zooms the page into any focused field under 16px.
+@supports (-webkit-touch-callout: none) {
+	textarea,
+	input,
+	select,
+	[contenteditable='true'] {
+		font-size: 16px !important;
 	}
 }

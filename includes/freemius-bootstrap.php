@@ -66,7 +66,7 @@ if ( flow_ew_is_pro_build() ) {
 		define( 'FLOW_EW_PRO_VERSION', '1.4.0' );
 	}
 	if ( ! defined( 'FLOW_EW_PRO_DB_VERSION' ) ) {
-		define( 'FLOW_EW_PRO_DB_VERSION', '12' );
+		define( 'FLOW_EW_PRO_DB_VERSION', '14' );
 	}
 	if ( ! defined( 'FLOW_EW_PRO_PLUGIN_FILE' ) ) {
 		define( 'FLOW_EW_PRO_PLUGIN_FILE', dirname( __DIR__ ) . '/jumplinks-editorial-workflow.php' );
@@ -323,6 +323,7 @@ if ( ! function_exists( 'flow_fs' ) ) {
 				$wpdb->prefix . 'flow_review_reviewers',
 				$wpdb->prefix . 'flow_pro_webhook_endpoints',
 				$wpdb->prefix . 'flow_pro_webhook_deliveries',
+				$wpdb->prefix . 'flow_pro_comment_reactions',
 			);
 			foreach ( $flow_ew_pro_tables as $flow_ew_pro_table ) {
 				$flow_ew_pro_table = esc_sql( $flow_ew_pro_table );
@@ -345,6 +346,7 @@ if ( ! function_exists( 'flow_fs' ) ) {
 				'flow_ew_site_review_disabled',
 				'flow_ew_site_review_external_disabled',
 				'flow_ew_site_review_roles',
+				'flow_ew_site_review_link_days',
 				'flow_ew_pro_digest_enabled',
 				'flow_ew_pro_digest_hour',
 				'flow_ew_pro_slack_bot_token',
@@ -363,6 +365,7 @@ if ( ! function_exists( 'flow_fs' ) ) {
 
 			$flow_ew_pro_cron_hooks = array(
 				'flow_ew_pro_daily_digest',
+				'flow_ew_pro_site_review_expiry',
 				'flow_ew_pro_webhook_run',
 				'flow_ew_pro_webhook_sweep',
 				'flow_ew_pro_webhook_prune',

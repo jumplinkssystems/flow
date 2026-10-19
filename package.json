@@ -1,6 +1,6 @@
 {
   "name": "jumplinks-editorial-workflow",
-  "version": "2.6.4",
+  "version": "2.7.0",
   "description": "Jumplinks Flow – Client Feedback & Editorial Workflow",
   "scripts": {
     "test:php": "php vendor/bin/phpunit -c phpunit.xml.dist",
@@ -41,7 +41,7 @@
     "build:tokens": "node scripts/build-status-tokens.js",
     "build:readable": "NODE_ENV=development webpack --config webpack.config.js",
     "build:minified": "NODE_ENV=production webpack --config webpack.config.js",
-    "build": "npm run build:tokens && npm run build:readable && npm run build:minified",
+    "build": "npm run build:tokens && npm run build:readable && npm run build:minified && node scripts/hash-build-files.js",
     "start": "npm run build:tokens && wp-scripts start",
     "lint:js": "wp-scripts lint-js src/",
     "make-pot": "php scripts/make-pot.php",

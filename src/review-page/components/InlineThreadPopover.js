@@ -4,6 +4,7 @@ import { closeSmall } from '@wordpress/icons';
 import commentReplyIcon from '../icons/comment-reply';
 import commentResolveIcon from '../icons/comment-resolve';
 import { __ } from '@wordpress/i18n';
+import { applyFilters } from '@wordpress/hooks';
 import {
 	closestFromEventTarget,
 	eventHitsShadowNode,
@@ -775,6 +776,9 @@ export default function InlineThreadPopover( {
 							onClick={ handleResolve }
 						/>
 					) }
+					{ applyFilters( 'flow_ew_comment_card_actions', null, {
+						comment: thread,
+					} ) }
 					<Button
 						icon={ closeSmall }
 						className="flow-thread-popover__close"
@@ -787,6 +791,9 @@ export default function InlineThreadPopover( {
 					className="flow-thread-popover__body"
 					dangerouslySetInnerHTML={ { __html: thread.html } }
 				/>
+				{ applyFilters( 'flow_ew_comment_card_footer', null, {
+					comment: thread,
+				} ) }
 
 				{ replies.length > 0 && (
 					<div className="flow-thread-popover__replies">
@@ -799,12 +806,24 @@ export default function InlineThreadPopover( {
 									comment={ reply }
 									className="flow-thread-popover__reply-header"
 								/>
+								<span className="flow-thread-popover__reply-actions">
+									{ applyFilters(
+										'flow_ew_comment_card_actions',
+										null,
+										{ comment: reply }
+									) }
+								</span>
 								<div
 									className="flow-thread-popover__reply-body"
 									dangerouslySetInnerHTML={ {
 										__html: reply.html,
 									} }
 								/>
+								{ applyFilters(
+									'flow_ew_comment_card_footer',
+									null,
+									{ comment: reply }
+								) }
 							</div>
 						) ) }
 					</div>

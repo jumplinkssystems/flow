@@ -37,7 +37,7 @@ msgid_plural "%d comments"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/review-page/components/CommentThread.js:150
+#: src/review-page/components/CommentThread.js:153
 msgid "%d more replies"
 msgstr ""
 
@@ -99,7 +99,7 @@ msgstr ""
 msgid "AI agent settings"
 msgstr ""
 
-#: src/review-page/components/CommentCard.js:266
+#: src/review-page/components/CommentCard.js:281
 msgid "Actions"
 msgstr ""
 
@@ -112,13 +112,17 @@ msgid "Active"
 msgstr ""
 
 #: src/review-page/components/BasicCommentEditor.js:179
-#: src/review-page/components/InlineCommentPopover.js:1211
-#: src/review-page/components/InlineCommentPopover.js:1228
+#: src/review-page/components/InlineCommentPopover.js:1246
+#: src/review-page/components/InlineCommentPopover.js:1263
 msgid "Add Comment"
 msgstr ""
 
 #: includes/class-flow-setup-wizard.php:299
 msgid "Add a user"
+msgstr ""
+
+#: src/review-page/components/CommentSidebar.js:291
+msgid "Add general comment"
 msgstr ""
 
 #: src/review-page/utils/commentable-chrome.js:115
@@ -195,7 +199,7 @@ msgstr ""
 msgid "An agent must post a short note describing what it actually changed before a comment counts as resolved, so every resolved thread keeps its own record. With this off, agents resolve silently."
 msgstr ""
 
-#: includes/class-flow-comment-presenter.php:141
+#: includes/class-flow-comment-presenter.php:147
 msgid "Anonymous"
 msgstr ""
 
@@ -386,6 +390,18 @@ msgstr ""
 msgid "Click anywhere on the page to pin a comment to that spot."
 msgstr ""
 
+#: src/review-page/utils/init-embed-overlays.js:260
+msgid "Click to comment"
+msgstr ""
+
+#: src/review-page/utils/init-embed-overlays.js:267
+msgid "Click to leave a comment on this embed"
+msgstr ""
+
+#: src/review-page/utils/init-embed-overlays.js:480
+msgid "Click to leave a comment on this video"
+msgstr ""
+
 #: includes/class-flow-setup-presets.php:33
 msgid "Client feedback"
 msgstr ""
@@ -393,15 +409,15 @@ msgstr ""
 #: includes/site-demo/class-demo-frontend.php:238
 #: templates/builder/panel.php:51
 #: src/review-page/components/AnonymousNamePrompt.js:87
-#: src/review-page/components/CommentCard.js:253
-#: src/review-page/components/InlineThreadPopover.js:781
-#: src/review-page/components/CommentSidebar.js:710
+#: src/review-page/components/CommentCard.js:268
+#: src/review-page/components/InlineThreadPopover.js:785
+#: src/review-page/components/CommentSidebar.js:734
 #: src/review-page/components/RevisionsDialog.js:39
 #: src/review-page/components/RevisionsDialog.js:135
 msgid "Close"
 msgstr ""
 
-#: src/review-page/components/CommentCard.js:195
+#: src/review-page/components/CommentCard.js:206
 msgid "Collapse thread"
 msgstr ""
 
@@ -418,7 +434,7 @@ msgid "Comment not found."
 msgstr ""
 
 #: includes/site-demo/class-demo-admin.php:338
-#: src/review-page/components/CommentSidebar.js:30
+#: src/review-page/components/CommentSidebar.js:32
 msgid "Comments"
 msgstr ""
 
@@ -565,7 +581,7 @@ msgid "Dedicated role created by the Flow plugin. Can access Review page, add co
 msgstr ""
 
 #: includes/site-demo/class-demo-admin.php:394
-#: src/review-page/components/CommentCard.js:243
+#: src/review-page/components/CommentCard.js:258
 #: src/review-page/components/ConfirmDialog.js:10
 msgid "Delete"
 msgstr ""
@@ -575,7 +591,7 @@ msgid "Delete all demo site reviews and wipe the demo session log? This cannot b
 msgstr ""
 
 #: src/review-page/components/InlineCommentsPanel.js:253
-#: src/review-page/components/CommentSidebar.js:202
+#: src/review-page/components/CommentSidebar.js:207
 msgid "Delete this comment?"
 msgstr ""
 
@@ -649,7 +665,7 @@ msgstr ""
 
 #: includes/class-flow-plugin.php:254
 #: includes/class-flow-dashboard-list-renderer.php:68
-#: src/review-page/components/CommentCard.js:233
+#: src/review-page/components/CommentCard.js:248
 msgid "Edit"
 msgstr ""
 
@@ -677,7 +693,7 @@ msgstr ""
 msgid "Email (optional)"
 msgstr ""
 
-#: src/review-page/components/InlineCommentPopover.js:43
+#: src/review-page/components/InlineCommentPopover.js:47
 msgid "Embed"
 msgstr ""
 
@@ -768,7 +784,7 @@ msgstr ""
 
 #: includes/class-flow-rest-reviews.php:812
 #: src/review-page/components/InlineCommentsPanel.js:291
-#: src/review-page/components/CommentSidebar.js:244
+#: src/review-page/components/CommentSidebar.js:249
 msgid "Failed to delete comment."
 msgstr ""
 
@@ -905,9 +921,9 @@ msgstr ""
 msgid "Give me an overview of the feedback on [url]"
 msgstr ""
 
-#: src/review-page/utils/init-embed-overlays.js:288
-#: src/review-page/utils/init-embed-overlays.js:290
-#: src/review-page/utils/init-embed-overlays.js:294
+#: src/review-page/utils/init-embed-overlays.js:371
+#: src/review-page/utils/init-embed-overlays.js:373
+#: src/review-page/utils/init-embed-overlays.js:377
 msgid "Go to link"
 msgstr ""
 
@@ -944,7 +960,7 @@ msgstr ""
 msgid "Hi,\n\n%1$s has sent \"%2$s\" for your review.\n\nOpen the review page:\n%3$s\n\nNo account or password needed — the link signs you in. Select any text or image on the page to leave a comment there. When you're done, click Approve or Request Changes.\n\n— %4$s"
 msgstr ""
 
-#: src/review-page/components/ViewDropdown.js:103
+#: src/review-page/components/ViewDropdown.js:104
 msgid "Hide inline comments"
 msgstr ""
 
@@ -984,9 +1000,9 @@ msgstr ""
 msgid "IP"
 msgstr ""
 
-#: src/review-page/components/InlineCommentPopover.js:45
-#: src/review-page/components/InlineCommentPopover.js:825
-#: src/review-page/components/InlineCommentPopover.js:902
+#: src/review-page/components/InlineCommentPopover.js:49
+#: src/review-page/components/InlineCommentPopover.js:839
+#: src/review-page/components/InlineCommentPopover.js:916
 msgid "Image"
 msgstr ""
 
@@ -1133,8 +1149,8 @@ msgstr ""
 msgid "Mark as AI"
 msgstr ""
 
-#: src/review-page/components/CommentCard.js:211
-#: src/review-page/components/InlineThreadPopover.js:771
+#: src/review-page/components/CommentCard.js:222
+#: src/review-page/components/InlineThreadPopover.js:772
 msgid "Mark as resolved"
 msgstr ""
 
@@ -1196,7 +1212,7 @@ msgstr ""
 msgid "No inline comments yet"
 msgstr ""
 
-#: src/review-page/components/CommentSidebar.js:761
+#: src/review-page/components/CommentSidebar.js:785
 msgid "No resolved comments yet."
 msgstr ""
 
@@ -1366,12 +1382,12 @@ msgstr ""
 msgid "Pinned comment"
 msgstr ""
 
-#: src/review-page/utils/init-embed-overlays.js:374
+#: src/review-page/utils/init-embed-overlays.js:454
 msgid "Play"
 msgstr ""
 
-#: src/review-page/utils/init-embed-overlays.js:368
-#: src/review-page/utils/init-embed-overlays.js:370
+#: src/review-page/utils/init-embed-overlays.js:448
+#: src/review-page/utils/init-embed-overlays.js:450
 msgid "Play video"
 msgstr ""
 
@@ -1415,7 +1431,7 @@ msgstr ""
 msgid "Potentially outdated comment."
 msgstr ""
 
-#: src/review-page/components/ViewDropdown.js:118
+#: src/review-page/components/ViewDropdown.js:119
 msgid "Preview in new tab"
 msgstr ""
 
@@ -1440,7 +1456,7 @@ msgstr ""
 msgid "Publishing stays locked until a reviewer approves."
 msgstr ""
 
-#: src/review-page/components/CommentCard.js:328
+#: src/review-page/components/CommentCard.js:343
 msgid "Read more"
 msgstr ""
 
@@ -1459,8 +1475,8 @@ msgstr ""
 msgid "Remove reviewer"
 msgstr ""
 
-#: src/review-page/components/InlineThreadPopover.js:830
-#: src/review-page/components/CommentThread.js:210
+#: src/review-page/components/InlineThreadPopover.js:849
+#: src/review-page/components/CommentThread.js:213
 msgid "Reopen this thread"
 msgstr ""
 
@@ -1468,10 +1484,10 @@ msgstr ""
 msgid "Repeat until the page is right, then publish. Nobody else sees your comments."
 msgstr ""
 
-#: src/review-page/components/InlineThreadPopover.js:840
-#: src/review-page/components/InlineThreadPopover.js:855
-#: src/review-page/components/CommentThread.js:179
-#: src/review-page/components/CommentThread.js:220
+#: src/review-page/components/InlineThreadPopover.js:859
+#: src/review-page/components/InlineThreadPopover.js:874
+#: src/review-page/components/CommentThread.js:182
+#: src/review-page/components/CommentThread.js:223
 msgid "Reply"
 msgstr ""
 
@@ -1511,12 +1527,12 @@ msgstr ""
 msgid "Resolve comments"
 msgstr ""
 
-#: src/review-page/components/InlineThreadPopover.js:815
-#: src/review-page/components/CommentSidebar.js:34
+#: src/review-page/components/InlineThreadPopover.js:834
+#: src/review-page/components/CommentSidebar.js:36
 msgid "Resolved"
 msgstr ""
 
-#: src/review-page/components/CommentSidebar.js:332
+#: src/review-page/components/CommentSidebar.js:356
 msgid "Resolved comment threads: %d"
 msgstr ""
 
@@ -1645,7 +1661,7 @@ msgid "Reviewed by %s"
 msgstr ""
 
 #: includes/class-flow-plugin.php:250
-#: includes/class-flow-comment-presenter.php:138
+#: includes/class-flow-comment-presenter.php:144
 #: includes/class-flow-ability-context.php:30
 #: templates/classic/review-ui.php:136
 #: templates/classic/review-ui.php:230
@@ -1720,7 +1736,7 @@ msgstr ""
 msgid "Run setup again"
 msgstr ""
 
-#: src/review-page/components/CommentCard.js:287
+#: src/review-page/components/CommentCard.js:302
 msgid "Save"
 msgstr ""
 
@@ -1865,7 +1881,7 @@ msgstr ""
 msgid "Show Pro upgrade prompts across the admin menu, editors, and review page. Turn off to hide the [PRO] Site Review and Integrations menu items plus the \"unlock\" hints in editors and on the review page. The \"Upgrade\" entry and the early-bird discount bar (which reviewers can dismiss) stay visible."
 msgstr ""
 
-#: src/review-page/components/CommentCard.js:324
+#: src/review-page/components/CommentCard.js:339
 msgid "Show less"
 msgstr ""
 
@@ -1966,6 +1982,18 @@ msgstr ""
 msgid "Summarise the changes and wait for my go-ahead"
 msgstr ""
 
+#: src/review-page/utils/init-embed-overlays.js:259
+msgid "Tap to comment"
+msgstr ""
+
+#: src/review-page/utils/init-embed-overlays.js:263
+msgid "Tap to leave a comment on this embed"
+msgstr ""
+
+#: src/review-page/utils/init-embed-overlays.js:476
+msgid "Tap to leave a comment on this video"
+msgstr ""
+
 #: includes/class-flow-setup-wizard.php:316
 msgid "Tell it to fix your comments. It edits the page, resolves each comment it handled and tells you about anything unclear."
 msgstr ""
@@ -2042,7 +2070,7 @@ msgstr ""
 
 #: includes/site-demo/class-demo-admin.php:388
 #: src/review-page/components/InlineCommentsPanel.js:257
-#: src/review-page/components/CommentSidebar.js:206
+#: src/review-page/components/CommentSidebar.js:211
 msgid "This action cannot be undone."
 msgstr ""
 
@@ -2154,7 +2182,7 @@ msgstr ""
 msgid "Unlock public reviews"
 msgstr ""
 
-#: src/review-page/components/CommentSidebar.js:327
+#: src/review-page/components/CommentSidebar.js:351
 msgid "Unresolved comment threads: %d"
 msgstr ""
 
@@ -2187,8 +2215,8 @@ msgstr ""
 msgid "Users with these roles can be assigned as reviewers and approve or request changes."
 msgstr ""
 
-#: src/review-page/components/InlineCommentPopover.js:40
-#: src/review-page/components/InlineCommentPopover.js:824
+#: src/review-page/components/InlineCommentPopover.js:44
+#: src/review-page/components/InlineCommentPopover.js:838
 msgid "Video"
 msgstr ""
 
@@ -2205,6 +2233,14 @@ msgstr ""
 msgid "View Flow Dashboard"
 msgstr ""
 
+#: src/review-page/utils/init-embed-overlays.js:310
+msgid "View comment"
+msgstr ""
+
+#: src/review-page/utils/init-embed-overlays.js:558
+msgid "View existing comment on this embed"
+msgstr ""
+
 #: includes/class-flow-dashboard-widget.php:214
 msgid "View less"
 msgstr ""
@@ -2213,7 +2249,7 @@ msgstr ""
 msgid "View more"
 msgstr ""
 
-#: src/review-page/components/CommentThread.js:187
+#: src/review-page/components/CommentThread.js:190
 msgid "View original"
 msgstr ""
 

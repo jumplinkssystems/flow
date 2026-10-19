@@ -313,6 +313,26 @@ final class Assets {
 		return false === $mtime ? $fallback : $fallback . '.' . $mtime;
 	}
 
+	/** @var array<string,string>|null Hashes from build/manifest.php, keyed by path under build/. */
+	private static ?array $build_manifest = null;
+
+	/**
+	 * Content hash the release build put in a minified file's name, so caches
+	 * that ignore `?ver=` still fetch the new file after an update.
+	 */
+	private static function build_hash( string $min_file ): string {
+		if ( null === self::$build_manifest ) {
+			$manifest_file        = FLOW_EW_PLUGIN_DIR . 'build/manifest.php';
+			$manifest             = is_readable( $manifest_file ) ? include $manifest_file : [];
+			self::$build_manifest = is_array( $manifest ) ? $manifest : [];
+		}
+		$build_dir = FLOW_EW_PLUGIN_DIR . 'build/';
+		if ( 0 !== strpos( $min_file, $build_dir ) ) {
+			return '';
+		}
+		return (string) ( self::$build_manifest[ substr( $min_file, strlen( $build_dir ) ) ] ?? '' );
+	}
+
 	public static function webpack_build_suffix( string $absolute_path_without_extension, string $ext ): string {
 		$ext = strtolower( $ext );
 		if ( ! in_array( $ext, [ 'js', 'css' ], true ) ) {
@@ -324,6 +344,10 @@ final class Assets {
 		$prefer_min = ! ( defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG );
 
 		if ( $prefer_min ) {
+			$hash = self::build_hash( $min_file );
+			if ( '' !== $hash && is_readable( $absolute_path_without_extension . '.min.' . $hash . '.' . $ext ) ) {
+				return '.min.' . $hash;
+			}
 			if ( is_readable( $min_file ) ) {
 				return '.min';
 			}

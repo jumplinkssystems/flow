@@ -67,7 +67,8 @@ export default function ViewDropdown( { postUrl, device } ) {
 					className="flow-bar__view-dropdown"
 					popoverProps={ {
 						placement: 'bottom-end',
-						className: 'flow-bar__view-dropdown-popover',
+						className:
+							'flow-bar__view-dropdown-popover flow-ew-portal',
 					} }
 					toggleProps={ {
 						size: 'compact',

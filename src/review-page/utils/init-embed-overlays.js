@@ -46,13 +46,22 @@ const OVERLAY_CSS = `
 	transition: background-color 0.15s ease;
 	z-index: 2;
 }
-.flow-embed-overlay:hover,
+.flow-embed-overlay.is-touch-armed,
 .flow-embed-overlay:focus-visible {
 	background: rgba(0, 0, 0, 0.25);
 }
-.flow-embed-overlay:hover .flow-embed-overlay__hint,
+.flow-embed-overlay.is-touch-armed .flow-embed-overlay__hint,
 .flow-embed-overlay:focus-visible .flow-embed-overlay__hint {
 	opacity: 1;
+}
+/* Touch screens keep :hover after a tap, so they rely on .is-touch-armed. */
+@media (hover: hover) {
+	.flow-embed-overlay:hover {
+		background: rgba(0, 0, 0, 0.25);
+	}
+	.flow-embed-overlay:hover .flow-embed-overlay__hint {
+		opacity: 1;
+	}
 }
 .flow-embed-overlay:focus-visible {
 	outline: 2px solid #2271b1;
@@ -96,13 +105,28 @@ const OVERLAY_CSS = `
 	bottom: auto !important;
 	margin: 0 !important;
 	transform: none !important;
+	width: auto !important;
+	min-width: 0 !important;
+	height: auto !important;
+	min-height: 0 !important;
+	max-height: none !important;
+	line-height: 1.2 !important;
+	box-shadow: none !important;
+	text-transform: none !important;
+	letter-spacing: normal !important;
 	transition: background-color 0.15s ease, opacity 0.15s ease;
 }
-.flow-embed-overlay:hover .flow-embed-overlay__play-pill,
+.flow-embed-overlay.is-touch-armed .flow-embed-overlay__play-pill,
 .flow-embed-overlay:focus-within .flow-embed-overlay__play-pill,
-.flow-embed-overlay:hover .flow-embed-overlay__link-pill,
+.flow-embed-overlay.is-touch-armed .flow-embed-overlay__link-pill,
 .flow-embed-overlay:focus-within .flow-embed-overlay__link-pill {
 	opacity: 1;
+}
+@media (hover: hover) {
+	.flow-embed-overlay:hover .flow-embed-overlay__play-pill,
+	.flow-embed-overlay:hover .flow-embed-overlay__link-pill {
+		opacity: 1;
+	}
 }
 .flow-embed-overlay__play-pill:hover,
 .flow-embed-overlay__play-pill:focus-visible,
@@ -114,6 +138,9 @@ const OVERLAY_CSS = `
 .flow-embed-overlay__play-pill svg,
 .flow-embed-overlay__link-pill svg {
 	display: block;
+	flex: none;
+	width: 14px;
+	height: 14px;
 }
 /* Small media can't hold the centred hint and a labelled corner pill side by
    side: the pills drop to their icon (the label stays as tooltip and name),
@@ -181,6 +208,7 @@ const OVERLAY_CSS = `
 	pointer-events: none;
 }
 .flow-embed-overlay.is-playing:hover,
+.flow-embed-overlay.is-playing.is-touch-armed,
 .flow-embed-overlay.is-playing:focus-visible {
 	background: transparent;
 }
@@ -223,8 +251,63 @@ function injectOverlayStyles( doc ) {
 // IDs of iframes the plugin itself injects — never wrap these.
 const SKIP_IDS = new Set( [ 'flow-template-frame', 'wp-auth-check-frame' ] );
 
-const HINT_DEFAULT = 'Click to comment';
-const HINT_HAS_COMMENT = 'View comment';
+const IS_TOUCH =
+	typeof window !== 'undefined' &&
+	!! window.matchMedia?.( '(hover: none)' )?.matches;
+const hintDefault = () =>
+	IS_TOUCH
+		? __( 'Tap to comment', 'jumplinks-editorial-workflow' )
+		: __( 'Click to comment', 'jumplinks-editorial-workflow' );
+const leaveCommentLabel = () =>
+	IS_TOUCH
+		? __(
+				'Tap to leave a comment on this embed',
+				'jumplinks-editorial-workflow'
+		  )
+		: __(
+				'Click to leave a comment on this embed',
+				'jumplinks-editorial-workflow'
+		  );
+const ARMED_CLASS = 'is-touch-armed';
+
+function isTouchTap( e ) {
+	if ( e?.pointerType ) {
+		return e.pointerType !== 'mouse';
+	}
+	return IS_TOUCH;
+}
+
+/**
+ * On touch screens the first tap only reveals the overlay (hint, Play, Go to
+ * link); the second one acts. Returns true when this tap just revealed it.
+ *
+ * @param {Element} overlay
+ * @param {Event}   e
+ * @return {boolean} Whether the tap was used up revealing the overlay.
+ */
+export function revealOverlayOnFirstTap( overlay, e ) {
+	if (
+		! overlay ||
+		overlay.classList.contains( ARMED_CLASS ) ||
+		overlay.classList.contains( 'is-playing' ) ||
+		! isTouchTap( e )
+	) {
+		return false;
+	}
+	overlay.ownerDocument
+		.querySelectorAll( `.${ ARMED_CLASS }` )
+		.forEach( ( el ) => el.classList.remove( ARMED_CLASS ) );
+	overlay.classList.add( ARMED_CLASS );
+	return true;
+}
+
+export function hideTouchOverlays( doc ) {
+	doc?.querySelectorAll( `.${ ARMED_CLASS }` ).forEach( ( el ) =>
+		el.classList.remove( ARMED_CLASS )
+	);
+}
+const hintHasComment = () =>
+	__( 'View comment', 'jumplinks-editorial-workflow' );
 const HIGHLIGHT_CLASS = 'flow-inline-highlight-media';
 
 // Iframe sources we recognise as video players. Matched against the iframe
@@ -348,15 +431,12 @@ function createOverlay( doc, opts = {} ) {
 	const overlay = doc.createElement( 'span' );
 	overlay.className = 'flow-embed-overlay';
 	overlay.setAttribute( 'role', 'button' );
-	overlay.setAttribute(
-		'aria-label',
-		'Click to leave a comment on this embed'
-	);
+	overlay.setAttribute( 'aria-label', leaveCommentLabel() );
 	overlay.tabIndex = 0;
 
 	const hint = doc.createElement( 'span' );
 	hint.className = 'flow-embed-overlay__hint';
-	hint.textContent = HINT_DEFAULT;
+	hint.textContent = hintDefault();
 	overlay.appendChild( hint );
 
 	if ( opts.isVideo ) {
@@ -392,7 +472,15 @@ function createOverlay( doc, opts = {} ) {
 		pin.setAttribute( 'role', 'button' );
 		pin.setAttribute(
 			'aria-label',
-			'Click to leave a comment on this video'
+			IS_TOUCH
+				? __(
+						'Tap to leave a comment on this video',
+						'jumplinks-editorial-workflow'
+				  )
+				: __(
+						'Click to leave a comment on this video',
+						'jumplinks-editorial-workflow'
+				  )
 		);
 		pin.tabIndex = 0;
 		pin.innerHTML = COMMENT_SVG;
@@ -463,12 +551,15 @@ function updateHintForIframe( iframe, overlay ) {
 		return;
 	}
 	const hasComment = iframe.classList.contains( HIGHLIGHT_CLASS );
-	hint.textContent = hasComment ? HINT_HAS_COMMENT : HINT_DEFAULT;
+	hint.textContent = hasComment ? hintHasComment() : hintDefault();
 	overlay.setAttribute(
 		'aria-label',
 		hasComment
-			? 'View existing comment on this embed'
-			: 'Click to leave a comment on this embed'
+			? __(
+					'View existing comment on this embed',
+					'jumplinks-editorial-workflow'
+			  )
+			: leaveCommentLabel()
 	);
 }
 
@@ -904,6 +995,20 @@ export function attachToDoc( doc ) {
 	injectOverlayStyles( doc );
 	watchPendingMedia( doc );
 	scanRoot( root );
+
+	if ( ! doc.flowTouchOverlayDismiss ) {
+		doc.flowTouchOverlayDismiss = true;
+		doc.addEventListener(
+			'pointerdown',
+			( e ) => {
+				const armed = doc.querySelector( `.${ ARMED_CLASS }` );
+				if ( armed && ! armed.contains( e.target ) ) {
+					armed.classList.remove( ARMED_CLASS );
+				}
+			},
+			true
+		);
+	}
 
 	if ( observer ) {
 		observer.disconnect();

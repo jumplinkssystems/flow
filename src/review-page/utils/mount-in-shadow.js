@@ -1,6 +1,8 @@
 import { render } from '@wordpress/element';
 
-const WP_STYLE_SELECTOR = 'style[id^="wp-"], link[id^="wp-"]';
+// The site's Customizer "Additional CSS" is for the theme, not for Flow.
+const WP_STYLE_SELECTOR =
+	'style[id^="wp-"]:not(#wp-custom-css), link[id^="wp-"]';
 
 export default function mountInShadow( hostEl, cssText, Tree ) {
 	const shadow = hostEl.attachShadow( { mode: 'open' } );
@@ -23,6 +25,7 @@ export default function mountInShadow( hostEl, cssText, Tree ) {
 				const id = node.id || '';
 				if (
 					id.startsWith( 'wp-' ) &&
+					id !== 'wp-custom-css' &&
 					( node.tagName === 'STYLE' || node.tagName === 'LINK' )
 				) {
 					cloneNode( node );

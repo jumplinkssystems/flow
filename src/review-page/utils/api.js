@@ -25,7 +25,7 @@ export { pageData };
 
 export const isReviewReadOnly = () => !! pageData.isCancelled;
 
-// Localized as "1" / "". Site review chrome sends no flag yet and keeps the logged-in-only rule.
+// Localized as "1" / "" (page reviews) or a boolean (site reviews).
 export const canResolveComments = () => {
 	if ( isReviewReadOnly() ) {
 		return false;

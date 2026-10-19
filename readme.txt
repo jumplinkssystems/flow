@@ -4,7 +4,7 @@ Tags: client feedback, website feedback, content approval, site review, editoria
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.6.4
+Stable tag: 2.7.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -201,12 +201,24 @@ No, and this is deliberate rather than an oversight. There is no approve ability
 
 == Changelog ==
 
+= 2.7.0 =
+* New: Site review links expire after a set number of days (Pro): choose 1 to 999 days under Settings → Site Review (default 30). Seven days before, the review page shows a notice where you can extend by any number of days, and the requester gets an email.
+* New: Feedback summary on the site review page (Pro): open any page to see its comments with author, status and replies, filter by status or by reviewer, and jump straight to a comment with Open comment. Each reviewer shows "X comments on Y pages".
+* New: Emoji reactions on comments (Pro): react with 👍 👎 ✅ ❤️ 👀 or 🤔 from the button in a comment's corner, like in Slack. Reactions show under the comment with a count and never send an email.
+* New: Emoji in the comment editor (Pro): an emoji button after the link button inserts common reactions, and typed smileys such as :) or <3 turn into emoji.
+* Improvement: The general comment form in the review sidebar opens from an Add general comment link, and only one comment, reply or edit form is open at a time.
+* Improvement: Site review counts are per thread: replies no longer count as open comments, and the summary sidebar shows open and resolved counts for every page, general comments included.
+* Improvement: Mobile: on iPhone the comment field no longer zooms the page and stays above the keyboard, the first tap on an image or video shows its overlay and the second opens the comment, and comment dates are shorter.
+* Fix: Theme styles no longer leak into Flow's menus and comment editor, the space after a mention is kept, and the link badge fits small images.
+* Fix: Updates show up straight away on sites behind Cloudflare or other caches: Flow's script and style files now have the version in their name.
+
 = 2.6.4 =
 * New: Reviewers, including people invited by email, can resolve comment threads. Turn it off under Settings → Workflow → "Disable reviewers resolving comments"; reviewers can always reopen a thread.
 * New: The reviewer field suggests the last 5 email addresses you invited.
-* Improvement: Mobile interface improvements: panels take 80% of the screen, larger bar buttons, review actions at the bottom of the comments panel, the comment box opens under the selected text, and picking a page or comment closes the panel.
+* Improvement: Mobile interface improvements: panels take 80% of the screen and fit above the browser toolbar, larger bar buttons, review actions at the bottom of the comments panel, the comment box opens under the selected text, and picking a page or comment closes the panel.
+* Fix: In site reviews (Pro), menus such as View no longer open on top of their button when the WordPress toolbar is turned on.
 * Improvement: Clearer confirmations for Send feedback and Exit review in site reviews (Pro).
-* Fix: Clicking a comment inside a closed accordion, toggle or tab opens it and scrolls to the comment, for all supported builders and popular block plugins, and accordion or tab titles that are links (Avada, Bootstrap) open on the review page.
+* Fix: Clicking a comment inside a closed accordion, toggle or tab opens it and scrolls to the comment, for all supported builders and popular block plugins, and accordion or tab titles that are links (Avada, Bootstrap, Divi) open on the review page.
 * Fix: Comment overlays on linked images, logos and Woodmart cards; no overlay on background images.
 * Fix: Reviewers who are not logged in see Flow in the site's language.
 * Fix: The Flow logo no longer links to jumplinks.net for reviewers who are not logged in.
@@ -222,23 +234,5 @@ No, and this is deliberate rather than an oversight. There is no approve ability
 * Fix: Administrators and editors (anyone who can manage reviews) can open any review page, not only reviews they requested or were assigned to. Self reviews stay private.
 * Improvement: In the builder integrations and the Classic editor, the "Review Mode set to Mandatory" notice can be dismissed. It stays hidden in that browser; publishing is still blocked until approval.
 * Tweak: The Breakdance review panel is as tall as Oxygen's, and in Divi the Current review icons are smaller and its link uses Divi's link blue.
-
-= 2.6.2 =
-* New: Pin comments. Click a spot on the review page that has no text to highlight (backgrounds, empty space, button padding) to pin a comment there; clicks on text stay for highlighting. Pins follow their element through reflows and device sizes, turn green when resolved, and AI agents get the element and position over MCP. The review page tips card and the Pro site review welcome show pinning in a new clip.
-* New: Hide inline comments in the View menu shows the page without highlights and pins; picking a comment in the sidebar still shows that one. The choice is remembered per browser.
-* Fix: Highlighted text keeps the page's own text colour instead of turning black on dark sections.
-* Fix: Embeds sized to fill their box, such as maps, keep their full size on the review page instead of shrinking to 300×150.
-* Fix: Cookie banners, chat widgets and other theme or plugin output no longer show twice on the review page and in site reviews.
-* Fix: Call, WhatsApp, mail and new-tab buttons no longer open from the review page preview, the same as other links.
-* Fix: Commenting on something at the right edge of the page opens Add Comment on its left, pointing at it, instead of covering it.
-* Fix: On small images and videos, the Go to link and Play buttons shrink to their icon and the comment hint steps aside, so nothing overlaps.
-* Improvement: External reviewers invited by email can edit and delete their own comments, on the review page and (Pro) in site reviews.
-* Fix: Older Bricks revisions on the review page show the page as it was after that save, not the save before it.
-* Fix: Dragging across a button or link selects its text instead of dragging the link, on the review page and in site reviews, where a plain click still follows the link.
-* Improvement: View revisions now shows older layouts for Breakdance and Beaver Builder pages too (Beaver from new saves on), and on builder pages lists only revisions that carry a layout. The link only appears once the page has more than one revision.
-* Improvement: Comments whose text is gone from the current version show as outdated on every builder, and get a View original button that opens the version they were written on.
-* Fix: A comment whose text was removed no longer jumps to the same word in another part of the page; it stays anchored to where it was left.
-* Improvement: Clicking a highlighted comment on the page opens its thread in the sidebar on the right tab, Resolved included, and keeps it outlined until you click elsewhere.
-* Tweak: The review page's Cancel review button is red, matching the cancel icon in the editor.
 
 Earlier versions: https://jumplinks.net/changelog/

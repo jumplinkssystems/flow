@@ -8,6 +8,7 @@ import {
 } from '@wordpress/element';
 import { Button } from '@wordpress/components';
 import { closeSmall } from '@wordpress/icons';
+import commentReplyIcon from '../icons/comment-reply';
 import { __, sprintf } from '@wordpress/i18n';
 import { applyFilters } from '@wordpress/hooks';
 import { pageData, isReviewReadOnly } from '../utils/api';
@@ -22,6 +23,7 @@ import CommentThread from './CommentThread';
 import InlineCommentsPanel from './InlineCommentsPanel';
 import { buildCommentTree } from '../utils/comment-tree';
 import { useConfirmDialog } from '../hooks/use-confirm-dialog';
+import { useSingleCommentForm } from '../utils/single-comment-form';
 import { isSameReviewPage } from '../../shared/same-review-page';
 
 const SIDEBAR_TABS = [
@@ -63,6 +65,9 @@ function GeneralCommentsPanel( {
 	setComments,
 } ) {
 	const { confirm, confirmDialog } = useConfirmDialog();
+	// The general comment form opens on demand and shares the one-open-form rule.
+	const [ composing, setComposing ] = useState( false );
+	useSingleCommentForm( composing, () => setComposing( false ) );
 
 	const tree = useMemo( () => buildCommentTree( comments ), [ comments ] );
 	const { activeThreads, resolvedThreads } = useMemo( () => {
@@ -258,7 +263,7 @@ function GeneralCommentsPanel( {
 
 	return (
 		<>
-			{ showEditor && ! readOnly && (
+			{ showEditor && ! readOnly && composing && (
 				<div className="flow-sidebar__body">
 					{ applyFilters(
 						'flow_ew_comment_editor_extras',
@@ -266,9 +271,28 @@ function GeneralCommentsPanel( {
 						{}
 					) }
 					<CommentEditor
-						onSubmit={ handleSubmit }
+						onSubmit={ async ( html ) => {
+							await handleSubmit( html );
+							setComposing( false );
+						} }
+						onCancel={ () => setComposing( false ) }
 						clearDraftOnCancel
+						autoFocus
 					/>
+				</div>
+			) }
+			{ showEditor && ! readOnly && ! composing && (
+				<div className="flow-sidebar__body">
+					<Button
+						icon={ commentReplyIcon }
+						className="flow-btn--text flow-comment-thread__reply-btn flow-sidebar__add-general"
+						onClick={ () => setComposing( true ) }
+					>
+						{ __(
+							'Add general comment',
+							'jumplinks-editorial-workflow'
+						) }
+					</Button>
 				</div>
 			) }
 			{ threads.length > 0 && (

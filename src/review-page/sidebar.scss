@@ -249,6 +249,11 @@ textarea {
 		flex-shrink: 0;
 	}
 
+	// Reply-link look; its box starts at the comment cards' edge.
+	&__add-general.flow-comment-thread__reply-btn.components-button {
+		margin-left: 0 !important;
+	}
+
 	&__placeholder {
 		padding: 24px 16px;
 		color: $color-muted;
@@ -575,6 +580,23 @@ textarea {
 		line-height: 1.2;
 		grid-column: 2;
 		grid-row: 2;
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	&__date-short {
+		display: none;
+	}
+
+	@media (max-width: $mobile-bp) {
+		&__date-full {
+			display: none;
+		}
+
+		&__date-short {
+			display: inline;
+		}
 	}
 
 	&__actions {
@@ -584,6 +606,10 @@ textarea {
 		grid-column: 3;
 		grid-row: 1 / span 2;
 		align-self: center;
+
+		@media (max-width: $mobile-bp) {
+			gap: 0;
+		}
 	}
 
 	&__action-btn.components-button {
@@ -973,7 +999,7 @@ textarea {
 			min-width: 32px !important;
 			width: auto !important;
 			height: 36px !important;
-			padding: 0 6px !important;
+			padding: 0 4px !important;
 			border-radius: 0;
 			border-left: 1px solid $editor-border-color;
 			color: $color-text;
@@ -995,8 +1021,18 @@ textarea {
 			min-width: 32px !important;
 			width: auto !important;
 			height: 36px !important;
-			padding: 0 6px !important;
+			padding: 0 4px !important;
 			border-radius: 0;
+		}
+
+		// The mobile panel is narrower: keep the whole row visible in replies too.
+		@media (max-width: $mobile-bp) {
+			.components-button,
+			.components-button.is-small,
+			.components-button[data-size="small"] {
+				min-width: 28px !important;
+				padding: 0 2px !important;
+			}
 		}
 	}
 
@@ -1132,6 +1168,7 @@ textarea {
 		border-bottom: none;
 	}
 
+
 	&__link-input {
 		flex: 1;
 		height: 28px;
@@ -1246,5 +1283,39 @@ textarea {
 @media (max-width: $mobile-bp) {
 	.flow-sidebar__tab-panel {
 		padding-bottom: var(--flow-ew-mobile-actions-height, 0px);
+	}
+}
+
+// Site styles copied into the panel must not resize comment text.
+.ProseMirror,
+.ProseMirror p {
+	font-size: inherit;
+}
+
+// ProseMirror's base CSS goes into the page <head>, which a shadow root
+// never sees. Without pre-wrap a trailing space (after a mention) collapses.
+.ProseMirror {
+	white-space: pre-wrap;
+	white-space: break-spaces;
+	word-wrap: break-word;
+	font-variant-ligatures: none;
+	font-feature-settings: 'liga' 0;
+}
+
+.ProseMirror [contenteditable='false'] {
+	white-space: normal;
+}
+
+.ProseMirror pre {
+	white-space: pre-wrap;
+}
+
+// iOS Safari zooms the page into any focused field under 16px.
+@supports (-webkit-touch-callout: none) {
+	textarea,
+	input,
+	select,
+	[contenteditable='true'] {
+		font-size: 16px !important;
 	}
 }

@@ -2,6 +2,7 @@ import { useState, useCallback, useRef, useEffect } from '@wordpress/element';
 import { Button } from '@wordpress/components';
 import { chevronUp, closeSmall } from '@wordpress/icons';
 import { __ } from '@wordpress/i18n';
+import { applyFilters } from '@wordpress/hooks';
 import { pageData, isReviewReadOnly, canResolveComments } from '../utils/api';
 import {
 	markCommentBusy,
@@ -9,6 +10,7 @@ import {
 } from '../utils/local-edit-registry';
 import { eventHitsShadowNode } from '../utils/dom-helpers';
 import CommentEditor from './CommentEditor';
+import { useSingleCommentForm } from '../utils/single-comment-form';
 import commentMoreIcon from '../icons/comment-more';
 import commentResolveIcon from '../icons/comment-resolve';
 import commentEditIcon from '../icons/comment-edit';
@@ -54,6 +56,7 @@ export default function CommentCard( {
 		markCommentBusy( comment.id );
 		return () => releaseCommentBusy( comment.id );
 	}, [ editing, comment.id ] );
+	useSingleCommentForm( editing, () => setEditing( false ) );
 	const [ menuOpen, setMenuOpen ] = useState( false );
 	const [ truncated, setTruncated ] = useState( false );
 	// Expanding one long comment is separate from expanding the whole thread.
@@ -180,8 +183,16 @@ export default function CommentCard( {
 						<span className="flow-comment-card__agent">AI</span>
 					) }
 				</span>
-				<span className="flow-comment-card__date">
-					{ comment.date }
+				<span
+					className="flow-comment-card__date"
+					title={ comment.date }
+				>
+					<span className="flow-comment-card__date-full">
+						{ comment.date }
+					</span>
+					<span className="flow-comment-card__date-short">
+						{ comment.dateShort || comment.date }
+					</span>
 				</span>
 				<span className="flow-comment-card__actions">
 					{ ! menuOpen &&
@@ -215,6 +226,10 @@ export default function CommentCard( {
 								onClick={ () => onResolve( comment.id ) }
 							/>
 						) }
+					{ ! menuOpen &&
+						applyFilters( 'flow_ew_comment_card_actions', null, {
+							comment,
+						} ) }
 					{ isOwn && ! isReviewReadOnly() && (
 						<div
 							ref={ menuRef }
@@ -331,6 +346,9 @@ export default function CommentCard( {
 								  ) }
 						</button>
 					) }
+					{ applyFilters( 'flow_ew_comment_card_footer', null, {
+						comment,
+					} ) }
 				</>
 			) }
 		</div>

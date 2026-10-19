@@ -9,6 +9,7 @@ import {
 	releaseCommentBusy,
 } from '../utils/local-edit-registry';
 import CommentEditor from './CommentEditor';
+import { useSingleCommentForm } from '../utils/single-comment-form';
 import { pageData, canReopenComments } from '../utils/api';
 const COLLAPSED_REPLY_LIMIT = 1;
 
@@ -48,6 +49,8 @@ export default function CommentThread( {
 		markCommentBusy( replyingTo );
 		return () => releaseCommentBusy( replyingTo );
 	}, [ replyingTo ] );
+
+	useSingleCommentForm( !! replyingTo, () => setReplyingTo( null ) );
 	const [ threadExpanded, setThreadExpanded ] = useState( false );
 	// Replying to a resolved thread almost always means the fix was wrong, so
 	// reopening is the default. The box is visible, so it is easy to opt out.

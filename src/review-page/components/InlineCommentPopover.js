@@ -29,6 +29,10 @@ import {
 	eventInsidePortalUI,
 } from '../utils/dom-helpers';
 import { defaultCommentApi } from '../utils/comment-api';
+import {
+	revealOverlayOnFirstTap,
+	hideTouchOverlays,
+} from '../utils/init-embed-overlays';
 import { isReviewReadOnly } from '../utils/api';
 import CommentEditor from './CommentEditor';
 
@@ -454,6 +458,16 @@ export default function InlineCommentPopover( {
 		( e ) => {
 			if ( editorOpenRef.current || isReviewReadOnly() ) {
 				return;
+			}
+
+			const tapped = e.target.closest?.( '.flow-embed-overlay' );
+			if ( revealOverlayOnFirstTap( tapped, e ) ) {
+				e.preventDefault();
+				e.stopPropagation();
+				return;
+			}
+			if ( tapped ) {
+				hideTouchOverlays( tapped.ownerDocument );
 			}
 
 			// Play / Go-to-link pills own their clicks; don't steal them here.
@@ -1050,6 +1064,10 @@ export default function InlineCommentPopover( {
 		window.addEventListener( 'resize', onViewportChange, {
 			passive: true,
 		} );
+		// iOS keeps the layout viewport when the keyboard opens; only the
+		// visual viewport shrinks and pans.
+		window.visualViewport?.addEventListener( 'resize', onViewportChange );
+		window.visualViewport?.addEventListener( 'scroll', onViewportChange );
 		window.addEventListener( 'flow:iframe-ready', onIframeReady );
 		window.addEventListener( 'flow:iframe-removed', onIframeRemoved );
 		attachIframeScroll( getIframe() );
@@ -1060,6 +1078,14 @@ export default function InlineCommentPopover( {
 			}
 			window.removeEventListener( 'scroll', onViewportChange, true );
 			window.removeEventListener( 'resize', onViewportChange );
+			window.visualViewport?.removeEventListener(
+				'resize',
+				onViewportChange
+			);
+			window.visualViewport?.removeEventListener(
+				'scroll',
+				onViewportChange
+			);
 			window.removeEventListener( 'flow:iframe-ready', onIframeReady );
 			window.removeEventListener(
 				'flow:iframe-removed',
@@ -1143,8 +1169,12 @@ export default function InlineCommentPopover( {
 		}
 		const h = el.offsetHeight;
 		const w = el.offsetWidth;
-		const minTop = BAR_HEIGHT + 8;
-		const maxTop = Math.max( minTop, window.innerHeight - 8 - h );
+		// Stay inside what is visible above the on-screen keyboard.
+		const vv = window.visualViewport;
+		const viewTop = vv ? vv.offsetTop : 0;
+		const viewBottom = vv ? vv.offsetTop + vv.height : window.innerHeight;
+		const minTop = viewTop + 8 + Math.max( 0, BAR_HEIGHT - viewTop );
+		const maxTop = Math.max( minTop, viewBottom - 8 - h );
 		let top = position.anchorBottom + 8;
 		let above = false;
 		if ( top > maxTop && position.anchorTop - 8 - h >= minTop ) {
@@ -1152,6 +1182,11 @@ export default function InlineCommentPopover( {
 			above = true;
 		}
 		top = Math.min( Math.max( top, minTop ), maxTop );
+		// Too tall for the space above the keyboard: keep the field and the
+		// submit button in view, even if that covers the review bar.
+		if ( editorOpen && top + h > viewBottom - 8 ) {
+			top = Math.max( viewTop + 8, viewBottom - 8 - h );
+		}
 		// Centred under the selection so the caret points at it.
 		const anchorCenter =
 			( position.anchorLeft +

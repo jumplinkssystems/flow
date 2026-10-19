@@ -56,8 +56,8 @@ final class Comment_Presenter {
 	public static function version( array $comment_state, object $review ): string {
 		// The post's own stamp: saving a draft mints a revision without
 		// touching the review row, and reviewers still need to hear about it.
-		$post = get_post( (int) $review->post_id );
-		return sprintf(
+		$post    = get_post( (int) $review->post_id );
+		$version = sprintf(
 			'%d.%d.%d-%d.%d.%s-%d',
 			(int) $comment_state['total'],
 			(int) $comment_state['max_id'],
@@ -69,6 +69,8 @@ final class Comment_Presenter {
 			(string) ( $review->status ?? '' ),
 			$post instanceof \WP_Post ? (int) strtotime( (string) $post->post_modified_gmt . ' UTC' ) : 0
 		);
+		// Extensions that add their own per-comment data (Pro reactions) change the token too.
+		return (string) apply_filters( 'flow_ew_comments_version', $version, $review );
 	}
 
 	/**
@@ -94,11 +96,15 @@ final class Comment_Presenter {
 
 		[ $general, $inline ] = self::split( array_map( [ self::class, 'to_array' ], $rows ) );
 
-		return [
-			'comments'        => $general,
-			'inlineComments'  => $inline,
-			'commentsVersion' => self::version( self::state_from_rows( $rows ), $review ),
-		];
+		return (array) apply_filters(
+			'flow_ew_review_comment_lists',
+			[
+				'comments'        => $general,
+				'inlineComments'  => $inline,
+				'commentsVersion' => self::version( self::state_from_rows( $rows ), $review ),
+			],
+			$review
+		);
 	}
 
 	/**
@@ -164,6 +170,18 @@ final class Comment_Presenter {
 				get_option( 'date_format' ) . ' ' . get_option( 'time_format' ),
 				$ts ?: time()
 			),
+			'dateShort'     => self::short_date( $ts ?: time() ),
 		];
+	}
+
+	/**
+	 * Compact date for narrow screens: "Oct 15, 12:26 pm", or "Oct 15, 2025"
+	 * for an earlier year.
+	 */
+	public static function short_date( int $ts ): string {
+		if ( wp_date( 'Y', $ts ) !== wp_date( 'Y' ) ) {
+			return (string) wp_date( 'M j, Y', $ts );
+		}
+		return (string) wp_date( 'M j, ', $ts ) . (string) wp_date( (string) get_option( 'time_format' ), $ts );
 	}
 }
