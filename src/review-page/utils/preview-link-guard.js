@@ -30,11 +30,14 @@ export function installPreviewLinkGuard( doc ) {
 		if ( href === '' || href.toLowerCase().startsWith( 'javascript:' ) ) {
 			return true;
 		}
+		// The tab role often sits on a parent (WooCommerce puts it on the
+		// <li>), so a hash link inside a tab list has to stay live too.
 		return (
 			href.startsWith( '#' ) &&
-			a.matches(
+			( a.matches(
 				'[data-toggle], [data-bs-toggle], [aria-controls], [aria-expanded], [role="button"], [role="tab"]'
-			)
+			) ||
+				!! a.closest( '[role="tab"], [role="tablist"]' ) )
 		);
 	};
 
@@ -71,10 +74,18 @@ export function installPreviewLinkGuard( doc ) {
 			return;
 		}
 		e.preventDefault();
+		const closest = e.target?.closest;
 		const onMedia =
-			typeof e.target?.closest === 'function' &&
+			typeof closest === 'function' &&
 			e.target.closest( 'img, video, iframe, .flow-embed-overlay' );
-		if ( ! onMedia ) {
+		// A highlight inside the link opens its thread on click. Stopping
+		// the event here would swallow that handler along with navigation.
+		const onHighlight =
+			typeof closest === 'function' &&
+			e.target.closest(
+				'.flow-inline-highlight, .flow-inline-highlight-media'
+			);
+		if ( ! onMedia && ! onHighlight ) {
 			e.stopPropagation();
 		}
 	};

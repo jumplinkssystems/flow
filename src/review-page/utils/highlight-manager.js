@@ -4,6 +4,9 @@ import {
 	clearHighlight,
 	resolveMediaNode,
 	resolvePinNode,
+	contentRanges,
+	mediaForOverlaySelection,
+	serializeMediaAnchor,
 } from './text-anchor';
 import {
 	PIN_CLASS,
@@ -28,6 +31,7 @@ import {
 } from './preview-link-guard';
 import { COMMENTS_HIDDEN_CLASS } from './comment-visibility';
 import { isHiddenTarget, revealHiddenTarget } from './reveal-hidden-target';
+import { shouldIgnoreHighlightMutation } from './dom-observer-policy';
 const HIGHLIGHT_CLASS = 'flow-inline-highlight';
 const MEDIA_HIGHLIGHT_CLASS = 'flow-inline-highlight-media';
 const ACTIVE_CLASS = 'flow-inline-highlight--active';
@@ -234,6 +238,27 @@ function findMark( commentId ) {
 	return null;
 }
 
+// A drag across a photo used to quote the overlay chips. Paint the photo
+// instead when the saved range has no real text outside that chrome.
+function highlightRange( commentId, range, optionalRoot ) {
+	if ( contentRanges( range ).length ) {
+		return wrapRange( range, commentId );
+	}
+	const media = mediaForOverlaySelection( range );
+	if ( ! media ) {
+		return null;
+	}
+	const label =
+		media.getAttribute( 'alt' )?.trim() ||
+		media.getAttribute( 'title' )?.trim() ||
+		'';
+	return applyMediaHighlight(
+		commentId,
+		serializeMediaAnchor( media, label ),
+		optionalRoot
+	);
+}
+
 function handleAdd( e ) {
 	const { commentId, rangeDescriptor } = e.detail || {};
 	if ( ! commentId || ! rangeDescriptor ) {
@@ -250,7 +275,7 @@ function handleAdd( e ) {
 
 	const range = deserializeRange( rangeDescriptor );
 	if ( range ) {
-		wrapRange( range, commentId );
+		highlightRange( commentId, range );
 	}
 }
 
@@ -439,7 +464,7 @@ function wrapCommentsInRoot( contentRoot, comments ) {
 			}
 			const range = deserializeRange( descriptor, effectiveRoot );
 			if ( range ) {
-				const mark = wrapRange( range, c.id );
+				const mark = highlightRange( c.id, range, effectiveRoot );
 				if ( mark && c.isResolved ) {
 					mark.classList.add( RESOLVED_CLASS );
 				}
@@ -498,15 +523,45 @@ function attachManagerToDoc( doc, options = {} ) {
 	}
 
 	let rewrapTimer = null;
+	let wrapping = false;
 	const scheduleRewrap = () => {
+		if ( wrapping ) {
+			return;
+		}
 		clearTimeout( rewrapTimer );
 		rewrapTimer = window.setTimeout( () => {
-			wrapCommentsInRoot( wrapRoot, allComments );
-			repositionPins( doc );
-			applyRevealed();
+			wrapping = true;
+			try {
+				wrapCommentsInRoot( wrapRoot, allComments );
+				repositionPins( doc );
+				applyRevealed();
+			} finally {
+				wrapping = false;
+			}
 		}, 150 );
 	};
-	const mo = new MutationObserver( scheduleRewrap );
+	const isFlowChromeNode = ( node ) =>
+		node?.nodeType === 1 &&
+		( node.classList?.contains( HIGHLIGHT_CLASS ) ||
+			node.classList?.contains( MEDIA_HIGHLIGHT_CLASS ) ||
+			node.classList?.contains( PIN_CLASS ) ||
+			node.closest?.(
+				`.${ HIGHLIGHT_CLASS }, .${ MEDIA_HIGHLIGHT_CLASS }, .${ PIN_CLASS }`
+			) );
+	const mo = new MutationObserver( ( mutations ) => {
+		const ownWrite = mutations.every( ( m ) =>
+			shouldIgnoreHighlightMutation(
+				[ ...m.addedNodes, ...m.removedNodes ].map( ( node ) => ( {
+					nodeType: node.nodeType,
+					chrome: isFlowChromeNode( node ),
+				} ) ),
+				isFlowChromeNode( m.target )
+			)
+		);
+		if ( ! ownWrite ) {
+			scheduleRewrap();
+		}
+	} );
 	mo.observe( wrapRoot, { childList: true, subtree: true } );
 
 	clickRoot.addEventListener( 'click', onHighlightClick );

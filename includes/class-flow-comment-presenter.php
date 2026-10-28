@@ -45,8 +45,10 @@ final class Comment_Presenter {
 	}
 
 	/**
-	 * Change token for a review's comments and its own row. Clients send the
-	 * last one back and get `changed: false` when nothing moved.
+	 * Change token for a review's comments and its own row (not the post body).
+	 * Clients send this back; when it matches, the sync endpoint skips
+	 * re-serializing comment lists. Post saves update {@see content_version()}
+	 * instead so draft autosaves do not force a full comment payload.
 	 *
 	 * Two edits inside one second collapse into one token — DATETIME has no
 	 * finer resolution — so the later edit surfaces on the next change.
@@ -54,30 +56,89 @@ final class Comment_Presenter {
 	 * @param array{total:int,max_id:int,max_updated:string} $comment_state
 	 */
 	public static function version( array $comment_state, object $review ): string {
-		// The post's own stamp: saving a draft mints a revision without
-		// touching the review row, and reviewers still need to hear about it.
-		$post    = get_post( (int) $review->post_id );
 		$version = sprintf(
-			'%d.%d.%d-%d.%d.%s-%d',
+			'%d.%d.%d-%d.%d.%s',
 			(int) $comment_state['total'],
 			(int) $comment_state['max_id'],
-			// strtotime( ' UTC' ) is "now", which made a review with no
+			// strtotime( 'UTC' ) is "now", which made a review with no
 			// comments report a change on every poll.
 			'' !== (string) $comment_state['max_updated'] ? (int) strtotime( (string) $comment_state['max_updated'] . ' UTC' ) : 0,
 			(int) strtotime( (string) ( $review->updated_at ?? '' ) . ' UTC' ),
 			(int) ( $review->iteration ?? 1 ),
-			(string) ( $review->status ?? '' ),
-			$post instanceof \WP_Post ? (int) strtotime( (string) $post->post_modified_gmt . ' UTC' ) : 0
+			(string) ( $review->status ?? '' )
 		);
 		// Extensions that add their own per-comment data (Pro reactions) change the token too.
 		return (string) apply_filters( 'flow_ew_comments_version', $version, $review );
 	}
 
 	/**
+	 * Post-body stamp used with sync so reviewers learn about new revisions
+	 * without reloading every comment.
+	 */
+	public static function content_version( object $review ): string {
+		$post = get_post( (int) $review->post_id );
+		if ( ! $post instanceof \WP_Post ) {
+			return '0';
+		}
+		$gmt = (string) $post->post_modified_gmt;
+		// MySQL's zero date stringifies to a negative timestamp. Callers
+		// compare this token, so an unsaved post must stay at "0".
+		if ( '' === $gmt || '0000-00-00 00:00:00' === $gmt ) {
+			return '0';
+		}
+		$ts = strtotime( $gmt . ' UTC' );
+		if ( false === $ts || $ts <= 0 ) {
+			return '0';
+		}
+		return (string) $ts;
+	}
+
+	/**
+	 * Slim sync body. A matching comment token omits both comment lists.
+	 * The review state is included only when the post token moved, or when
+	 * the comment token itself moved.
+	 *
+	 * @param array<int,array<string,mixed>> $comments
+	 * @param array<int,array<string,mixed>> $inline_comments
+	 * @param array<string,mixed>            $review_state
+	 * @return array<string,mixed>
+	 */
+	public static function sync_payload(
+		string $known_version,
+		string $known_content,
+		string $comments_version,
+		string $content_version,
+		array $comments,
+		array $inline_comments,
+		array $review_state
+	): array {
+		if ( '' !== $known_version && $known_version === $comments_version ) {
+			$payload = [
+				'version'        => $comments_version,
+				'contentVersion' => $content_version,
+				'changed'        => false,
+			];
+			if ( '' === $known_content || $known_content !== $content_version ) {
+				$payload['review'] = $review_state;
+			}
+			return $payload;
+		}
+
+		return [
+			'version'        => $comments_version,
+			'contentVersion' => $content_version,
+			'changed'        => true,
+			'comments'       => $comments,
+			'inlineComments' => $inline_comments,
+			'review'         => $review_state,
+		];
+	}
+
+	/**
 	 * Everything the review page needs about a review's comments: both lists
 	 * in render order plus the token that says whether they moved.
 	 *
-	 * @return array{comments:array<int,array<string,mixed>>,inlineComments:array<int,array<string,mixed>>,commentsVersion:string}
+	 * @return array{comments:array<int,array<string,mixed>>,inlineComments:array<int,array<string,mixed>>,commentsVersion:string,contentVersion:string}
 	 */
 	public static function list_for_review( object $review ): array {
 		$rows = DB::get_comments_for_post( (int) $review->post_id, (int) $review->id );
@@ -102,6 +163,7 @@ final class Comment_Presenter {
 				'comments'        => $general,
 				'inlineComments'  => $inline,
 				'commentsVersion' => self::version( self::state_from_rows( $rows ), $review ),
+				'contentVersion'  => self::content_version( $review ),
 			],
 			$review
 		);

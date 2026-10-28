@@ -4,7 +4,7 @@ Tags: client feedback, website feedback, content approval, site review, editoria
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.7.0
+Stable tag: 2.7.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -187,6 +187,10 @@ Any client that can call WordPress abilities: an MCP client, the WordPress Agent
 
 No, and this is deliberate rather than an oversight. There is no approve ability and no request-changes ability exposed to agents. With Mandatory review switched on, the publish block is enforced on the server, so an agent cannot ship unreviewed work even through the REST API.
 
+= Does Flow record anything about who's commenting? =
+
+Free does not. Flow Pro can optionally record the operating system, browser, device type, and viewport of whoever posts a new comment, shown as a small info icon next to their name. It's visible only to the review owner and site admins, never to the reviewer who wrote the comment. It's on by default and can be turned off under Flow → Settings.
+
 == Screenshots ==
 
 1. Assign reviewer to page in Gutenberg
@@ -201,6 +205,17 @@ No, and this is deliberate rather than an oversight. There is no approve ability
 
 == Changelog ==
 
+= 2.7.2 =
+* New: White label (Pro). Under Settings → White label, upload your own square logo and it replaces the Jumplinks mark in the page review and site review top bar. Choose a dark or light background. A square PNG or WebP with a transparent background works best: 128 × 128 px, shown at up to 64 × 64 px.
+* New: Comment environment info (Pro). A small info icon after the author's name on each new comment shows their OS, browser, device, and viewport — visible only to the review owner and admins. On by default under Settings → Comment environment info.
+* Improvement: Pausing on a link offers Add Comment. On a site review, pausing on a link that already has a comment opens that comment. On a page review the comment opens when you click, because the link itself does not leave the page.
+* Improvement: Hovering an image or video highlights it in the same blue as selected text.
+* Improvement: On a site review (Pro), the owner's logo is a back button with the same hover animation, and it opens that site review's edit page.
+* Fix: On a site review (Pro), that back button opened the homepage instead of the edit page.
+
+= 2.7.1 =
+* Fix: In site reviews (Pro), reviewers who are not logged in, such as people invited by email or site demo visitors, can now resolve comments, and the "Disable reviewers resolving comments" setting now applies to site reviews too.
+
 = 2.7.0 =
 * New: Site review links expire after a set number of days (Pro): choose 1 to 999 days under Settings → Site Review (default 30). Seven days before, the review page shows a notice where you can extend by any number of days, and the requester gets an email.
 * New: Feedback summary on the site review page (Pro): open any page to see its comments with author, status and replies, filter by status or by reviewer, and jump straight to a comment with Open comment. Each reviewer shows "X comments on Y pages".
@@ -211,28 +226,5 @@ No, and this is deliberate rather than an oversight. There is no approve ability
 * Improvement: Mobile: on iPhone the comment field no longer zooms the page and stays above the keyboard, the first tap on an image or video shows its overlay and the second opens the comment, and comment dates are shorter.
 * Fix: Theme styles no longer leak into Flow's menus and comment editor, the space after a mention is kept, and the link badge fits small images.
 * Fix: Updates show up straight away on sites behind Cloudflare or other caches: Flow's script and style files now have the version in their name.
-
-= 2.6.4 =
-* New: Reviewers, including people invited by email, can resolve comment threads. Turn it off under Settings → Workflow → "Disable reviewers resolving comments"; reviewers can always reopen a thread.
-* New: The reviewer field suggests the last 5 email addresses you invited.
-* Improvement: Mobile interface improvements: panels take 80% of the screen and fit above the browser toolbar, larger bar buttons, review actions at the bottom of the comments panel, the comment box opens under the selected text, and picking a page or comment closes the panel.
-* Fix: In site reviews (Pro), menus such as View no longer open on top of their button when the WordPress toolbar is turned on.
-* Improvement: Clearer confirmations for Send feedback and Exit review in site reviews (Pro).
-* Fix: Clicking a comment inside a closed accordion, toggle or tab opens it and scrolls to the comment, for all supported builders and popular block plugins, and accordion or tab titles that are links (Avada, Bootstrap, Divi) open on the review page.
-* Fix: Comment overlays on linked images, logos and Woodmart cards; no overlay on background images.
-* Fix: Reviewers who are not logged in see Flow in the site's language.
-* Fix: The Flow logo no longer links to jumplinks.net for reviewers who are not logged in.
-* Fix: In site reviews (Pro), replies stay in their thread after a reload, and general comments show only on the page they were added on.
-* Fix: Email reviewers can reopen a thread when they reply, and the post author can resolve comments on their own post.
-
-= 2.6.3 =
-* New: Review history shows each cancelled review's status as a coloured dot, its reviewers, status and comment count on hover, and a Restore button that brings the review back with its comments, reviewers and status. The review that was running is cancelled and kept in the history, so you can switch back. Reviews cancelled before this update come back as pending.
-* New: Create the user AI comments are posted as straight from Settings → AI agent or the setup wizard, with a Create user button next to the field. It only needs a username and an email, and is made a Subscriber with a random password.
-* Fix: In the builder integrations, the reviewer list opens over the edge of the review panel instead of being cut off by it, and in Gutenberg it opens over Current review instead of pushing it down.
-* Fix: Review history in every builder shows the comment count on the right, with date links in each builder's own link colour. Avada's history links are no longer oversized, and in Beaver the Open review note matches Beaver's text colour.
-* Fix (Avada): The Self review description sits right under its checkbox, and opening the reviewer field no longer flashes a scrollbar.
-* Fix: Administrators and editors (anyone who can manage reviews) can open any review page, not only reviews they requested or were assigned to. Self reviews stay private.
-* Improvement: In the builder integrations and the Classic editor, the "Review Mode set to Mandatory" notice can be dismissed. It stays hidden in that browser; publishing is still blocked until approval.
-* Tweak: The Breakdance review panel is as tall as Oxygen's, and in Divi the Current review icons are smaller and its link uses Divi's link blue.
 
 Earlier versions: https://jumplinks.net/changelog/

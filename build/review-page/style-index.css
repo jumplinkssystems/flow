@@ -211,6 +211,9 @@ iframe.flow-inline-highlight-media {
   background: transparent;
   border: 0;
   cursor: pointer;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+       user-select: none;
   display: flex;
   inset: 0;
   justify-content: center;
@@ -218,11 +221,17 @@ iframe.flow-inline-highlight-media {
   transition: background-color 0.15s ease;
   z-index: 2;
 }
-.flow-embed-overlay:hover, .flow-embed-overlay:focus-visible {
-  background: rgba(0, 0, 0, 0.25);
+.flow-embed-overlay:hover, .flow-embed-overlay:focus-visible, .flow-embed-overlay.is-touch-armed {
+  background: rgba(128, 188, 254, 0.6);
 }
-.flow-embed-overlay:hover .flow-embed-overlay__hint, .flow-embed-overlay:focus-visible .flow-embed-overlay__hint {
+.flow-embed-overlay:hover .flow-embed-overlay__hint, .flow-embed-overlay:focus-visible .flow-embed-overlay__hint, .flow-embed-overlay.is-touch-armed .flow-embed-overlay__hint {
   opacity: 1;
+}
+.flow-embed-overlay.is-comment-open, .flow-embed-overlay.is-comment-open:hover, .flow-embed-overlay.is-comment-open.is-playing, .flow-embed-overlay.is-comment-open.is-playing:hover {
+  background: rgba(128, 188, 254, 0.6);
+}
+.flow-embed-overlay.is-comment-open .flow-embed-overlay__hint, .flow-embed-overlay.is-comment-open:hover .flow-embed-overlay__hint, .flow-embed-overlay.is-comment-open.is-playing .flow-embed-overlay__hint, .flow-embed-overlay.is-comment-open.is-playing:hover .flow-embed-overlay__hint {
+  opacity: 0;
 }
 .flow-embed-overlay:focus-visible {
   outline: 2px solid var(--wp-admin-theme-color, #2271b1);

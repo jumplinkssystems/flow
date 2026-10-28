@@ -103,6 +103,9 @@ export default function ReviewBar( {
 		status = '',
 		displayStatus = '',
 		wpLogoUrl = '/',
+		wpLogoLabel = '',
+		brandLogoUrl = '',
+		brandLogoBackground = 'dark',
 		postEditUrl = '',
 		postUrl = '',
 		canAct = false,
@@ -662,6 +665,9 @@ export default function ReviewBar( {
 			<div className="flow-bar__left">
 				<WpLogoButton
 					wpLogoUrl={ wpLogoUrl }
+					wpLogoLabel={ wpLogoLabel }
+					brandLogoUrl={ brandLogoUrl }
+					brandLogoBackground={ brandLogoBackground }
 					isLoggedIn={ currentUserId > 0 }
 				/>
 				{ applyFilters( 'flow_ew_review_bar_left_extras', null, {
@@ -813,6 +819,10 @@ export default function ReviewBar( {
 								) }
 							</button>
 						) : null }
+						{ applyFilters(
+							'flow_ew_review_bar_status_extras',
+							null
+						) }
 						{ debugMode && revisionStatus === 'latest' ? (
 							<span
 								className="flow-bar__freshness flow-bar__freshness--debug"

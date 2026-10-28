@@ -41,6 +41,7 @@ export default function CommentCard( {
 	onRequestExpand = null,
 	onRequestCollapse = null,
 	isReply = false,
+	hideEnvironment = false,
 } ) {
 	const currentUserId = Number( pageData.currentUserId || 0 );
 	const isOwn =
@@ -350,6 +351,13 @@ export default function CommentCard( {
 						comment,
 					} ) }
 				</>
+			) }
+			{ ! hideEnvironment && (
+				<div className="flow-comment-env-row">
+					{ applyFilters( 'flow_ew_comment_byline_extras', null, {
+						comment,
+					} ) }
+				</div>
 			) }
 		</div>
 	);

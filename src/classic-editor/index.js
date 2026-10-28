@@ -384,12 +384,13 @@ import { rememberInviteEmails } from '../shared/recent-invite-emails';
 			node.hidden = assigned;
 		}
 
-		let cancelledReviews = flowEW.cancelledReviews || [];
+		let cancelledReviews = [];
 		const HISTORY_PAGE = 5;
 		let historyVisible = HISTORY_PAGE;
 		const historyKey = () =>
 			review ? review.id + ':' + review.status : '';
 		let lastHistoryKey = historyKey();
+		let historyLoaded = false;
 
 		function renderHistory() {
 			const existing = $( '#flow-ew-history' );
@@ -460,6 +461,23 @@ import { rememberInviteEmails } from '../shared/recent-invite-emails';
 			root.insertBefore( div, spinner );
 		}
 
+		function loadCancelledHistory( force ) {
+			if ( ! postId || ( historyLoaded && ! force ) ) {
+				return;
+			}
+			historyPending = true;
+			api( '/reviews/' + postId + '/cancelled', 'GET' )
+				.then( function ( list ) {
+					cancelledReviews = Array.isArray( list ) ? list : [];
+					historyLoaded = true;
+				} )
+				.catch( function () {} )
+				.finally( function () {
+					historyPending = false;
+					renderHistory();
+				} );
+		}
+
 		// A cancel swaps the active review, or (Pro roster) marks it cancelled.
 		function refreshHistoryOnReviewChange() {
 			const key = historyKey();
@@ -467,17 +485,31 @@ import { rememberInviteEmails } from '../shared/recent-invite-emails';
 				return;
 			}
 			lastHistoryKey = key;
-			historyPending = true;
-			renderHistory();
-			api( '/reviews/' + postId + '/cancelled', 'GET' )
-				.then( function ( list ) {
-					cancelledReviews = Array.isArray( list ) ? list : [];
-				} )
-				.catch( function () {} )
-				.finally( function () {
-					historyPending = false;
-					renderHistory();
-				} );
+			loadCancelledHistory( true );
+		}
+
+		function historyDrawer() {
+			return root.closest(
+				'.flow-ew-elementor-drawer, .flow-ew-bricks-drawer, .flow-ew-breakdance-drawer, .flow-ew-avada-drawer, .flow-ew-beaver-drawer, .flow-ew-divi-drawer, .flow-ew-oxygen-drawer'
+			);
+		}
+
+		function ensureCancelledHistory() {
+			const drawer = historyDrawer();
+			if ( drawer && ! drawer.classList.contains( 'is-open' ) ) {
+				return;
+			}
+			loadCancelledHistory( false );
+		}
+
+		ensureCancelledHistory();
+		const historyHost = historyDrawer();
+		if ( historyHost ) {
+			const historyWatch = new MutationObserver( ensureCancelledHistory );
+			historyWatch.observe( historyHost, {
+				attributes: true,
+				attributeFilter: [ 'class' ],
+			} );
 		}
 
 		let toastTimer = 0;

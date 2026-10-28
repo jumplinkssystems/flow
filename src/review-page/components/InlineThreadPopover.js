@@ -119,6 +119,12 @@ function findMarkElement( commentId ) {
 	return null;
 }
 
+// A mark whose rendered width takes up (almost) the full row — a full-width
+// image or embed, typically — has no single point worth pointing at, so the
+// caret centers itself instead of chasing a coordinate that reads as
+// arbitrary.
+const FULL_ROW_RATIO = 0.9;
+
 function markRectToViewport( rect, inIframe, popoverHeight = 320 ) {
 	const GAP = 8;
 	const PAD = 8;
@@ -126,18 +132,24 @@ function markRectToViewport( rect, inIframe, popoverHeight = 320 ) {
 	let markTop;
 	let markBottom;
 	let left;
+	let markWidth;
+	let contentWidth;
 	let visibleTop = 0;
 	let visibleBottom = window.innerHeight;
 	if ( ! inIframe ) {
 		markTop = rect.top;
 		markBottom = rect.bottom;
 		left = rect.left + rect.width / 2;
+		markWidth = rect.width;
+		contentWidth = window.innerWidth;
 	} else {
 		const iframe = getIframe();
 		if ( ! iframe ) {
 			markTop = rect.top;
 			markBottom = rect.bottom;
 			left = rect.left + rect.width / 2;
+			markWidth = rect.width;
+			contentWidth = window.innerWidth;
 		} else {
 			const iframeRect = iframe.getBoundingClientRect();
 			// Iframe is visually transform-scaled in ReviewBar; rect coords
@@ -146,11 +158,15 @@ function markRectToViewport( rect, inIframe, popoverHeight = 320 ) {
 			markTop = iframeRect.top + rect.top * s;
 			markBottom = iframeRect.top + rect.bottom * s;
 			left = iframeRect.left + rect.left * s + ( rect.width * s ) / 2;
+			markWidth = rect.width * s;
+			contentWidth = iframeRect.width;
 			visibleTop = Math.max( 0, iframeRect.top );
 			visibleBottom = Math.min( window.innerHeight, iframeRect.bottom );
 		}
 	}
 	const offscreen = markBottom < visibleTop || markTop > visibleBottom;
+	const spansFullRow =
+		contentWidth > 0 && markWidth >= contentWidth * FULL_ROW_RATIO;
 
 	const viewportBottom = window.innerHeight;
 	const fitsBelow = markBottom + GAP + popoverHeight <= viewportBottom - PAD;
@@ -170,7 +186,7 @@ function markRectToViewport( rect, inIframe, popoverHeight = 320 ) {
 		placement = 'below';
 	}
 
-	return { top, left, placement, offscreen };
+	return { top, left, placement, offscreen, spansFullRow };
 }
 
 /**
@@ -384,10 +400,13 @@ export default function InlineThreadPopover( {
 				popoverRef.current?.offsetHeight || 320
 			);
 			const left = clampCenterToViewport( next.left );
+			const alreadyOpen = Number( openThreadRootIdRef.current ) === id;
 			openThreadRootIdRef.current = id;
 			setPosition( { ...next, left, anchorLeft: next.left } );
 			setThread( nextThread );
-			setReplying( false );
+			if ( ! alreadyOpen ) {
+				setReplying( false );
+			}
 		},
 		[ clampCenterToViewport ]
 	);
@@ -570,6 +589,12 @@ export default function InlineThreadPopover( {
 			setCaretOffset( 0 );
 			return;
 		}
+		// A full-row anchor (e.g. a full-width image) has no single spot to
+		// point at, so the caret just stays centered on the card.
+		if ( position.spansFullRow ) {
+			setCaretOffset( 0 );
+			return;
+		}
 		const cardWidth = popoverRef.current?.offsetWidth || 360;
 		const maxShift = Math.max( 0, cardWidth / 2 - 20 );
 		const anchorLeft = Number( position.anchorLeft || position.left );
@@ -579,12 +604,37 @@ export default function InlineThreadPopover( {
 		setCaretOffset( Math.max( -maxShift, Math.min( delta, maxShift ) ) );
 	}, [ position ] );
 
+	const replyingRef = useRef( false );
+	replyingRef.current = replying;
+
 	const handleClose = useCallback( () => {
 		openThreadRootIdRef.current = null;
 		setThread( null );
 		setPosition( null );
 		setReplying( false );
 	}, [] );
+
+	useEffect( () => {
+		const onDismiss = ( e ) => {
+			const id = Number( e.detail?.commentId );
+			if ( ! id || Number( openThreadRootIdRef.current ) !== id ) {
+				return;
+			}
+			if ( replyingRef.current ) {
+				return;
+			}
+			handleClose();
+		};
+		window.addEventListener(
+			'flow:inline-thread-hover-dismiss',
+			onDismiss
+		);
+		return () =>
+			window.removeEventListener(
+				'flow:inline-thread-hover-dismiss',
+				onDismiss
+			);
+	}, [ handleClose ] );
 
 	const handleMouseDown = useCallback(
 		( e ) => {
@@ -747,6 +797,20 @@ export default function InlineThreadPopover( {
 	return (
 		<div
 			ref={ popoverRef }
+			onMouseEnter={ () => {
+				window.dispatchEvent(
+					new CustomEvent( 'flow:inline-thread-pointer', {
+						detail: { inside: true },
+					} )
+				);
+			} }
+			onMouseLeave={ () => {
+				window.dispatchEvent(
+					new CustomEvent( 'flow:inline-thread-pointer', {
+						detail: { inside: false },
+					} )
+				);
+			} }
 			className={ `flow-thread-popover flow-thread-popover--${ placement }` }
 			style={ {
 				position: 'fixed',
@@ -759,7 +823,7 @@ export default function InlineThreadPopover( {
 		>
 			<span
 				className="flow-thread-popover__caret"
-				style={ { marginLeft: `${ caretOffset }px` } }
+				style={ { left: `${ caretOffset }px` } }
 				aria-hidden="true"
 			/>
 			<div className="flow-thread-popover__card">
@@ -824,6 +888,13 @@ export default function InlineThreadPopover( {
 									null,
 									{ comment: reply }
 								) }
+								<div className="flow-comment-env-row">
+									{ applyFilters(
+										'flow_ew_comment_byline_extras',
+										null,
+										{ comment: reply }
+									) }
+								</div>
 							</div>
 						) ) }
 					</div>
@@ -873,6 +944,9 @@ export default function InlineThreadPopover( {
 						>
 							{ __( 'Reply', 'jumplinks-editorial-workflow' ) }
 						</Button>
+						{ applyFilters( 'flow_ew_comment_byline_extras', null, {
+							comment: thread,
+						} ) }
 					</div>
 				) }
 			</div>

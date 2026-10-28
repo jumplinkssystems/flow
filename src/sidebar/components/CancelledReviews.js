@@ -20,24 +20,71 @@ export default function CancelledReviews( {
 		( sel ) => sel( 'core/editor' ).getCurrentPostId(),
 		[]
 	);
-	const [ items, setItems ] = useState( flowEW.cancelledReviews || [] );
+	const [ items, setItems ] = useState( [] );
 	const [ visible, setVisible ] = useState( PAGE_SIZE );
 	const [ confirmId, setConfirmId ] = useState( null );
 	const [ isStale, setIsStale ] = useState( false );
+	const [ hasLoaded, setHasLoaded ] = useState( false );
 	const lastKey = useRef( reviewKey );
+	const loading = useRef( false );
 
-	// A cancel swaps the active review, or (Pro roster) marks it cancelled.
+	// The panel stays mounted while collapsed. Fetch only once it is open,
+	// and again after a cancel or restore changes the active review.
 	useEffect( () => {
-		if ( lastKey.current === reviewKey || ! postId ) {
-			return;
+		if ( ! postId ) {
+			return undefined;
 		}
-		lastKey.current = reviewKey;
-		setIsStale( true );
-		apiFetch( { url: `${ restUrl }/reviews/${ postId }/cancelled` } )
-			.then( ( list ) => setItems( Array.isArray( list ) ? list : [] ) )
-			.catch( () => {} )
-			.finally( () => setIsStale( false ) );
-	}, [ reviewKey, postId ] );
+		let stopped = false;
+		let observer = null;
+		const panelIsOpen = () => {
+			const panel = document.querySelector( '.flow-ew-review-panel' );
+			return ! panel || panel.classList.contains( 'is-opened' );
+		};
+		const load = () => {
+			const keyChanged = lastKey.current !== reviewKey;
+			if ( loading.current || ( hasLoaded && ! keyChanged ) ) {
+				return;
+			}
+			loading.current = true;
+			lastKey.current = reviewKey;
+			setIsStale( true );
+			apiFetch( { url: `${ restUrl }/reviews/${ postId }/cancelled` } )
+				.then( ( list ) => {
+					if ( ! stopped ) {
+						setItems( Array.isArray( list ) ? list : [] );
+					}
+				} )
+				.catch( () => {} )
+				.finally( () => {
+					loading.current = false;
+					if ( ! stopped ) {
+						setIsStale( false );
+						setHasLoaded( true );
+					}
+				} );
+		};
+		if ( panelIsOpen() ) {
+			load();
+		} else {
+			observer = new MutationObserver( () => {
+				if ( stopped || ! panelIsOpen() ) {
+					return;
+				}
+				observer.disconnect();
+				load();
+			} );
+			observer.observe( document.body, {
+				attributes: true,
+				subtree: true,
+				attributeFilter: [ 'class' ],
+			} );
+		}
+		return () => {
+			stopped = true;
+			loading.current = false;
+			observer?.disconnect();
+		};
+	}, [ reviewKey, postId, hasLoaded ] );
 
 	if ( ! items.length ) {
 		return null;

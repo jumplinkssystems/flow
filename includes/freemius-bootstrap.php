@@ -66,7 +66,7 @@ if ( flow_ew_is_pro_build() ) {
 		define( 'FLOW_EW_PRO_VERSION', '1.4.0' );
 	}
 	if ( ! defined( 'FLOW_EW_PRO_DB_VERSION' ) ) {
-		define( 'FLOW_EW_PRO_DB_VERSION', '14' );
+		define( 'FLOW_EW_PRO_DB_VERSION', '15' );
 	}
 	if ( ! defined( 'FLOW_EW_PRO_PLUGIN_FILE' ) ) {
 		define( 'FLOW_EW_PRO_PLUGIN_FILE', dirname( __DIR__ ) . '/jumplinks-editorial-workflow.php' );
@@ -415,6 +415,35 @@ add_action(
 	'init',
 	static function (): void {
 		if ( ! flow_ew_is_pro_build() ) {
+			return;
+		}
+		// Skip the ~120KB Pro catalogue on anonymous front hits that never
+		// render Flow UI. Admin, AJAX, REST, cron, and review/site-review
+		// entry points still load it (Free's languages/ is not a substitute).
+		$needs = is_admin() || wp_doing_ajax() || wp_doing_cron();
+		if ( ! $needs && defined( 'REST_REQUEST' ) && REST_REQUEST ) {
+			$needs = true;
+		}
+		if ( ! $needs ) {
+			// phpcs:disable WordPress.Security.NonceVerification.Recommended -- presence-only; handlers verify tokens.
+			$needs = isset( $_GET['flow_review_id'] ) || isset( $_GET['flow_token'] )
+				|| isset( $_GET['flow_sr'] ) || isset( $_GET['flow_sr_token'] );
+			// phpcs:enable WordPress.Security.NonceVerification.Recommended
+		}
+		if ( ! $needs ) {
+			foreach ( array_keys( $_COOKIE ) as $name ) {
+				$name = (string) $name;
+				if (
+					'flow_email_review_session' === $name
+					|| 0 === strncmp( $name, 'flow_sr_', 8 )
+					|| 0 === strncmp( $name, 'flow_ew_', 8 )
+				) {
+					$needs = true;
+					break;
+				}
+			}
+		}
+		if ( ! $needs ) {
 			return;
 		}
 		// Pro's `.l10n.php` is a true superset (Free + Pro strings) — one

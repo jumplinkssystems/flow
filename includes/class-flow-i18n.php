@@ -70,10 +70,18 @@ final class I18n {
 		$marked = isset( $_GET['flow_review_id'] ) || isset( $_GET['flow_token'] ) || isset( $_GET['flow_sr'] ) || isset( $_GET['flow_sr_token'] );
 		if ( ! $marked ) {
 			// Navigation inside the site-review chrome has no query string but carries `flow_sr_*` cookies.
-			foreach ( array_keys( $_COOKIE ) as $name ) {
-				if ( 0 === strncmp( (string) $name, 'flow_sr_', 8 ) ) {
+			foreach ( [ 'flow_sr_session', 'flow_sr_token', 'flow_email_review_session' ] as $cookie ) {
+				if ( isset( $_COOKIE[ $cookie ] ) ) {
 					$marked = true;
 					break;
+				}
+			}
+			if ( ! $marked ) {
+				foreach ( array_keys( $_COOKIE ) as $name ) {
+					if ( 0 === strncmp( (string) $name, 'flow_sr_', 8 ) ) {
+						$marked = true;
+						break;
+					}
 				}
 			}
 		}

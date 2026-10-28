@@ -1,4 +1,5 @@
 import { isHiddenTarget } from './reveal-hidden-target';
+import { createSharedPinObserver } from './dom-observer-policy';
 
 /**
  * Pin markers: comments dropped on a spot of the page rather than on selected
@@ -13,6 +14,20 @@ const SVG_NS = 'http://www.w3.org/2000/svg';
 const PIN_BODY_PATH =
 	'M12 1.5C7.305 1.5 3.5 5.305 3.5 10c0 5.95 7.43 11.93 7.746 12.18a1.2 1.2 0 0 0 1.508 0C13.07 21.93 20.5 15.95 20.5 10c0-4.695-3.805-8.5-8.5-8.5Z';
 const PIN_DOT_PATH = 'M12 13.25a3.25 3.25 0 1 0 0-6.5 3.25 3.25 0 0 0 0 6.5Z';
+
+/** @type {WeakMap<Document, {watch: Function}>} */
+const docObservers = new WeakMap();
+
+function sharedObserverFor( doc ) {
+	let state = docObservers.get( doc );
+	if ( state ) {
+		return state;
+	}
+	const view = doc.defaultView || window;
+	state = createSharedPinObserver( doc, view.ResizeObserver );
+	docObservers.set( doc, state );
+	return state;
+}
 
 export function createPinElement(
 	doc,
@@ -84,16 +99,13 @@ export function placePinOnAnchor( pin, anchor, x, y ) {
 
 export function observePinAnchor( pin, anchor, reposition ) {
 	pin.flowCleanup?.();
-	const view = pin.ownerDocument.defaultView || window;
-	let ro = null;
-	if ( typeof view.ResizeObserver === 'function' ) {
-		ro = new view.ResizeObserver( reposition );
-		ro.observe( anchor );
-		ro.observe( pin.ownerDocument.documentElement );
-	}
+	const stop = sharedObserverFor( pin.ownerDocument ).watch(
+		anchor,
+		reposition
+	);
 	pin.addEventListener( 'pointerenter', reposition );
 	pin.flowCleanup = () => {
-		ro?.disconnect();
+		stop();
 		pin.removeEventListener( 'pointerenter', reposition );
 	};
 }

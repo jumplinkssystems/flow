@@ -8,6 +8,7 @@
  * postComment( { html, anchorText, blockClientId, parentId } ) → comment row
  * updateComment( id, data ) → comment row
  */
+import { applyFilters } from '@wordpress/hooks';
 import flowFetch, { pageData } from './api';
 import { ensureInviteCommentIdentity } from './invite-comment-identity';
 import { noteLocalWrite } from './comment-sync';
@@ -38,10 +39,11 @@ async function write( request ) {
 export const defaultCommentApi = {
 	postComment: async ( payload ) => {
 		await ensureInviteCommentIdentity();
+		const data = applyFilters( 'flow_ew_comment_payload', payload );
 		return write( () =>
 			flowFetch( `reviews/${ pageData.reviewId }/comments`, {
 				method: 'POST',
-				data: withInviteIdentity( payload ),
+				data: withInviteIdentity( data ),
 			} )
 		);
 	},

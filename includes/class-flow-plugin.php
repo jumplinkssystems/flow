@@ -199,7 +199,8 @@ class Plugin {
 			],
 			'activeReview'             => $active_review,
 			'recentInviteEmails'       => current_user_can( 'flow_assign_reviewer' ) ? Email_Review::recent_invite_emails( $current_user_id ) : [],
-			'cancelledReviews'         => $post_id ? Review::cancelled_history( $post_id, $current_user_id ) : [],
+			// History loads on demand via GET /reviews/{post_id}/cancelled.
+			'cancelledReviews'         => [],
 			'pendingReviewer'          => $pending_reviewer,
 			'debugMode'                => Settings::is_debug_mode(),
 			'reviewMandatory'          => Settings::is_mandatory(),

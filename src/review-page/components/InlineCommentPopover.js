@@ -12,6 +12,8 @@ import {
 	serializeRange,
 	serializeMediaAnchor,
 	serializePinAnchor,
+	contentRanges,
+	mediaForOverlaySelection,
 } from '../utils/text-anchor';
 import {
 	createPinElement,
@@ -34,6 +36,10 @@ import {
 	hideTouchOverlays,
 } from '../utils/init-embed-overlays';
 import { isReviewReadOnly } from '../utils/api';
+import {
+	COMMENTS_HIDDEN_CLASS,
+	RESOLVED_HIDDEN_CLASS,
+} from '../utils/comment-visibility';
 import CommentEditor from './CommentEditor';
 
 // Matches $bar-height: the popover never slides under the review bar.
@@ -58,7 +64,209 @@ const PIN_EXCLUDED = `.flow-inline-highlight, .flow-inline-highlight-media, .flo
 const PIN_EXCLUDED_BROWSING =
 	'a[href], button, [role="button"], summary, label';
 
-const PIN_OFFER_DELAY_MS = 200;
+const LINK_HOVER_DELAY_MS = 200;
+const LINK_HOVER_LEAVE_MS = 500;
+const LINK_HOVER_CLASS = 'flow-link-hover-selection';
+const MEDIA_COMMENT_CLASS = 'is-comment-open';
+
+// The overlay is a sibling of its media (or shares a wrap with it) and
+// points back via flowMedia.
+function overlayForMedia( media ) {
+	const parent = media?.parentElement;
+	if ( ! parent ) {
+		return null;
+	}
+	for ( const el of parent.children ) {
+		if (
+			el.classList?.contains( 'flow-embed-overlay' ) &&
+			el.flowMedia === media
+		) {
+			return el;
+		}
+	}
+	return null;
+}
+const DRAFT_HIGHLIGHT_NAME = 'flow-comment-draft';
+
+// Native ::selection disappears once the comment field takes focus. The
+// Highlight registry paints the same blue without holding the selection,
+// so the field can focus and the text still looks hovered.
+function paintDraftHighlight( ranges ) {
+	const list = ( Array.isArray( ranges ) ? ranges : [ ranges ] ).filter(
+		Boolean
+	);
+	const view = list[ 0 ]?.startContainer?.ownerDocument?.defaultView || null;
+	if (
+		! list.length ||
+		! view ||
+		typeof view.Highlight !== 'function' ||
+		! view.CSS?.highlights
+	) {
+		return false;
+	}
+	try {
+		view.CSS.highlights.set(
+			DRAFT_HIGHLIGHT_NAME,
+			new view.Highlight( ...list )
+		);
+		return true;
+	} catch {
+		return false;
+	}
+}
+
+function clearDraftHighlight( doc ) {
+	try {
+		doc?.defaultView?.CSS?.highlights?.delete( DRAFT_HIGHLIGHT_NAME );
+	} catch {
+		// The document is already gone.
+	}
+}
+const COMMENTABLE_CONTROL =
+	'a[href], button, [role="button"], [role="tab"], summary';
+const LIVE_TOGGLE =
+	'[data-toggle], [data-bs-toggle], [aria-controls], [aria-expanded], [role="button"], [role="tab"]';
+
+// A pause offers a comment on the label. Buttons, tabs and accordions are
+// included; a tap or click still activates them. Script links and controls
+// with no text stay out — an image already has its own comment gesture.
+function commentableControl( node ) {
+	const control = node?.closest?.( COMMENTABLE_CONTROL );
+	if ( ! control ) {
+		return null;
+	}
+	if (
+		control.closest(
+			'.flow-inline-highlight, .flow-inline-highlight-media, .flow-review-info-notice, .flow-inline-pin, .flow-embed-overlay'
+		) ||
+		control.querySelector(
+			'.flow-inline-highlight, .flow-inline-highlight-media'
+		)
+	) {
+		return null;
+	}
+	if ( control.matches( 'a[href]' ) ) {
+		const href = ( control.getAttribute( 'href' ) || '' ).trim();
+		if ( href.toLowerCase().startsWith( 'javascript:' ) ) {
+			return null;
+		}
+	}
+	if ( ! ( control.innerText || '' ).trim() ) {
+		return null;
+	}
+	const doc = control.ownerDocument;
+	if ( ! doc || ! resolveContentRootFor( doc, control ) ) {
+		return null;
+	}
+	return control;
+}
+
+const COMMENT_MARK = '.flow-inline-highlight, .flow-inline-highlight-media';
+
+function commentIdFromMark( mark ) {
+	const direct = Number( mark.dataset.commentId );
+	if ( direct ) {
+		return direct;
+	}
+	const ids = ( mark.dataset.commentIds || '' )
+		.split( ' ' )
+		.map( Number )
+		.filter( Boolean );
+	return ids[ ids.length - 1 ] || 0;
+}
+
+// Hidden and resolved-hidden marks stay quiet, same as a click on them.
+function isDormantMark( mark ) {
+	const root = mark.ownerDocument?.documentElement;
+	if ( ! root ) {
+		return true;
+	}
+	const revealed = mark.classList.contains(
+		'flow-inline-highlight--revealed'
+	);
+	if ( root.classList.contains( COMMENTS_HIDDEN_CLASS ) && ! revealed ) {
+		return true;
+	}
+	return (
+		root.classList.contains( RESOLVED_HIDDEN_CLASS ) &&
+		mark.classList.contains( 'flow-inline-highlight--resolved' ) &&
+		! revealed
+	);
+}
+
+// A link (or button, or tab) that already carries a comment. Hovering it
+// opens that thread instead of offering a new one.
+function commentOnControl( node ) {
+	const control = node?.closest?.( COMMENTABLE_CONTROL );
+	if ( ! control ) {
+		return null;
+	}
+	let mark = node.closest?.( COMMENT_MARK ) || null;
+	if ( mark && ! control.contains( mark ) && ! mark.contains( control ) ) {
+		mark = null;
+	}
+	if ( ! mark ) {
+		mark = control.querySelector( COMMENT_MARK );
+	}
+	if ( ! mark || isDormantMark( mark ) ) {
+		return null;
+	}
+	const commentId = commentIdFromMark( mark );
+	if ( ! commentId ) {
+		return null;
+	}
+	return { control, mark, commentId };
+}
+
+// Tabs, accordions and buttons keep their own click. The comment offer is
+// hover-only, so a tap still switches the tab.
+function controlKeepsActivation( control ) {
+	if ( ! control.matches( 'a[href]' ) ) {
+		return true;
+	}
+	const href = ( control.getAttribute( 'href' ) || '' ).trim();
+	if ( href === '' || href === '#' ) {
+		return true;
+	}
+	return (
+		control.matches( LIVE_TOGGLE ) ||
+		!! control.closest( '[role="tab"], [role="tablist"]' )
+	);
+}
+
+// A product card link, or a tab with an icon, wraps a photo and a label.
+// The comment is about the words, so the selection stops at the text.
+function linkTextRange( anchor ) {
+	const doc = anchor.ownerDocument;
+	const media = 'img, picture, video, svg, canvas, iframe';
+	// The comment overlay on that photo carries its own hint text.
+	const skipped = `${ media }, .flow-embed-overlay`;
+	const texts = [];
+	const walker = doc.createTreeWalker( anchor, NodeFilter.SHOW_TEXT );
+	let node = walker.nextNode();
+	while ( node ) {
+		if ( node.data.trim() && ! node.parentElement?.closest( skipped ) ) {
+			texts.push( node );
+		}
+		node = walker.nextNode();
+	}
+	if ( ! texts.length ) {
+		return null;
+	}
+	const range = doc.createRange();
+	const last = texts[ texts.length - 1 ];
+	range.setStart( texts[ 0 ], 0 );
+	range.setEnd( last, last.data.length );
+	const picture = anchor.querySelector( media );
+	if ( picture && range.intersectsNode( picture ) ) {
+		const best = texts.reduce( ( longer, item ) =>
+			item.data.trim().length > longer.data.trim().length ? item : longer
+		);
+		range.setStart( best, 0 );
+		range.setEnd( best, best.data.length );
+	}
+	return range;
+}
 
 // Text under the pointer (where the cursor is the I-beam) belongs to
 // highlighting; pins are for the spots around it.
@@ -164,18 +372,73 @@ export default function InlineCommentPopover( {
 	// Phones: no room beside the selection, so sit under it (or above).
 	const [ mobilePos, setMobilePos ] = useState( null );
 	const [ popoverHeight, setPopoverHeight ] = useState( 0 );
+	// Nudges the CSS caret off the button's own centre toward the real
+	// anchor point once viewport clamping has moved the button away from
+	// it — same idea as the thread popover's caret, applied to this one's
+	// CSS-pseudo-element triangle via a custom property instead of a
+	// dedicated DOM node. X for the below/above (mobile) layout, where the
+	// button sits centred under/over the anchor; Y for the beside (desktop)
+	// layout, where it sits level with the anchor's vertical centre.
+	const [ caretOffsetX, setCaretOffsetX ] = useState( 0 );
+	const [ caretOffsetY, setCaretOffsetY ] = useState( 0 );
 	const iframeLocalRef = useRef( null );
 	const pressRef = useRef( null );
 	const pinOfferRef = useRef( null );
 	const threadOpenRef = useRef( false );
 
-	const pinOfferTimerRef = useRef( null );
+	const draftHighlightDocRef = useRef( null );
+	const mediaOverlayRef = useRef( null );
+	const linkHoverRef = useRef( {
+		timer: 0,
+		leaveTimer: 0,
+		token: 0,
+		anchor: null,
+		marked: null,
+		openedThreadId: 0,
+		threadPointer: false,
+	} );
+	const popoverPointerRef = useRef( false );
+	const scheduleLinkLeaveRef = useRef( () => {} );
+	const positionNearRectRef = useRef( null );
+	const clearPinOfferRef = useRef( null );
 
 	const clearPinOffer = useCallback( () => {
-		clearTimeout( pinOfferTimerRef.current );
-		pinOfferTimerRef.current = null;
 		removePin( pinOfferRef.current );
 		pinOfferRef.current = null;
+	}, [] );
+	clearPinOfferRef.current = clearPinOffer;
+
+	// Keeps the blue wash on a photo while its comment form is open.
+	const holdMediaComment = useCallback( ( media ) => {
+		const held = overlayForMedia( media );
+		if ( mediaOverlayRef.current && mediaOverlayRef.current !== held ) {
+			mediaOverlayRef.current.classList.remove( MEDIA_COMMENT_CLASS );
+		}
+		held?.classList.add( MEDIA_COMMENT_CLASS );
+		mediaOverlayRef.current = held || null;
+	}, [] );
+
+	// Drops the stand-in hover paint and the link hover class. Used when the
+	// comment form closes; while it is open the text stays highlighted.
+	const releaseDraftHover = useCallback( () => {
+		clearDraftHighlight( draftHighlightDocRef.current );
+		draftHighlightDocRef.current = null;
+		mediaOverlayRef.current?.classList.remove( MEDIA_COMMENT_CLASS );
+		mediaOverlayRef.current = null;
+		const marked = linkHoverRef.current.marked;
+		if ( ! marked ) {
+			return;
+		}
+		marked.classList.remove( LINK_HOVER_CLASS );
+		linkHoverRef.current.marked = null;
+		const selection = marked.ownerDocument.defaultView?.getSelection();
+		if ( ! selection?.rangeCount ) {
+			return;
+		}
+		const node = selection.getRangeAt( 0 ).commonAncestorContainer;
+		if ( marked === node || marked.contains( node ) ) {
+			selection.removeAllRanges();
+		}
 	}, [] );
 
 	// A click that only closes an open thread must not also offer a pin.
@@ -327,6 +590,7 @@ export default function InlineCommentPopover( {
 		},
 		[ placeBeside, clampTopToViewport ]
 	);
+	positionNearRectRef.current = positionNearRect;
 
 	const offerPinAt = useCallback(
 		( e, sourceWindow ) => {
@@ -411,13 +675,7 @@ export default function InlineCommentPopover( {
 					rangeRef.current = null;
 					descriptorRef.current = null;
 					if ( isPlainClick( press, e ) ) {
-						// Held back for the double-click interval so the first
-						// click of a word selection never flashes a pin.
-						clearTimeout( pinOfferTimerRef.current );
-						pinOfferTimerRef.current = setTimeout( () => {
-							pinOfferTimerRef.current = null;
-							offerPinAt( e, sourceWindow );
-						}, PIN_OFFER_DELAY_MS );
+						offerPinAt( e, sourceWindow );
 					}
 					return;
 				}
@@ -553,6 +811,16 @@ export default function InlineCommentPopover( {
 
 			// Media (img/video/iframe) are clicked through their `.flow-embed-overlay`
 			const rect = media.getBoundingClientRect();
+			// Keep the hover wash on this media until the form closes. The
+			// "Click to comment" chip stays hidden; only the blue overlay holds.
+			const held = overlay?.classList?.contains( 'flow-embed-overlay' )
+				? overlay
+				: overlayForMedia( media );
+			if ( mediaOverlayRef.current && mediaOverlayRef.current !== held ) {
+				mediaOverlayRef.current.classList.remove( MEDIA_COMMENT_CLASS );
+			}
+			held?.classList.add( MEDIA_COMMENT_CLASS );
+			mediaOverlayRef.current = held || null;
 			positionNearRect( rect, sourceWindow, true );
 		},
 		[ positionNearRect ]
@@ -579,13 +847,14 @@ export default function InlineCommentPopover( {
 				editorOpenRef.current = false;
 				rangeRef.current = null;
 				descriptorRef.current = null;
+				releaseDraftHover();
 				return;
 			}
 			setPosition( null );
 			rangeRef.current = null;
 			descriptorRef.current = null;
 		},
-		[ clearPinOffer ]
+		[ clearPinOffer, releaseDraftHover ]
 	);
 
 	// Show the popover from whatever selection is currently committed to JS.
@@ -724,6 +993,370 @@ export default function InlineCommentPopover( {
 		};
 	}, [ showPopoverFromCurrentSelection ] );
 
+	// Commenting on a link must not need a drag that can also activate it.
+	// A pause offers Add Comment. A site review follows the link, so the pause
+	// also opens a thread that is already there. The page review blocks
+	// navigation, so that thread opens on click instead.
+	useEffect( () => {
+		const hover = linkHoverRef.current;
+		let attachedDoc = null;
+		const isBrowsing = () =>
+			!! attachedDoc?.documentElement.classList.contains(
+				'flow-clickable-links'
+			);
+
+		const releaseMark = () => {
+			const marked = hover.marked;
+			if ( ! marked ) {
+				return;
+			}
+			marked.classList.remove( LINK_HOVER_CLASS );
+			hover.marked = null;
+			const selection = marked.ownerDocument.defaultView?.getSelection();
+			if ( ! selection || ! selection.rangeCount ) {
+				return;
+			}
+			const node = selection.getRangeAt( 0 ).commonAncestorContainer;
+			if ( marked === node || marked.contains( node ) ) {
+				selection.removeAllRanges();
+			}
+		};
+
+		const dismissHoverThread = () => {
+			const id = hover.openedThreadId;
+			if ( ! id ) {
+				return;
+			}
+			hover.openedThreadId = 0;
+			window.dispatchEvent(
+				new CustomEvent( 'flow:inline-thread-hover-dismiss', {
+					detail: { commentId: id },
+				} )
+			);
+		};
+
+		const dismissOffer = () => {
+			if (
+				editorOpenRef.current ||
+				popoverPointerRef.current ||
+				hover.threadPointer
+			) {
+				return;
+			}
+			releaseMark();
+			setPosition( null );
+			rangeRef.current = null;
+			descriptorRef.current = null;
+			dismissHoverThread();
+		};
+
+		const scheduleLeave = () => {
+			clearTimeout( hover.leaveTimer );
+			hover.leaveTimer = window.setTimeout(
+				dismissOffer,
+				LINK_HOVER_LEAVE_MS
+			);
+		};
+		scheduleLinkLeaveRef.current = scheduleLeave;
+
+		const selectLink = ( anchor ) => {
+			const doc = anchor.ownerDocument;
+			const view = doc.defaultView;
+			if ( ! view || ! positionNearRectRef.current ) {
+				return;
+			}
+			const range = linkTextRange( anchor );
+			if ( ! range ) {
+				return;
+			}
+			const rect = range.getBoundingClientRect();
+			if ( ! rect.width && ! rect.height ) {
+				return;
+			}
+			clearPinOfferRef.current?.();
+			dismissHoverThread();
+			if ( hover.marked && hover.marked !== anchor ) {
+				hover.marked.classList.remove( LINK_HOVER_CLASS );
+			}
+			anchor.classList.add( LINK_HOVER_CLASS );
+			hover.marked = anchor;
+			const selection = view.getSelection();
+			selection?.removeAllRanges();
+			selection?.addRange( range );
+			rangeRef.current = range.cloneRange();
+			descriptorRef.current = null;
+			positionNearRectRef.current( rect, view );
+		};
+
+		const openCommentedThread = ( found ) => {
+			clearPinOfferRef.current?.();
+			releaseMark();
+			setPosition( null );
+			rangeRef.current = null;
+			descriptorRef.current = null;
+			hover.openedThreadId = found.commentId;
+			window.dispatchEvent(
+				new CustomEvent( 'flow:inline-comment-focus', {
+					detail: {
+						commentId: found.commentId,
+						isResolved: found.mark.classList.contains(
+							'flow-inline-highlight--resolved'
+						),
+					},
+				} )
+			);
+		};
+
+		const onOver = ( e ) => {
+			if ( e.buttons || editorOpenRef.current ) {
+				return;
+			}
+			// The thread popover lives in the parent document. A move
+			// inside the preview means the pointer has left that popover.
+			hover.threadPointer = false;
+			const commented = commentOnControl( e.target );
+			if ( commented && isBrowsing() ) {
+				if ( hover.openedThreadId === commented.commentId ) {
+					clearTimeout( hover.leaveTimer );
+					hover.anchor = commented.control;
+					return;
+				}
+				clearTimeout( hover.leaveTimer );
+				clearTimeout( hover.timer );
+				hover.anchor = commented.control;
+				const token = ++hover.token;
+				hover.timer = window.setTimeout( () => {
+					if ( hover.token !== token || editorOpenRef.current ) {
+						return;
+					}
+					openCommentedThread( commented );
+				}, LINK_HOVER_DELAY_MS );
+				return;
+			}
+			if ( hover.openedThreadId ) {
+				scheduleLeave();
+			}
+			if ( isReviewReadOnly() ) {
+				return;
+			}
+			const anchor = commentableControl( e.target );
+			if ( ! anchor ) {
+				return;
+			}
+			if ( hover.anchor === anchor ) {
+				clearTimeout( hover.leaveTimer );
+				return;
+			}
+			clearTimeout( hover.leaveTimer );
+			clearTimeout( hover.timer );
+			hover.anchor = anchor;
+			const token = ++hover.token;
+			hover.timer = window.setTimeout( () => {
+				if (
+					hover.token !== token ||
+					editorOpenRef.current ||
+					isReviewReadOnly()
+				) {
+					return;
+				}
+				selectLink( anchor );
+			}, LINK_HOVER_DELAY_MS );
+		};
+
+		const onOut = ( e ) => {
+			const anchor = e.target?.closest?.( COMMENTABLE_CONTROL );
+			if ( ! anchor || anchor !== hover.anchor ) {
+				return;
+			}
+			if ( e.relatedTarget && anchor.contains( e.relatedTarget ) ) {
+				return;
+			}
+			clearTimeout( hover.timer );
+			hover.anchor = null;
+			hover.token += 1;
+			scheduleLeave();
+		};
+
+		const onDown = ( e ) => {
+			// A touch tap is handled on touchend. The synthetic mousedown
+			// that follows it must not wipe the offer it just opened.
+			if ( e.sourceCapabilities?.firesTouchEvents ) {
+				return;
+			}
+			clearTimeout( hover.timer );
+			hover.anchor = null;
+			hover.token += 1;
+			releaseMark();
+			// A click keeps an open thread. Only a hover, with no press,
+			// closes again once the pointer leaves.
+			hover.openedThreadId = 0;
+		};
+
+		const onClick = ( e ) => {
+			if (
+				e.button !== 0 ||
+				e.ctrlKey ||
+				e.metaKey ||
+				e.shiftKey ||
+				e.pointerType === 'touch' ||
+				editorOpenRef.current ||
+				isBrowsing()
+			) {
+				return;
+			}
+			const commented = commentOnControl( e.target );
+			if ( commented ) {
+				// The highlight's own click handler opens it.
+				if ( ! e.target.closest?.( COMMENT_MARK ) ) {
+					window.dispatchEvent(
+						new CustomEvent( 'flow:inline-comment-focus', {
+							detail: {
+								commentId: commented.commentId,
+								isResolved: commented.mark.classList.contains(
+									'flow-inline-highlight--resolved'
+								),
+							},
+						} )
+					);
+				}
+				return;
+			}
+			if ( isReviewReadOnly() ) {
+				return;
+			}
+			const anchor = commentableControl( e.target );
+			// The padding around the label still takes a pin.
+			if (
+				! anchor ||
+				! isOverSelectableText(
+					anchor.ownerDocument,
+					e.clientX,
+					e.clientY
+				)
+			) {
+				return;
+			}
+			selectLink( anchor );
+		};
+
+		let touchStart = null;
+		const onTouchStart = ( e ) => {
+			const point = e.changedTouches?.[ 0 ];
+			touchStart = point ? { x: point.clientX, y: point.clientY } : null;
+		};
+		const onTouchEnd = ( e ) => {
+			const point = e.changedTouches?.[ 0 ];
+			const start = touchStart;
+			touchStart = null;
+			if (
+				! point ||
+				! start ||
+				editorOpenRef.current ||
+				isReviewReadOnly() ||
+				attachedDoc?.documentElement.classList.contains(
+					'flow-clickable-links'
+				)
+			) {
+				return;
+			}
+			if (
+				Math.abs( point.clientX - start.x ) > 10 ||
+				Math.abs( point.clientY - start.y ) > 10
+			) {
+				return;
+			}
+			const anchor = commentableControl( e.target );
+			if ( ! anchor || controlKeepsActivation( anchor ) ) {
+				return;
+			}
+			// Keep the later click from navigating or clearing this offer.
+			e.preventDefault();
+			selectLink( anchor );
+		};
+
+		const attach = ( iframe ) => {
+			let doc = null;
+			try {
+				doc = iframe?.contentDocument || null;
+			} catch {
+				return;
+			}
+			if ( ! doc || doc === attachedDoc ) {
+				return;
+			}
+			detach();
+			doc.addEventListener( 'mouseover', onOver );
+			doc.addEventListener( 'mouseout', onOut );
+			doc.addEventListener( 'mousedown', onDown, true );
+			doc.addEventListener( 'click', onClick, true );
+			doc.addEventListener( 'touchstart', onTouchStart, {
+				passive: true,
+			} );
+			doc.addEventListener( 'touchend', onTouchEnd, { passive: false } );
+			attachedDoc = doc;
+		};
+		const detach = () => {
+			if ( ! attachedDoc ) {
+				return;
+			}
+			attachedDoc.removeEventListener( 'mouseover', onOver );
+			attachedDoc.removeEventListener( 'mouseout', onOut );
+			attachedDoc.removeEventListener( 'mousedown', onDown, true );
+			attachedDoc.removeEventListener( 'click', onClick, true );
+			attachedDoc.removeEventListener( 'touchstart', onTouchStart );
+			attachedDoc.removeEventListener( 'touchend', onTouchEnd );
+			attachedDoc = null;
+		};
+
+		attach( getIframe() );
+		const onReady = ( e ) => attach( e.detail?.iframe );
+		const onRemoved = () => {
+			clearTimeout( hover.timer );
+			clearTimeout( hover.leaveTimer );
+			releaseMark();
+			detach();
+		};
+		const onThreadPointer = ( e ) => {
+			hover.threadPointer = !! e.detail?.inside;
+			if ( hover.threadPointer ) {
+				clearTimeout( hover.leaveTimer );
+				return;
+			}
+			if ( hover.openedThreadId ) {
+				scheduleLeave();
+			}
+		};
+		const onThreadState = ( e ) => {
+			if ( ! e.detail?.open ) {
+				hover.openedThreadId = 0;
+				hover.threadPointer = false;
+			}
+		};
+		window.addEventListener( 'flow:iframe-ready', onReady );
+		window.addEventListener( 'flow:iframe-removed', onRemoved );
+		window.addEventListener(
+			'flow:inline-thread-pointer',
+			onThreadPointer
+		);
+		window.addEventListener( 'flow:inline-thread-state', onThreadState );
+		return () => {
+			clearTimeout( hover.timer );
+			clearTimeout( hover.leaveTimer );
+			releaseMark();
+			window.removeEventListener( 'flow:iframe-ready', onReady );
+			window.removeEventListener( 'flow:iframe-removed', onRemoved );
+			window.removeEventListener(
+				'flow:inline-thread-pointer',
+				onThreadPointer
+			);
+			window.removeEventListener(
+				'flow:inline-thread-state',
+				onThreadState
+			);
+			detach();
+		};
+	}, [] );
+
 	useEffect( () => {
 		const attachIframe = ( iframe ) => {
 			if ( ! iframe ) {
@@ -787,6 +1420,7 @@ export default function InlineCommentPopover( {
 			rangeRef.current = null;
 			descriptorRef.current = null;
 			clearPinOffer();
+			releaseDraftHover();
 
 			detachIframe( iframeLocalRef.current || getIframe() );
 			iframeLocalRef.current = null;
@@ -810,8 +1444,15 @@ export default function InlineCommentPopover( {
 			rangeRef.current = null;
 			descriptorRef.current = null;
 			clearPinOffer();
+			releaseDraftHover();
 		};
-	}, [ handleMouseUp, handleMouseDown, handleMediaClick, clearPinOffer ] );
+	}, [
+		handleMouseUp,
+		handleMouseDown,
+		handleMediaClick,
+		clearPinOffer,
+		releaseDraftHover,
+	] );
 
 	const handleOpenEditor = useCallback( () => {
 		const range = rangeRef.current;
@@ -827,21 +1468,40 @@ export default function InlineCommentPopover( {
 			return;
 		}
 
-		const descriptor =
-			descriptorRef.current ||
-			( range.startContainer.nodeType === Node.ELEMENT_NODE &&
-			[ 'IMG', 'VIDEO' ].includes( range.startContainer.tagName )
+		let descriptor = descriptorRef.current;
+		if ( ! descriptor && range ) {
+			const mediaNode =
+				range.startContainer.nodeType === Node.ELEMENT_NODE &&
+				[ 'IMG', 'VIDEO', 'IFRAME' ].includes(
+					range.startContainer.tagName
+				)
+					? range.startContainer
+					: null;
+			descriptor = mediaNode
 				? serializeMediaAnchor(
-						range.startContainer,
-						range.startContainer.getAttribute( 'alt' )?.trim() ||
-							( range.startContainer.tagName === 'VIDEO'
-								? __( 'Video', 'jumplinks-editorial-workflow' )
-								: __(
-										'Image',
-										'jumplinks-editorial-workflow'
-								  ) )
+						mediaNode,
+						mediaNode.getAttribute( 'alt' )?.trim() ||
+							mediaNode.getAttribute( 'title' )?.trim() ||
+							mediaTypeLabel( mediaNode.tagName )
 				  )
-				: serializeRange( range ) );
+				: serializeRange( range );
+			// A drag across the photo selects the overlay chips. That is the
+			// photo, not the words "Click to comment" / "Go to link".
+			if ( ! descriptor ) {
+				const media = mediaForOverlaySelection( range );
+				descriptor = media
+					? serializeMediaAnchor(
+							media,
+							media.getAttribute( 'alt' )?.trim() ||
+								media.getAttribute( 'title' )?.trim() ||
+								mediaTypeLabel( media.tagName )
+					  )
+					: null;
+				if ( media ) {
+					holdMediaComment( media );
+				}
+			}
+		}
 		if ( ! descriptor ) {
 			return;
 		}
@@ -898,8 +1558,22 @@ export default function InlineCommentPopover( {
 		setEditorOpen( true );
 
 		const sourceWindow = rangeDoc.defaultView || window;
-		sourceWindow.getSelection()?.removeAllRanges();
-	}, [ placeBeside, clampTopToViewport ] );
+		// A pin has no text to keep lit. A text anchor keeps its hover blue
+		// for as long as the form is open; the native selection is released
+		// only once that blue has been copied onto the highlight registry,
+		// so focus can move into the field. Overlay chips are not part of it.
+		const draftRanges = range && ! offer ? contentRanges( range ) : [];
+		if ( draftRanges.length && paintDraftHighlight( draftRanges ) ) {
+			draftHighlightDocRef.current = rangeDoc;
+			sourceWindow.getSelection()?.removeAllRanges();
+		} else if ( ! range || offer ) {
+			sourceWindow.getSelection()?.removeAllRanges();
+			linkHoverRef.current.marked?.classList.remove( LINK_HOVER_CLASS );
+			linkHoverRef.current.marked = null;
+		} else {
+			sourceWindow.getSelection()?.removeAllRanges();
+		}
+	}, [ placeBeside, clampTopToViewport, holdMediaComment ] );
 
 	const handleSubmit = useCallback(
 		async ( html ) => {
@@ -937,8 +1611,9 @@ export default function InlineCommentPopover( {
 			editorOpenRef.current = false;
 			rangeRef.current = null;
 			descriptorRef.current = null;
+			releaseDraftHover();
 		},
-		[ api, clearPinOffer ]
+		[ api, clearPinOffer, releaseDraftHover ]
 	);
 
 	const handleCancel = useCallback( () => {
@@ -948,7 +1623,8 @@ export default function InlineCommentPopover( {
 		rangeRef.current = null;
 		descriptorRef.current = null;
 		clearPinOffer();
-	}, [ clearPinOffer ] );
+		releaseDraftHover();
+	}, [ clearPinOffer, releaseDraftHover ] );
 
 	const repositionPopover = useCallback( () => {
 		const anchor = pinOfferRef.current || rangeRef.current;
@@ -1153,6 +1829,53 @@ export default function InlineCommentPopover( {
 		}
 	}, [ position, popoverHeight, editorOpen, shiftY ] );
 
+	// Desktop "beside" layout: the popover (Add Comment button, or the
+	// comment form once it opens) sits level with the anchor's true
+	// vertical centre, except when clamping had to push it off a screen
+	// edge. Shift the caret by that difference so it still points at the
+	// anchor. A layout effect, like the clamps above, so it reads the DOM
+	// in the same pass they do; `editorOpen` is a dependency in its own
+	// right (not just via `popoverHeight`) because a render can flip the
+	// button to the form without `popoverHeight` having caught up yet —
+	// skipping it left the clamp measuring the short button's height
+	// after an image's editor had already opened, over-restricting the
+	// shift and stranding the caret far from the anchor.
+	useLayoutEffect( () => {
+		if (
+			! position ||
+			mobilePos ||
+			undefined === position.anchorTop ||
+			undefined === position.anchorBottom
+		) {
+			setCaretOffsetY( 0 );
+			return;
+		}
+		const height = popoverRef.current?.offsetHeight || 60;
+		const maxShift = Math.max( 0, height / 2 - 12 );
+		const anchorCenter = ( position.anchorTop + position.anchorBottom ) / 2;
+		const renderedCenter = position.top + shiftY;
+		const delta = anchorCenter - renderedCenter;
+		setCaretOffsetY( Math.max( -maxShift, Math.min( delta, maxShift ) ) );
+	}, [ position, shiftY, mobilePos, popoverHeight, editorOpen ] );
+
+	// Mobile "below"/"above" layout: same idea along the horizontal axis.
+	// The popover is centred under the anchor until clamped off a side edge.
+	useLayoutEffect( () => {
+		if ( ! position || ! mobilePos ) {
+			setCaretOffsetX( 0 );
+			return;
+		}
+		const width = popoverRef.current?.offsetWidth || 220;
+		const maxShift = Math.max( 0, width / 2 - 12 );
+		const anchorCenter =
+			( position.anchorLeft +
+				( position.anchorRight ?? position.anchorLeft ) ) /
+			2;
+		const renderedCenter = mobilePos.left + width / 2;
+		const delta = anchorCenter - renderedCenter;
+		setCaretOffsetX( Math.max( -maxShift, Math.min( delta, maxShift ) ) );
+	}, [ position, mobilePos, popoverHeight, editorOpen ] );
+
 	useLayoutEffect( () => {
 		const el = popoverRef.current;
 		const mobile = !! window.matchMedia?.( '(max-width: 782px)' )?.matches;
@@ -1207,12 +1930,25 @@ export default function InlineCommentPopover( {
 	}, [ position, popoverHeight, editorOpen, mobilePos ] );
 
 	if ( ! position ) {
+		// Unmounting skips mouseleave, which would otherwise leave the
+		// pointer flag stuck and block the next hover from closing.
+		popoverPointerRef.current = false;
 		return null;
 	}
 
 	return (
 		<div
 			ref={ popoverRef }
+			onMouseEnter={ () => {
+				popoverPointerRef.current = true;
+				clearTimeout( linkHoverRef.current.leaveTimer );
+			} }
+			onMouseLeave={ () => {
+				popoverPointerRef.current = false;
+				if ( ! editorOpenRef.current ) {
+					scheduleLinkLeaveRef.current();
+				}
+			} }
 			className={ `flow-inline-popover${
 				editorOpen ? ' flow-inline-popover--editor' : ''
 			}${ mobilePos ? ' flow-inline-popover--below' : '' }${
@@ -1225,6 +1961,8 @@ export default function InlineCommentPopover( {
 				transform: mobilePos ? 'none' : 'translateY(-50%)',
 				zIndex: 1_000_001,
 				visibility: position.offscreen ? 'hidden' : undefined,
+				'--flow-caret-offset-x': `${ caretOffsetX }px`,
+				'--flow-caret-offset-y': `${ caretOffsetY }px`,
 			} }
 		>
 			{ editorOpen ? (

@@ -114,6 +114,35 @@ textarea {
 			width: 100%;
 			height: 100%;
 		}
+
+		.flow-bar__brand-logo {
+			box-sizing: border-box;
+			display: block;
+			height: 100%;
+			object-fit: contain;
+			padding: 12px;
+			width: 100%;
+		}
+	}
+
+	&__wp-logo--custom#{&}__wp-logo--bg-dark &__wp-logo-icon {
+		background: #1e1e1e;
+	}
+
+	// The white logo square fills the slot, so the edge sits above it.
+	&__wp-logo--custom#{&}__wp-logo--bg-light::after {
+		content: "";
+		position: absolute;
+		top: 0;
+		right: 0;
+		bottom: 0;
+		width: 1px;
+		background: $color-border;
+		pointer-events: none;
+	}
+
+	&__wp-logo--custom#{&}__wp-logo--bg-light &__wp-logo-icon {
+		background: #fff;
 	}
 
 	&__wp-logo-back {
@@ -332,6 +361,41 @@ textarea {
 		&:focus {
 			color: var(--wp-admin-theme-color-darker-10, #135e96);
 		}
+	}
+
+	// Site review: shown while "Prevent navigation" is on. Sized like the
+	// other status badges, in the yellow review colours; clicking it unlocks.
+	&__nav-lock {
+		color: $badge-review-text;
+		background: $badge-review-bg;
+		border: 0;
+		margin: 0;
+		padding: 2px 6px 2px 8px;
+		font-family: inherit;
+		line-height: inherit;
+		cursor: pointer;
+		// The centred meta block ignores clicks so it never blocks the bar.
+		pointer-events: auto;
+
+		&:hover,
+		&:focus-visible {
+			filter: brightness(0.96);
+		}
+
+		&:focus-visible {
+			outline: 2px solid currentColor;
+			outline-offset: 1px;
+		}
+
+		svg {
+			height: 14px;
+			width: 14px;
+		}
+	}
+
+	&__nav-lock-off {
+		fill: currentColor;
+		opacity: 0.8;
 	}
 
 	&__freshness-row {
@@ -604,6 +668,10 @@ textarea {
 			width: 48px;
 		}
 
+		&__brand-logo {
+			padding: 8px;
+		}
+
 		&__edit-post.components-button,
 		&__title,
 		&__meta,
@@ -707,3 +775,30 @@ textarea {
 		}
 	}
 }
+
+// Site review, phones: navigation is locked but the status chip is hidden,
+// so the View button carries a warning badge.
+@media (max-width: $mobile-bp) {
+	:host([data-nav-locked]) .flow-bar__view-dropdown-wrap {
+		position: relative;
+
+		&::after {
+			content: "!";
+			position: absolute;
+			top: 5px;
+			right: 5px;
+			width: 13px;
+			height: 13px;
+			border-radius: 50%;
+			background: #dba617;
+			box-shadow: 0 0 0 2px #fff;
+			color: #fff;
+			font-size: 10px;
+			font-weight: 700;
+			line-height: 13px;
+			text-align: center;
+			pointer-events: none;
+		}
+	}
+}
+

@@ -237,18 +237,31 @@ class Dashboard_Page {
 	 * comments, the ones still waiting on a fix first.
 	 */
 	private static function render_self_reviews( int $user_id ): void {
-		$rows = [];
+		$accessible = [];
 		foreach ( self::fetch_all_pages( [ 'only_private' => true ] ) as $review ) {
 			if ( ! Review::can_user_access_private_review( $review, $user_id ) ) {
 				continue;
 			}
-			$comments = Ability_Context::list_comments_payload( $review, true );
-			$open     = count( $comments['unresolved_inline'] ) + count( $comments['unresolved_general'] );
-			$total    = count( DB::get_comments_for_post( (int) $review->post_id, (int) $review->id ) );
-			if ( 0 === $total ) {
+			$accessible[] = $review;
+		}
+		$counts = DB::get_comment_counts_for_reviews(
+			array_map(
+				static function ( object $review ): int {
+					return (int) $review->id;
+				},
+				$accessible
+			)
+		);
+		$rows   = [];
+		foreach ( $accessible as $review ) {
+			$stats = $counts[ (int) $review->id ] ?? [
+				'total'      => 0,
+				'unresolved' => 0,
+			];
+			if ( 0 === (int) $stats['total'] ) {
 				continue;
 			}
-			$rows[] = [ $review, $open ];
+			$rows[] = [ $review, (int) $stats['unresolved'] ];
 		}
 		usort(
 			$rows,

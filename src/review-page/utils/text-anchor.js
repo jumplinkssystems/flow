@@ -88,6 +88,135 @@ function getTextNodeAtOffset( element, charOffset ) {
 	return null;
 }
 
+function elementOf( node ) {
+	return node?.nodeType === Node.ELEMENT_NODE ? node : node?.parentElement;
+}
+
+function nodeInEmbedOverlay( node ) {
+	return !! elementOf( node )?.closest?.( '.flow-embed-overlay' );
+}
+
+// Text nodes the range covers, with the slice of each that is actually inside it.
+function textSlices( range ) {
+	const doc = range.startContainer?.ownerDocument || document;
+	const root = range.commonAncestorContainer;
+	const scope =
+		root?.nodeType === Node.TEXT_NODE ? root.parentNode || root : root;
+	if ( ! scope ) {
+		return [];
+	}
+	const slices = [];
+	const walker = doc.createTreeWalker( scope, NodeFilter.SHOW_TEXT, null );
+	let node = walker.nextNode();
+	while ( node ) {
+		let hit = false;
+		try {
+			hit = range.intersectsNode( node );
+		} catch {
+			hit = false;
+		}
+		if ( hit ) {
+			const start = node === range.startContainer ? range.startOffset : 0;
+			const end =
+				node === range.endContainer
+					? range.endOffset
+					: node.textContent.length;
+			if ( end > start ) {
+				slices.push( {
+					node,
+					start,
+					end,
+					overlay: nodeInEmbedOverlay( node ),
+				} );
+			}
+		}
+		node = walker.nextNode();
+	}
+	return slices;
+}
+
+// Selection text with the image/video overlay chrome left out. "Click to
+// comment" and "Go to link" sit in the DOM over the media, so a drag across
+// the photo would otherwise quote them.
+function contentText( range ) {
+	return textSlices( range )
+		.filter( ( slice ) => ! slice.overlay )
+		.map( ( slice ) =>
+			slice.node.textContent.slice( slice.start, slice.end )
+		)
+		.join( '' );
+}
+
+// One range per run of real text, so a highlight can skip the overlay chips
+// that sit between the words.
+export function contentRanges( range ) {
+	const doc = range?.startContainer?.ownerDocument || document;
+	const ranges = [];
+	let current = null;
+	textSlices( range ).forEach( ( slice ) => {
+		if ( slice.overlay ) {
+			current = null;
+			return;
+		}
+		if (
+			current &&
+			current.endContainer === slice.node &&
+			current.endOffset === slice.start
+		) {
+			current.setEnd( slice.node, slice.end );
+			return;
+		}
+		current = doc.createRange();
+		current.setStart( slice.node, slice.start );
+		current.setEnd( slice.node, slice.end );
+		ranges.push( current );
+	} );
+	return ranges;
+}
+
+// A drag that landed on the photo quotes only the overlay. The comment
+// belongs to that image (or video), not to the chips.
+export function mediaForOverlaySelection( range ) {
+	const root = range?.commonAncestorContainer;
+	const scope = elementOf( root );
+	if ( ! scope ) {
+		return null;
+	}
+	// The whole selection sits inside one overlay: it is that photo.
+	const ownOverlay = scope.closest?.( '.flow-embed-overlay' );
+	const ownMedia = ownOverlay?.flowMedia;
+	if (
+		ownMedia &&
+		[ 'IMG', 'VIDEO', 'IFRAME' ].includes( ownMedia.tagName )
+	) {
+		return ownMedia;
+	}
+	if ( ! scope.querySelectorAll ) {
+		return null;
+	}
+	const found = new Set();
+	const consider = ( el ) => {
+		let hit = false;
+		try {
+			hit = range.intersectsNode( el );
+		} catch {
+			hit = false;
+		}
+		if ( ! hit ) {
+			return;
+		}
+		const media = el.classList?.contains( 'flow-embed-overlay' )
+			? el.flowMedia
+			: el;
+		if ( media && [ 'IMG', 'VIDEO', 'IFRAME' ].includes( media.tagName ) ) {
+			found.add( media );
+		}
+	};
+	scope.querySelectorAll( '.flow-embed-overlay' ).forEach( consider );
+	scope.querySelectorAll( 'img, video, iframe' ).forEach( consider );
+	return found.size === 1 ? found.values().next().value : null;
+}
+
 function getCharOffset( element, textNode, nodeOffset ) {
 	if ( textNode === element ) {
 		return Array.from( element.childNodes )
@@ -129,6 +258,11 @@ export function serializeRange( range ) {
 			: range.endContainer;
 
 	const doc = range.startContainer.ownerDocument || document;
+	const text = contentText( range );
+	// Nothing but overlay chrome. Callers attach the image instead.
+	if ( ! text.trim() ) {
+		return null;
+	}
 	return {
 		startPath: getCssPath( startEl, root ),
 		startOffset: getCharOffset(
@@ -138,7 +272,7 @@ export function serializeRange( range ) {
 		),
 		endPath: getCssPath( endEl, root ),
 		endOffset: getCharOffset( endEl, range.endContainer, range.endOffset ),
-		text: range.toString(),
+		text,
 		// Tells the wrap-time code which root to resolve paths against. 'body'
 		// is the fallback used when the selection lives outside the standard
 		// content roots (title, post meta, etc.); 'content' is the default
@@ -448,7 +582,13 @@ export function deserializeRange( descriptor, optionalRoot ) {
 	}
 
 	const range = tryDeserializeFromPaths( descriptor, root );
-	if ( range && range.toString() === descriptor.text ) {
+	// contentText drops overlay chips, so a drag across a photo still matches
+	// the saved quote after those labels are left out of it.
+	if (
+		range &&
+		( range.toString() === descriptor.text ||
+			contentText( range ) === descriptor.text )
+	) {
 		return range;
 	}
 
@@ -470,6 +610,12 @@ export function wrapRange( range, commentId ) {
 	const mark = doc.createElement( 'mark' );
 	mark.className = HIGHLIGHT_CLASS;
 	mark.dataset.commentId = String( commentId );
+
+	// The overlay's own labels must never wear the comment highlight.
+	if ( textSlices( range ).some( ( slice ) => slice.overlay ) ) {
+		const marks = wrapRangeAcrossNodes( range, commentId );
+		return marks.length ? marks[ 0 ] : null;
+	}
 
 	try {
 		range.surroundContents( mark );
@@ -510,6 +656,9 @@ function wrapRangeAcrossNodes( range, commentId ) {
 	}
 
 	for ( const textNode of textNodes ) {
+		if ( nodeInEmbedOverlay( textNode ) ) {
+			continue;
+		}
 		const startOffset =
 			textNode === range.startContainer ? range.startOffset : 0;
 		const endOffset =

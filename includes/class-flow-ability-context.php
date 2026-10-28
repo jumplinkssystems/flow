@@ -223,8 +223,9 @@ class Ability_Context {
 		];
 
 		if ( $review ) {
+			// Work queue only — resolved threads stay available via list-comments.
 			$payload['review']             = Review::prepare_response_payload( $review );
-			$comments                      = self::list_comments_payload( $review, false );
+			$comments                      = self::list_comments_payload( $review, true );
 			$payload['comments']           = $comments['comments'];
 			$payload['unresolved_inline']  = $comments['unresolved_inline'];
 			$payload['unresolved_general'] = $comments['unresolved_general'];

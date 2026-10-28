@@ -335,6 +335,40 @@ class DB {
 		];
 	}
 
+	/**
+	 * Aggregate comment totals for many reviews in one query (dashboard lists).
+	 *
+	 * @param int[] $review_ids
+	 * @return array<int,array{total:int,unresolved:int}>
+	 */
+	public static function get_comment_counts_for_reviews( array $review_ids ): array {
+		$review_ids = array_values( array_unique( array_filter( array_map( 'intval', $review_ids ) ) ) );
+		if ( [] === $review_ids ) {
+			return [];
+		}
+		global $wpdb;
+		$comments_table = esc_sql( self::comments_table() );
+		$placeholders   = implode( ',', array_fill( 0, count( $review_ids ), '%d' ) );
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table literal; placeholders are %d.
+		$sql  = "SELECT review_id,
+				COUNT(*) AS total,
+				SUM(CASE WHEN is_resolved = 0 AND (parent_id IS NULL OR parent_id = 0) THEN 1 ELSE 0 END) AS unresolved
+			FROM {$comments_table}
+			WHERE review_id IN ({$placeholders})
+			GROUP BY review_id";
+		$rows = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+			$wpdb->prepare( $sql, $review_ids ) // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		);
+		$out  = [];
+		foreach ( (array) $rows as $row ) {
+			$out[ (int) $row->review_id ] = [
+				'total'      => (int) $row->total,
+				'unresolved' => (int) $row->unresolved,
+			];
+		}
+		return $out;
+	}
+
 	public static function get_comments_for_post( int $post_id, ?int $review_id = null ): array {
 		global $wpdb;
 		$comments_table = esc_sql( self::comments_table() );

@@ -121,7 +121,7 @@ class Abilities {
 			'flow/get-review',
 			[
 				'label'            => __( 'Get Flow review', 'jumplinks-editorial-workflow' ),
-				'description'      => __( 'Return the active review for a post, publish-gate flags, next_action, and all comments (inline selected_text plus general). Use after a human requests changes to see what to edit. When the site has self review on, self_review carries the private channel (id, review_url, unresolved counts); use review_id = self_review.id with list-comments and resolve-comment.', 'jumplinks-editorial-workflow' ),
+				'description'      => __( 'Return the active review for a post, publish-gate flags, next_action, and unresolved comments (inline selected_text plus general). Use after a human requests changes to see what to edit. Pass unresolved_only false to list-comments when you also need resolved threads. When the site has self review on, self_review carries the private channel (id, review_url, unresolved counts); use review_id = self_review.id with list-comments and resolve-comment.', 'jumplinks-editorial-workflow' ),
 				'category'         => self::CATEGORY,
 				'input_schema'     => [
 					'type'                 => 'object',
@@ -276,7 +276,7 @@ class Abilities {
 			'flow/list-comments',
 			[
 				'label'            => __( 'List Flow review comments', 'jumplinks-editorial-workflow' ),
-				'description'      => __( 'List review comments, unresolved first. Inline comments include selected_text (the quoted passage to change). Use this as the work queue after a human requests changes. Pass unresolved_only true to hide resolved threads.', 'jumplinks-editorial-workflow' ),
+				'description'      => __( 'List review comments, unresolved first. Inline comments include selected_text (the quoted passage to change). Use this as the work queue after a human requests changes. Defaults to unresolved_only; pass false to include resolved threads.', 'jumplinks-editorial-workflow' ),
 				'category'         => self::CATEGORY,
 				'input_schema'     => [
 					'type'                 => 'object',
@@ -293,8 +293,8 @@ class Abilities {
 						],
 						'unresolved_only' => [
 							'type'        => 'boolean',
-							'description' => 'If true, omit resolved comments from comments[]. Unresolved lists are always included.',
-							'default'     => false,
+							'description' => 'If true (default), omit resolved comments from comments[]. Unresolved lists are always included.',
+							'default'     => true,
 						],
 					],
 					'additionalProperties' => false,
@@ -322,7 +322,7 @@ class Abilities {
 					return Ability_Context::list_comments(
 						(int) ( $input['review_id'] ?? 0 ),
 						(int) ( $input['post_id'] ?? 0 ),
-						! empty( $input['unresolved_only'] )
+						! isset( $input['unresolved_only'] ) || (bool) $input['unresolved_only']
 					);
 				},
 				'annotations'      => [

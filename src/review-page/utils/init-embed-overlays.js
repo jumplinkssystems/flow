@@ -36,6 +36,8 @@ const OVERLAY_CSS = `
 .flow-embed-overlay {
 	align-items: center;
 	background: transparent;
+	-webkit-user-select: none;
+	user-select: none;
 	border: 0;
 	container: flow-embed / size;
 	cursor: pointer;
@@ -48,7 +50,13 @@ const OVERLAY_CSS = `
 }
 .flow-embed-overlay.is-touch-armed,
 .flow-embed-overlay:focus-visible {
-	background: rgba(0, 0, 0, 0.25);
+	/* The active text-selection blue. The system Highlight color is gray
+	   until the preview frame is focused, so the first hover would not match. */
+	background: rgba(128, 188, 254, 0.6);
+}
+/* Its buttons may hang over the next media; they must win the tap. */
+.flow-embed-overlay.is-touch-armed {
+	z-index: 10;
 }
 .flow-embed-overlay.is-touch-armed .flow-embed-overlay__hint,
 .flow-embed-overlay:focus-visible .flow-embed-overlay__hint {
@@ -57,20 +65,54 @@ const OVERLAY_CSS = `
 /* Touch screens keep :hover after a tap, so they rely on .is-touch-armed. */
 @media (hover: hover) {
 	.flow-embed-overlay:hover {
-		background: rgba(0, 0, 0, 0.25);
+		background: rgba(128, 188, 254, 0.6);
 	}
 	.flow-embed-overlay:hover .flow-embed-overlay__hint {
 		opacity: 1;
 	}
 }
+/* Held while the comment form is open. The pointer has moved into the form,
+   so :hover is gone; keep the blue wash and drop the "Click to comment" chip. */
+.flow-embed-overlay.is-comment-open,
+.flow-embed-overlay.is-comment-open:hover,
+.flow-embed-overlay.is-comment-open.is-playing,
+.flow-embed-overlay.is-comment-open.is-playing:hover {
+	background: rgba(128, 188, 254, 0.6);
+}
+.flow-embed-overlay.is-comment-open .flow-embed-overlay__hint,
+.flow-embed-overlay.is-comment-open:hover .flow-embed-overlay__hint,
+.flow-embed-overlay.is-comment-open.is-touch-armed .flow-embed-overlay__hint,
+.flow-embed-overlay.is-comment-open:focus-visible .flow-embed-overlay__hint {
+	opacity: 0;
+}
 .flow-embed-overlay:focus-visible {
 	outline: 2px solid #2271b1;
 	outline-offset: -2px;
 }
+/* The review stylesheet makes buttons and role=button selectable so their
+   labels can be commented on. These chips are chrome over the photo, so
+   that rule must not apply to them. */
+.flow-embed-overlay[role="button"],
+.flow-embed-overlay button,
+.flow-embed-overlay a[href] {
+	-webkit-user-select: none;
+	user-select: none;
+	cursor: pointer;
+}
+.flow-embed-overlay__hint-icon {
+	display: block;
+	flex: none;
+}
+.flow-embed-overlay__hint-icon svg {
+	display: block;
+}
 .flow-embed-overlay__hint {
+	align-items: center;
 	background: rgba(0, 0, 0, 0.7);
 	border-radius: 4px;
 	color: #ffffff;
+	display: inline-flex;
+	gap: 6px;
 	font: 500 13px/1.2 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 	opacity: 0;
 	padding: 8px 14px;
@@ -135,6 +177,10 @@ const OVERLAY_CSS = `
 	background: rgba(0, 0, 0, 0.92);
 	outline: 0;
 }
+/* Navigation locked: links are not followed, so no way out through an image. */
+html:not(.flow-clickable-links) .flow-embed-overlay__link-pill {
+	display: none !important;
+}
 .flow-embed-overlay__play-pill svg,
 .flow-embed-overlay__link-pill svg {
 	display: block;
@@ -144,7 +190,7 @@ const OVERLAY_CSS = `
 }
 /* Small media can't hold the centred hint and a labelled corner pill side by
    side: the pills drop to their icon (the label stays as tooltip and name),
-   then the hint goes, and on tiny media the icon tucks into the corner. */
+   the hint keeps only its comment icon, and on tiny media everything shrinks. */
 @container flow-embed (max-width: 260px) or (max-height: 110px) {
 	.flow-embed-overlay__play-pill,
 	.flow-embed-overlay__link-pill {
@@ -159,7 +205,47 @@ const OVERLAY_CSS = `
 }
 @container flow-embed (max-width: 170px) or (max-height: 80px) {
 	.flow-embed-overlay__hint {
+		border-radius: 50%;
+		padding: 7px;
+	}
+	.flow-embed-overlay__hint-text {
 		display: none;
+	}
+	/* Touch needs two taps, so the instruction stays, under the media,
+	   and Go to link / Play move there too as full-size buttons: the corner
+	   icon is too small to hit with a finger. */
+	.flow-embed-overlay.is-touch .flow-embed-overlay__hint-text {
+		background: rgba(0, 0, 0, 0.7);
+		border-radius: 4px;
+		display: block;
+		font-size: 11px;
+		left: 50%;
+		padding: 3px 6px;
+		position: absolute;
+		top: calc(100% + 4px);
+		transform: translateX(-50%);
+		white-space: nowrap;
+	}
+	.flow-embed-overlay.is-touch .flow-embed-overlay__play-pill,
+	.flow-embed-overlay.is-touch .flow-embed-overlay__link-pill {
+		font-size: 12px !important;
+		left: 50% !important;
+		min-height: 32px !important;
+		padding: 6px 12px !important;
+		right: auto !important;
+		top: calc(100% + 30px) !important;
+		transform: translateX(-50%) !important;
+		white-space: nowrap;
+		z-index: 3;
+	}
+	.flow-embed-overlay.is-touch .flow-embed-overlay__play-pill span,
+	.flow-embed-overlay.is-touch .flow-embed-overlay__link-pill span {
+		display: inline;
+	}
+	.flow-embed-overlay.is-touch .flow-embed-overlay__play-pill svg,
+	.flow-embed-overlay.is-touch .flow-embed-overlay__link-pill svg {
+		height: 14px;
+		width: 14px;
 	}
 }
 @container flow-embed (max-width: 64px) or (max-height: 44px) {
@@ -173,6 +259,36 @@ const OVERLAY_CSS = `
 	.flow-embed-overlay__link-pill svg {
 		height: 10px;
 		width: 10px;
+	}
+	.flow-embed-overlay__hint {
+		padding: 4px;
+	}
+	.flow-embed-overlay__hint-icon svg {
+		height: 12px;
+		width: 12px;
+	}
+	/* No room in the corner: Go to link / Play hang under the media, flush
+	   with it (transparent top border) so the hover is not lost on the way. */
+	.flow-embed-overlay:not(.is-touch) .flow-embed-overlay__play-pill,
+	.flow-embed-overlay:not(.is-touch) .flow-embed-overlay__link-pill {
+		background-clip: padding-box !important;
+		border-top: 4px solid transparent !important;
+		font-size: 12px !important;
+		left: 50% !important;
+		padding: 4px 10px !important;
+		right: auto !important;
+		top: 100% !important;
+		transform: translateX(-50%) !important;
+		white-space: nowrap;
+	}
+	.flow-embed-overlay:not(.is-touch) .flow-embed-overlay__play-pill span,
+	.flow-embed-overlay:not(.is-touch) .flow-embed-overlay__link-pill span {
+		display: inline;
+	}
+	.flow-embed-overlay:not(.is-touch) .flow-embed-overlay__play-pill svg,
+	.flow-embed-overlay:not(.is-touch) .flow-embed-overlay__link-pill svg {
+		height: 14px;
+		width: 14px;
 	}
 }
 /* Persistent comment pin shown only after Play has been activated. Sits in
@@ -281,6 +397,11 @@ function isTouchTap( e ) {
  * On touch screens the first tap only reveals the overlay (hint, Play, Go to
  * link); the second one acts. Returns true when this tap just revealed it.
  *
+ * A plain image — no Play pill (not video), no Go to link pill (not linked,
+ * or not in site-review mode) — has nothing to reveal: there's no affordance
+ * a first tap could expose, so it skips the reveal step and the tap opens
+ * the comment popover directly.
+ *
  * @param {Element} overlay
  * @param {Event}   e
  * @return {boolean} Whether the tap was used up revealing the overlay.
@@ -292,6 +413,12 @@ export function revealOverlayOnFirstTap( overlay, e ) {
 		overlay.classList.contains( 'is-playing' ) ||
 		! isTouchTap( e )
 	) {
+		return false;
+	}
+	const hasRevealTarget = !! overlay.querySelector(
+		'.flow-embed-overlay__play-pill, .flow-embed-overlay__link-pill'
+	);
+	if ( ! hasRevealTarget ) {
 		return false;
 	}
 	overlay.ownerDocument
@@ -429,14 +556,21 @@ function ensureLinkClickBlocker( overlay ) {
 
 function createOverlay( doc, opts = {} ) {
 	const overlay = doc.createElement( 'span' );
-	overlay.className = 'flow-embed-overlay';
+	overlay.className = IS_TOUCH
+		? 'flow-embed-overlay is-touch'
+		: 'flow-embed-overlay';
 	overlay.setAttribute( 'role', 'button' );
 	overlay.setAttribute( 'aria-label', leaveCommentLabel() );
 	overlay.tabIndex = 0;
 
+	// Text on roomy media; small media only has room for the icon.
 	const hint = doc.createElement( 'span' );
 	hint.className = 'flow-embed-overlay__hint';
-	hint.textContent = hintDefault();
+	hint.innerHTML =
+		'<span class="flow-embed-overlay__hint-icon">' +
+		COMMENT_SVG +
+		'</span><span class="flow-embed-overlay__hint-text"></span>';
+	hint.lastChild.textContent = hintDefault();
 	overlay.appendChild( hint );
 
 	if ( opts.isVideo ) {
@@ -537,10 +671,28 @@ function activatePlayMode( overlay ) {
 	}
 	if ( media.tagName === 'IFRAME' ) {
 		media.style.pointerEvents = '';
+		// Players only autoplay when the iframe is allowed to, and phones
+		// only when muted; viewers can unmute in the player.
+		const allow = media.getAttribute( 'allow' ) || '';
+		if ( ! /\bautoplay\b/.test( allow ) ) {
+			media.setAttribute(
+				'allow',
+				allow
+					? allow.replace( /;?\s*$/, '; autoplay' )
+					: 'autoplay; fullscreen'
+			);
+		}
 		const src = media.getAttribute( 'src' ) || '';
 		if ( src && ! /[?&]autoplay=1\b/.test( src ) ) {
+			const params = [ 'autoplay=1' ];
+			if ( IS_TOUCH ) {
+				params.push(
+					/vimeo\.com/.test( src ) ? 'muted=1' : 'mute=1',
+					'playsinline=1'
+				);
+			}
 			const sep = src.includes( '?' ) ? '&' : '?';
-			media.setAttribute( 'src', src + sep + 'autoplay=1' );
+			media.setAttribute( 'src', src + sep + params.join( '&' ) );
 		}
 	}
 }
@@ -551,7 +703,8 @@ function updateHintForIframe( iframe, overlay ) {
 		return;
 	}
 	const hasComment = iframe.classList.contains( HIGHLIGHT_CLASS );
-	hint.textContent = hasComment ? hintHasComment() : hintDefault();
+	const text = hint.querySelector( '.flow-embed-overlay__hint-text' ) || hint;
+	text.textContent = hasComment ? hintHasComment() : hintDefault();
 	overlay.setAttribute(
 		'aria-label',
 		hasComment
@@ -650,6 +803,12 @@ function findCoveringLink( media, view ) {
 	return null;
 }
 
+function linkCoversMore( link, media ) {
+	const lr = link.getBoundingClientRect();
+	const mr = media.getBoundingClientRect();
+	return lr.width * lr.height > mr.width * mr.height * 1.5;
+}
+
 function rectsMatch( a, b ) {
 	const ar = a.getBoundingClientRect();
 	const br = b.getBoundingClientRect();
@@ -726,7 +885,10 @@ function wrapMedia( media ) {
 	// chrome the link guard intercepts navigation globally, so this is
 	// strictly a site-review concern.
 	const coveringLink = tag === 'IMG' ? findCoveringLink( media, view ) : null;
-	if ( coveringLink ) {
+	// A link stretched over a whole card (live search results, product
+	// tiles) must keep working outside the image, so lift the overlay instead.
+	const coversMore = coveringLink && linkCoversMore( coveringLink, media );
+	if ( coveringLink && ! coversMore ) {
 		// Clicks reach the overlay; in a site review its link pill navigates.
 		coveringLink.style.setProperty( 'pointer-events', 'none', 'important' );
 		coveringLink.dataset.flowCoveringLink = '1';
@@ -750,6 +912,15 @@ function wrapMedia( media ) {
 	overlay.flowMedia = media;
 	if ( isPositioned && ! isIframe ) {
 		overlay.style.zIndex = cs.zIndex;
+	}
+	if ( coversMore ) {
+		const linkZ = parseInt(
+			view.getComputedStyle( coveringLink ).zIndex,
+			10
+		);
+		overlay.style.zIndex = String(
+			( Number.isNaN( linkZ ) ? 0 : linkZ ) + 1
+		);
 	}
 
 	// Always isolate overlay surface clicks from theme lightbox / video-modal

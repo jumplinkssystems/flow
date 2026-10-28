@@ -881,23 +881,70 @@ function CancelledReviews({
   hasActiveReview = false
 }) {
   const postId = (0,_wordpress_data__WEBPACK_IMPORTED_MODULE_1__.useSelect)(sel => sel('core/editor').getCurrentPostId(), []);
-  const [items, setItems] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useState)(flowEW.cancelledReviews || []);
+  const [items, setItems] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useState)([]);
   const [visible, setVisible] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useState)(PAGE_SIZE);
   const [confirmId, setConfirmId] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useState)(null);
   const [isStale, setIsStale] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useState)(false);
+  const [hasLoaded, setHasLoaded] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useState)(false);
   const lastKey = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useRef)(reviewKey);
+  const loading = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useRef)(false);
 
-  // A cancel swaps the active review, or (Pro roster) marks it cancelled.
+  // The panel stays mounted while collapsed. Fetch only once it is open,
+  // and again after a cancel or restore changes the active review.
   (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
-    if (lastKey.current === reviewKey || !postId) {
-      return;
+    if (!postId) {
+      return undefined;
     }
-    lastKey.current = reviewKey;
-    setIsStale(true);
-    _wordpress_api_fetch__WEBPACK_IMPORTED_MODULE_2___default()({
-      url: `${restUrl}/reviews/${postId}/cancelled`
-    }).then(list => setItems(Array.isArray(list) ? list : [])).catch(() => {}).finally(() => setIsStale(false));
-  }, [reviewKey, postId]);
+    let stopped = false;
+    let observer = null;
+    const panelIsOpen = () => {
+      const panel = document.querySelector('.flow-ew-review-panel');
+      return !panel || panel.classList.contains('is-opened');
+    };
+    const load = () => {
+      const keyChanged = lastKey.current !== reviewKey;
+      if (loading.current || hasLoaded && !keyChanged) {
+        return;
+      }
+      loading.current = true;
+      lastKey.current = reviewKey;
+      setIsStale(true);
+      _wordpress_api_fetch__WEBPACK_IMPORTED_MODULE_2___default()({
+        url: `${restUrl}/reviews/${postId}/cancelled`
+      }).then(list => {
+        if (!stopped) {
+          setItems(Array.isArray(list) ? list : []);
+        }
+      }).catch(() => {}).finally(() => {
+        loading.current = false;
+        if (!stopped) {
+          setIsStale(false);
+          setHasLoaded(true);
+        }
+      });
+    };
+    if (panelIsOpen()) {
+      load();
+    } else {
+      observer = new MutationObserver(() => {
+        if (stopped || !panelIsOpen()) {
+          return;
+        }
+        observer.disconnect();
+        load();
+      });
+      observer.observe(document.body, {
+        attributes: true,
+        subtree: true,
+        attributeFilter: ['class']
+      });
+    }
+    return () => {
+      stopped = true;
+      loading.current = false;
+      observer?.disconnect();
+    };
+  }, [reviewKey, postId, hasLoaded]);
   if (!items.length) {
     return null;
   }

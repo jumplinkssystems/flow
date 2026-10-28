@@ -90,27 +90,25 @@ class Admin_Columns {
 	}
 
 	/**
-	 * Mirrors ReviewPage::user_can_view_review_preview() — kept local (and slim)
-	 * so we don't have to expose that private method just for the row action.
+	 * Same people who can open the review page: participants, anyone with
+	 * `flow_manage_reviews`, the post author, and open reviews. Being the
+	 * author is not required when the viewer already has access.
 	 */
 	private static function current_user_can_view_review( object $review, \WP_Post $post ): bool {
 		$user_id = get_current_user_id();
 		if ( $user_id <= 0 ) {
 			return false;
 		}
-		if ( Review::is_user_review_participant( $review, $user_id ) ) {
+		if ( Review::can_user_access_review( $review, $user_id ) ) {
 			return true;
 		}
 		if ( (int) $post->post_author === $user_id ) {
 			return true;
 		}
-		if ( ! empty( $review->is_open ) && Review::is_open_review_feature_available() ) {
-			return true;
-		}
 		if ( Settings::is_debug_mode() && user_can( $user_id, 'manage_options' ) ) {
 			return true;
 		}
-		return false;
+		return (bool) apply_filters( 'flow_ew_user_can_view_review_preview', false, $review, $user_id );
 	}
 
 	public function render_filter_dropdown( string $post_type ): void {

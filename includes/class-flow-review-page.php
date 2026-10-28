@@ -251,6 +251,7 @@ class ReviewPage {
 		show_admin_bar( false );
 		// Remove the admin-bar bump CSS too (it stays even after show_admin_bar(false)).
 		remove_action( 'wp_head', '_admin_bar_bump_cb' );
+		add_action( 'wp_head', [ __CLASS__, 'print_no_admin_bar_offset' ], PHP_INT_MAX );
 
 		$snapshot = self::resolve_snapshot( $review );
 		self::serve_builder_data_from( $snapshot, (int) $review->post_id );
@@ -283,6 +284,14 @@ class ReviewPage {
 		}
 
 		$this->preview_review_id = $is_embed ? 0 : $review_id;
+	}
+
+	/**
+	 * Admin-bar.css still loads for logged-in users and sets the bar height
+	 * variable that sticky theme headers offset themselves by.
+	 */
+	public static function print_no_admin_bar_offset(): void {
+		echo '<style id="flow-no-admin-bar">html{--wp-admin--admin-bar--height:0px !important;scroll-padding-top:0 !important}</style>' . "\n";
 	}
 
 	/**
@@ -533,13 +542,15 @@ class ReviewPage {
 			wp_normalize_path( ABSPATH . 'wp-includes' ),
 			wp_normalize_path( FLOW_EW_PLUGIN_DIR ),
 		];
+		/** @var array<string,string> $file_cache Reflection results for this request. */
+		static $file_cache = [];
 		foreach ( [ 'wp_head', 'wp_body_open', 'wp_footer' ] as $hook ) {
 			if ( ! isset( $wp_filter[ $hook ] ) || ! $wp_filter[ $hook ] instanceof \WP_Hook ) {
 				continue;
 			}
 			foreach ( $wp_filter[ $hook ]->callbacks as $priority => $callbacks ) {
 				foreach ( $callbacks as $callback ) {
-					$file = self::callback_file( $callback['function'] );
+					$file = self::callback_file( $callback['function'], $file_cache );
 					$keep = false;
 					foreach ( $kept_dirs as $dir ) {
 						if ( '' !== $file && 0 === strpos( $file, $dir ) ) {
@@ -563,9 +574,20 @@ class ReviewPage {
 	}
 
 	/**
-	 * @param mixed $callback
+	 * @param mixed                $callback
+	 * @param array<string,string> $file_cache
 	 */
-	private static function callback_file( $callback ): string {
+	private static function callback_file( $callback, array &$file_cache = [] ): string {
+		$key = '';
+		if ( is_string( $callback ) ) {
+			$key = $callback;
+		} elseif ( is_array( $callback ) && isset( $callback[0], $callback[1] ) ) {
+			$class = is_object( $callback[0] ) ? get_class( $callback[0] ) : (string) $callback[0];
+			$key   = $class . '::' . (string) $callback[1];
+		}
+		if ( '' !== $key && array_key_exists( $key, $file_cache ) ) {
+			return $file_cache[ $key ];
+		}
 		try {
 			if ( is_string( $callback ) && false !== strpos( $callback, '::' ) ) {
 				$callback = explode( '::', $callback, 2 );
@@ -574,10 +596,17 @@ class ReviewPage {
 				? new \ReflectionMethod( $callback[0], (string) $callback[1] )
 				: new \ReflectionFunction( \Closure::fromCallable( $callback ) );
 		} catch ( \Throwable $e ) {
+			if ( '' !== $key ) {
+				$file_cache[ $key ] = '';
+			}
 			return '';
 		}
 		$file = $reflection->getFileName();
-		return is_string( $file ) ? wp_normalize_path( $file ) : '';
+		$path = is_string( $file ) ? wp_normalize_path( $file ) : '';
+		if ( '' !== $key ) {
+			$file_cache[ $key ] = $path;
+		}
+		return $path;
 	}
 
 	public function dequeue_theme_assets_for_shell(): void {
@@ -733,6 +762,7 @@ class ReviewPage {
 				'comments'                => $comment_lists['comments'],
 				'inlineComments'          => $comment_lists['inlineComments'],
 				'commentsVersion'         => $comment_lists['commentsVersion'],
+				'contentVersion'          => $comment_lists['contentVersion'] ?? Comment_Presenter::content_version( $review ),
 				'reviewerId'              => (int) $review->reviewer_id,
 				'reviewerName'            => $reviewer_user ? $reviewer_user->display_name : '',
 				'requesterId'             => (int) $review->requester_id,

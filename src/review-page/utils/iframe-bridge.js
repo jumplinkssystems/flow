@@ -125,6 +125,16 @@ export function rectToPageCoords( rect, inIframe ) {
 }
 
 const HIGHLIGHT_CSS = `
+::selection {
+	/* Same blue as an active selection. Without this, the first hover paints
+	   the inactive gray until the preview frame is focused. */
+	background: rgba(128, 188, 254, 0.6);
+}
+::highlight(flow-comment-draft) {
+	/* The comment form takes focus, which drops ::selection. Same blue, so
+	   the text being commented on stays highlighted. */
+	background-color: rgba(128, 188, 254, 0.6);
+}
 .flow-inline-highlight {
 	/* Highlights are <mark>s; keep the page's text colour, not the UA black. */
 	color: inherit;
@@ -227,14 +237,41 @@ html.flow-comments-hidden .flow-inline-highlight-media:not(.flow-inline-highligh
 html.flow-comments-hidden .flow-inline-pin:not(.flow-inline-pin--offer):not(.flow-inline-highlight--revealed) {
 	display: none;
 }
-a[href] {
+html.flow-resolved-hidden .flow-inline-highlight.flow-inline-highlight--resolved:not(.flow-inline-highlight--revealed) {
+	background: none;
+	box-shadow: none;
+	cursor: inherit;
+}
+html.flow-resolved-hidden .flow-inline-highlight-media.flow-inline-highlight--resolved:not(.flow-inline-highlight--revealed) ~ .flow-embed-overlay {
+	outline: none;
+}
+html.flow-resolved-hidden .flow-inline-pin.flow-inline-highlight--resolved:not(.flow-inline-highlight--revealed) {
+	display: none;
+}
+a[href],
+button,
+[role="button"],
+[role="tab"],
+summary {
 	cursor: text;
 	-webkit-user-select: text;
 	user-select: text;
 	-webkit-user-drag: none;
 }
-html.flow-clickable-links a[href] {
+html.flow-clickable-links a[href],
+html.flow-clickable-links button,
+html.flow-clickable-links [role="button"],
+html.flow-clickable-links [role="tab"],
+html.flow-clickable-links summary {
 	cursor: pointer;
+}
+/* Overlay chips ("Click to comment", "Go to link") are not page text. */
+.flow-embed-overlay,
+.flow-embed-overlay[role="button"],
+.flow-embed-overlay button,
+.flow-embed-overlay a[href] {
+	-webkit-user-select: none;
+	user-select: none;
 }
 /* Elementor's decorative overlay/shape layers sit absolutely positioned over
  * section content and intercept mouse drags, so text-selection never reaches

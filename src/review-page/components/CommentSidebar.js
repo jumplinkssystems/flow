@@ -24,7 +24,7 @@ import InlineCommentsPanel from './InlineCommentsPanel';
 import { buildCommentTree } from '../utils/comment-tree';
 import { useConfirmDialog } from '../hooks/use-confirm-dialog';
 import { useSingleCommentForm } from '../utils/single-comment-form';
-import { isSameReviewPage } from '../../shared/same-review-page';
+import { isCommentOnPage } from '../../shared/same-review-page';
 
 const SIDEBAR_TABS = [
 	{
@@ -322,7 +322,7 @@ function GeneralCommentsPanel( {
  * @param {string} pageUrl  Page in view; empty on a single-post review.
  * @return {Array} Comments of threads started on that page.
  */
-function generalCommentsForPage( comments, pageUrl ) {
+function generalCommentsForPage( comments, pageUrl, pagePostId ) {
 	if ( ! pageUrl ) {
 		return comments;
 	}
@@ -342,8 +342,19 @@ function generalCommentsForPage( comments, pageUrl ) {
 	};
 	return comments.filter( ( c ) => {
 		const root = rootOf( c );
-		return ! root.url || isSameReviewPage( root.url, pageUrl );
+		return (
+			( ! root.url && ! Number( root.postId || 0 ) ) ||
+			isCommentOnPage( root, pageUrl, pagePostId )
+		);
 	} );
+}
+
+function initialGeneralForPage() {
+	return generalCommentsForPage(
+		pageData.comments || [],
+		window.flowCommentsPageUrl || '',
+		window.flowCommentsPagePostId || 0
+	);
 }
 
 function tabCountLabel( tabName, count ) {
@@ -389,15 +400,21 @@ export default function CommentSidebar( {
 	const [ pageUrl, setPageUrl ] = useState(
 		() => window.flowCommentsPageUrl || ''
 	);
+	const [ pagePostId, setPagePostId ] = useState(
+		() => window.flowCommentsPagePostId || 0
+	);
 	useEffect( () => {
-		const onPage = ( e ) => setPageUrl( e.detail?.url || '' );
+		const onPage = ( e ) => {
+			setPageUrl( e.detail?.url || '' );
+			setPagePostId( e.detail?.postId || 0 );
+		};
 		window.addEventListener( 'flow:comments-page-url', onPage );
 		return () =>
 			window.removeEventListener( 'flow:comments-page-url', onPage );
 	}, [] );
 	const generalComments = useMemo(
-		() => generalCommentsForPage( allGeneralComments, pageUrl ),
-		[ allGeneralComments, pageUrl ]
+		() => generalCommentsForPage( allGeneralComments, pageUrl, pagePostId ),
+		[ allGeneralComments, pageUrl, pagePostId ]
 	);
 	const [ inlineComments, setInlineComments ] = useState(
 		() => pageData.inlineComments || []
@@ -426,13 +443,13 @@ export default function CommentSidebar( {
 			window.removeEventListener( 'flow:inline-comment-focus', onFocus );
 	}, [] );
 	const [ reviewUnresolved, setReviewUnresolved ] = useState( () =>
-		countUnresolvedCommentThreads( pageData.comments || [] )
+		countUnresolvedCommentThreads( initialGeneralForPage() )
 	);
 	const [ inlineUnresolved, setInlineUnresolved ] = useState( () =>
 		countUnresolvedCommentThreads( pageData.inlineComments || [] )
 	);
 	const [ reviewResolved, setReviewResolved ] = useState( () =>
-		countResolvedCommentThreads( pageData.comments || [] )
+		countResolvedCommentThreads( initialGeneralForPage() )
 	);
 	const [ inlineResolved, setInlineResolved ] = useState( () =>
 		countResolvedCommentThreads( pageData.inlineComments || [] )

@@ -370,3 +370,79 @@ tr.flow-ew-agent-dependent[hidden] {
 .flow-ew-agent-user-create__error {
 	color: #d63638;
 }
+
+.flow-ew-white-label-logo-preview {
+	align-items: center;
+	background: #f0f0f1;
+	border: 1px solid #c3c4c7;
+	display: flex;
+	height: 128px;
+	justify-content: center;
+	overflow: hidden;
+	position: relative;
+	width: 128px;
+}
+
+.flow-ew-white-label-logo-preview img {
+	box-sizing: border-box;
+	display: block;
+	height: 100%;
+	object-fit: contain;
+	padding: 20px;
+	width: 100%;
+}
+
+.flow-ew-white-label-logo-remove {
+	align-items: center;
+	background: #d63638;
+	border: 0;
+	border-radius: 50%;
+	color: #fff;
+	cursor: pointer;
+	display: flex;
+	height: 24px;
+	justify-content: center;
+	padding: 0;
+	position: absolute;
+	right: 6px;
+	top: 6px;
+	width: 24px;
+}
+
+.flow-ew-white-label-logo-remove svg {
+	display: block;
+}
+
+.flow-ew-white-label-logo-remove[hidden] {
+	display: none;
+}
+
+.flow-ew-white-label-logo-preview.is-empty {
+	background: #f0f0f1;
+	color: #646970;
+	font-size: 12px;
+	padding: 12px;
+	text-align: center;
+}
+
+.flow-ew-white-label-logo-preview.is-dark:not(.is-empty) {
+	background: #1e1e1e;
+}
+
+.flow-ew-white-label-logo-preview.is-light:not(.is-empty) {
+	background: #fff;
+}
+
+.flow-ew-white-label-background-choice {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	margin-right: 16px;
+}
+
+.flow-ew-white-label-logo-actions {
+	align-items: center;
+	display: flex;
+	gap: 12px;
+	margin: 10px 0 6px;
+}

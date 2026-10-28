@@ -3,6 +3,7 @@ import { Button } from '@wordpress/components';
 import { backup } from '@wordpress/icons';
 import commentReplyIcon from '../icons/comment-reply';
 import { __, sprintf } from '@wordpress/i18n';
+import { applyFilters } from '@wordpress/hooks';
 import CommentCard from './CommentCard';
 import {
 	markCommentBusy,
@@ -138,6 +139,7 @@ export default function CommentThread( {
 				canCollapseThread
 				onRequestExpand={ () => setThreadExpanded( true ) }
 				onRequestCollapse={ () => setThreadExpanded( false ) }
+				hideEnvironment={ !! onResolve && ! replyingTo }
 			/>
 
 			{ replies.length > 0 && (
@@ -193,6 +195,9 @@ export default function CommentThread( {
 							) }
 						</Button>
 					) }
+					{ applyFilters( 'flow_ew_comment_byline_extras', null, {
+						comment: thread,
+					} ) }
 				</div>
 			) }
 

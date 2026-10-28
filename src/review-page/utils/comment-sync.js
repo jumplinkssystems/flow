@@ -25,6 +25,7 @@ let started = false;
 let stopped = false;
 let failures = 0;
 let version = '';
+let contentVersion = '';
 let lastLocalWriteAt = 0;
 let draftOpen = false;
 let lastPollStartedAt = 0;
@@ -125,8 +126,20 @@ function broadcast( payload ) {
 		} )
 	);
 
-	const review = payload.review;
-	if ( review && 'revisionStatus' in review ) {
+	applyReviewState( payload.review );
+}
+
+/**
+ * Revision / status updates can arrive without a comment-list change (author
+ * autosave). Keep comment resets separate so those polls stay cheap.
+ *
+ * @param {Object|undefined} review
+ */
+function applyReviewState( review ) {
+	if ( ! review ) {
+		return;
+	}
+	if ( 'revisionStatus' in review ) {
 		// Never reload the content the reviewer is reading; the bar offers the
 		// new version and they decide when to take it.
 		window.dispatchEvent(
@@ -139,12 +152,12 @@ function broadcast( payload ) {
 			} )
 		);
 	}
-	if ( review && review.isCancelled && ! pageData.isCancelled ) {
+	if ( review.isCancelled && ! pageData.isCancelled ) {
 		// The page only knows read-only at boot, so a cancel elsewhere reloads it.
 		window.location.reload();
 		return;
 	}
-	if ( review && review.status ) {
+	if ( review.status ) {
 		// No `message` key: this must not raise the action snackbar, which is
 		// reserved for something the viewer did themselves.
 		window.dispatchEvent(
@@ -169,6 +182,9 @@ async function poll() {
 		const params = new URLSearchParams();
 		if ( version ) {
 			params.set( 'version', version );
+		}
+		if ( contentVersion ) {
+			params.set( 'content', contentVersion );
 		}
 		// Localized data arrives as strings, and 0 is meaningful: the page
 		// rendered before the post had a revision.
@@ -201,13 +217,26 @@ async function poll() {
 				return;
 			}
 			version = payload.version || version;
+			if ( payload.contentVersion !== undefined ) {
+				contentVersion = String( payload.contentVersion );
+			}
 			if ( adapter ) {
 				adapter.handlePayload( payload );
 			} else {
 				broadcast( payload );
 			}
-		} else if ( payload && payload.version ) {
-			version = payload.version;
+		} else if ( payload ) {
+			if ( payload.version ) {
+				version = payload.version;
+			}
+			if ( payload.contentVersion !== undefined ) {
+				contentVersion = String( payload.contentVersion );
+			}
+			// Comments unchanged; still apply revision/status when the server
+			// included a review object (post body changed).
+			if ( ! adapter && payload.review ) {
+				applyReviewState( payload.review );
+			}
 		}
 		schedule();
 	} catch ( err ) {
@@ -288,6 +317,7 @@ export function startCommentSync() {
 	}
 	started = true;
 	version = String( pageData.commentsVersion || '' );
+	contentVersion = String( pageData.contentVersion || '' );
 
 	document.addEventListener( 'visibilitychange', onVisibilityChange );
 	window.addEventListener( 'focus', onFocus );

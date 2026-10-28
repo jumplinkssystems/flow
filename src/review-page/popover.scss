@@ -119,11 +119,14 @@
 		}
 
 		// Rotated square — 1px borders match the popup edge exactly (triangle
-		// borders anti-alias to a lighter shade than the box border).
+		// borders anti-alias to a lighter shade than the box border). `top`
+		// reads a JS-computed offset (--flow-caret-offset-y, 0 when the
+		// button sits level with the anchor) so the caret still points at
+		// the anchor once the button has been pushed off a screen edge.
 		&::before {
 			content: '';
 			position: absolute;
-			top: 50%;
+			top: calc(50% + var(--flow-caret-offset-y, 0px));
 			left: -6px;
 			z-index: 1;
 			width: 10px;
@@ -142,7 +145,7 @@
 		&::after {
 			content: '';
 			position: absolute;
-			top: 50%;
+			top: calc(50% + var(--flow-caret-offset-y, 0px));
 			left: 0;
 			z-index: 2;
 			width: 1px;
@@ -170,14 +173,33 @@
 		}
 	}
 
+	&--flipped &__editor-wrap {
+		&::before {
+			left: auto;
+			right: -6px;
+			border-left: 0;
+			border-bottom: 0;
+			border-top: 1px solid #e0e0e0;
+			border-right: 1px solid #e0e0e0;
+		}
+
+		&::after {
+			left: auto;
+			right: 0;
+		}
+	}
+
 	// Phones: the button sits under the selection, so the caret points up from
-	// the top centre (whichever side the desktop placement chose).
+	// the top centre (whichever side the desktop placement chose). `left`
+	// reads a JS-computed offset (--flow-caret-offset-x, 0 when the button
+	// sits centred under the anchor) so it still points at the anchor once
+	// the button has been pushed off a left/right screen edge.
 	&--below &__btn,
 	&--below#{&}--flipped &__btn {
 		&::before {
 			top: -6px;
 			right: auto;
-			left: 50%;
+			left: calc(50% + var(--flow-caret-offset-x, 0px));
 			border: 0;
 			border-left: 1px solid $popover-accent;
 			border-top: 1px solid $popover-accent;
@@ -187,7 +209,7 @@
 		&::after {
 			top: 0;
 			right: auto;
-			left: 50%;
+			left: calc(50% + var(--flow-caret-offset-x, 0px));
 			width: 14px;
 			height: 1px;
 			transform: translateX(-50%);
@@ -203,6 +225,47 @@
 			border-top: 0;
 			border-right: 1px solid $popover-accent;
 			border-bottom: 1px solid $popover-accent;
+		}
+
+		&::after {
+			top: auto;
+			bottom: 0;
+		}
+	}
+
+	// Phones: the form sits under the selection. Same horizontal offset as
+	// the Add Comment button, so the caret tracks the anchor once the form
+	// is pushed off a side edge. Full-width anchors stay centred (offset 0).
+	&--below &__editor-wrap,
+	&--below#{&}--flipped &__editor-wrap {
+		&::before {
+			top: -6px;
+			right: auto;
+			left: calc(50% + var(--flow-caret-offset-x, 0px));
+			border: 0;
+			border-left: 1px solid #e0e0e0;
+			border-top: 1px solid #e0e0e0;
+			transform: translateX(-50%) rotate(45deg);
+		}
+
+		&::after {
+			top: 0;
+			right: auto;
+			left: calc(50% + var(--flow-caret-offset-x, 0px));
+			width: 14px;
+			height: 1px;
+			transform: translateX(-50%);
+		}
+	}
+
+	&--below#{&}--above &__editor-wrap {
+		&::before {
+			top: auto;
+			bottom: -6px;
+			border-left: 0;
+			border-top: 0;
+			border-right: 1px solid #e0e0e0;
+			border-bottom: 1px solid #e0e0e0;
 		}
 
 		&::after {
@@ -234,12 +297,46 @@
 	&__editor-wrap {
 		$pe-border: #1d2327;
 		$pe-accent: var(--wp-admin-theme-color, #007cba);
+		$pe-caret-border: #e0e0e0;
 
+		position: relative;
 		background: #fff;
-		border: 1px solid #e0e0e0;
+		border: 1px solid $pe-caret-border;
 		border-radius: 4px;
 		box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
 		padding: 12px;
+
+		// Same caret as the Add Comment button, in the form's own colours.
+		// Desktop sits beside the anchor, so the caret is on the left edge
+		// and slides vertically with --flow-caret-offset-y.
+		&::before {
+			content: '';
+			position: absolute;
+			top: calc(50% + var(--flow-caret-offset-y, 0px));
+			left: -6px;
+			z-index: 1;
+			width: 10px;
+			height: 10px;
+			box-sizing: border-box;
+			background: #fff;
+			border-left: 1px solid $pe-caret-border;
+			border-bottom: 1px solid $pe-caret-border;
+			transform: translateY(-50%) rotate(45deg);
+			pointer-events: none;
+		}
+
+		&::after {
+			content: '';
+			position: absolute;
+			top: calc(50% + var(--flow-caret-offset-y, 0px));
+			left: 0;
+			z-index: 2;
+			width: 1px;
+			height: 14px;
+			background: #fff;
+			transform: translateY(-50%);
+			pointer-events: none;
+		}
 		font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 		font-size: 13px;
 		line-height: 1.4;
@@ -486,19 +583,11 @@
 	// both sides regardless of the inline style React writes. We have to
 	// use `!important` because the `position: fixed; left: …; transform:
 	// translateX(-50%)` triplet is set inline from React.
-	//
-	// The caret is hidden in this mode — once the bubble no longer tracks
-	// the highlight horizontally, an arrow pointing at a fixed spot is
-	// more confusing than helpful.
 	@media (max-width: 600px) {
 		left: 16px !important;
 		right: 16px !important;
 		transform: none !important;
 		align-items: stretch;
-
-		.flow-thread-popover__caret {
-			display: none;
-		}
 	}
 
 	&__caret {
@@ -506,6 +595,10 @@
 		width: 16px;
 		height: 8px;
 		flex: 0 0 auto;
+		// Centred on the container (the card stretches edge-to-edge on phones),
+		// then shifted by an inline `left`. A margin would only move a centred
+		// flex item by half its value.
+		align-self: center;
 		margin-bottom: -1px;
 		z-index: 2;
 		pointer-events: none;

@@ -163,6 +163,7 @@ class REST_Reviews extends \WP_REST_Controller {
 				'args'                => [
 					'id'       => self::int_arg(),
 					'version'  => self::bounded_text_arg( 64 ),
+					'content'  => self::bounded_text_arg( 32 ),
 					'revision' => self::int_arg( false, 0 ),
 				],
 			]
@@ -593,17 +594,30 @@ class REST_Reviews extends \WP_REST_Controller {
 			return $type_ok;
 		}
 
-		$known   = (string) $request->get_param( 'version' );
-		$version = Comment_Presenter::version(
-			DB::get_comments_state( (int) $review->post_id, (int) $review->id ),
-			$review
-		);
-		if ( '' !== $known && $known === $version ) {
+		$known            = (string) $request->get_param( 'version' );
+		$known_content    = (string) $request->get_param( 'content' );
+		$comment_state    = DB::get_comments_state( (int) $review->post_id, (int) $review->id );
+		$comments_version = Comment_Presenter::version( $comment_state, $review );
+		$content_version  = Comment_Presenter::content_version( $review );
+		$revision_arg     = array_key_exists( 'revision', $request->get_query_params() )
+			? (int) $request->get_param( 'revision' )
+			: null;
+
+		$review_state = ReviewPage::review_state_payload( $review, $revision_arg );
+
+		// Comments + review-row unchanged: skip list serialization. Still send
+		// review state when the post body moved so the revision banner updates.
+		if ( '' !== $known && $known === $comments_version ) {
 			return rest_ensure_response(
-				[
-					'version' => $version,
-					'changed' => false,
-				]
+				Comment_Presenter::sync_payload(
+					$known,
+					$known_content,
+					$comments_version,
+					$content_version,
+					[],
+					[],
+					$review_state
+				)
 			);
 		}
 
@@ -612,22 +626,17 @@ class REST_Reviews extends \WP_REST_Controller {
 		return rest_ensure_response(
 			(array) \apply_filters(
 				'flow_ew_review_sync_payload',
-				[
+				Comment_Presenter::sync_payload(
+					$known,
+					$known_content,
 					// Recomputed from the rows just read, so a comment landing
 					// between the two queries is not skipped until the next poll.
-					'version'        => $lists['commentsVersion'],
-					'changed'        => true,
-					'comments'       => $lists['comments'],
-					'inlineComments' => $lists['inlineComments'],
-					// An explicit 0 means the page rendered before any revision
-					// existed; only an absent param falls back to the stored one.
-					'review'         => ReviewPage::review_state_payload(
-						$review,
-						array_key_exists( 'revision', $request->get_query_params() )
-							? (int) $request->get_param( 'revision' )
-							: null
-					),
-				],
+					$lists['commentsVersion'],
+					$content_version,
+					$lists['comments'],
+					$lists['inlineComments'],
+					$review_state
+				),
 				$review
 			)
 		);
@@ -900,6 +909,14 @@ class REST_Reviews extends \WP_REST_Controller {
 					'count_total' => false,
 				]
 			);
+
+			$user_ids = [];
+			foreach ( $users as $u ) {
+				$user_ids[] = (int) $u->ID;
+			}
+			if ( [] !== $user_ids && function_exists( 'cache_users' ) ) {
+				cache_users( $user_ids );
+			}
 
 			foreach ( $users as $u ) {
 				$data[] = [

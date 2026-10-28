@@ -444,13 +444,29 @@ textarea {
 	}
 
 	&__resolve-row {
-		padding: 12px 0;
+		padding: 12px;
 		display: flex;
+		align-items: center;
+		gap: 12px;
 		justify-content: flex-start;
 
 		.components-button {
 			min-height: 30px;
 			margin-left: 0;
+			margin-right: 0;
+		}
+
+		// The reply/issue buttons also set 12px side margins. Inside this
+		// row the gap owns the spacing, so those margins would double it.
+		.flow-comment-thread__reply-btn.components-button.has-icon.has-text {
+			margin-left: 0;
+			margin-right: 0;
+			flex-shrink: 0;
+			white-space: nowrap;
+		}
+
+		@media (max-width: $mobile-bp) {
+			gap: 8px;
 		}
 	}
 
@@ -898,8 +914,7 @@ textarea {
 	text-align: left;
 	overflow: hidden;
 	font-family: inherit;
-	text-decoration: underline;
-	text-underline-offset: 2px;
+	text-decoration: none;
 	pointer-events: none;
 
 	&__text {
@@ -908,19 +923,50 @@ textarea {
 		overflow: hidden;
 		white-space: nowrap;
 		text-overflow: ellipsis;
+		text-decoration: underline;
+		text-underline-offset: 2px;
 	}
 
 	&__hint {
-		display: inline-block;
+		display: block;
 		font-size: 11px;
 		font-style: normal;
 		font-weight: 600;
 		color: #7a5a00;
 	}
 
+	&__alert {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 20px;
+		height: 20px;
+		grid-column: 2;
+		grid-row: 1 / span 2;
+		align-self: center;
+		justify-self: end;
+		color: #7a5a00;
+
+		svg {
+			display: block;
+			width: 20px;
+			height: 20px;
+		}
+	}
+
 	&--outdated {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) 20px;
+		column-gap: 8px;
+		row-gap: 2px;
+		align-items: center;
 		background: #fff6cc;
 		color: #7a5a00;
+
+		.flow-inline-anchor__text,
+		.flow-inline-anchor__hint {
+			grid-column: 1;
+		}
 	}
 }
 
@@ -960,14 +1006,10 @@ textarea {
 
 	&--outdated {
 		border-color: #e5c453;
-		background: #fff6cc;
+		background: $color-bg-white;
 
 		&.flow-inline-thread--navigable:hover {
 			border-color: #666a70;
-		}
-
-		.flow-comment-thread__replies {
-			border-left-color: #e5c453;
 		}
 	}
 }

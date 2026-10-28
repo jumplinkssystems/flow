@@ -22,32 +22,53 @@ const LOGO = (
 );
 
 /**
- * Jumplinks mark in the bar. Signed-in users get a link back to the review
- * dashboard; everyone else gets the plain mark, so it never leads away.
+ * Review brand mark. Pro may replace the Jumplinks mark with a custom logo.
+ * Signed-in users get a link back to the review dashboard; everyone else gets
+ * the plain mark, so it never leads away.
  */
-export default function WpLogoButton( { wpLogoUrl, isLoggedIn } ) {
+export default function WpLogoButton( {
+	wpLogoUrl,
+	wpLogoLabel = '',
+	brandLogoUrl,
+	brandLogoBackground = 'dark',
+	isLoggedIn,
+} ) {
+	const logo = brandLogoUrl ? (
+		<img src={ brandLogoUrl } alt="" className="flow-bar__brand-logo" />
+	) : (
+		LOGO
+	);
+	const backgroundClass =
+		brandLogoBackground === 'light'
+			? ' flow-bar__wp-logo--bg-light'
+			: ' flow-bar__wp-logo--bg-dark';
+	const customClass = brandLogoUrl
+		? ` flow-bar__wp-logo--custom${ backgroundClass }`
+		: '';
 	if ( ! isLoggedIn || ! wpLogoUrl ) {
 		return (
 			<div
-				className="flow-bar__wp-logo flow-bar__wp-logo--static"
+				className={ `flow-bar__wp-logo flow-bar__wp-logo--static${ customClass }` }
 				aria-hidden="true"
 			>
 				<span className="flow-bar__wp-logo-link">
-					<span className="flow-bar__wp-logo-icon">{ LOGO }</span>
+					<span className="flow-bar__wp-logo-icon">{ logo }</span>
 				</span>
 			</div>
 		);
 	}
-	const label = __( 'Review dashboard', 'jumplinks-editorial-workflow' );
+	const label =
+		wpLogoLabel || __( 'Review dashboard', 'jumplinks-editorial-workflow' );
 	return (
 		<Tooltip text={ label } placement="right" fixed>
-			<div className="flow-bar__wp-logo" tabIndex="0">
+			<div className={ `flow-bar__wp-logo${ customClass }` } tabIndex="0">
 				<a
 					href={ wpLogoUrl }
+					referrerPolicy="origin"
 					className="flow-bar__wp-logo-link"
 					aria-label={ label }
 				>
-					<div className="flow-bar__wp-logo-icon">{ LOGO }</div>
+					<div className="flow-bar__wp-logo-icon">{ logo }</div>
 					<div className="flow-bar__wp-logo-back">
 						<svg
 							xmlns="http://www.w3.org/2000/svg"

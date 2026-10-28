@@ -5,16 +5,18 @@ import {
 	Tooltip,
 } from '@wordpress/components';
 import { useEffect, useState } from '@wordpress/element';
-import { check, desktop, external } from '@wordpress/icons';
+import { desktop, external } from '@wordpress/icons';
 import { __ } from '@wordpress/i18n';
 import { applyFilters } from '@wordpress/hooks';
-import { SVG } from '@wordpress/primitives';
 
 import useDropdownToggleGuard from '../utils/use-dropdown-toggle-guard';
+import { eyeIcon, eyeOffIcon } from '../icons/outline-icons';
 import {
 	applyInlineCommentsVisibility,
 	areInlineCommentsHidden,
+	areResolvedCommentsHidden,
 	setInlineCommentsHidden,
+	setResolvedCommentsHidden,
 } from '../utils/comment-visibility';
 
 /**
@@ -23,11 +25,6 @@ import {
  * switcher) and `flow_ew_view_dropdown_icon` filter (device-aware trigger
  * icon). The wrapper carries the toggle guard from `useDropdownToggleGuard`.
  */
-// Holds the check mark's slot so the row keeps its height when unchecked.
-const blankIcon = (
-	<SVG xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" />
-);
-
 // Matches $mobile-bp: a phone has no use for device previews or a new tab.
 const isMobileViewport = () =>
 	!! window.matchMedia?.( '(max-width: 782px)' )?.matches;
@@ -36,6 +33,9 @@ export default function ViewDropdown( { postUrl, device } ) {
 	const wrapperRef = useDropdownToggleGuard();
 	const [ commentsHidden, setCommentsHidden ] = useState(
 		areInlineCommentsHidden
+	);
+	const [ resolvedHidden, setResolvedHidden ] = useState(
+		areResolvedCommentsHidden
 	);
 
 	// Each reload of the preview (device, revision, site navigation) needs it again.
@@ -91,10 +91,20 @@ export default function ViewDropdown( { postUrl, device } ) {
 									}
 								) }
 							<MenuGroup>
+								{ applyFilters(
+									'flow_ew_view_dropdown_toggles',
+									null
+								) }
 								<MenuItem
 									role="menuitemcheckbox"
 									isSelected={ commentsHidden }
-									icon={ commentsHidden ? check : blankIcon }
+									aria-label={ __(
+										'Hide inline comments',
+										'jumplinks-editorial-workflow'
+									) }
+									icon={
+										commentsHidden ? eyeOffIcon : eyeIcon
+									}
 									onClick={ () => {
 										const next = ! commentsHidden;
 										setInlineCommentsHidden( next );
@@ -102,7 +112,28 @@ export default function ViewDropdown( { postUrl, device } ) {
 									} }
 								>
 									{ __(
-										'Hide inline comments',
+										'Inline comments',
+										'jumplinks-editorial-workflow'
+									) }
+								</MenuItem>
+								<MenuItem
+									role="menuitemcheckbox"
+									isSelected={ resolvedHidden }
+									aria-label={ __(
+										'Hide resolved comments',
+										'jumplinks-editorial-workflow'
+									) }
+									icon={
+										resolvedHidden ? eyeOffIcon : eyeIcon
+									}
+									onClick={ () => {
+										const next = ! resolvedHidden;
+										setResolvedCommentsHidden( next );
+										setResolvedHidden( next );
+									} }
+								>
+									{ __(
+										'Resolved comments',
 										'jumplinks-editorial-workflow'
 									) }
 								</MenuItem>

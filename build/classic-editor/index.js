@@ -327,11 +327,12 @@ __webpack_require__.r(__webpack_exports__);
       const assigned = !!(review && (Number(review.reviewer_id || reviewer && reviewer.id || 0) > 0 || review.invite_email || reviewer && reviewer.is_email));
       node.hidden = assigned;
     }
-    let cancelledReviews = flowEW.cancelledReviews || [];
+    let cancelledReviews = [];
     const HISTORY_PAGE = 5;
     let historyVisible = HISTORY_PAGE;
     const historyKey = () => review ? review.id + ':' + review.status : '';
     let lastHistoryKey = historyKey();
+    let historyLoaded = false;
     function renderHistory() {
       const existing = $('#flow-ew-history');
       if (existing) {
@@ -363,6 +364,19 @@ __webpack_require__.r(__webpack_exports__);
       }
       root.insertBefore(div, spinner);
     }
+    function loadCancelledHistory(force) {
+      if (!postId || historyLoaded && !force) {
+        return;
+      }
+      historyPending = true;
+      api('/reviews/' + postId + '/cancelled', 'GET').then(function (list) {
+        cancelledReviews = Array.isArray(list) ? list : [];
+        historyLoaded = true;
+      }).catch(function () {}).finally(function () {
+        historyPending = false;
+        renderHistory();
+      });
+    }
 
     // A cancel swaps the active review, or (Pro roster) marks it cancelled.
     function refreshHistoryOnReviewChange() {
@@ -371,13 +385,25 @@ __webpack_require__.r(__webpack_exports__);
         return;
       }
       lastHistoryKey = key;
-      historyPending = true;
-      renderHistory();
-      api('/reviews/' + postId + '/cancelled', 'GET').then(function (list) {
-        cancelledReviews = Array.isArray(list) ? list : [];
-      }).catch(function () {}).finally(function () {
-        historyPending = false;
-        renderHistory();
+      loadCancelledHistory(true);
+    }
+    function historyDrawer() {
+      return root.closest('.flow-ew-elementor-drawer, .flow-ew-bricks-drawer, .flow-ew-breakdance-drawer, .flow-ew-avada-drawer, .flow-ew-beaver-drawer, .flow-ew-divi-drawer, .flow-ew-oxygen-drawer');
+    }
+    function ensureCancelledHistory() {
+      const drawer = historyDrawer();
+      if (drawer && !drawer.classList.contains('is-open')) {
+        return;
+      }
+      loadCancelledHistory(false);
+    }
+    ensureCancelledHistory();
+    const historyHost = historyDrawer();
+    if (historyHost) {
+      const historyWatch = new MutationObserver(ensureCancelledHistory);
+      historyWatch.observe(historyHost, {
+        attributes: true,
+        attributeFilter: ['class']
       });
     }
     let toastTimer = 0;

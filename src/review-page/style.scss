@@ -297,6 +297,8 @@ iframe.flow-inline-highlight-media {
 	background: transparent;
 	border: 0;
 	cursor: pointer;
+	-webkit-user-select: none;
+	user-select: none;
 	display: flex;
 	inset: 0;
 	justify-content: center;
@@ -305,11 +307,26 @@ iframe.flow-inline-highlight-media {
 	z-index: 2;
 
 	&:hover,
-	&:focus-visible {
-		background: rgba(0, 0, 0, 0.25);
+	&:focus-visible,
+	&.is-touch-armed {
+		// The active text-selection blue. The system Highlight color is gray
+		// until the preview frame is focused, so the first hover would not match.
+		background: rgba(128, 188, 254, 0.6);
 
 		.flow-embed-overlay__hint {
 			opacity: 1;
+		}
+	}
+
+	// Held while the comment form is open, after the pointer has left.
+	&.is-comment-open,
+	&.is-comment-open:hover,
+	&.is-comment-open.is-playing,
+	&.is-comment-open.is-playing:hover {
+		background: rgba(128, 188, 254, 0.6);
+
+		.flow-embed-overlay__hint {
+			opacity: 0;
 		}
 	}
 

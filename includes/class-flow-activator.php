@@ -115,6 +115,24 @@ class Activator {
 		foreach ( $sql as $statement ) {
 			dbDelta( $statement );
 		}
+		self::drop_post_review_index( $comments_table );
+	}
+
+	/**
+	 * Removed indexes stay behind after dbDelta. Comment reads filter
+	 * by review_id and order by created_at, which review_created already
+	 * covers, so post_review is only write cost.
+	 */
+	private static function drop_post_review_index( string $table ): void {
+		global $wpdb;
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.SchemaChange, PluginCheck.Security.DirectDB.UnescapedDBParameter -- table literal; SHOW INDEX has no placeholder for table names.
+		$index = $wpdb->get_var(
+			"SHOW INDEX FROM {$table} WHERE Key_name = 'post_review'"
+		);
+		if ( $index ) {
+			$wpdb->query( "ALTER TABLE {$table} DROP INDEX post_review" );
+		}
+		// phpcs:enable WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.SchemaChange, PluginCheck.Security.DirectDB.UnescapedDBParameter
 	}
 
 	public static function add_capabilities(): void {

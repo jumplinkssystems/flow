@@ -7,6 +7,7 @@ import {
 } from '@wordpress/element';
 import { Icon } from '@wordpress/components';
 import { comment as commentIcon } from '@wordpress/icons';
+import alertWarningIcon from '../icons/alert-warning';
 import { __ } from '@wordpress/i18n';
 import { pageData } from '../utils/api';
 import { defaultCommentApi } from '../utils/comment-api';
@@ -26,7 +27,24 @@ function clearFocusedThread() {
 	focusedThread = null;
 }
 
-// Stays outlined until the next click anywhere, including inside the page frame.
+// Quote on the left, warning on the right. The icon matches the resolve
+// check and covers both lines of the banner.
+function OutdatedHint() {
+	return (
+		<>
+			<span className="flow-inline-anchor__hint">
+				{ __(
+					'Potentially outdated comment.',
+					'jumplinks-editorial-workflow'
+				) }
+			</span>
+			<span className="flow-inline-anchor__alert" aria-hidden="true">
+				<Icon icon={ alertWarningIcon } size={ 20 } />
+			</span>
+		</>
+	);
+}
+
 function isPinThread( thread ) {
 	try {
 		return JSON.parse( thread.blockClientId || '' )?.type === 'pin';
@@ -415,12 +433,7 @@ export default function InlineCommentsPanel( {
 			>
 				{ isPin && isOutdated && (
 					<div className="flow-inline-anchor flow-inline-anchor--outdated">
-						<span className="flow-inline-anchor__hint">
-							{ __(
-								'Potentially outdated comment.',
-								'jumplinks-editorial-workflow'
-							) }
-						</span>
+						<OutdatedHint />
 					</div>
 				) }
 				{ ! isPin && thread.anchorText && (
@@ -440,14 +453,7 @@ export default function InlineCommentsPanel( {
 								: thread.anchorText }
 							&rdquo;
 						</span>
-						{ isOutdated && (
-							<span className="flow-inline-anchor__hint">
-								{ __(
-									'Potentially outdated comment.',
-									'jumplinks-editorial-workflow'
-								) }
-							</span>
-						) }
+						{ isOutdated && <OutdatedHint /> }
 					</div>
 				) }
 				<CommentThread
