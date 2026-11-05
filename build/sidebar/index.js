@@ -1079,15 +1079,11 @@ function FlowReviewPanel() {
     createSuccessNotice,
     createErrorNotice
   } = (0,_wordpress_data__WEBPACK_IMPORTED_MODULE_0__.useDispatch)(_wordpress_notices__WEBPACK_IMPORTED_MODULE_3__.store);
-  const isInReview = review?.status === 'in_review';
+
   // Fresh review, or newly assigned reviewers that still need a send.
   const isPendingSend = (0,_shared_should_show_send_for_review__WEBPACK_IMPORTED_MODULE_9__.shouldShowSendForReview)(review);
   const isChangesRequested = review?.status === 'changes_requested' && !review?.has_pending_reviewers;
   const reviewerId = review ? Number(review.reviewer?.id || review.reviewer_id) : 0;
-  const isReviewer = (0,_wordpress_hooks__WEBPACK_IMPORTED_MODULE_6__.applyFilters)('flow_ew_is_reviewer', review ? reviewerId === currentUserId : false, {
-    review,
-    currentUserId
-  });
   const hasEmailInvite = !!(review && (review.invite_email || review.reviewer?.is_email || Array.isArray(review.email_invites) && review.email_invites.length > 0));
   const hasReviewer = (0,_wordpress_hooks__WEBPACK_IMPORTED_MODULE_6__.applyFilters)('flow_ew_has_reviewer',
   // Email invitees use a negative synthetic id — still a valid assignment.
@@ -1095,38 +1091,8 @@ function FlowReviewPanel() {
     review,
     reviewerId
   });
-  const myReviewerRow = review && Array.isArray(review.reviewers) ? review.reviewers.find(r => Number(r.id) === Number(currentUserId)) : null;
-  const myVote = myReviewerRow ? myReviewerRow.status : review?.status;
-  const myApproved = myVote === 'approved';
-  const myChangesRequested = myVote === 'changes_requested';
   const postAuthorId = (0,_wordpress_data__WEBPACK_IMPORTED_MODULE_0__.useSelect)(sel => sel('core/editor').getEditedPostAttribute('author'), []);
   const isPostAuthor = Number(postAuthorId) === Number(currentUserId);
-  const approve = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_1__.useCallback)(async () => {
-    if (!review) {
-      return;
-    }
-    setLoading(true);
-    try {
-      const data = await _wordpress_api_fetch__WEBPACK_IMPORTED_MODULE_5___default()({
-        url: `${restUrl}/reviews/${review.id}/approve`,
-        method: 'POST'
-      });
-      if (data) {
-        setReview(data);
-      }
-      createSuccessNotice((0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_4__.__)('✔ Approval recorded.', 'jumplinks-editorial-workflow'), {
-        type: 'snackbar',
-        isDismissible: true
-      });
-    } catch (err) {
-      createErrorNotice(err?.message || (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_4__.__)('Failed to approve.', 'jumplinks-editorial-workflow'), {
-        isDismissible: true
-      });
-    } finally {
-      setLoading(false);
-    }
-  }, [review]); // eslint-disable-line react-hooks/exhaustive-deps
-
   const cancelReview = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_1__.useCallback)(async () => {
     if (!review) {
       return;
@@ -1173,58 +1139,6 @@ function FlowReviewPanel() {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const canCancelReview = !!review && (currentUserCan.manageReviews || Number(review.requester_id ?? review.requester?.id) === Number(currentUserId));
-  const requestChanges = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_1__.useCallback)(async () => {
-    if (!review) {
-      return;
-    }
-    setLoading(true);
-    try {
-      const data = await _wordpress_api_fetch__WEBPACK_IMPORTED_MODULE_5___default()({
-        url: `${restUrl}/reviews/${review.id}/request-changes`,
-        method: 'POST'
-      });
-      if (data) {
-        setReview(data);
-      }
-      createSuccessNotice((0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_4__.__)('✔ Changes requested.', 'jumplinks-editorial-workflow'), {
-        type: 'snackbar',
-        isDismissible: true
-      });
-    } catch (err) {
-      createErrorNotice(err?.message || (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_4__.__)('Failed to request changes.', 'jumplinks-editorial-workflow'), {
-        isDismissible: true
-      });
-    } finally {
-      setLoading(false);
-    }
-  }, [review]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const revokeApproval = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_1__.useCallback)(async () => {
-    if (!review) {
-      return;
-    }
-    setLoading(true);
-    try {
-      const data = await _wordpress_api_fetch__WEBPACK_IMPORTED_MODULE_5___default()({
-        url: `${restUrl}/reviews/${review.id}/revoke-approval`,
-        method: 'POST'
-      });
-      if (data) {
-        setReview(data);
-      }
-      createSuccessNotice((0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_4__.__)('Approval revoked.', 'jumplinks-editorial-workflow'), {
-        type: 'snackbar',
-        isDismissible: true
-      });
-    } catch (err) {
-      createErrorNotice(err?.message || (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_4__.__)('Failed to revoke approval.', 'jumplinks-editorial-workflow'), {
-        isDismissible: true
-      });
-    } finally {
-      setLoading(false);
-    }
-  }, [review]); // eslint-disable-line react-hooks/exhaustive-deps
-
   const resubmit = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_1__.useCallback)(async () => {
     if (!review) {
       return;
@@ -1356,31 +1270,7 @@ function FlowReviewPanel() {
           isBusy: loading,
           className: "flow-ew-actions__btn",
           children: i18n.resubmit
-        }), isInReview && isReviewer && currentUserCan.reviewPosts && (myApproved ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_17__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__.Button, {
-          variant: "secondary",
-          onClick: revokeApproval,
-          disabled: loading,
-          isBusy: loading,
-          className: "flow-ew-actions__btn",
-          children: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_4__.__)('Revoke Approval', 'jumplinks-editorial-workflow')
-        }) : /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_17__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_17__.Fragment, {
-          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_17__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__.Button, {
-            variant: "primary",
-            onClick: approve,
-            disabled: loading,
-            isBusy: loading,
-            className: "flow-ew-actions__btn flow-ew-actions__btn--approve",
-            children: i18n.approve
-          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_17__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__.Button, {
-            variant: "secondary",
-            isDestructive: true,
-            onClick: requestChanges,
-            disabled: loading || myChangesRequested,
-            isBusy: loading,
-            className: "flow-ew-actions__btn",
-            children: i18n.requestChanges
-          })]
-        })), review?.revision_preview_url && (review.status !== 'pending' || !!review.is_open) && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_17__.jsx)(_RevisionShareBar__WEBPACK_IMPORTED_MODULE_11__["default"], {
+        }), review?.revision_preview_url && (review.status !== 'pending' || !!review.is_open) && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_17__.jsx)(_RevisionShareBar__WEBPACK_IMPORTED_MODULE_11__["default"], {
           url: review.revision_preview_url,
           onCancel: canCancelReview ? cancelReview : null,
           isBusy: loading
@@ -1445,6 +1335,34 @@ const {
   currentUserCan,
   i18n
 } = flowEW;
+
+/**
+ * PluginPostStatusInfo always fills at the end of the summary stack
+ * (just above Move to trash). Move our row to sit under Author, or
+ * under the URL row when the Author control is hidden.
+ */
+function placeUnderAuthor(node) {
+  if (!node || !node.isConnected) {
+    return;
+  }
+  const ourRow = node.closest('.components-panel__row');
+  const stack = ourRow ? ourRow.parentElement : null;
+  if (!ourRow || !stack) {
+    return;
+  }
+  const authorLabel = (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_6__.__)('Author');
+  const rows = Array.from(stack.children);
+  const authorRow = rows.find(el => {
+    const label = el.querySelector('.editor-post-panel__row-label');
+    return label && label.textContent.trim() === authorLabel;
+  });
+  const urlRow = rows.find(el => el.querySelector('.editor-post-url__panel-toggle, .editor-post-url'));
+  const anchor = authorRow || urlRow;
+  if (!anchor || anchor.nextElementSibling === ourRow) {
+    return;
+  }
+  anchor.after(ourRow);
+}
 function FlowReviewerInfoPanel() {
   const review = (0,_wordpress_data__WEBPACK_IMPORTED_MODULE_0__.useSelect)(sel => sel(_store__WEBPACK_IMPORTED_MODULE_8__.STORE_NAME).getReview(), []);
   const reviewers = (0,_wordpress_data__WEBPACK_IMPORTED_MODULE_0__.useSelect)(sel => sel(_store__WEBPACK_IMPORTED_MODULE_8__.STORE_NAME).getReviewers(), []);
@@ -1458,6 +1376,10 @@ function FlowReviewerInfoPanel() {
   const [popoverAnchor, setPopoverAnchor] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_1__.useState)(null);
   const [filterValue, setFilterValue] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_1__.useState)('');
   const [isSaving, setIsSaving] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_1__.useState)(false);
+  const rowRef = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_1__.useRef)(null);
+  (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_1__.useLayoutEffect)(() => {
+    placeUnderAuthor(rowRef.current);
+  });
   const reviewerId = review ? Number(review.reviewer?.id || review.reviewer_id) : 0;
   const reviewerData = reviewerId ? review.reviewer || reviewers.find(u => u.id === reviewerId) || null : null;
   const canAssign = currentUserCan.assignReviewer;
@@ -1516,8 +1438,12 @@ function FlowReviewerInfoPanel() {
     return null;
   }
   return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_10__.jsx)(_wordpress_editor__WEBPACK_IMPORTED_MODULE_4__.PluginPostStatusInfo, {
+    className: "flow-ew-reviewer-status-info",
     children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_10__.jsx)("div", {
-      ref: setPopoverAnchor,
+      ref: node => {
+        rowRef.current = node;
+        setPopoverAnchor(node);
+      },
       style: {
         width: '100%'
       },

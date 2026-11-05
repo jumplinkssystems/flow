@@ -196,3 +196,74 @@ export function installLinkDragSelect( doc ) {
 		doc.removeEventListener( 'click', onClick, true );
 	};
 }
+
+const FORM_SUBMITTER =
+	'input[type="submit" i], input[type="image" i], button[type="submit" i], button:not([type])';
+
+// The preview is for reading and commenting. A form post (search, contact,
+// login, the theme's own comment form) leaves that page the same way a link
+// does. Flow's own forms live outside this document, in the review chrome.
+export function installPreviewFormGuard( doc ) {
+	if ( ! doc?.documentElement ) {
+		return () => {};
+	}
+
+	const onClick = ( e ) => {
+		if ( e.button !== 0 || e.metaKey || e.ctrlKey ) {
+			return;
+		}
+		const submitter = e.target?.closest?.( FORM_SUBMITTER );
+		if ( ! submitter?.form ) {
+			return;
+		}
+		e.preventDefault();
+	};
+
+	const onSubmit = ( e ) => {
+		e.preventDefault();
+		e.stopPropagation();
+	};
+
+	doc.addEventListener( 'click', onClick, true );
+	doc.addEventListener( 'submit', onSubmit, true );
+
+	const view = doc.defaultView;
+	const proto = view?.HTMLFormElement?.prototype;
+	let restoreSubmit = null;
+	if ( proto && typeof proto.submit === 'function' ) {
+		const originalSubmit = proto.submit;
+		const originalRequest = proto.requestSubmit;
+		const blocked = () => {};
+		try {
+			proto.submit = blocked;
+			if ( typeof originalRequest === 'function' ) {
+				proto.requestSubmit = blocked;
+			}
+			restoreSubmit = () => {
+				try {
+					if ( proto.submit === blocked ) {
+						proto.submit = originalSubmit;
+					}
+					if (
+						typeof originalRequest === 'function' &&
+						proto.requestSubmit === blocked
+					) {
+						proto.requestSubmit = originalRequest;
+					}
+				} catch {
+					// iframe torn down; nothing to restore.
+				}
+			};
+		} catch {
+			restoreSubmit = null;
+		}
+	}
+
+	return () => {
+		doc.removeEventListener( 'click', onClick, true );
+		doc.removeEventListener( 'submit', onSubmit, true );
+		if ( restoreSubmit ) {
+			restoreSubmit();
+		}
+	};
+}

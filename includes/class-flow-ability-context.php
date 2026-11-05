@@ -65,7 +65,7 @@ class Ability_Context {
 	 * so it also carries the element path, where inside the element it was
 	 * clicked, and what that element is.
 	 *
-	 * @return array{text:string,type:string,src:string,rootType:string,path?:string,x?:float,y?:float,element?:array{tag:string,id:string,classes:string[],text:string}}
+	 * @return array{text:string,type:string,src:string,rootType:string,path?:string,x?:float,y?:float,element?:array{tag:string,id:string,classes:string[],text:string},viewport?:array{device:string,width:int}}
 	 */
 	public static function location_from_descriptor( string $raw ): array {
 		$empty = [
@@ -102,6 +102,14 @@ class Ability_Context {
 			'classes' => array_values( array_map( 'sanitize_html_class', array_slice( (array) ( $element['classes'] ?? [] ), 0, 5 ) ) ),
 			'text'    => mb_substr( sanitize_text_field( (string) ( $element['text'] ?? '' ) ), 0, 160 ),
 		];
+		$viewport            = is_array( $decoded['viewport'] ?? null ) ? $decoded['viewport'] : [];
+		$device              = (string) ( $viewport['device'] ?? '' );
+		if ( in_array( $device, [ 'desktop', 'tablet', 'mobile' ], true ) ) {
+			$location['viewport'] = [
+				'device' => $device,
+				'width'  => max( 0, (int) ( $viewport['width'] ?? 0 ) ),
+			];
+		}
 		return $location;
 	}
 

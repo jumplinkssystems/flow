@@ -31,7 +31,6 @@ export default function FlowReviewPanel() {
 	const { createSuccessNotice, createErrorNotice } =
 		useDispatch( noticesStore );
 
-	const isInReview = review?.status === 'in_review';
 	// Fresh review, or newly assigned reviewers that still need a send.
 	const isPendingSend = shouldShowSendForReview( review );
 	const isChangesRequested =
@@ -40,11 +39,6 @@ export default function FlowReviewPanel() {
 	const reviewerId = review
 		? Number( review.reviewer?.id || review.reviewer_id )
 		: 0;
-	const isReviewer = applyFilters(
-		'flow_ew_is_reviewer',
-		review ? reviewerId === currentUserId : false,
-		{ review, currentUserId }
-	);
 	const hasEmailInvite = !! (
 		review &&
 		( review.invite_email ||
@@ -59,48 +53,11 @@ export default function FlowReviewPanel() {
 		{ review, reviewerId }
 	);
 
-	const myReviewerRow =
-		review && Array.isArray( review.reviewers )
-			? review.reviewers.find(
-					( r ) => Number( r.id ) === Number( currentUserId )
-			  )
-			: null;
-	const myVote = myReviewerRow ? myReviewerRow.status : review?.status;
-	const myApproved = myVote === 'approved';
-	const myChangesRequested = myVote === 'changes_requested';
 	const postAuthorId = useSelect(
 		( sel ) => sel( 'core/editor' ).getEditedPostAttribute( 'author' ),
 		[]
 	);
 	const isPostAuthor = Number( postAuthorId ) === Number( currentUserId );
-
-	const approve = useCallback( async () => {
-		if ( ! review ) {
-			return;
-		}
-		setLoading( true );
-		try {
-			const data = await apiFetch( {
-				url: `${ restUrl }/reviews/${ review.id }/approve`,
-				method: 'POST',
-			} );
-			if ( data ) {
-				setReview( data );
-			}
-			createSuccessNotice(
-				__( '✔ Approval recorded.', 'jumplinks-editorial-workflow' ),
-				{ type: 'snackbar', isDismissible: true }
-			);
-		} catch ( err ) {
-			createErrorNotice(
-				err?.message ||
-					__( 'Failed to approve.', 'jumplinks-editorial-workflow' ),
-				{ isDismissible: true }
-			);
-		} finally {
-			setLoading( false );
-		}
-	}, [ review ] ); // eslint-disable-line react-hooks/exhaustive-deps
 
 	const cancelReview = useCallback( async () => {
 		if ( ! review ) {
@@ -152,68 +109,6 @@ export default function FlowReviewPanel() {
 		( currentUserCan.manageReviews ||
 			Number( review.requester_id ?? review.requester?.id ) ===
 				Number( currentUserId ) );
-
-	const requestChanges = useCallback( async () => {
-		if ( ! review ) {
-			return;
-		}
-		setLoading( true );
-		try {
-			const data = await apiFetch( {
-				url: `${ restUrl }/reviews/${ review.id }/request-changes`,
-				method: 'POST',
-			} );
-			if ( data ) {
-				setReview( data );
-			}
-			createSuccessNotice(
-				__( '✔ Changes requested.', 'jumplinks-editorial-workflow' ),
-				{ type: 'snackbar', isDismissible: true }
-			);
-		} catch ( err ) {
-			createErrorNotice(
-				err?.message ||
-					__(
-						'Failed to request changes.',
-						'jumplinks-editorial-workflow'
-					),
-				{ isDismissible: true }
-			);
-		} finally {
-			setLoading( false );
-		}
-	}, [ review ] ); // eslint-disable-line react-hooks/exhaustive-deps
-
-	const revokeApproval = useCallback( async () => {
-		if ( ! review ) {
-			return;
-		}
-		setLoading( true );
-		try {
-			const data = await apiFetch( {
-				url: `${ restUrl }/reviews/${ review.id }/revoke-approval`,
-				method: 'POST',
-			} );
-			if ( data ) {
-				setReview( data );
-			}
-			createSuccessNotice(
-				__( 'Approval revoked.', 'jumplinks-editorial-workflow' ),
-				{ type: 'snackbar', isDismissible: true }
-			);
-		} catch ( err ) {
-			createErrorNotice(
-				err?.message ||
-					__(
-						'Failed to revoke approval.',
-						'jumplinks-editorial-workflow'
-					),
-				{ isDismissible: true }
-			);
-		} finally {
-			setLoading( false );
-		}
-	}, [ review ] ); // eslint-disable-line react-hooks/exhaustive-deps
 
 	const resubmit = useCallback( async () => {
 		if ( ! review ) {
@@ -383,46 +278,6 @@ export default function FlowReviewPanel() {
 							{ i18n.resubmit }
 						</Button>
 					) }
-
-					{ isInReview &&
-						isReviewer &&
-						currentUserCan.reviewPosts &&
-						( myApproved ? (
-							<Button
-								variant="secondary"
-								onClick={ revokeApproval }
-								disabled={ loading }
-								isBusy={ loading }
-								className="flow-ew-actions__btn"
-							>
-								{ __(
-									'Revoke Approval',
-									'jumplinks-editorial-workflow'
-								) }
-							</Button>
-						) : (
-							<>
-								<Button
-									variant="primary"
-									onClick={ approve }
-									disabled={ loading }
-									isBusy={ loading }
-									className="flow-ew-actions__btn flow-ew-actions__btn--approve"
-								>
-									{ i18n.approve }
-								</Button>
-								<Button
-									variant="secondary"
-									isDestructive
-									onClick={ requestChanges }
-									disabled={ loading || myChangesRequested }
-									isBusy={ loading }
-									className="flow-ew-actions__btn"
-								>
-									{ i18n.requestChanges }
-								</Button>
-							</>
-						) ) }
 
 					{ review?.revision_preview_url &&
 						( review.status !== 'pending' ||

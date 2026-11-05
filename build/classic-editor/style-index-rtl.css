@@ -1,7 +1,7 @@
 /*!**********************************************************************************************************************************************************************************!*\
   !*** css ./node_modules/css-loader/dist/cjs.js??ruleSet[1].rules[4].use[1]!./node_modules/postcss-loader/dist/cjs.js??ruleSet[1].rules[4].use[2]!./src/classic-editor/style.css ***!
   \**********************************************************************************************************************************************************************************/
-/* Generated from assets/status-palette.json by scripts/build-status-tokens.js. Do not edit. */
+/* Generated from assets/status-palette.json by tools/build/build-status-tokens.js. Do not edit. */
 :root {
 	--flow-status-open_review-bg: #dff4ff;
 	--flow-status-open_review-text: #1579a5;

@@ -1,4 +1,4 @@
-/* Generated from assets/status-palette.json by scripts/build-status-tokens.js. Do not edit. */
+/* Generated from assets/status-palette.json by tools/build/build-status-tokens.js. Do not edit. */
 :root {
 	--flow-status-open_review-bg: #dff4ff;
 	--flow-status-open_review-text: #1579a5;

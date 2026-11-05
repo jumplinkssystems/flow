@@ -111,22 +111,34 @@ function GeneralCommentsPanel( {
 			const comment = await api.postComment( { html, parentId } );
 			appendComment( comment );
 			if ( reopen ) {
-				await api.updateComment( parentId, { resolved: false } );
-				setComments( ( prev ) =>
-					prev.map( ( c ) =>
-						c.id === parentId ? { ...c, isResolved: false } : c
-					)
-				);
-				window.dispatchEvent(
-					new CustomEvent( 'flow:highlight-resolve', {
-						detail: { commentId: parentId, resolved: false },
-					} )
-				);
-				window.dispatchEvent(
-					new CustomEvent( 'flow:inline-comment-resolved', {
-						detail: { commentId: parentId, resolved: false },
-					} )
-				);
+				// The reply already posted above; reopening the thread is
+				// best-effort on top of that. Letting this throw would leave
+				// the editor thinking the whole submit failed — the reviewer
+				// retries, and that posts a second copy of the same reply.
+				try {
+					await api.updateComment( parentId, { resolved: false } );
+					setComments( ( prev ) =>
+						prev.map( ( c ) =>
+							c.id === parentId ? { ...c, isResolved: false } : c
+						)
+					);
+					window.dispatchEvent(
+						new CustomEvent( 'flow:highlight-resolve', {
+							detail: { commentId: parentId, resolved: false },
+						} )
+					);
+					window.dispatchEvent(
+						new CustomEvent( 'flow:inline-comment-resolved', {
+							detail: { commentId: parentId, resolved: false },
+						} )
+					);
+				} catch ( err ) {
+					// eslint-disable-next-line no-console
+					console.warn(
+						'[Flow] Reply posted, but reopening the thread failed.',
+						err
+					);
+				}
 			}
 			window.dispatchEvent(
 				new CustomEvent( 'flow:author-resubmit-activity', {

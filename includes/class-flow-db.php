@@ -369,6 +369,93 @@ class DB {
 		return $out;
 	}
 
+	/**
+	 * How many comments each reviewer left on each review — the dashboard's
+	 * per-reviewer row needs this so a reviewer who hasn't weighed in yet
+	 * reads differently from one who has.
+	 *
+	 * @param int[] $review_ids
+	 * @return array<int,array<int,int>> review_id => [ author_id => count ].
+	 */
+	public static function get_comment_counts_by_author( array $review_ids ): array {
+		$review_ids = array_values( array_unique( array_filter( array_map( 'intval', $review_ids ) ) ) );
+		if ( [] === $review_ids ) {
+			return [];
+		}
+		global $wpdb;
+		$comments_table = esc_sql( self::comments_table() );
+		$placeholders   = implode( ',', array_fill( 0, count( $review_ids ), '%d' ) );
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table literal; placeholders are %d.
+		$sql  = "SELECT review_id, author_id, COUNT(*) AS total
+			FROM {$comments_table}
+			WHERE review_id IN ({$placeholders}) AND author_id > 0
+			GROUP BY review_id, author_id";
+		$rows = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+			$wpdb->prepare( $sql, $review_ids ) // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		);
+		$out  = [];
+		foreach ( (array) $rows as $row ) {
+			$out[ (int) $row->review_id ][ (int) $row->author_id ] = (int) $row->total;
+		}
+		return $out;
+	}
+
+	/**
+	 * Comment counts for email invitees, who comment with `author_id = 0`.
+	 * Keyed by lowercase email so two invitees on one review stay distinct.
+	 *
+	 * @param int[] $review_ids
+	 * @return array<int,array<string,int>> review_id => [ email => count ].
+	 */
+	public static function get_guest_comment_counts_by_email( array $review_ids ): array {
+		$review_ids = array_values( array_unique( array_filter( array_map( 'intval', $review_ids ) ) ) );
+		if ( [] === $review_ids ) {
+			return [];
+		}
+		global $wpdb;
+		$comments_table = esc_sql( self::comments_table() );
+		$placeholders   = implode( ',', array_fill( 0, count( $review_ids ), '%d' ) );
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table literal; placeholders are %d.
+		$sql  = "SELECT review_id, LOWER(author_email) AS author_email, COUNT(*) AS total
+			FROM {$comments_table}
+			WHERE review_id IN ({$placeholders}) AND author_id = 0 AND author_email <> ''
+			GROUP BY review_id, LOWER(author_email)";
+		$rows = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+			$wpdb->prepare( $sql, $review_ids ) // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		);
+		$out  = [];
+		foreach ( (array) $rows as $row ) {
+			$email = strtolower( (string) $row->author_email );
+			if ( '' === $email ) {
+				continue;
+			}
+			$out[ (int) $row->review_id ][ $email ] = (int) $row->total;
+		}
+		return $out;
+	}
+
+	/**
+	 * The subset of `$review_ids` the user has left at least one comment on.
+	 *
+	 * @param int[] $review_ids
+	 * @return int[]
+	 */
+	public static function get_review_ids_commented_by( int $user_id, array $review_ids ): array {
+		$review_ids = array_values( array_unique( array_filter( array_map( 'intval', $review_ids ) ) ) );
+		if ( $user_id <= 0 || [] === $review_ids ) {
+			return [];
+		}
+		global $wpdb;
+		$comments_table = esc_sql( self::comments_table() );
+		$placeholders   = implode( ',', array_fill( 0, count( $review_ids ), '%d' ) );
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table literal; placeholders are %d.
+		$sql = "SELECT DISTINCT review_id FROM {$comments_table} WHERE author_id = %d AND review_id IN ({$placeholders})";
+		$ids = $wpdb->get_col( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+			$wpdb->prepare( $sql, array_merge( [ $user_id ], $review_ids ) ) // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		);
+		return array_map( 'intval', (array) $ids );
+	}
+
 	public static function get_comments_for_post( int $post_id, ?int $review_id = null ): array {
 		global $wpdb;
 		$comments_table = esc_sql( self::comments_table() );

@@ -1,5 +1,11 @@
 import { useSelect, useDispatch } from '@wordpress/data';
-import { useState, useMemo, useCallback } from '@wordpress/element';
+import {
+	useState,
+	useMemo,
+	useCallback,
+	useLayoutEffect,
+	useRef,
+} from '@wordpress/element';
 import {
 	Button,
 	ComboboxControl,
@@ -18,6 +24,36 @@ import { getConfig } from '../../shared/config';
 const flowEW = getConfig();
 const { restUrl, postId, currentUserCan, i18n } = flowEW;
 
+/**
+ * PluginPostStatusInfo always fills at the end of the summary stack
+ * (just above Move to trash). Move our row to sit under Author, or
+ * under the URL row when the Author control is hidden.
+ */
+function placeUnderAuthor( node ) {
+	if ( ! node || ! node.isConnected ) {
+		return;
+	}
+	const ourRow = node.closest( '.components-panel__row' );
+	const stack = ourRow ? ourRow.parentElement : null;
+	if ( ! ourRow || ! stack ) {
+		return;
+	}
+	const authorLabel = __( 'Author' );
+	const rows = Array.from( stack.children );
+	const authorRow = rows.find( ( el ) => {
+		const label = el.querySelector( '.editor-post-panel__row-label' );
+		return label && label.textContent.trim() === authorLabel;
+	} );
+	const urlRow = rows.find( ( el ) =>
+		el.querySelector( '.editor-post-url__panel-toggle, .editor-post-url' )
+	);
+	const anchor = authorRow || urlRow;
+	if ( ! anchor || anchor.nextElementSibling === ourRow ) {
+		return;
+	}
+	anchor.after( ourRow );
+}
+
 export default function FlowReviewerInfoPanel() {
 	const review = useSelect( ( sel ) => sel( STORE_NAME ).getReview(), [] );
 	const reviewers = useSelect(
@@ -31,6 +67,11 @@ export default function FlowReviewerInfoPanel() {
 	const [ popoverAnchor, setPopoverAnchor ] = useState( null );
 	const [ filterValue, setFilterValue ] = useState( '' );
 	const [ isSaving, setIsSaving ] = useState( false );
+	const rowRef = useRef( null );
+
+	useLayoutEffect( () => {
+		placeUnderAuthor( rowRef.current );
+	} );
 
 	const reviewerId = review
 		? Number( review.reviewer?.id || review.reviewer_id )
@@ -120,8 +161,14 @@ export default function FlowReviewerInfoPanel() {
 	}
 
 	return (
-		<PluginPostStatusInfo>
-			<div ref={ setPopoverAnchor } style={ { width: '100%' } }>
+		<PluginPostStatusInfo className="flow-ew-reviewer-status-info">
+			<div
+				ref={ ( node ) => {
+					rowRef.current = node;
+					setPopoverAnchor( node );
+				} }
+				style={ { width: '100%' } }
+			>
 				<HStack className="editor-post-panel__row">
 					<div className="editor-post-panel__row-label">
 						{ i18n.reviewer }

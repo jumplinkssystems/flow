@@ -1,5 +1,6 @@
 import { isHiddenTarget } from './reveal-hidden-target';
 import { createSharedPinObserver } from './dom-observer-policy';
+import { axisPosition } from './pin-geometry';
 
 /**
  * Pin markers: comments dropped on a spot of the page rather than on selected
@@ -14,6 +15,9 @@ const SVG_NS = 'http://www.w3.org/2000/svg';
 const PIN_BODY_PATH =
 	'M12 1.5C7.305 1.5 3.5 5.305 3.5 10c0 5.95 7.43 11.93 7.746 12.18a1.2 1.2 0 0 0 1.508 0C13.07 21.93 20.5 15.95 20.5 10c0-4.695-3.805-8.5-8.5-8.5Z';
 const PIN_DOT_PATH = 'M12 13.25a3.25 3.25 0 1 0 0-6.5 3.25 3.25 0 0 0 0 6.5Z';
+const PIN_ALERT_PATH =
+	'M10.9 4.9h2.2v6.2h-2.2zM12 15.6a1.3 1.3 0 1 0 0-2.6 1.3 1.3 0 0 0 0 2.6Z';
+export const PIN_OTHER_DEVICE_CLASS = 'flow-inline-pin--other-device';
 
 /** @type {WeakMap<Document, {watch: Function}>} */
 const docObservers = new WeakMap();
@@ -48,6 +52,7 @@ export function createPinElement(
 	[
 		[ PIN_BODY_PATH, 'flow-inline-pin__body' ],
 		[ PIN_DOT_PATH, 'flow-inline-pin__dot' ],
+		[ PIN_ALERT_PATH, 'flow-inline-pin__alert' ],
 	].forEach( ( [ d, className ] ) => {
 		const path = doc.createElementNS( SVG_NS, 'path' );
 		path.setAttribute( 'd', d );
@@ -86,14 +91,14 @@ export function placePinAtClientPoint( pin, clientX, clientY ) {
 	pin.style.top = `${ top }px`;
 }
 
-export function placePinOnAnchor( pin, anchor, x, y ) {
+export function placePinOnAnchor( pin, anchor, descriptor ) {
 	const rect = anchor.getBoundingClientRect();
 	// A pin on a closed accordion or tab would float at its zero-size box.
 	pin.style.visibility = isHiddenTarget( anchor ) ? 'hidden' : '';
 	placePinAtClientPoint(
 		pin,
-		rect.left + Number( x || 0 ) * rect.width,
-		rect.top + Number( y || 0 ) * rect.height
+		axisPosition( rect.left, rect.width, descriptor?.x, descriptor?.ax ),
+		axisPosition( rect.top, rect.height, descriptor?.y, descriptor?.ay )
 	);
 }
 

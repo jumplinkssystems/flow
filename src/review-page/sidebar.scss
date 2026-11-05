@@ -779,6 +779,25 @@ textarea {
 		}
 	}
 
+	// A mouse can hover the comment to ask for it; a trackpad/touch user
+	// always sees it. Once a click brought this thread into view from its
+	// highlight in the preview, the icon stays up without needing a hover.
+	// Scoped to the whole thread (not just this card) so moving the mouse
+	// down into the Reply row — right below the card, same as the
+	// environment icon's row — doesn't drop the hover and hide it again.
+	@media (hover: hover) and (pointer: fine) {
+		&__resolve-icon.components-button {
+			opacity: 0;
+			transition: opacity 0.15s ease, background-color 0.15s ease;
+		}
+
+		.flow-comment-thread:hover &__resolve-icon.components-button,
+		.flow-comment-thread:focus-within &__resolve-icon.components-button,
+		&__resolve-icon.components-button:focus-visible {
+			opacity: 1;
+		}
+	}
+
 	&__action-btn--collapse.components-button {
 		min-width: 0 !important;
 		width: 32px !important;
@@ -981,6 +1000,12 @@ textarea {
 .flow-inline-thread--focused {
 	border-color: $color-accent !important;
 	box-shadow: 0 0 0 1px $color-accent;
+}
+
+@media (hover: hover) and (pointer: fine) {
+	.flow-inline-thread--focused .flow-comment-card__resolve-icon.components-button {
+		opacity: 1;
+	}
 }
 
 .flow-inline-thread {

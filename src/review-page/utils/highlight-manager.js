@@ -4,6 +4,9 @@ import {
 	clearHighlight,
 	resolveMediaNode,
 	resolvePinNode,
+	resolveControlNode,
+	paintButtonLabelMetrics,
+	clearButtonLabelMetrics,
 	contentRanges,
 	mediaForOverlaySelection,
 	serializeMediaAnchor,
@@ -11,11 +14,13 @@ import {
 import {
 	PIN_CLASS,
 	createPinElement,
+	PIN_OTHER_DEVICE_CLASS,
 	observePinAnchor,
 	placePinOnAnchor,
 	removePin,
 } from './pin-marker';
 import { closestFromEventTarget } from './dom-helpers';
+import { pinOnOtherDevice } from '../../shared/device';
 import {
 	getIframeDoc,
 	injectHighlightStyles,
@@ -28,12 +33,14 @@ import {
 import {
 	installLinkDragSelect,
 	installPreviewLinkGuard,
+	installPreviewFormGuard,
 } from './preview-link-guard';
 import { COMMENTS_HIDDEN_CLASS } from './comment-visibility';
 import { isHiddenTarget, revealHiddenTarget } from './reveal-hidden-target';
 import { shouldIgnoreHighlightMutation } from './dom-observer-policy';
 const HIGHLIGHT_CLASS = 'flow-inline-highlight';
 const MEDIA_HIGHLIGHT_CLASS = 'flow-inline-highlight-media';
+const CONTROL_HIGHLIGHT_CLASS = 'flow-inline-highlight-control';
 const ACTIVE_CLASS = 'flow-inline-highlight--active';
 // While inline comments are hidden, the one picked in the sidebar stays visible.
 const REVEALED_CLASS = 'flow-inline-highlight--revealed';
@@ -53,7 +60,7 @@ function hasRootInlineComments( comments ) {
 function onHighlightClick( e ) {
 	let mark = closestFromEventTarget(
 		e.target,
-		`.${ HIGHLIGHT_CLASS }, .${ MEDIA_HIGHLIGHT_CLASS }, .${ PIN_CLASS }[data-comment-id]`
+		`.${ HIGHLIGHT_CLASS }, .${ MEDIA_HIGHLIGHT_CLASS }, .${ CONTROL_HIGHLIGHT_CLASS }, .${ PIN_CLASS }[data-comment-id]`
 	);
 
 	if ( ! mark ) {
@@ -126,7 +133,7 @@ function hasCommentId( el, commentId ) {
 }
 
 function queryHighlightedByCommentId( commentId ) {
-	const selector = `.${ HIGHLIGHT_CLASS }, .${ MEDIA_HIGHLIGHT_CLASS }, .${ PIN_CLASS }[data-comment-id]`;
+	const selector = `.${ HIGHLIGHT_CLASS }, .${ MEDIA_HIGHLIGHT_CLASS }, .${ CONTROL_HIGHLIGHT_CLASS }, .${ PIN_CLASS }[data-comment-id]`;
 	const all = queryHighlights( selector );
 	return all.filter( ( el ) => hasCommentId( el, commentId ) );
 }
@@ -165,6 +172,17 @@ function applyMediaHighlight( commentId, descriptor, optionalRoot ) {
 	return media;
 }
 
+function applyControlHighlight( commentId, descriptor, optionalRoot ) {
+	const control = resolveControlNode( descriptor, optionalRoot );
+	if ( ! control ) {
+		return null;
+	}
+	control.classList.add( CONTROL_HIGHLIGHT_CLASS );
+	paintButtonLabelMetrics( control );
+	addCommentId( control, commentId );
+	return control;
+}
+
 function applyPinMarker( commentId, descriptor, optionalRoot ) {
 	const anchor = resolvePinNode( descriptor, optionalRoot );
 	if ( ! anchor ) {
@@ -181,8 +199,12 @@ function applyPinMarker( commentId, descriptor, optionalRoot ) {
 		} );
 	pin.flowAnchor = anchor;
 	pin.flowDescriptor = descriptor;
+	pin.classList.toggle(
+		PIN_OTHER_DEVICE_CLASS,
+		!! pinOnOtherDevice( descriptor )
+	);
 	const reposition = () =>
-		placePinOnAnchor( pin, pin.flowAnchor, descriptor.x, descriptor.y );
+		placePinOnAnchor( pin, pin.flowAnchor, descriptor );
 	reposition();
 	observePinAnchor( pin, anchor, reposition );
 	return pin;
@@ -200,26 +222,16 @@ function repositionPins( doc ) {
 				}
 				pin.flowAnchor = anchor;
 				observePinAnchor( pin, anchor, () =>
-					placePinOnAnchor(
-						pin,
-						pin.flowAnchor,
-						pin.flowDescriptor.x,
-						pin.flowDescriptor.y
-					)
+					placePinOnAnchor( pin, pin.flowAnchor, pin.flowDescriptor )
 				);
 			}
-			placePinOnAnchor(
-				pin,
-				pin.flowAnchor,
-				pin.flowDescriptor.x,
-				pin.flowDescriptor.y
-			);
+			placePinOnAnchor( pin, pin.flowAnchor, pin.flowDescriptor );
 		}
 	);
 }
 
 function findMark( commentId ) {
-	const selector = `.${ HIGHLIGHT_CLASS }[data-comment-id="${ commentId }"], .${ MEDIA_HIGHLIGHT_CLASS }, .${ PIN_CLASS }[data-comment-id="${ commentId }"]`;
+	const selector = `.${ HIGHLIGHT_CLASS }[data-comment-id="${ commentId }"], .${ MEDIA_HIGHLIGHT_CLASS }, .${ CONTROL_HIGHLIGHT_CLASS }, .${ PIN_CLASS }[data-comment-id="${ commentId }"]`;
 	const iframeDoc = getIframeDoc();
 	if ( iframeDoc ) {
 		const inIframe = [ ...iframeDoc.querySelectorAll( selector ) ].find(
@@ -268,6 +280,10 @@ function handleAdd( e ) {
 		applyMediaHighlight( commentId, rangeDescriptor );
 		return;
 	}
+	if ( rangeDescriptor?.type === 'control' ) {
+		applyControlHighlight( commentId, rangeDescriptor );
+		return;
+	}
 	if ( rangeDescriptor?.type === 'pin' ) {
 		applyPinMarker( commentId, rangeDescriptor );
 		return;
@@ -307,6 +323,20 @@ function removeHighlightForComment( commentId ) {
 				ACTIVE_CLASS,
 				RESOLVED_CLASS
 			);
+		}
+	} );
+	queryHighlights( `.${ CONTROL_HIGHLIGHT_CLASS }` ).forEach( ( control ) => {
+		if ( ! hasCommentId( control, commentId ) ) {
+			return;
+		}
+		removeCommentId( control, commentId );
+		if ( ! control.dataset.commentIds ) {
+			control.classList.remove(
+				CONTROL_HIGHLIGHT_CLASS,
+				ACTIVE_CLASS,
+				RESOLVED_CLASS
+			);
+			clearButtonLabelMetrics( control );
 		}
 	} );
 }
@@ -413,6 +443,19 @@ function collectAnchoredCommentIds( contentRoot, doc ) {
 						}
 					} );
 			} );
+		scope
+			.querySelectorAll(
+				`.${ CONTROL_HIGHLIGHT_CLASS }[data-comment-ids]`
+			)
+			.forEach( ( el ) => {
+				( el.dataset.commentIds || '' )
+					.split( ' ' )
+					.forEach( ( id ) => {
+						if ( id ) {
+							ids.add( id );
+						}
+					} );
+			} );
 	}
 	return ids;
 }
@@ -452,6 +495,17 @@ function wrapCommentsInRoot( contentRoot, comments ) {
 				);
 				if ( media && c.isResolved ) {
 					media.classList.add( RESOLVED_CLASS );
+				}
+				continue;
+			}
+			if ( descriptor?.type === 'control' ) {
+				const control = applyControlHighlight(
+					c.id,
+					descriptor,
+					effectiveRoot
+				);
+				if ( control && c.isResolved ) {
+					control.classList.add( RESOLVED_CLASS );
 				}
 				continue;
 			}
@@ -495,6 +549,7 @@ function attachManagerToDoc( doc, options = {} ) {
 	injectHighlightStyles( doc );
 
 	let linkGuardCleanup = null;
+	const formGuardCleanup = installPreviewFormGuard( doc );
 	if ( ! skipLinkGuard ) {
 		linkGuardCleanup = installPreviewLinkGuard( doc );
 	} else if ( doc.documentElement ) {
@@ -506,6 +561,7 @@ function attachManagerToDoc( doc, options = {} ) {
 	const clickRoot = doc.body || doc.documentElement;
 	if ( ! wrapRoot || ! clickRoot ) {
 		return () => {
+			formGuardCleanup();
 			if ( linkGuardCleanup ) {
 				linkGuardCleanup();
 			}
@@ -594,6 +650,7 @@ function attachManagerToDoc( doc, options = {} ) {
 		clickRoot.removeEventListener( 'click', onHighlightClick );
 		doc.removeEventListener( 'pointerdown', onPagePointerDown, true );
 		view?.removeEventListener( 'resize', onResize );
+		formGuardCleanup();
 		if ( linkGuardCleanup ) {
 			linkGuardCleanup();
 		}
@@ -685,7 +742,7 @@ function handleCommentDeleted( e ) {
  *   `'site-review'`: skip the link guard so the reviewer can browse the
  *   site inside the iframe via the theme's regular menus. The iframe
  *   keeps firing `flow:iframe-ready` on every navigation, so the manager
- *   re-binds each new page.
+ *   re-binds each new page. Form posts are blocked in both modes.
  */
 export function initHighlights( inlineComments, options = {} ) {
 	allComments = [ ...( inlineComments || [] ) ];

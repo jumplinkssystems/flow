@@ -4,11 +4,11 @@ Tags: client feedback, website feedback, content approval, site review, editoria
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.7.1
+Stable tag: 2.7.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Client feedback on the live page with inline comments and content approval editorial workflow. Magic links for clients, no signup, no SaaS subscriptions, no external services. MCP AI-ready. Works with your builder.
+Client feedback on the live page with inline comments and content approval editorial workflow. Magic links for clients, no signup, no SaaS subscriptions; reviews stay on your site. MCP AI-ready. Works with your builder.
 
 == Description ==
 
@@ -77,6 +77,10 @@ Everything above is free. [Flow Pro](https://jumplinks.net/pro) adds:
 * **Webhooks for n8n, Zapier, and Make:** signed JSON payloads for 17 events across the review lifecycle — sent, approved, changes requested, resubmitted, comments and site reviews. Deliveries are queued and retried with a full log. Payloads include the exact passage each inline comment points at, formatted for a prompt, so a writing agent can apply the fixes and resubmit.
 * **Activity log:** every status change on the review page, with the user who triggered it.
 
+**Pro licensing.** Pro is an annual, per-site licence sold through Freemius (including purchases made on marketplaces such as WPBay, which deliver a Freemius licence key). Activate it under Plugins → Activate License next to Flow, then click Install Pro features. Pro needs WordPress 6.0+ and PHP 7.4+, like the free version. If the licence is inactive or expires, the Pro features switch off and Flow keeps working as the free version; your Pro settings and data stay in place and come back when the licence is renewed.
+
+**Pro version numbers.** Pro builds are numbered `X.Y.Z.N`: the features of release X.Y.Z, Pro build N (for example 2.7.2.1 is the first Pro build of 2.7.2). The extra digit lets the Pro package upgrade the free plugin in place; the changelog entry for X.Y.Z describes both.
+
 = 🛠️ Development =
 
 **Where is the JavaScript and CSS source?**
@@ -85,10 +89,10 @@ Human-editable source for the compiled assets in `build/` lives in the `src/` di
 
 **How do I rebuild the compiled assets?**
 
-From the plugin directory, with a supported Node.js release:
+From the plugin directory, with Node.js 18 or later:
 
-1. Run `npm install` or `npm ci` to install dependencies.
-2. Run `npm run build` to regenerate webpack output.
+1. Run `npm ci` to install the exact dependencies from `package-lock.json`.
+2. Run `npm run build`. It regenerates the status colour tokens (`tools/build/build-status-tokens.js`), builds readable and minified bundles with webpack into `build/`, then gives each minified file a content-hashed name and writes `build/manifest.php` (`tools/build/hash-build-files.js`), which the plugin reads to load the right file.
 
 **Third-party JavaScript**
 
@@ -110,7 +114,7 @@ This is the same Gravatar integration that ships with WordPress core. The free p
 Flow Pro adds optional integrations that only send data once you configure them:
 
 * **Slack** (https://slack.com/) — when you save a Slack bot token, Flow calls `chat.postMessage` and `users.lookupByEmail` on api.slack.com to deliver direct messages. Sent: the reviewer's WordPress email address (to find their Slack account), reviewer and author display names, content titles, review links, and the text of comments they are mentioned in. Terms: https://slack.com/terms-of-service · Privacy: https://slack.com/privacy-policy
-* **Webhooks** — Flow posts signed JSON to the endpoint URLs you enter under Flow → Webhooks. Payloads contain review status, post title and links, reviewer and requester names and email addresses, and comment text including the exact passage a comment points at. Deliveries and their payloads are kept in your database for the retention period you set and pruned by cron.
+* **Webhooks** — Flow posts signed JSON to the endpoint URLs you enter under Flow → Webhooks. Payloads contain review status, post title and links, reviewer and requester names and email addresses, and comment text including the exact passage a comment points at. Deliveries and their payloads are kept in your database (30 days for successful deliveries, 90 for failures) and then pruned by cron.
 * **Akismet** — if the Akismet plugin is active and configured, anonymous comments on open-to-public reviews are checked with Akismet's `comment-check` endpoint (comment text, name, email, IP address, user agent and referrer), governed by Akismet's terms and privacy policy: https://akismet.com/privacy/
 * **Freemius** (https://freemius.com/) — Pro licences are activated and updates are fetched through Freemius; no usage data is sent unless you explicitly opt in. Privacy: https://freemius.com/privacy/
 
@@ -206,14 +210,24 @@ Free does not. Flow Pro can optionally record the operating system, browser, dev
 == Changelog ==
 
 = 2.7.2 =
+* Improvement: The Flow Dashboard has two tabs. Received lists what you were asked to review, and other people's open reviews. Sent lists what you sent for review. Page, open and site reviews share one list, each marked with its type. Filter by All, In review or Resolved, by type, or click a person's name to see only their reviews. Resolved now keeps approved and cancelled reviews, 20 per page.
+* Improvement: Pins stay on the element you clicked when the page is viewed on another screen size. A pin near an element's edge keeps its distance from that edge, and a pin dropped in empty space attaches to the nearest block. A pin placed on another device is marked "Pinned on mobile", "Pinned on tablet" or "Pinned on desktop".
+* Improvement: "Comment environment info" (Pro) moved to Settings → Extras.
+* Improvement: The count of reviews waiting for you now shows next to Flow → Dashboard instead of the top-level Flow menu.
+* Improvement: Pausing on a link offers a comment only on regular links and buttons. A link that wraps a whole card, such as a product with its image, title and button, is treated like page content: highlight its text or click its image to comment.
+* Security: Public review links (Pro): commenting without an account now requires the signed share link, not just the review's ID.
+* Security: The @mention list (Pro) only shows a review's participants to people who can open that review, and no longer exposes the email addresses of anonymous commenters.
+* Fix: With Pro active, a reviewer assigned while Pro was off now appears in the reviewers list.
+* Fix: On the review page, CSS in a Custom HTML block (a <style> tag) showed as text and the block lost its styling. Content now displays as on the live page when its author is allowed to use unfiltered HTML.
+* Dev: The build helpers moved to tools/build/ and ship with the plugin, so `npm ci && npm run build` works from the released package.
+
+= 2.7.1 =
 * New: White label (Pro). Under Settings → White label, upload your own square logo and it replaces the Jumplinks mark in the page review and site review top bar. Choose a dark or light background. A square PNG or WebP with a transparent background works best: 128 × 128 px, shown at up to 64 × 64 px.
 * New: Comment environment info (Pro). A small info icon after the author's name on each new comment shows their OS, browser, device, and viewport — visible only to the review owner and admins. On by default under Settings → Comment environment info.
 * Improvement: Pausing on a link offers Add Comment. On a site review, pausing on a link that already has a comment opens that comment. On a page review the comment opens when you click, because the link itself does not leave the page.
 * Improvement: Hovering an image or video highlights it in the same blue as selected text.
 * Improvement: On a site review (Pro), the owner's logo is a back button with the same hover animation, and it opens that site review's edit page.
 * Fix: On a site review (Pro), that back button opened the homepage instead of the edit page.
-
-= 2.7.1 =
 * Fix: In site reviews (Pro), reviewers who are not logged in, such as people invited by email or site demo visitors, can now resolve comments, and the "Disable reviewers resolving comments" setting now applies to site reviews too.
 
 = 2.7.0 =

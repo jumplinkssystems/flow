@@ -7,7 +7,6 @@ import {
 } from '@wordpress/element';
 import { Icon } from '@wordpress/components';
 import { comment as commentIcon } from '@wordpress/icons';
-import alertWarningIcon from '../icons/alert-warning';
 import { __ } from '@wordpress/i18n';
 import { pageData } from '../utils/api';
 import { defaultCommentApi } from '../utils/comment-api';
@@ -18,7 +17,14 @@ import {
 	getIframeDoc,
 	resolveCommentContentRoot,
 } from '../utils/iframe-bridge';
-import { deserializeRange } from '../utils/text-anchor';
+import {
+	canPreviewDevices,
+	currentDevice,
+	pinViewportDevice,
+} from '../../shared/device';
+import PinnedOnHint from './PinnedOnHint';
+import OutdatedHint from './OutdatedHint';
+import { isAnchorOutdated, showPinOnDevice } from '../utils/comment-flags';
 
 let focusedThread = null;
 
@@ -27,29 +33,20 @@ function clearFocusedThread() {
 	focusedThread = null;
 }
 
-// Quote on the left, warning on the right. The icon matches the resolve
-// check and covers both lines of the banner.
-function OutdatedHint() {
-	return (
-		<>
-			<span className="flow-inline-anchor__hint">
-				{ __(
-					'Potentially outdated comment.',
-					'jumplinks-editorial-workflow'
-				) }
-			</span>
-			<span className="flow-inline-anchor__alert" aria-hidden="true">
-				<Icon icon={ alertWarningIcon } size={ 20 } />
-			</span>
-		</>
-	);
-}
-
 function isPinThread( thread ) {
 	try {
 		return JSON.parse( thread.blockClientId || '' )?.type === 'pin';
 	} catch {
 		return false;
+	}
+}
+
+// Older pins carry no device; they are never flagged.
+function pinDevice( thread ) {
+	try {
+		return pinViewportDevice( JSON.parse( thread.blockClientId || '' ) );
+	} catch {
+		return '';
 	}
 }
 
@@ -98,7 +95,18 @@ export default function InlineCommentsPanel( {
 } ) {
 	const { confirm, confirmDialog } = useConfirmDialog();
 	const [ outdatedMap, setOutdatedMap ] = useState( {} );
+	const [ viewDevice, setViewDevice ] = useState( currentDevice );
 	const threadRefs = useRef( {} );
+
+	useEffect( () => {
+		const sync = () => setViewDevice( currentDevice() );
+		window.addEventListener( 'flow:set-device-preview', sync );
+		window.addEventListener( 'flow:iframe-ready', sync );
+		return () => {
+			window.removeEventListener( 'flow:set-device-preview', sync );
+			window.removeEventListener( 'flow:iframe-ready', sync );
+		};
+	}, [] );
 
 	const tree = useMemo( () => buildCommentTree( comments ), [ comments ] );
 	const { activeThreads, resolvedThreads } = useMemo( () => {
@@ -128,12 +136,7 @@ export default function InlineCommentsPanel( {
 				if ( c.parentId || ! c.blockClientId ) {
 					continue;
 				}
-				try {
-					const descriptor = JSON.parse( c.blockClientId );
-					next[ c.id ] = ! deserializeRange( descriptor, root );
-				} catch {
-					next[ c.id ] = true;
-				}
+				next[ c.id ] = isAnchorOutdated( c, root );
 			}
 			setOutdatedMap( next );
 		};
@@ -184,23 +187,37 @@ export default function InlineCommentsPanel( {
 				return [ ...prev, comment ];
 			} );
 			if ( reopen ) {
-				await api.updateComment( parentId, { resolved: false } );
-				const pid = Number( parentId );
-				setComments( ( prev ) =>
-					prev.map( ( c ) =>
-						Number( c.id ) === pid ? { ...c, isResolved: false } : c
-					)
-				);
-				window.dispatchEvent(
-					new CustomEvent( 'flow:highlight-resolve', {
-						detail: { commentId: parentId, resolved: false },
-					} )
-				);
-				window.dispatchEvent(
-					new CustomEvent( 'flow:inline-comment-resolved', {
-						detail: { commentId: parentId, resolved: false },
-					} )
-				);
+				// The reply already posted above; reopening the thread is
+				// best-effort on top of that. Letting this throw would leave
+				// the editor thinking the whole submit failed — the reviewer
+				// retries, and that posts a second copy of the same reply.
+				try {
+					await api.updateComment( parentId, { resolved: false } );
+					const pid = Number( parentId );
+					setComments( ( prev ) =>
+						prev.map( ( c ) =>
+							Number( c.id ) === pid
+								? { ...c, isResolved: false }
+								: c
+						)
+					);
+					window.dispatchEvent(
+						new CustomEvent( 'flow:highlight-resolve', {
+							detail: { commentId: parentId, resolved: false },
+						} )
+					);
+					window.dispatchEvent(
+						new CustomEvent( 'flow:inline-comment-resolved', {
+							detail: { commentId: parentId, resolved: false },
+						} )
+					);
+				} catch ( err ) {
+					// eslint-disable-next-line no-console
+					console.warn(
+						'[Flow] Reply posted, but reopening the thread failed.',
+						err
+					);
+				}
 			}
 			window.dispatchEvent(
 				new CustomEvent( 'flow:inline-comment-added', {
@@ -316,7 +333,11 @@ export default function InlineCommentsPanel( {
 		[ api, setComments, confirm ]
 	);
 
-	const handleAnchorClick = useCallback( ( commentId ) => {
+	// Mirrors the other direction: clicking a highlight in the preview both
+	// scrolls this panel to the thread AND opens the floating popover there
+	// (`InlineThreadPopover`'s `flow:inline-comment-focus` listener). Clicking
+	// the thread here should do the same round trip, not just flash the mark.
+	const handleAnchorClick = useCallback( ( commentId, isResolved ) => {
 		// On phones the panel covers the page, so close it to show the comment.
 		if ( window.matchMedia?.( '(max-width: 782px)' )?.matches ) {
 			window.dispatchEvent(
@@ -330,10 +351,15 @@ export default function InlineCommentsPanel( {
 				detail: { commentId },
 			} )
 		);
+		window.dispatchEvent(
+			new CustomEvent( 'flow:inline-comment-focus', {
+				detail: { commentId, isResolved: !! isResolved },
+			} )
+		);
 	}, [] );
 
 	const handleThreadSurfaceClick = useCallback(
-		( event, commentId ) => {
+		( event, commentId, isResolved ) => {
 			if (
 				event.target.closest(
 					'button, a, input, textarea, select, [contenteditable="true"], .flow-comment-editor, .components-button, [role="menu"]'
@@ -341,7 +367,7 @@ export default function InlineCommentsPanel( {
 			) {
 				return;
 			}
-			handleAnchorClick( commentId );
+			handleAnchorClick( commentId, isResolved );
 		},
 		[ handleAnchorClick ]
 	);
@@ -401,9 +427,14 @@ export default function InlineCommentsPanel( {
 
 	const renderThread = ( thread ) => {
 		// A resolved comment's text is expected to be gone; it keeps View original, not the warning.
-		const isOutdated = ! thread.isResolved && !! outdatedMap[ thread.id ];
 		// A pin points at a spot, not words: nothing to quote.
 		const isPin = isPinThread( thread );
+		const pinnedOn = pinDevice( thread );
+		const otherDevice = !! pinnedOn && pinnedOn !== viewDevice;
+		// On another screen size the spot is approximate, which says more than "outdated".
+		const isOutdated =
+			! thread.isResolved &&
+			( otherDevice || !! outdatedMap[ thread.id ] );
 		return (
 			<div
 				key={ thread.id }
@@ -417,7 +448,11 @@ export default function InlineCommentsPanel( {
 					threadRefs.current[ thread.id ] = el;
 				} }
 				onClick={ ( event ) =>
-					handleThreadSurfaceClick( event, thread.id )
+					handleThreadSurfaceClick(
+						event,
+						thread.id,
+						thread.isResolved
+					)
 				}
 				title={
 					isPin
@@ -431,9 +466,13 @@ export default function InlineCommentsPanel( {
 						  )
 				}
 			>
-				{ isPin && isOutdated && (
+				{ isPin && ( otherDevice || isOutdated ) && (
 					<div className="flow-inline-anchor flow-inline-anchor--outdated">
-						<OutdatedHint />
+						{ otherDevice ? (
+							<PinnedOnHint device={ pinnedOn } />
+						) : (
+							<OutdatedHint />
+						) }
 					</div>
 				) }
 				{ ! isPin && thread.anchorText && (
@@ -463,7 +502,11 @@ export default function InlineCommentsPanel( {
 					onReply={ handleReply }
 					onResolve={ handleResolve }
 					suppressBodyExpandClick
-					isOutdated={ isOutdated }
+					isOutdated={ isOutdated && ! otherDevice }
+					showOnDevice={
+						otherDevice && canPreviewDevices() ? pinnedOn : ''
+					}
+					onShowOnDevice={ showPinOnDevice }
 				/>
 			</div>
 		);

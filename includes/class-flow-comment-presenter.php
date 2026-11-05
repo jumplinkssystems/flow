@@ -214,7 +214,7 @@ final class Comment_Presenter {
 
 		return [
 			'id'            => (int) $c->id,
-			'html'          => $c->comment_text,
+			'html'          => Comment_Html::mask_mention_emails( (string) $c->comment_text ),
 			'author'        => $display_name,
 			'authorId'      => $author_id,
 			// Per viewer: lets an external reviewer edit and delete their own.

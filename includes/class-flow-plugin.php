@@ -26,6 +26,7 @@ class Plugin {
 		I18n::boot();
 		Mailer::boot();
 		Privacy::boot();
+		( new Comment_Spam_Guard() )->boot();
 		Page_Cache::boot();
 		Maintenance_Bypass::boot();
 		AI_Engine_Bridge::boot();

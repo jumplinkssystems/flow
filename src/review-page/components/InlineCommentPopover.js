@@ -14,6 +14,10 @@ import {
 	serializePinAnchor,
 	contentRanges,
 	mediaForOverlaySelection,
+	isButtonInput,
+	buttonInputLabel,
+	paintButtonLabelMetrics,
+	clearButtonLabelMetrics,
 } from '../utils/text-anchor';
 import {
 	createPinElement,
@@ -67,6 +71,18 @@ const PIN_EXCLUDED_BROWSING =
 const LINK_HOVER_DELAY_MS = 200;
 const LINK_HOVER_LEAVE_MS = 500;
 const LINK_HOVER_CLASS = 'flow-link-hover-selection';
+
+// The hover wash and a saved comment share the label box. Dropping the hover
+// must not wipe that box once the comment highlight owns it.
+function releaseHoverPaint( marked ) {
+	if ( ! marked ) {
+		return;
+	}
+	marked.classList.remove( LINK_HOVER_CLASS );
+	if ( ! marked.classList.contains( 'flow-inline-highlight-control' ) ) {
+		clearButtonLabelMetrics( marked );
+	}
+}
 const MEDIA_COMMENT_CLASS = 'is-comment-open';
 
 // The overlay is a sibling of its media (or shares a wrap with it) and
@@ -87,6 +103,7 @@ function overlayForMedia( media ) {
 	return null;
 }
 const DRAFT_HIGHLIGHT_NAME = 'flow-comment-draft';
+const DRAFT_FLASH_NAME = 'flow-comment-draft-flash';
 
 // Native ::selection disappears once the comment field takes focus. The
 // Highlight registry paints the same blue without holding the selection,
@@ -117,30 +134,106 @@ function paintDraftHighlight( ranges ) {
 
 function clearDraftHighlight( doc ) {
 	try {
-		doc?.defaultView?.CSS?.highlights?.delete( DRAFT_HIGHLIGHT_NAME );
+		const highlights = doc?.defaultView?.CSS?.highlights;
+		highlights?.delete( DRAFT_HIGHLIGHT_NAME );
+		highlights?.delete( DRAFT_FLASH_NAME );
 	} catch {
 		// The document is already gone.
 	}
 }
+
+// The field the reviewer is typing into: Free's textarea, or Pro's Tiptap
+// surface. Empty (including a blank rich-text paragraph) means an outside
+// click may dismiss the draft.
+function editorHasDraftText( root ) {
+	if ( ! root ) {
+		return false;
+	}
+	const textarea = root.querySelector( 'textarea' );
+	if ( textarea ) {
+		return textarea.value.trim().length > 0;
+	}
+	const editable = root.querySelector(
+		'.ProseMirror, [contenteditable="true"]'
+	);
+	if ( ! editable ) {
+		return false;
+	}
+	return (
+		( editable.innerText || '' ).replace( /\u00a0/g, ' ' ).trim().length > 0
+	);
+}
+
+function flashHighlight( ranges, onDone ) {
+	const list = ( Array.isArray( ranges ) ? ranges : [ ranges ] ).filter(
+		Boolean
+	);
+	const view = list[ 0 ]?.startContainer?.ownerDocument?.defaultView || null;
+	if (
+		! list.length ||
+		! view ||
+		typeof view.Highlight !== 'function' ||
+		! view.CSS?.highlights
+	) {
+		return 0;
+	}
+	try {
+		view.CSS.highlights.set(
+			DRAFT_FLASH_NAME,
+			new view.Highlight( ...list )
+		);
+	} catch {
+		return 0;
+	}
+	return view.setTimeout( () => {
+		try {
+			view.CSS.highlights.delete( DRAFT_FLASH_NAME );
+		} catch {
+			// The document is already gone.
+		}
+		if ( onDone ) {
+			onDone();
+		}
+	}, 700 );
+}
 const COMMENTABLE_CONTROL =
-	'a[href], button, [role="button"], [role="tab"], summary';
+	'a[href], button, input[type="submit" i], input[type="button" i], input[type="reset" i], input[type="image" i], [role="button"], [role="tab"], summary';
 const LIVE_TOGGLE =
 	'[data-toggle], [data-bs-toggle], [aria-controls], [aria-expanded], [role="button"], [role="tab"]';
+const CARD_CONTENT =
+	'h1, h2, h3, h4, h5, h6, p, ul, ol, table, blockquote, figure, article, section';
+const CARD_MEDIA = 'img, picture, video, canvas, iframe';
+const ICON_MAX_PX = 48;
+
+// A link wrapping a whole card (photo, heading, text) is page content, not a
+// link label: its text and image are commented like any other.
+function isCardControl( control ) {
+	if ( control.querySelector( CARD_CONTENT ) ) {
+		return true;
+	}
+	for ( const media of control.querySelectorAll( CARD_MEDIA ) ) {
+		const rect = media.getBoundingClientRect();
+		if ( rect.width > ICON_MAX_PX || rect.height > ICON_MAX_PX ) {
+			return true;
+		}
+	}
+	return false;
+}
 
 // A pause offers a comment on the label. Buttons, tabs and accordions are
 // included; a tap or click still activates them. Script links and controls
 // with no text stay out — an image already has its own comment gesture.
 function commentableControl( node ) {
 	const control = node?.closest?.( COMMENTABLE_CONTROL );
-	if ( ! control ) {
+	if ( ! control || isCardControl( control ) ) {
 		return null;
 	}
 	if (
 		control.closest(
-			'.flow-inline-highlight, .flow-inline-highlight-media, .flow-review-info-notice, .flow-inline-pin, .flow-embed-overlay'
+			'.flow-inline-highlight, .flow-inline-highlight-media, .flow-inline-highlight-control, .flow-review-info-notice, .flow-inline-pin, .flow-embed-overlay'
 		) ||
 		control.querySelector(
-			'.flow-inline-highlight, .flow-inline-highlight-media'
+			'.flow-inline-highlight, .flow-inline-highlight-media, .flow-inline-highlight-control'
 		)
 	) {
 		return null;
@@ -151,7 +244,9 @@ function commentableControl( node ) {
 			return null;
 		}
 	}
-	if ( ! ( control.innerText || '' ).trim() ) {
+	const label =
+		( control.innerText || '' ).trim() || buttonInputLabel( control );
+	if ( ! label ) {
 		return null;
 	}
 	const doc = control.ownerDocument;
@@ -161,7 +256,8 @@ function commentableControl( node ) {
 	return control;
 }
 
-const COMMENT_MARK = '.flow-inline-highlight, .flow-inline-highlight-media';
+const COMMENT_MARK =
+	'.flow-inline-highlight, .flow-inline-highlight-media, .flow-inline-highlight-control';
 
 function commentIdFromMark( mark ) {
 	const direct = Number( mark.dataset.commentId );
@@ -198,7 +294,7 @@ function isDormantMark( mark ) {
 // opens that thread instead of offering a new one.
 function commentOnControl( node ) {
 	const control = node?.closest?.( COMMENTABLE_CONTROL );
-	if ( ! control ) {
+	if ( ! control || isCardControl( control ) ) {
 		return null;
 	}
 	let mark = node.closest?.( COMMENT_MARK ) || null;
@@ -234,8 +330,8 @@ function controlKeepsActivation( control ) {
 	);
 }
 
-// A product card link, or a tab with an icon, wraps a photo and a label.
-// The comment is about the words, so the selection stops at the text.
+// A tab or button with an icon wraps a small image and a label. The comment
+// is about the words, so the selection stops at the text.
 function linkTextRange( anchor ) {
 	const doc = anchor.ownerDocument;
 	const media = 'img, picture, video, svg, canvas, iframe';
@@ -251,6 +347,12 @@ function linkTextRange( anchor ) {
 		node = walker.nextNode();
 	}
 	if ( ! texts.length ) {
+		// A submit input's label lives in its value, not a text node.
+		if ( isButtonInput( anchor ) && buttonInputLabel( anchor ) ) {
+			const range = doc.createRange();
+			range.selectNode( anchor );
+			return range;
+		}
 		return null;
 	}
 	const range = doc.createRange();
@@ -387,6 +489,15 @@ export default function InlineCommentPopover( {
 	const threadOpenRef = useRef( false );
 
 	const draftHighlightDocRef = useRef( null );
+	// Ranges kept lit while the form is open: the text being commented on,
+	// plus any other text the reviewer points at without discarding the draft.
+	const draftRangesRef = useRef( [] );
+	const extraRangesRef = useRef( [] );
+	const flashTimerRef = useRef( 0 );
+	const pointTimerRef = useRef( 0 );
+	// Pulses the open form when the reviewer points at other text, so the
+	// popup reads as highlighted along with that passage.
+	const [ pointed, setPointed ] = useState( false );
 	const mediaOverlayRef = useRef( null );
 	const linkHoverRef = useRef( {
 		timer: 0,
@@ -421,15 +532,19 @@ export default function InlineCommentPopover( {
 	// Drops the stand-in hover paint and the link hover class. Used when the
 	// comment form closes; while it is open the text stays highlighted.
 	const releaseDraftHover = useCallback( () => {
+		clearTimeout( flashTimerRef.current );
+		flashTimerRef.current = 0;
 		clearDraftHighlight( draftHighlightDocRef.current );
 		draftHighlightDocRef.current = null;
+		draftRangesRef.current = [];
+		extraRangesRef.current = [];
 		mediaOverlayRef.current?.classList.remove( MEDIA_COMMENT_CLASS );
 		mediaOverlayRef.current = null;
 		const marked = linkHoverRef.current.marked;
 		if ( ! marked ) {
 			return;
 		}
-		marked.classList.remove( LINK_HOVER_CLASS );
+		releaseHoverPaint( marked );
 		linkHoverRef.current.marked = null;
 		const selection = marked.ownerDocument.defaultView?.getSelection();
 		if ( ! selection?.rangeCount ) {
@@ -634,9 +749,114 @@ export default function InlineCommentPopover( {
 		[ positionNearRect, clearPinOffer ]
 	);
 
+	// Paint the passage this open comment is about. A click or selection
+	// elsewhere flashes that same passage; it does not mark the new text.
+	const paintKeptHighlights = useCallback( () => {
+		const draft = draftRangesRef.current || [];
+		const extra = extraRangesRef.current || [];
+		const draftView =
+			draft[ 0 ]?.startContainer?.ownerDocument?.defaultView;
+		const extraView =
+			extra[ 0 ]?.startContainer?.ownerDocument?.defaultView;
+		let painted = false;
+		if ( draftView && extraView && draftView !== extraView ) {
+			painted = paintDraftHighlight( draft ) || painted;
+			painted = paintDraftHighlight( extra ) || painted;
+		} else {
+			painted = paintDraftHighlight( [ ...draft, ...extra ] );
+		}
+		const doc = ( extra[ 0 ] || draft[ 0 ] )?.startContainer?.ownerDocument;
+		if ( painted && doc ) {
+			draftHighlightDocRef.current = doc;
+		}
+		return painted;
+	}, [] );
+
+	const flashPopover = useCallback( () => {
+		setPointed( false );
+		// Dropping the class for a frame lets the animation restart when the
+		// reviewer highlights a second passage.
+		window.setTimeout( () => {
+			setPointed( true );
+			clearTimeout( pointTimerRef.current );
+			pointTimerRef.current = window.setTimeout(
+				() => setPointed( false ),
+				700
+			);
+		}, 20 );
+	}, [] );
+
+	// Yellow on top of the blue draft wash mixes into green. Lift the flashed
+	// ranges out of the blue highlight for the duration of the wash, then
+	// settle them back to blue.
+	const flashRangesApart = useCallback(
+		( ranges ) => {
+			const flashed = new Set( ranges );
+			const draft = draftRangesRef.current || [];
+			const extra = extraRangesRef.current || [];
+			draftRangesRef.current = draft.filter(
+				( range ) => ! flashed.has( range )
+			);
+			extraRangesRef.current = extra.filter(
+				( range ) => ! flashed.has( range )
+			);
+			if (
+				draftRangesRef.current.length ||
+				extraRangesRef.current.length
+			) {
+				paintKeptHighlights();
+			} else {
+				clearDraftHighlight(
+					ranges[ 0 ]?.startContainer?.ownerDocument
+				);
+			}
+			draftRangesRef.current = draft;
+			extraRangesRef.current = extra;
+			clearTimeout( flashTimerRef.current );
+			flashTimerRef.current = flashHighlight( ranges, () => {
+				paintKeptHighlights();
+			} );
+		},
+		[ paintKeptHighlights ]
+	);
+
+	// Clicking or selecting somewhere else keeps the draft. The flash marks
+	// the passage this comment is about — the one already open — and the
+	// popup. The new selection is left to the browser.
+	const highlightAnchoredText = useCallback( () => {
+		extraRangesRef.current = [];
+		if ( draftRangesRef.current.length ) {
+			flashRangesApart( draftRangesRef.current );
+		} else {
+			paintKeptHighlights();
+		}
+		flashPopover();
+	}, [ flashPopover, flashRangesApart, paintKeptHighlights ] );
+
+	const selectionInsideEditor = useCallback( ( sourceWindow ) => {
+		const views = [
+			sourceWindow,
+			iframeLocalRef.current?.contentWindow,
+			window,
+		];
+		for ( const view of views ) {
+			const sel = view?.getSelection?.();
+			if ( ! sel || ! sel.rangeCount || sel.isCollapsed ) {
+				continue;
+			}
+			const node = sel.getRangeAt( 0 ).commonAncestorContainer;
+			const el =
+				node.nodeType === Node.ELEMENT_NODE ? node : node.parentElement;
+			if ( el && popoverRef.current?.contains( el ) ) {
+				return true;
+			}
+		}
+		return false;
+	}, [] );
+
 	const handleMouseUp = useCallback(
 		( e ) => {
-			if ( editorOpenRef.current || isReviewReadOnly() ) {
+			if ( isReviewReadOnly() ) {
 				return;
 			}
 
@@ -645,6 +865,22 @@ export default function InlineCommentPopover( {
 			}
 
 			const sourceWindow = e?.view || window;
+
+			// A draft that already has text stays open. Pointing at other copy
+			// flashes the passage this comment is attached to, and the form.
+			if ( editorOpenRef.current ) {
+				pressRef.current = null;
+				requestAnimationFrame( () => {
+					if (
+						! editorOpenRef.current ||
+						selectionInsideEditor( sourceWindow )
+					) {
+						return;
+					}
+					highlightAnchoredText();
+				} );
+				return;
+			}
 			const mediaTarget = e?.target?.closest?.(
 				`${ MEDIA }, .flow-embed-overlay`
 			);
@@ -709,7 +945,13 @@ export default function InlineCommentPopover( {
 				positionNearRect( rect, sourceWindow );
 			} );
 		},
-		[ positionNearRect, offerPinAt, clearPinOffer ]
+		[
+			positionNearRect,
+			offerPinAt,
+			clearPinOffer,
+			highlightAnchoredText,
+			selectionInsideEditor,
+		]
 	);
 
 	const handleMediaClick = useCallback(
@@ -840,16 +1082,23 @@ export default function InlineCommentPopover( {
 				view: e.view,
 				suppressPin: editorOpenRef.current || threadOpenRef.current,
 			};
-			clearPinOffer();
 			if ( editorOpenRef.current ) {
-				setPosition( null );
+				// Typed text stays. The matching mouseup highlights whatever
+				// else was clicked. An empty form still dismisses, so the
+				// same gesture can start a comment on different text.
+				if ( editorHasDraftText( popoverRef.current ) ) {
+					return;
+				}
 				setEditorOpen( false );
 				editorOpenRef.current = false;
 				rangeRef.current = null;
 				descriptorRef.current = null;
+				clearPinOffer();
 				releaseDraftHover();
+				setPosition( null );
 				return;
 			}
+			clearPinOffer();
 			setPosition( null );
 			rangeRef.current = null;
 			descriptorRef.current = null;
@@ -913,10 +1162,30 @@ export default function InlineCommentPopover( {
 		let timer = null;
 		const SETTLE_MS = 200;
 		const settle = ( sourceWindow ) => {
+			clearTimeout( timer );
+			// A drag reports itself here, not as a click. Same response as a
+			// click elsewhere: flash the open comment's own text and the form.
+			// An empty form still closes on mouseup.
 			if ( editorOpenRef.current ) {
+				if ( ! editorHasDraftText( popoverRef.current ) ) {
+					return;
+				}
+				timer = setTimeout( () => {
+					if (
+						! editorOpenRef.current ||
+						! editorHasDraftText( popoverRef.current ) ||
+						selectionInsideEditor( sourceWindow )
+					) {
+						return;
+					}
+					const sel = sourceWindow.getSelection();
+					if ( ! sel || sel.isCollapsed || ! sel.toString().trim() ) {
+						return;
+					}
+					highlightAnchoredText();
+				}, SETTLE_MS );
 				return;
 			}
-			clearTimeout( timer );
 			timer = setTimeout( () => {
 				showPopoverFromCurrentSelection( sourceWindow );
 			}, SETTLE_MS );
@@ -991,7 +1260,11 @@ export default function InlineCommentPopover( {
 			);
 			detachIframe();
 		};
-	}, [ showPopoverFromCurrentSelection ] );
+	}, [
+		showPopoverFromCurrentSelection,
+		highlightAnchoredText,
+		selectionInsideEditor,
+	] );
 
 	// Commenting on a link must not need a drag that can also activate it.
 	// A pause offers Add Comment. A site review follows the link, so the pause
@@ -1010,14 +1283,18 @@ export default function InlineCommentPopover( {
 			if ( ! marked ) {
 				return;
 			}
-			marked.classList.remove( LINK_HOVER_CLASS );
+			releaseHoverPaint( marked );
 			hover.marked = null;
 			const selection = marked.ownerDocument.defaultView?.getSelection();
 			if ( ! selection || ! selection.rangeCount ) {
 				return;
 			}
-			const node = selection.getRangeAt( 0 ).commonAncestorContainer;
-			if ( marked === node || marked.contains( node ) ) {
+			const selected = selection.getRangeAt( 0 );
+			const node = selected.commonAncestorContainer;
+			const selectsMarked =
+				node === marked.parentNode &&
+				node.childNodes?.[ selected.startOffset ] === marked;
+			if ( marked === node || marked.contains( node ) || selectsMarked ) {
 				selection.removeAllRanges();
 			}
 		};
@@ -1076,13 +1353,19 @@ export default function InlineCommentPopover( {
 			clearPinOfferRef.current?.();
 			dismissHoverThread();
 			if ( hover.marked && hover.marked !== anchor ) {
-				hover.marked.classList.remove( LINK_HOVER_CLASS );
+				releaseHoverPaint( hover.marked );
 			}
 			anchor.classList.add( LINK_HOVER_CLASS );
 			hover.marked = anchor;
 			const selection = view.getSelection();
 			selection?.removeAllRanges();
-			selection?.addRange( range );
+			if ( isButtonInput( anchor ) ) {
+				// No text node to select. Paint the label, and don't select
+				// the whole control — that reads as the button being highlighted.
+				paintButtonLabelMetrics( anchor );
+			} else {
+				selection?.addRange( range );
+			}
 			rangeRef.current = range.cloneRange();
 			descriptorRef.current = null;
 			positionNearRectRef.current( rect, view );
@@ -1563,6 +1846,8 @@ export default function InlineCommentPopover( {
 		// only once that blue has been copied onto the highlight registry,
 		// so focus can move into the field. Overlay chips are not part of it.
 		const draftRanges = range && ! offer ? contentRanges( range ) : [];
+		draftRangesRef.current = draftRanges;
+		extraRangesRef.current = [];
 		if ( draftRanges.length && paintDraftHighlight( draftRanges ) ) {
 			draftHighlightDocRef.current = rangeDoc;
 			sourceWindow.getSelection()?.removeAllRanges();
@@ -1951,9 +2236,11 @@ export default function InlineCommentPopover( {
 			} }
 			className={ `flow-inline-popover${
 				editorOpen ? ' flow-inline-popover--editor' : ''
-			}${ mobilePos ? ' flow-inline-popover--below' : '' }${
-				mobilePos?.above ? ' flow-inline-popover--above' : ''
-			}${ position.flipped ? ' flow-inline-popover--flipped' : '' }` }
+			}${ pointed ? ' flow-inline-popover--pointed' : '' }${
+				mobilePos ? ' flow-inline-popover--below' : ''
+			}${ mobilePos?.above ? ' flow-inline-popover--above' : '' }${
+				position.flipped ? ' flow-inline-popover--flipped' : ''
+			}` }
 			style={ {
 				position: 'fixed',
 				top: `${ mobilePos ? mobilePos.top : position.top + shiftY }px`,

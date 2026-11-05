@@ -423,7 +423,10 @@ class ReviewPage {
 			return;
 		}
 
-		$body_content   = $source->post_content;
+		// Same trust as the live page: kses would turn a Custom HTML <style> into visible text.
+		$body_content   = user_can( (int) $source->post_author, 'unfiltered_html' )
+			? (string) $source->post_content
+			: wp_kses_post( (string) $source->post_content );
 		$body_title     = $source->post_title;
 		$review_post_id = (int) $review->post_id;
 
@@ -446,7 +449,7 @@ class ReviewPage {
 						$current = (int) $global_post->ID;
 					}
 				}
-				return $current === $review_post_id ? wp_kses_post( (string) $body_content ) : $content;
+				return $current === $review_post_id ? $body_content : $content;
 			},
 			1
 		);

@@ -135,6 +135,10 @@ const HIGHLIGHT_CSS = `
 	   the text being commented on stays highlighted. */
 	background-color: rgba(128, 188, 254, 0.6);
 }
+::highlight(flow-comment-draft-flash) {
+	/* Brief wash on text the reviewer points at while a draft is open. */
+	background-color: rgba(255, 212, 59, 0.9);
+}
 .flow-inline-highlight {
 	/* Highlights are <mark>s; keep the page's text colour, not the UA black. */
 	color: inherit;
@@ -219,6 +223,25 @@ iframe.flow-inline-highlight-media {
 .flow-inline-pin.flow-inline-highlight--resolved .flow-inline-pin__dot {
 	fill: #458037;
 }
+.flow-inline-pin.flow-inline-highlight--resolved:hover {
+	background: transparent;
+}
+.flow-inline-pin.flow-inline-highlight--resolved:hover .flow-inline-pin__body {
+	fill: #6cc97a;
+}
+.flow-inline-pin__alert {
+	display: none;
+	fill: #e69500;
+}
+.flow-inline-pin--other-device .flow-inline-pin__dot {
+	display: none;
+}
+.flow-inline-pin--other-device .flow-inline-pin__alert {
+	display: inline;
+}
+.flow-inline-pin.flow-inline-highlight--resolved .flow-inline-pin__alert {
+	fill: #458037;
+}
 .flow-inline-pin--offer {
 	pointer-events: none;
 	opacity: 0.85;
@@ -250,6 +273,10 @@ html.flow-resolved-hidden .flow-inline-pin.flow-inline-highlight--resolved:not(.
 }
 a[href],
 button,
+input[type="submit"],
+input[type="button"],
+input[type="reset"],
+input[type="image"],
 [role="button"],
 [role="tab"],
 summary {
@@ -258,8 +285,64 @@ summary {
 	user-select: text;
 	-webkit-user-drag: none;
 }
+/* A submit input has no text node, so ::selection cannot paint its label.
+   The label box is measured in JS (--flow-label-*) and only those words
+   are washed, the same as a link hover. An image input has no label, so
+   it keeps the full-control wash below. */
+input.flow-link-hover-selection.flow-button-label-mark,
+input.flow-link-hover-selection.flow-button-label-mark:hover,
+input.flow-link-hover-selection.flow-button-label-mark:focus {
+	background-image: linear-gradient(rgba(128, 188, 254, 0.6), rgba(128, 188, 254, 0.6)) !important;
+	background-repeat: no-repeat !important;
+	background-position: var(--flow-label-x) var(--flow-label-y) !important;
+	background-size: var(--flow-label-w) var(--flow-label-h) !important;
+}
+input.flow-inline-highlight-control {
+	box-shadow: inset 0 0 0 999px rgba(255, 212, 59, 0.45), inset 0 -2px 0 rgba(255, 183, 0, 0.6) !important;
+	cursor: pointer;
+}
+input.flow-inline-highlight-control.flow-button-label-mark {
+	box-shadow: none !important;
+	background-image:
+		linear-gradient(#e69500, #e69500),
+		linear-gradient(rgba(255, 212, 59, 0.45), rgba(255, 212, 59, 0.45)) !important;
+	background-repeat: no-repeat, no-repeat !important;
+	background-position:
+		var(--flow-label-x) var(--flow-label-line),
+		var(--flow-label-x) var(--flow-label-y) !important;
+	background-size:
+		var(--flow-label-w) 2px,
+		var(--flow-label-w) var(--flow-label-h) !important;
+}
+input.flow-inline-highlight-control.flow-inline-highlight--active {
+	box-shadow: inset 0 0 0 999px rgba(255, 183, 0, 0.55), inset 0 -2px 0 #e69500 !important;
+}
+input.flow-inline-highlight-control.flow-inline-highlight--active.flow-button-label-mark {
+	box-shadow: none !important;
+	background-image:
+		linear-gradient(#e69500, #e69500),
+		linear-gradient(rgba(255, 183, 0, 0.55), rgba(255, 183, 0, 0.55)) !important;
+}
+input.flow-inline-highlight-control.flow-inline-highlight--resolved {
+	box-shadow: inset 0 0 0 999px rgba(130, 214, 142, 0.4), inset 0 -2px 0 rgba(130, 214, 142, 0.5) !important;
+}
+input.flow-inline-highlight-control.flow-inline-highlight--resolved.flow-button-label-mark {
+	box-shadow: none !important;
+	background-image:
+		linear-gradient(rgba(69, 128, 55, 0.7), rgba(69, 128, 55, 0.7)),
+		linear-gradient(rgba(130, 214, 142, 0.4), rgba(130, 214, 142, 0.4)) !important;
+}
+html.flow-comments-hidden input.flow-inline-highlight-control:not(.flow-inline-highlight--revealed),
+html.flow-resolved-hidden input.flow-inline-highlight-control.flow-inline-highlight--resolved:not(.flow-inline-highlight--revealed) {
+	box-shadow: none !important;
+	background-image: none !important;
+}
 html.flow-clickable-links a[href],
 html.flow-clickable-links button,
+html.flow-clickable-links input[type="submit"],
+html.flow-clickable-links input[type="button"],
+html.flow-clickable-links input[type="reset"],
+html.flow-clickable-links input[type="image"],
 html.flow-clickable-links [role="button"],
 html.flow-clickable-links [role="tab"],
 html.flow-clickable-links summary {

@@ -783,25 +783,34 @@ function GeneralCommentsPanel({
     });
     appendComment(comment);
     if (reopen) {
-      await api.updateComment(parentId, {
-        resolved: false
-      });
-      setComments(prev => prev.map(c => c.id === parentId ? {
-        ...c,
-        isResolved: false
-      } : c));
-      window.dispatchEvent(new CustomEvent('flow:highlight-resolve', {
-        detail: {
-          commentId: parentId,
+      // The reply already posted above; reopening the thread is
+      // best-effort on top of that. Letting this throw would leave
+      // the editor thinking the whole submit failed — the reviewer
+      // retries, and that posts a second copy of the same reply.
+      try {
+        await api.updateComment(parentId, {
           resolved: false
-        }
-      }));
-      window.dispatchEvent(new CustomEvent('flow:inline-comment-resolved', {
-        detail: {
-          commentId: parentId,
-          resolved: false
-        }
-      }));
+        });
+        setComments(prev => prev.map(c => c.id === parentId ? {
+          ...c,
+          isResolved: false
+        } : c));
+        window.dispatchEvent(new CustomEvent('flow:highlight-resolve', {
+          detail: {
+            commentId: parentId,
+            resolved: false
+          }
+        }));
+        window.dispatchEvent(new CustomEvent('flow:inline-comment-resolved', {
+          detail: {
+            commentId: parentId,
+            resolved: false
+          }
+        }));
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.warn('[Flow] Reply posted, but reopening the thread failed.', err);
+      }
     }
     window.dispatchEvent(new CustomEvent('flow:author-resubmit-activity', {
       detail: {
@@ -1333,18 +1342,23 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _wordpress_components__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @wordpress/components */ "@wordpress/components");
 /* harmony import */ var _wordpress_components__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(_wordpress_components__WEBPACK_IMPORTED_MODULE_1__);
 /* harmony import */ var _wordpress_icons__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @wordpress/icons */ "./node_modules/@wordpress/icons/build-module/library/backup.mjs");
-/* harmony import */ var _icons_comment_reply__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../icons/comment-reply */ "./src/review-page/icons/comment-reply.js");
-/* harmony import */ var _wordpress_i18n__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! @wordpress/i18n */ "@wordpress/i18n");
-/* harmony import */ var _wordpress_i18n__WEBPACK_IMPORTED_MODULE_4___default = /*#__PURE__*/__webpack_require__.n(_wordpress_i18n__WEBPACK_IMPORTED_MODULE_4__);
-/* harmony import */ var _wordpress_hooks__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! @wordpress/hooks */ "@wordpress/hooks");
-/* harmony import */ var _wordpress_hooks__WEBPACK_IMPORTED_MODULE_5___default = /*#__PURE__*/__webpack_require__.n(_wordpress_hooks__WEBPACK_IMPORTED_MODULE_5__);
-/* harmony import */ var _CommentCard__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./CommentCard */ "./src/review-page/components/CommentCard.js");
-/* harmony import */ var _utils_local_edit_registry__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ../utils/local-edit-registry */ "./src/review-page/utils/local-edit-registry.js");
-/* harmony import */ var _CommentEditor__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./CommentEditor */ "./src/review-page/components/CommentEditor.js");
-/* harmony import */ var _utils_single_comment_form__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ../utils/single-comment-form */ "./src/review-page/utils/single-comment-form.js");
-/* harmony import */ var _utils_api__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ../utils/api */ "./src/review-page/utils/api.js");
-/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! react/jsx-runtime */ "react/jsx-runtime");
-/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_11___default = /*#__PURE__*/__webpack_require__.n(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_11__);
+/* harmony import */ var _wordpress_icons__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! @wordpress/icons */ "./node_modules/@wordpress/icons/build-module/library/desktop.mjs");
+/* harmony import */ var _wordpress_icons__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! @wordpress/icons */ "./node_modules/@wordpress/icons/build-module/library/mobile.mjs");
+/* harmony import */ var _wordpress_icons__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! @wordpress/icons */ "./node_modules/@wordpress/icons/build-module/library/tablet.mjs");
+/* harmony import */ var _icons_comment_reply__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ../icons/comment-reply */ "./src/review-page/icons/comment-reply.js");
+/* harmony import */ var _wordpress_i18n__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! @wordpress/i18n */ "@wordpress/i18n");
+/* harmony import */ var _wordpress_i18n__WEBPACK_IMPORTED_MODULE_7___default = /*#__PURE__*/__webpack_require__.n(_wordpress_i18n__WEBPACK_IMPORTED_MODULE_7__);
+/* harmony import */ var _wordpress_hooks__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! @wordpress/hooks */ "@wordpress/hooks");
+/* harmony import */ var _wordpress_hooks__WEBPACK_IMPORTED_MODULE_8___default = /*#__PURE__*/__webpack_require__.n(_wordpress_hooks__WEBPACK_IMPORTED_MODULE_8__);
+/* harmony import */ var _CommentCard__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ./CommentCard */ "./src/review-page/components/CommentCard.js");
+/* harmony import */ var _utils_local_edit_registry__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ../utils/local-edit-registry */ "./src/review-page/utils/local-edit-registry.js");
+/* harmony import */ var _CommentEditor__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ./CommentEditor */ "./src/review-page/components/CommentEditor.js");
+/* harmony import */ var _utils_single_comment_form__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! ../utils/single-comment-form */ "./src/review-page/utils/single-comment-form.js");
+/* harmony import */ var _utils_api__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(/*! ../utils/api */ "./src/review-page/utils/api.js");
+/* harmony import */ var _shared_device__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__(/*! ../../shared/device */ "./src/shared/device.js");
+/* harmony import */ var _utils_comment_flags__WEBPACK_IMPORTED_MODULE_15__ = __webpack_require__(/*! ../utils/comment-flags */ "./src/review-page/utils/comment-flags.js");
+/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_16__ = __webpack_require__(/*! react/jsx-runtime */ "react/jsx-runtime");
+/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_16___default = /*#__PURE__*/__webpack_require__.n(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_16__);
 
 
 
@@ -1357,20 +1371,14 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
+
+
+const DEVICE_ICONS = {
+  desktop: _wordpress_icons__WEBPACK_IMPORTED_MODULE_3__["default"],
+  tablet: _wordpress_icons__WEBPACK_IMPORTED_MODULE_5__["default"],
+  mobile: _wordpress_icons__WEBPACK_IMPORTED_MODULE_4__["default"]
+};
 const COLLAPSED_REPLY_LIMIT = 1;
-
-// The page as it was when the comment was raised, or '' when already there or unknown.
-// Resolved, or still open but its text is gone from this version (outdated).
-function issueUrl(thread, isOutdated) {
-  const revisionId = Number(thread.revisionId || 0);
-  if (!_utils_api__WEBPACK_IMPORTED_MODULE_10__.pageData.canViewRevisions || !(thread.isResolved || isOutdated) || !revisionId || revisionId === Number(_utils_api__WEBPACK_IMPORTED_MODULE_10__.pageData.revisionId || 0)) {
-    return '';
-  }
-  const url = new URL(window.location.href);
-  url.searchParams.set('flow_revision_id', String(revisionId));
-  url.searchParams.set('flow_focus_comment', String(thread.id));
-  return url.toString();
-}
 function CommentThread({
   thread,
   onEdit,
@@ -1378,7 +1386,9 @@ function CommentThread({
   onReply,
   onResolve,
   suppressBodyExpandClick = false,
-  isOutdated = false
+  isOutdated = false,
+  showOnDevice = '',
+  onShowOnDevice
 }) {
   const replies = thread.replies || [];
   const [replyingTo, setReplyingTo] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useState)(null);
@@ -1386,10 +1396,10 @@ function CommentThread({
     if (!replyingTo) {
       return undefined;
     }
-    (0,_utils_local_edit_registry__WEBPACK_IMPORTED_MODULE_7__.markCommentBusy)(replyingTo);
-    return () => (0,_utils_local_edit_registry__WEBPACK_IMPORTED_MODULE_7__.releaseCommentBusy)(replyingTo);
+    (0,_utils_local_edit_registry__WEBPACK_IMPORTED_MODULE_10__.markCommentBusy)(replyingTo);
+    return () => (0,_utils_local_edit_registry__WEBPACK_IMPORTED_MODULE_10__.releaseCommentBusy)(replyingTo);
   }, [replyingTo]);
-  (0,_utils_single_comment_form__WEBPACK_IMPORTED_MODULE_9__.useSingleCommentForm)(!!replyingTo, () => setReplyingTo(null));
+  (0,_utils_single_comment_form__WEBPACK_IMPORTED_MODULE_12__.useSingleCommentForm)(!!replyingTo, () => setReplyingTo(null));
   const [threadExpanded, setThreadExpanded] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useState)(false);
   // Replying to a resolved thread almost always means the fix was wrong, so
   // reopening is the default. The box is visible, so it is easy to opt out.
@@ -1399,7 +1409,7 @@ function CommentThread({
     setReplyingTo(prev => prev === parentId ? null : parentId);
   }, []);
   const handleReplySubmit = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useCallback)(async html => {
-    await onReply(replyingTo, html, thread.isResolved && reopen && (0,_utils_api__WEBPACK_IMPORTED_MODULE_10__.canReopenComments)());
+    await onReply(replyingTo, html, thread.isResolved && reopen && (0,_utils_api__WEBPACK_IMPORTED_MODULE_13__.canReopenComments)());
     setReplyingTo(null);
     setReopen(true);
   }, [replyingTo, onReply, thread.isResolved, reopen]);
@@ -1437,9 +1447,9 @@ function CommentThread({
       });
     });
   }, [replyingTo]);
-  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_11__.jsxs)("div", {
+  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_16__.jsxs)("div", {
     className: `flow-comment-thread${thread.isResolved ? ' flow-comment-thread--resolved' : ''}`,
-    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_11__.jsx)(_CommentCard__WEBPACK_IMPORTED_MODULE_6__["default"], {
+    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_16__.jsx)(_CommentCard__WEBPACK_IMPORTED_MODULE_9__["default"], {
       comment: thread,
       onEdit: onEdit,
       onDelete: onDelete,
@@ -1451,51 +1461,56 @@ function CommentThread({
       onRequestExpand: () => setThreadExpanded(true),
       onRequestCollapse: () => setThreadExpanded(false),
       hideEnvironment: !!onResolve && !replyingTo
-    }), replies.length > 0 && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_11__.jsxs)("div", {
+    }), replies.length > 0 && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_16__.jsxs)("div", {
       className: "flow-comment-thread__replies",
-      children: [!threadExpanded && hiddenCount > 0 && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_11__.jsx)("button", {
+      children: [!threadExpanded && hiddenCount > 0 && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_16__.jsx)("button", {
         type: "button",
         className: "flow-comment-thread__toggle",
         onClick: () => setThreadExpanded(true),
-        children: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_4__.sprintf)(/* translators: %d: number of hidden replies */
-        (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_4__.__)('%d more replies', 'jumplinks-editorial-workflow'), hiddenCount)
-      }), visibleReplies.map(reply => /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_11__.jsx)(_CommentCard__WEBPACK_IMPORTED_MODULE_6__["default"], {
+        children: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_7__.sprintf)(/* translators: %d: number of hidden replies */
+        (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_7__.__)('%d more replies', 'jumplinks-editorial-workflow'), hiddenCount)
+      }), visibleReplies.map(reply => /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_16__.jsx)(_CommentCard__WEBPACK_IMPORTED_MODULE_9__["default"], {
         comment: reply,
         onEdit: onEdit,
         onDelete: onDelete,
         isThreadExpanded: threadExpanded,
         isReply: true
       }, reply.id))]
-    }), onResolve && !replyingTo && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_11__.jsxs)("div", {
+    }), onResolve && !replyingTo && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_16__.jsxs)("div", {
       className: "flow-comment-thread__resolve-row",
-      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_11__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_1__.Button, {
+      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_16__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_1__.Button, {
         className: "flow-btn--text flow-comment-thread__reply-btn",
-        icon: _icons_comment_reply__WEBPACK_IMPORTED_MODULE_3__["default"],
+        icon: _icons_comment_reply__WEBPACK_IMPORTED_MODULE_6__["default"],
         onClick: () => handleReply(thread.id),
-        children: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_4__.__)('Reply', 'jumplinks-editorial-workflow')
-      }), issueUrl(thread, isOutdated) && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_11__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_1__.Button, {
+        children: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_7__.__)('Reply', 'jumplinks-editorial-workflow')
+      }), (0,_utils_comment_flags__WEBPACK_IMPORTED_MODULE_15__.issueUrl)(thread, isOutdated) && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_16__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_1__.Button, {
         className: "flow-btn--text flow-comment-thread__reply-btn flow-comment-thread__issue-btn",
         icon: _wordpress_icons__WEBPACK_IMPORTED_MODULE_2__["default"],
-        href: issueUrl(thread, isOutdated),
-        children: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_4__.__)('View original', 'jumplinks-editorial-workflow')
-      }), (0,_wordpress_hooks__WEBPACK_IMPORTED_MODULE_5__.applyFilters)('flow_ew_comment_byline_extras', null, {
+        href: (0,_utils_comment_flags__WEBPACK_IMPORTED_MODULE_15__.issueUrl)(thread, isOutdated),
+        children: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_7__.__)('View original', 'jumplinks-editorial-workflow')
+      }), showOnDevice && onShowOnDevice && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_16__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_1__.Button, {
+        className: "flow-btn--text flow-comment-thread__reply-btn flow-comment-thread__issue-btn flow-comment-thread__device-btn",
+        icon: DEVICE_ICONS[showOnDevice],
+        onClick: () => onShowOnDevice(thread.id, showOnDevice),
+        children: (0,_shared_device__WEBPACK_IMPORTED_MODULE_14__.viewDeviceLabel)(showOnDevice)
+      }), (0,_wordpress_hooks__WEBPACK_IMPORTED_MODULE_8__.applyFilters)('flow_ew_comment_byline_extras', null, {
         comment: thread
       })]
-    }), replyingTo && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_11__.jsxs)("div", {
+    }), replyingTo && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_16__.jsxs)("div", {
       className: "flow-comment-thread__reply-editor",
       ref: replyEditorRef,
-      children: [thread.isResolved && (0,_utils_api__WEBPACK_IMPORTED_MODULE_10__.canReopenComments)() && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_11__.jsxs)("label", {
+      children: [thread.isResolved && (0,_utils_api__WEBPACK_IMPORTED_MODULE_13__.canReopenComments)() && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_16__.jsxs)("label", {
         className: "flow-comment-thread__reopen",
-        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_11__.jsx)("input", {
+        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_16__.jsx)("input", {
           type: "checkbox",
           checked: reopen,
           onChange: e => setReopen(e.target.checked)
-        }), (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_4__.__)('Reopen this thread', 'jumplinks-editorial-workflow')]
-      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_11__.jsx)(_CommentEditor__WEBPACK_IMPORTED_MODULE_8__["default"], {
+        }), (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_7__.__)('Reopen this thread', 'jumplinks-editorial-workflow')]
+      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_16__.jsx)(_CommentEditor__WEBPACK_IMPORTED_MODULE_11__["default"], {
         autoFocus: true,
         onSubmit: handleReplySubmit,
         onCancel: () => setReplyingTo(null),
-        submitLabel: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_4__.__)('Reply', 'jumplinks-editorial-workflow')
+        submitLabel: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_7__.__)('Reply', 'jumplinks-editorial-workflow')
       })]
     })]
   });
@@ -1665,6 +1680,18 @@ const PIN_EXCLUDED_BROWSING = 'a[href], button, [role="button"], summary, label'
 const LINK_HOVER_DELAY_MS = 200;
 const LINK_HOVER_LEAVE_MS = 500;
 const LINK_HOVER_CLASS = 'flow-link-hover-selection';
+
+// The hover wash and a saved comment share the label box. Dropping the hover
+// must not wipe that box once the comment highlight owns it.
+function releaseHoverPaint(marked) {
+  if (!marked) {
+    return;
+  }
+  marked.classList.remove(LINK_HOVER_CLASS);
+  if (!marked.classList.contains('flow-inline-highlight-control')) {
+    (0,_utils_text_anchor__WEBPACK_IMPORTED_MODULE_4__.clearButtonLabelMetrics)(marked);
+  }
+}
 const MEDIA_COMMENT_CLASS = 'is-comment-open';
 
 // The overlay is a sibling of its media (or shares a wrap with it) and
@@ -1682,6 +1709,7 @@ function overlayForMedia(media) {
   return null;
 }
 const DRAFT_HIGHLIGHT_NAME = 'flow-comment-draft';
+const DRAFT_FLASH_NAME = 'flow-comment-draft-flash';
 
 // Native ::selection disappears once the comment field takes focus. The
 // Highlight registry paints the same blue without holding the selection,
@@ -1701,23 +1729,83 @@ function paintDraftHighlight(ranges) {
 }
 function clearDraftHighlight(doc) {
   try {
-    doc?.defaultView?.CSS?.highlights?.delete(DRAFT_HIGHLIGHT_NAME);
+    const highlights = doc?.defaultView?.CSS?.highlights;
+    highlights?.delete(DRAFT_HIGHLIGHT_NAME);
+    highlights?.delete(DRAFT_FLASH_NAME);
   } catch {
     // The document is already gone.
   }
 }
-const COMMENTABLE_CONTROL = 'a[href], button, [role="button"], [role="tab"], summary';
+
+// The field the reviewer is typing into: Free's textarea, or Pro's Tiptap
+// surface. Empty (including a blank rich-text paragraph) means an outside
+// click may dismiss the draft.
+function editorHasDraftText(root) {
+  if (!root) {
+    return false;
+  }
+  const textarea = root.querySelector('textarea');
+  if (textarea) {
+    return textarea.value.trim().length > 0;
+  }
+  const editable = root.querySelector('.ProseMirror, [contenteditable="true"]');
+  if (!editable) {
+    return false;
+  }
+  return (editable.innerText || '').replace(/\u00a0/g, ' ').trim().length > 0;
+}
+function flashHighlight(ranges, onDone) {
+  const list = (Array.isArray(ranges) ? ranges : [ranges]).filter(Boolean);
+  const view = list[0]?.startContainer?.ownerDocument?.defaultView || null;
+  if (!list.length || !view || typeof view.Highlight !== 'function' || !view.CSS?.highlights) {
+    return 0;
+  }
+  try {
+    view.CSS.highlights.set(DRAFT_FLASH_NAME, new view.Highlight(...list));
+  } catch {
+    return 0;
+  }
+  return view.setTimeout(() => {
+    try {
+      view.CSS.highlights.delete(DRAFT_FLASH_NAME);
+    } catch {
+      // The document is already gone.
+    }
+    if (onDone) {
+      onDone();
+    }
+  }, 700);
+}
+const COMMENTABLE_CONTROL = 'a[href], button, input[type="submit" i], input[type="button" i], input[type="reset" i], input[type="image" i], [role="button"], [role="tab"], summary';
 const LIVE_TOGGLE = '[data-toggle], [data-bs-toggle], [aria-controls], [aria-expanded], [role="button"], [role="tab"]';
+const CARD_CONTENT = 'h1, h2, h3, h4, h5, h6, p, ul, ol, table, blockquote, figure, article, section';
+const CARD_MEDIA = 'img, picture, video, canvas, iframe';
+const ICON_MAX_PX = 48;
+
+// A link wrapping a whole card (photo, heading, text) is page content, not a
+// link label: its text and image are commented like any other.
+function isCardControl(control) {
+  if (control.querySelector(CARD_CONTENT)) {
+    return true;
+  }
+  for (const media of control.querySelectorAll(CARD_MEDIA)) {
+    const rect = media.getBoundingClientRect();
+    if (rect.width > ICON_MAX_PX || rect.height > ICON_MAX_PX) {
+      return true;
+    }
+  }
+  return false;
+}
 
 // A pause offers a comment on the label. Buttons, tabs and accordions are
 // included; a tap or click still activates them. Script links and controls
 // with no text stay out — an image already has its own comment gesture.
 function commentableControl(node) {
   const control = node?.closest?.(COMMENTABLE_CONTROL);
-  if (!control) {
+  if (!control || isCardControl(control)) {
     return null;
   }
-  if (control.closest('.flow-inline-highlight, .flow-inline-highlight-media, .flow-review-info-notice, .flow-inline-pin, .flow-embed-overlay') || control.querySelector('.flow-inline-highlight, .flow-inline-highlight-media')) {
+  if (control.closest('.flow-inline-highlight, .flow-inline-highlight-media, .flow-inline-highlight-control, .flow-review-info-notice, .flow-inline-pin, .flow-embed-overlay') || control.querySelector('.flow-inline-highlight, .flow-inline-highlight-media, .flow-inline-highlight-control')) {
     return null;
   }
   if (control.matches('a[href]')) {
@@ -1726,7 +1814,8 @@ function commentableControl(node) {
       return null;
     }
   }
-  if (!(control.innerText || '').trim()) {
+  const label = (control.innerText || '').trim() || (0,_utils_text_anchor__WEBPACK_IMPORTED_MODULE_4__.buttonInputLabel)(control);
+  if (!label) {
     return null;
   }
   const doc = control.ownerDocument;
@@ -1735,7 +1824,7 @@ function commentableControl(node) {
   }
   return control;
 }
-const COMMENT_MARK = '.flow-inline-highlight, .flow-inline-highlight-media';
+const COMMENT_MARK = '.flow-inline-highlight, .flow-inline-highlight-media, .flow-inline-highlight-control';
 function commentIdFromMark(mark) {
   const direct = Number(mark.dataset.commentId);
   if (direct) {
@@ -1762,7 +1851,7 @@ function isDormantMark(mark) {
 // opens that thread instead of offering a new one.
 function commentOnControl(node) {
   const control = node?.closest?.(COMMENTABLE_CONTROL);
-  if (!control) {
+  if (!control || isCardControl(control)) {
     return null;
   }
   let mark = node.closest?.(COMMENT_MARK) || null;
@@ -1799,8 +1888,8 @@ function controlKeepsActivation(control) {
   return control.matches(LIVE_TOGGLE) || !!control.closest('[role="tab"], [role="tablist"]');
 }
 
-// A product card link, or a tab with an icon, wraps a photo and a label.
-// The comment is about the words, so the selection stops at the text.
+// A tab or button with an icon wraps a small image and a label. The comment
+// is about the words, so the selection stops at the text.
 function linkTextRange(anchor) {
   const doc = anchor.ownerDocument;
   const media = 'img, picture, video, svg, canvas, iframe';
@@ -1816,6 +1905,12 @@ function linkTextRange(anchor) {
     node = walker.nextNode();
   }
   if (!texts.length) {
+    // A submit input's label lives in its value, not a text node.
+    if ((0,_utils_text_anchor__WEBPACK_IMPORTED_MODULE_4__.isButtonInput)(anchor) && (0,_utils_text_anchor__WEBPACK_IMPORTED_MODULE_4__.buttonInputLabel)(anchor)) {
+      const range = doc.createRange();
+      range.selectNode(anchor);
+      return range;
+    }
     return null;
   }
   const range = doc.createRange();
@@ -1934,6 +2029,15 @@ function InlineCommentPopover({
   const pinOfferRef = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useRef)(null);
   const threadOpenRef = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useRef)(false);
   const draftHighlightDocRef = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useRef)(null);
+  // Ranges kept lit while the form is open: the text being commented on,
+  // plus any other text the reviewer points at without discarding the draft.
+  const draftRangesRef = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useRef)([]);
+  const extraRangesRef = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useRef)([]);
+  const flashTimerRef = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useRef)(0);
+  const pointTimerRef = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useRef)(0);
+  // Pulses the open form when the reviewer points at other text, so the
+  // popup reads as highlighted along with that passage.
+  const [pointed, setPointed] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useState)(false);
   const mediaOverlayRef = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useRef)(null);
   const linkHoverRef = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useRef)({
     timer: 0,
@@ -1967,15 +2071,19 @@ function InlineCommentPopover({
   // Drops the stand-in hover paint and the link hover class. Used when the
   // comment form closes; while it is open the text stays highlighted.
   const releaseDraftHover = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useCallback)(() => {
+    clearTimeout(flashTimerRef.current);
+    flashTimerRef.current = 0;
     clearDraftHighlight(draftHighlightDocRef.current);
     draftHighlightDocRef.current = null;
+    draftRangesRef.current = [];
+    extraRangesRef.current = [];
     mediaOverlayRef.current?.classList.remove(MEDIA_COMMENT_CLASS);
     mediaOverlayRef.current = null;
     const marked = linkHoverRef.current.marked;
     if (!marked) {
       return;
     }
-    marked.classList.remove(LINK_HOVER_CLASS);
+    releaseHoverPaint(marked);
     linkHoverRef.current.marked = null;
     const selection = marked.ownerDocument.defaultView?.getSelection();
     if (!selection?.rangeCount) {
@@ -2151,14 +2259,108 @@ function InlineCommentPopover({
     descriptorRef.current = descriptor;
     positionNearRect(offer.getBoundingClientRect(), sourceWindow);
   }, [positionNearRect, clearPinOffer]);
+
+  // Paint the passage this open comment is about. A click or selection
+  // elsewhere flashes that same passage; it does not mark the new text.
+  const paintKeptHighlights = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useCallback)(() => {
+    const draft = draftRangesRef.current || [];
+    const extra = extraRangesRef.current || [];
+    const draftView = draft[0]?.startContainer?.ownerDocument?.defaultView;
+    const extraView = extra[0]?.startContainer?.ownerDocument?.defaultView;
+    let painted = false;
+    if (draftView && extraView && draftView !== extraView) {
+      painted = paintDraftHighlight(draft) || painted;
+      painted = paintDraftHighlight(extra) || painted;
+    } else {
+      painted = paintDraftHighlight([...draft, ...extra]);
+    }
+    const doc = (extra[0] || draft[0])?.startContainer?.ownerDocument;
+    if (painted && doc) {
+      draftHighlightDocRef.current = doc;
+    }
+    return painted;
+  }, []);
+  const flashPopover = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useCallback)(() => {
+    setPointed(false);
+    // Dropping the class for a frame lets the animation restart when the
+    // reviewer highlights a second passage.
+    window.setTimeout(() => {
+      setPointed(true);
+      clearTimeout(pointTimerRef.current);
+      pointTimerRef.current = window.setTimeout(() => setPointed(false), 700);
+    }, 20);
+  }, []);
+
+  // Yellow on top of the blue draft wash mixes into green. Lift the flashed
+  // ranges out of the blue highlight for the duration of the wash, then
+  // settle them back to blue.
+  const flashRangesApart = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useCallback)(ranges => {
+    const flashed = new Set(ranges);
+    const draft = draftRangesRef.current || [];
+    const extra = extraRangesRef.current || [];
+    draftRangesRef.current = draft.filter(range => !flashed.has(range));
+    extraRangesRef.current = extra.filter(range => !flashed.has(range));
+    if (draftRangesRef.current.length || extraRangesRef.current.length) {
+      paintKeptHighlights();
+    } else {
+      clearDraftHighlight(ranges[0]?.startContainer?.ownerDocument);
+    }
+    draftRangesRef.current = draft;
+    extraRangesRef.current = extra;
+    clearTimeout(flashTimerRef.current);
+    flashTimerRef.current = flashHighlight(ranges, () => {
+      paintKeptHighlights();
+    });
+  }, [paintKeptHighlights]);
+
+  // Clicking or selecting somewhere else keeps the draft. The flash marks
+  // the passage this comment is about — the one already open — and the
+  // popup. The new selection is left to the browser.
+  const highlightAnchoredText = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useCallback)(() => {
+    extraRangesRef.current = [];
+    if (draftRangesRef.current.length) {
+      flashRangesApart(draftRangesRef.current);
+    } else {
+      paintKeptHighlights();
+    }
+    flashPopover();
+  }, [flashPopover, flashRangesApart, paintKeptHighlights]);
+  const selectionInsideEditor = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useCallback)(sourceWindow => {
+    const views = [sourceWindow, iframeLocalRef.current?.contentWindow, window];
+    for (const view of views) {
+      const sel = view?.getSelection?.();
+      if (!sel || !sel.rangeCount || sel.isCollapsed) {
+        continue;
+      }
+      const node = sel.getRangeAt(0).commonAncestorContainer;
+      const el = node.nodeType === Node.ELEMENT_NODE ? node : node.parentElement;
+      if (el && popoverRef.current?.contains(el)) {
+        return true;
+      }
+    }
+    return false;
+  }, []);
   const handleMouseUp = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useCallback)(e => {
-    if (editorOpenRef.current || (0,_utils_api__WEBPACK_IMPORTED_MODULE_10__.isReviewReadOnly)()) {
+    if ((0,_utils_api__WEBPACK_IMPORTED_MODULE_10__.isReviewReadOnly)()) {
       return;
     }
     if ((0,_utils_dom_helpers__WEBPACK_IMPORTED_MODULE_7__.eventHitsShadowNode)(e, popoverRef.current)) {
       return;
     }
     const sourceWindow = e?.view || window;
+
+    // A draft that already has text stays open. Pointing at other copy
+    // flashes the passage this comment is attached to, and the form.
+    if (editorOpenRef.current) {
+      pressRef.current = null;
+      requestAnimationFrame(() => {
+        if (!editorOpenRef.current || selectionInsideEditor(sourceWindow)) {
+          return;
+        }
+        highlightAnchoredText();
+      });
+      return;
+    }
     const mediaTarget = e?.target?.closest?.(`${MEDIA}, .flow-embed-overlay`);
     if (mediaTarget && (0,_utils_iframe_bridge__WEBPACK_IMPORTED_MODULE_6__.resolveContentRootFor)(sourceWindow.document, mediaTarget)) {
       return;
@@ -2203,7 +2405,7 @@ function InlineCommentPopover({
       descriptorRef.current = null;
       positionNearRect(rect, sourceWindow);
     });
-  }, [positionNearRect, offerPinAt, clearPinOffer]);
+  }, [positionNearRect, offerPinAt, clearPinOffer, highlightAnchoredText, selectionInsideEditor]);
   const handleMediaClick = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useCallback)(e => {
     if (editorOpenRef.current || (0,_utils_api__WEBPACK_IMPORTED_MODULE_10__.isReviewReadOnly)()) {
       return;
@@ -2294,16 +2496,23 @@ function InlineCommentPopover({
       view: e.view,
       suppressPin: editorOpenRef.current || threadOpenRef.current
     };
-    clearPinOffer();
     if (editorOpenRef.current) {
-      setPosition(null);
+      // Typed text stays. The matching mouseup highlights whatever
+      // else was clicked. An empty form still dismisses, so the
+      // same gesture can start a comment on different text.
+      if (editorHasDraftText(popoverRef.current)) {
+        return;
+      }
       setEditorOpen(false);
       editorOpenRef.current = false;
       rangeRef.current = null;
       descriptorRef.current = null;
+      clearPinOffer();
       releaseDraftHover();
+      setPosition(null);
       return;
     }
+    clearPinOffer();
     setPosition(null);
     rangeRef.current = null;
     descriptorRef.current = null;
@@ -2352,10 +2561,26 @@ function InlineCommentPopover({
     let timer = null;
     const SETTLE_MS = 200;
     const settle = sourceWindow => {
+      clearTimeout(timer);
+      // A drag reports itself here, not as a click. Same response as a
+      // click elsewhere: flash the open comment's own text and the form.
+      // An empty form still closes on mouseup.
       if (editorOpenRef.current) {
+        if (!editorHasDraftText(popoverRef.current)) {
+          return;
+        }
+        timer = setTimeout(() => {
+          if (!editorOpenRef.current || !editorHasDraftText(popoverRef.current) || selectionInsideEditor(sourceWindow)) {
+            return;
+          }
+          const sel = sourceWindow.getSelection();
+          if (!sel || sel.isCollapsed || !sel.toString().trim()) {
+            return;
+          }
+          highlightAnchoredText();
+        }, SETTLE_MS);
         return;
       }
-      clearTimeout(timer);
       timer = setTimeout(() => {
         showPopoverFromCurrentSelection(sourceWindow);
       }, SETTLE_MS);
@@ -2410,7 +2635,7 @@ function InlineCommentPopover({
       window.removeEventListener('flow:iframe-removed', onIframeRemoved);
       detachIframe();
     };
-  }, [showPopoverFromCurrentSelection]);
+  }, [showPopoverFromCurrentSelection, highlightAnchoredText, selectionInsideEditor]);
 
   // Commenting on a link must not need a drag that can also activate it.
   // A pause offers Add Comment. A site review follows the link, so the pause
@@ -2425,14 +2650,16 @@ function InlineCommentPopover({
       if (!marked) {
         return;
       }
-      marked.classList.remove(LINK_HOVER_CLASS);
+      releaseHoverPaint(marked);
       hover.marked = null;
       const selection = marked.ownerDocument.defaultView?.getSelection();
       if (!selection || !selection.rangeCount) {
         return;
       }
-      const node = selection.getRangeAt(0).commonAncestorContainer;
-      if (marked === node || marked.contains(node)) {
+      const selected = selection.getRangeAt(0);
+      const node = selected.commonAncestorContainer;
+      const selectsMarked = node === marked.parentNode && node.childNodes?.[selected.startOffset] === marked;
+      if (marked === node || marked.contains(node) || selectsMarked) {
         selection.removeAllRanges();
       }
     };
@@ -2480,13 +2707,19 @@ function InlineCommentPopover({
       clearPinOfferRef.current?.();
       dismissHoverThread();
       if (hover.marked && hover.marked !== anchor) {
-        hover.marked.classList.remove(LINK_HOVER_CLASS);
+        releaseHoverPaint(hover.marked);
       }
       anchor.classList.add(LINK_HOVER_CLASS);
       hover.marked = anchor;
       const selection = view.getSelection();
       selection?.removeAllRanges();
-      selection?.addRange(range);
+      if ((0,_utils_text_anchor__WEBPACK_IMPORTED_MODULE_4__.isButtonInput)(anchor)) {
+        // No text node to select. Paint the label, and don't select
+        // the whole control — that reads as the button being highlighted.
+        (0,_utils_text_anchor__WEBPACK_IMPORTED_MODULE_4__.paintButtonLabelMetrics)(anchor);
+      } else {
+        selection?.addRange(range);
+      }
       rangeRef.current = range.cloneRange();
       descriptorRef.current = null;
       positionNearRectRef.current(rect, view);
@@ -2851,6 +3084,8 @@ function InlineCommentPopover({
     // only once that blue has been copied onto the highlight registry,
     // so focus can move into the field. Overlay chips are not part of it.
     const draftRanges = range && !offer ? (0,_utils_text_anchor__WEBPACK_IMPORTED_MODULE_4__.contentRanges)(range) : [];
+    draftRangesRef.current = draftRanges;
+    extraRangesRef.current = [];
     if (draftRanges.length && paintDraftHighlight(draftRanges)) {
       draftHighlightDocRef.current = rangeDoc;
       sourceWindow.getSelection()?.removeAllRanges();
@@ -3160,7 +3395,7 @@ function InlineCommentPopover({
         scheduleLinkLeaveRef.current();
       }
     },
-    className: `flow-inline-popover${editorOpen ? ' flow-inline-popover--editor' : ''}${mobilePos ? ' flow-inline-popover--below' : ''}${mobilePos?.above ? ' flow-inline-popover--above' : ''}${position.flipped ? ' flow-inline-popover--flipped' : ''}`,
+    className: `flow-inline-popover${editorOpen ? ' flow-inline-popover--editor' : ''}${pointed ? ' flow-inline-popover--pointed' : ''}${mobilePos ? ' flow-inline-popover--below' : ''}${mobilePos?.above ? ' flow-inline-popover--above' : ''}${position.flipped ? ' flow-inline-popover--flipped' : ''}`,
     style: {
       position: 'fixed',
       top: `${mobilePos ? mobilePos.top : position.top + shiftY}px`,
@@ -3214,18 +3449,22 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _wordpress_components__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @wordpress/components */ "@wordpress/components");
 /* harmony import */ var _wordpress_components__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(_wordpress_components__WEBPACK_IMPORTED_MODULE_1__);
 /* harmony import */ var _wordpress_icons__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @wordpress/icons */ "./node_modules/@wordpress/icons/build-module/library/comment.mjs");
-/* harmony import */ var _icons_alert_warning__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../icons/alert-warning */ "./src/review-page/icons/alert-warning.js");
-/* harmony import */ var _wordpress_i18n__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! @wordpress/i18n */ "@wordpress/i18n");
-/* harmony import */ var _wordpress_i18n__WEBPACK_IMPORTED_MODULE_4___default = /*#__PURE__*/__webpack_require__.n(_wordpress_i18n__WEBPACK_IMPORTED_MODULE_4__);
-/* harmony import */ var _utils_api__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../utils/api */ "./src/review-page/utils/api.js");
-/* harmony import */ var _utils_comment_api__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ../utils/comment-api */ "./src/review-page/utils/comment-api.js");
-/* harmony import */ var _CommentThread__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./CommentThread */ "./src/review-page/components/CommentThread.js");
-/* harmony import */ var _utils_comment_tree__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ../utils/comment-tree */ "./src/review-page/utils/comment-tree.js");
-/* harmony import */ var _hooks_use_confirm_dialog__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ../hooks/use-confirm-dialog */ "./src/review-page/hooks/use-confirm-dialog.js");
-/* harmony import */ var _utils_iframe_bridge__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ../utils/iframe-bridge */ "./src/review-page/utils/iframe-bridge.js");
-/* harmony import */ var _utils_text_anchor__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ../utils/text-anchor */ "./src/review-page/utils/text-anchor.js");
-/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! react/jsx-runtime */ "react/jsx-runtime");
-/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_12___default = /*#__PURE__*/__webpack_require__.n(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_12__);
+/* harmony import */ var _wordpress_i18n__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! @wordpress/i18n */ "@wordpress/i18n");
+/* harmony import */ var _wordpress_i18n__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(_wordpress_i18n__WEBPACK_IMPORTED_MODULE_3__);
+/* harmony import */ var _utils_api__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../utils/api */ "./src/review-page/utils/api.js");
+/* harmony import */ var _utils_comment_api__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../utils/comment-api */ "./src/review-page/utils/comment-api.js");
+/* harmony import */ var _CommentThread__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./CommentThread */ "./src/review-page/components/CommentThread.js");
+/* harmony import */ var _utils_comment_tree__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ../utils/comment-tree */ "./src/review-page/utils/comment-tree.js");
+/* harmony import */ var _hooks_use_confirm_dialog__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ../hooks/use-confirm-dialog */ "./src/review-page/hooks/use-confirm-dialog.js");
+/* harmony import */ var _utils_iframe_bridge__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ../utils/iframe-bridge */ "./src/review-page/utils/iframe-bridge.js");
+/* harmony import */ var _shared_device__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ../../shared/device */ "./src/shared/device.js");
+/* harmony import */ var _PinnedOnHint__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ./PinnedOnHint */ "./src/review-page/components/PinnedOnHint.js");
+/* harmony import */ var _OutdatedHint__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! ./OutdatedHint */ "./src/review-page/components/OutdatedHint.js");
+/* harmony import */ var _utils_comment_flags__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(/*! ../utils/comment-flags */ "./src/review-page/utils/comment-flags.js");
+/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__(/*! react/jsx-runtime */ "react/jsx-runtime");
+/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_14___default = /*#__PURE__*/__webpack_require__.n(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_14__);
+
+
 
 
 
@@ -3244,29 +3483,20 @@ function clearFocusedThread() {
   focusedThread?.classList.remove('flow-inline-thread--focused');
   focusedThread = null;
 }
-
-// Quote on the left, warning on the right. The icon matches the resolve
-// check and covers both lines of the banner.
-function OutdatedHint() {
-  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_12__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_12__.Fragment, {
-    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_12__.jsx)("span", {
-      className: "flow-inline-anchor__hint",
-      children: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_4__.__)('Potentially outdated comment.', 'jumplinks-editorial-workflow')
-    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_12__.jsx)("span", {
-      className: "flow-inline-anchor__alert",
-      "aria-hidden": "true",
-      children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_12__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_1__.Icon, {
-        icon: _icons_alert_warning__WEBPACK_IMPORTED_MODULE_3__["default"],
-        size: 20
-      })
-    })]
-  });
-}
 function isPinThread(thread) {
   try {
     return JSON.parse(thread.blockClientId || '')?.type === 'pin';
   } catch {
     return false;
+  }
+}
+
+// Older pins carry no device; they are never flagged.
+function pinDevice(thread) {
+  try {
+    return (0,_shared_device__WEBPACK_IMPORTED_MODULE_10__.pinViewportDevice)(JSON.parse(thread.blockClientId || ''));
+  } catch {
+    return '';
   }
 }
 function focusThread(el) {
@@ -3280,7 +3510,7 @@ function focusThread(el) {
   });
   el.classList.add('flow-inline-thread--focused');
   focusedThread = el;
-  const docs = [document, (0,_utils_iframe_bridge__WEBPACK_IMPORTED_MODULE_10__.getIframeDoc)()].filter(Boolean);
+  const docs = [document, (0,_utils_iframe_bridge__WEBPACK_IMPORTED_MODULE_9__.getIframeDoc)()].filter(Boolean);
   const onNextClick = () => {
     docs.forEach(d => d.removeEventListener('pointerdown', onNextClick, true));
     if (focusedThread === el) {
@@ -3305,7 +3535,7 @@ function focusThread(el) {
  * @param {Function} props.setComments
  */
 function InlineCommentsPanel({
-  api = _utils_comment_api__WEBPACK_IMPORTED_MODULE_6__.defaultCommentApi,
+  api = _utils_comment_api__WEBPACK_IMPORTED_MODULE_5__.defaultCommentApi,
   threadFilter = 'active',
   showEmptyState = false,
   comments,
@@ -3314,10 +3544,20 @@ function InlineCommentsPanel({
   const {
     confirm,
     confirmDialog
-  } = (0,_hooks_use_confirm_dialog__WEBPACK_IMPORTED_MODULE_9__.useConfirmDialog)();
+  } = (0,_hooks_use_confirm_dialog__WEBPACK_IMPORTED_MODULE_8__.useConfirmDialog)();
   const [outdatedMap, setOutdatedMap] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useState)({});
+  const [viewDevice, setViewDevice] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useState)(_shared_device__WEBPACK_IMPORTED_MODULE_10__.currentDevice);
   const threadRefs = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useRef)({});
-  const tree = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useMemo)(() => (0,_utils_comment_tree__WEBPACK_IMPORTED_MODULE_8__.buildCommentTree)(comments), [comments]);
+  (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
+    const sync = () => setViewDevice((0,_shared_device__WEBPACK_IMPORTED_MODULE_10__.currentDevice)());
+    window.addEventListener('flow:set-device-preview', sync);
+    window.addEventListener('flow:iframe-ready', sync);
+    return () => {
+      window.removeEventListener('flow:set-device-preview', sync);
+      window.removeEventListener('flow:iframe-ready', sync);
+    };
+  }, []);
+  const tree = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useMemo)(() => (0,_utils_comment_tree__WEBPACK_IMPORTED_MODULE_7__.buildCommentTree)(comments), [comments]);
   const {
     activeThreads,
     resolvedThreads
@@ -3334,13 +3574,13 @@ function InlineCommentsPanel({
   }, [tree]);
   (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
     const recalcOutdated = () => {
-      const doc = (0,_utils_iframe_bridge__WEBPACK_IMPORTED_MODULE_10__.getIframeDoc)();
+      const doc = (0,_utils_iframe_bridge__WEBPACK_IMPORTED_MODULE_9__.getIframeDoc)();
       if (!doc) {
         setOutdatedMap({});
         return;
       }
       // Builders like Bricks have no content wrapper; highlights fall back to the body too.
-      const root = (0,_utils_iframe_bridge__WEBPACK_IMPORTED_MODULE_10__.resolveCommentContentRoot)(doc) || doc.body;
+      const root = (0,_utils_iframe_bridge__WEBPACK_IMPORTED_MODULE_9__.resolveCommentContentRoot)(doc) || doc.body;
       if (!root) {
         setOutdatedMap({});
         return;
@@ -3350,12 +3590,7 @@ function InlineCommentsPanel({
         if (c.parentId || !c.blockClientId) {
           continue;
         }
-        try {
-          const descriptor = JSON.parse(c.blockClientId);
-          next[c.id] = !(0,_utils_text_anchor__WEBPACK_IMPORTED_MODULE_11__.deserializeRange)(descriptor, root);
-        } catch {
-          next[c.id] = true;
-        }
+        next[c.id] = (0,_utils_comment_flags__WEBPACK_IMPORTED_MODULE_13__.isAnchorOutdated)(c, root);
       }
       setOutdatedMap(next);
     };
@@ -3398,26 +3633,35 @@ function InlineCommentsPanel({
       return [...prev, comment];
     });
     if (reopen) {
-      await api.updateComment(parentId, {
-        resolved: false
-      });
-      const pid = Number(parentId);
-      setComments(prev => prev.map(c => Number(c.id) === pid ? {
-        ...c,
-        isResolved: false
-      } : c));
-      window.dispatchEvent(new CustomEvent('flow:highlight-resolve', {
-        detail: {
-          commentId: parentId,
+      // The reply already posted above; reopening the thread is
+      // best-effort on top of that. Letting this throw would leave
+      // the editor thinking the whole submit failed — the reviewer
+      // retries, and that posts a second copy of the same reply.
+      try {
+        await api.updateComment(parentId, {
           resolved: false
-        }
-      }));
-      window.dispatchEvent(new CustomEvent('flow:inline-comment-resolved', {
-        detail: {
-          commentId: parentId,
-          resolved: false
-        }
-      }));
+        });
+        const pid = Number(parentId);
+        setComments(prev => prev.map(c => Number(c.id) === pid ? {
+          ...c,
+          isResolved: false
+        } : c));
+        window.dispatchEvent(new CustomEvent('flow:highlight-resolve', {
+          detail: {
+            commentId: parentId,
+            resolved: false
+          }
+        }));
+        window.dispatchEvent(new CustomEvent('flow:inline-comment-resolved', {
+          detail: {
+            commentId: parentId,
+            resolved: false
+          }
+        }));
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.warn('[Flow] Reply posted, but reopening the thread failed.', err);
+      }
     }
     window.dispatchEvent(new CustomEvent('flow:inline-comment-added', {
       detail: {
@@ -3458,20 +3702,20 @@ function InlineCommentsPanel({
     window.dispatchEvent(new CustomEvent('flow:inline-comment-resolved', {
       detail: {
         commentId: id,
-        userId: _utils_api__WEBPACK_IMPORTED_MODULE_5__.pageData.currentUserId
+        userId: _utils_api__WEBPACK_IMPORTED_MODULE_4__.pageData.currentUserId
       }
     }));
     window.dispatchEvent(new CustomEvent('flow:author-resubmit-activity', {
       detail: {
-        userId: _utils_api__WEBPACK_IMPORTED_MODULE_5__.pageData.currentUserId,
+        userId: _utils_api__WEBPACK_IMPORTED_MODULE_4__.pageData.currentUserId,
         kind: 'comment_resolved'
       }
     }));
   }, [api, setComments]);
   const handleDelete = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useCallback)(async id => {
     if (!(await confirm({
-      title: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_4__.__)('Delete this comment?', 'jumplinks-editorial-workflow'),
-      message: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_4__.__)('This action cannot be undone.', 'jumplinks-editorial-workflow')
+      title: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_3__.__)('Delete this comment?', 'jumplinks-editorial-workflow'),
+      message: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_3__.__)('This action cannot be undone.', 'jumplinks-editorial-workflow')
     }))) {
       return;
     }
@@ -3496,10 +3740,15 @@ function InlineCommentsPanel({
       }));
     } catch (err) {
       // eslint-disable-next-line no-alert
-      window.alert(err.message || (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_4__.__)('Failed to delete comment.', 'jumplinks-editorial-workflow'));
+      window.alert(err.message || (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_3__.__)('Failed to delete comment.', 'jumplinks-editorial-workflow'));
     }
   }, [api, setComments, confirm]);
-  const handleAnchorClick = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useCallback)(commentId => {
+
+  // Mirrors the other direction: clicking a highlight in the preview both
+  // scrolls this panel to the thread AND opens the floating popover there
+  // (`InlineThreadPopover`'s `flow:inline-comment-focus` listener). Clicking
+  // the thread here should do the same round trip, not just flash the mark.
+  const handleAnchorClick = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useCallback)((commentId, isResolved) => {
     // On phones the panel covers the page, so close it to show the comment.
     if (window.matchMedia?.('(max-width: 782px)')?.matches) {
       window.dispatchEvent(new CustomEvent('flow:comments-sidebar-toggle', {
@@ -3513,80 +3762,93 @@ function InlineCommentsPanel({
         commentId
       }
     }));
+    window.dispatchEvent(new CustomEvent('flow:inline-comment-focus', {
+      detail: {
+        commentId,
+        isResolved: !!isResolved
+      }
+    }));
   }, []);
-  const handleThreadSurfaceClick = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useCallback)((event, commentId) => {
+  const handleThreadSurfaceClick = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useCallback)((event, commentId, isResolved) => {
     if (event.target.closest('button, a, input, textarea, select, [contenteditable="true"], .flow-comment-editor, .components-button, [role="menu"]')) {
       return;
     }
-    handleAnchorClick(commentId);
+    handleAnchorClick(commentId, isResolved);
   }, [handleAnchorClick]);
   const threads = threadFilter === 'resolved' ? resolvedThreads : activeThreads;
   if (showEmptyState && threadFilter === 'active' && activeThreads.length === 0 && resolvedThreads.length === 0) {
-    return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_12__.jsxs)("div", {
+    return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_14__.jsxs)("div", {
       className: "flow-inline-comments-empty",
-      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_12__.jsx)("div", {
+      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_14__.jsx)("div", {
         className: "flow-inline-comments-empty__icon-wrap",
         "aria-hidden": "true",
-        children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_12__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_1__.Icon, {
+        children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_14__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_1__.Icon, {
           icon: _wordpress_icons__WEBPACK_IMPORTED_MODULE_2__["default"],
           size: 28
         })
-      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_12__.jsx)("h3", {
+      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_14__.jsx)("h3", {
         className: "flow-inline-comments-empty__title",
-        children: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_4__.__)('No inline comments yet', 'jumplinks-editorial-workflow')
-      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_12__.jsx)("p", {
+        children: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_3__.__)('No inline comments yet', 'jumplinks-editorial-workflow')
+      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_14__.jsx)("p", {
         className: "flow-inline-comments-empty__lead",
-        children: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_4__.__)('Highlight text in the content preview, then choose "Add comment".', 'jumplinks-editorial-workflow')
-      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_12__.jsxs)("ul", {
+        children: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_3__.__)('Highlight text in the content preview, then choose "Add comment".', 'jumplinks-editorial-workflow')
+      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_14__.jsxs)("ul", {
         className: "flow-inline-comments-empty__list",
-        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_12__.jsx)("li", {
-          children: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_4__.__)('Comments are tied to the exact words or media you select.', 'jumplinks-editorial-workflow')
-        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_12__.jsx)("li", {
-          children: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_4__.__)('Click an image or video in the article to comment on media.', 'jumplinks-editorial-workflow')
-        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_12__.jsx)("li", {
-          children: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_4__.__)('Click anywhere on the page to pin a comment to that spot.', 'jumplinks-editorial-workflow')
+        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_14__.jsx)("li", {
+          children: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_3__.__)('Comments are tied to the exact words or media you select.', 'jumplinks-editorial-workflow')
+        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_14__.jsx)("li", {
+          children: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_3__.__)('Click an image or video in the article to comment on media.', 'jumplinks-editorial-workflow')
+        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_14__.jsx)("li", {
+          children: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_3__.__)('Click anywhere on the page to pin a comment to that spot.', 'jumplinks-editorial-workflow')
         })]
       })]
     });
   }
   const renderThread = thread => {
     // A resolved comment's text is expected to be gone; it keeps View original, not the warning.
-    const isOutdated = !thread.isResolved && !!outdatedMap[thread.id];
     // A pin points at a spot, not words: nothing to quote.
     const isPin = isPinThread(thread);
-    return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_12__.jsxs)("div", {
+    const pinnedOn = pinDevice(thread);
+    const otherDevice = !!pinnedOn && pinnedOn !== viewDevice;
+    // On another screen size the spot is approximate, which says more than "outdated".
+    const isOutdated = !thread.isResolved && (otherDevice || !!outdatedMap[thread.id]);
+    return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_14__.jsxs)("div", {
       role: "presentation",
       className: isOutdated ? 'flow-inline-thread flow-inline-thread--outdated flow-inline-thread--navigable' : 'flow-inline-thread flow-inline-thread--navigable',
       ref: el => {
         threadRefs.current[thread.id] = el;
       },
-      onClick: event => handleThreadSurfaceClick(event, thread.id),
-      title: isPin ? (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_4__.__)('Scroll to pinned comment', 'jumplinks-editorial-workflow') : (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_4__.__)('Scroll to highlighted text', 'jumplinks-editorial-workflow'),
-      children: [isPin && isOutdated && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_12__.jsx)("div", {
+      onClick: event => handleThreadSurfaceClick(event, thread.id, thread.isResolved),
+      title: isPin ? (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_3__.__)('Scroll to pinned comment', 'jumplinks-editorial-workflow') : (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_3__.__)('Scroll to highlighted text', 'jumplinks-editorial-workflow'),
+      children: [isPin && (otherDevice || isOutdated) && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_14__.jsx)("div", {
         className: "flow-inline-anchor flow-inline-anchor--outdated",
-        children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_12__.jsx)(OutdatedHint, {})
-      }), !isPin && thread.anchorText && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_12__.jsxs)("div", {
+        children: otherDevice ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_14__.jsx)(_PinnedOnHint__WEBPACK_IMPORTED_MODULE_11__["default"], {
+          device: pinnedOn
+        }) : /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_14__.jsx)(_OutdatedHint__WEBPACK_IMPORTED_MODULE_12__["default"], {})
+      }), !isPin && thread.anchorText && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_14__.jsxs)("div", {
         className: ['flow-inline-anchor', isOutdated && 'flow-inline-anchor--outdated', thread.isResolved && 'flow-inline-anchor--resolved'].filter(Boolean).join(' '),
-        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_12__.jsxs)("span", {
+        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_14__.jsxs)("span", {
           className: "flow-inline-anchor__text",
           children: ["\u201C", thread.anchorText.length > 80 ? thread.anchorText.slice(0, 80) + '\u2026' : thread.anchorText, "\u201D"]
-        }), isOutdated && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_12__.jsx)(OutdatedHint, {})]
-      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_12__.jsx)(_CommentThread__WEBPACK_IMPORTED_MODULE_7__["default"], {
+        }), isOutdated && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_14__.jsx)(_OutdatedHint__WEBPACK_IMPORTED_MODULE_12__["default"], {})]
+      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_14__.jsx)(_CommentThread__WEBPACK_IMPORTED_MODULE_6__["default"], {
         thread: thread,
         onEdit: handleEdit,
         onDelete: handleDelete,
         onReply: handleReply,
         onResolve: handleResolve,
         suppressBodyExpandClick: true,
-        isOutdated: isOutdated
+        isOutdated: isOutdated && !otherDevice,
+        showOnDevice: otherDevice && (0,_shared_device__WEBPACK_IMPORTED_MODULE_10__.canPreviewDevices)() ? pinnedOn : '',
+        onShowOnDevice: _utils_comment_flags__WEBPACK_IMPORTED_MODULE_13__.showPinOnDevice
       })]
     }, thread.id);
   };
   if (threads.length === 0) {
     return confirmDialog;
   }
-  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_12__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_12__.Fragment, {
-    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_12__.jsx)("div", {
+  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_14__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_14__.Fragment, {
+    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_14__.jsx)("div", {
       className: "flow-comment-threads",
       children: [...threads].reverse().map(renderThread)
     }), confirmDialog]
@@ -3609,21 +3871,29 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _wordpress_element__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_wordpress_element__WEBPACK_IMPORTED_MODULE_0__);
 /* harmony import */ var _wordpress_components__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @wordpress/components */ "@wordpress/components");
 /* harmony import */ var _wordpress_components__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(_wordpress_components__WEBPACK_IMPORTED_MODULE_1__);
-/* harmony import */ var _wordpress_icons__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @wordpress/icons */ "./node_modules/@wordpress/icons/build-module/library/close-small.mjs");
-/* harmony import */ var _icons_comment_reply__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../icons/comment-reply */ "./src/review-page/icons/comment-reply.js");
-/* harmony import */ var _icons_comment_resolve__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../icons/comment-resolve */ "./src/review-page/icons/comment-resolve.js");
-/* harmony import */ var _wordpress_i18n__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! @wordpress/i18n */ "@wordpress/i18n");
-/* harmony import */ var _wordpress_i18n__WEBPACK_IMPORTED_MODULE_5___default = /*#__PURE__*/__webpack_require__.n(_wordpress_i18n__WEBPACK_IMPORTED_MODULE_5__);
-/* harmony import */ var _wordpress_hooks__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! @wordpress/hooks */ "@wordpress/hooks");
-/* harmony import */ var _wordpress_hooks__WEBPACK_IMPORTED_MODULE_6___default = /*#__PURE__*/__webpack_require__.n(_wordpress_hooks__WEBPACK_IMPORTED_MODULE_6__);
-/* harmony import */ var _utils_dom_helpers__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ../utils/dom-helpers */ "./src/review-page/utils/dom-helpers.js");
-/* harmony import */ var _utils_iframe_bridge__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ../utils/iframe-bridge */ "./src/review-page/utils/iframe-bridge.js");
-/* harmony import */ var _utils_api__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ../utils/api */ "./src/review-page/utils/api.js");
-/* harmony import */ var _utils_comment_api__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ../utils/comment-api */ "./src/review-page/utils/comment-api.js");
-/* harmony import */ var _CommentEditor__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ./CommentEditor */ "./src/review-page/components/CommentEditor.js");
-/* harmony import */ var _utils_comment_tree__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! ../utils/comment-tree */ "./src/review-page/utils/comment-tree.js");
-/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(/*! react/jsx-runtime */ "react/jsx-runtime");
-/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_13___default = /*#__PURE__*/__webpack_require__.n(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_13__);
+/* harmony import */ var _wordpress_icons__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @wordpress/icons */ "./node_modules/@wordpress/icons/build-module/library/backup.mjs");
+/* harmony import */ var _wordpress_icons__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! @wordpress/icons */ "./node_modules/@wordpress/icons/build-module/library/close-small.mjs");
+/* harmony import */ var _wordpress_icons__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! @wordpress/icons */ "./node_modules/@wordpress/icons/build-module/library/desktop.mjs");
+/* harmony import */ var _wordpress_icons__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! @wordpress/icons */ "./node_modules/@wordpress/icons/build-module/library/mobile.mjs");
+/* harmony import */ var _wordpress_icons__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! @wordpress/icons */ "./node_modules/@wordpress/icons/build-module/library/tablet.mjs");
+/* harmony import */ var _icons_comment_reply__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ../icons/comment-reply */ "./src/review-page/icons/comment-reply.js");
+/* harmony import */ var _icons_comment_resolve__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ../icons/comment-resolve */ "./src/review-page/icons/comment-resolve.js");
+/* harmony import */ var _wordpress_i18n__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! @wordpress/i18n */ "@wordpress/i18n");
+/* harmony import */ var _wordpress_i18n__WEBPACK_IMPORTED_MODULE_9___default = /*#__PURE__*/__webpack_require__.n(_wordpress_i18n__WEBPACK_IMPORTED_MODULE_9__);
+/* harmony import */ var _wordpress_hooks__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! @wordpress/hooks */ "@wordpress/hooks");
+/* harmony import */ var _wordpress_hooks__WEBPACK_IMPORTED_MODULE_10___default = /*#__PURE__*/__webpack_require__.n(_wordpress_hooks__WEBPACK_IMPORTED_MODULE_10__);
+/* harmony import */ var _utils_dom_helpers__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ../utils/dom-helpers */ "./src/review-page/utils/dom-helpers.js");
+/* harmony import */ var _utils_iframe_bridge__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! ../utils/iframe-bridge */ "./src/review-page/utils/iframe-bridge.js");
+/* harmony import */ var _utils_api__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(/*! ../utils/api */ "./src/review-page/utils/api.js");
+/* harmony import */ var _utils_comment_api__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__(/*! ../utils/comment-api */ "./src/review-page/utils/comment-api.js");
+/* harmony import */ var _CommentEditor__WEBPACK_IMPORTED_MODULE_15__ = __webpack_require__(/*! ./CommentEditor */ "./src/review-page/components/CommentEditor.js");
+/* harmony import */ var _PinnedOnHint__WEBPACK_IMPORTED_MODULE_16__ = __webpack_require__(/*! ./PinnedOnHint */ "./src/review-page/components/PinnedOnHint.js");
+/* harmony import */ var _OutdatedHint__WEBPACK_IMPORTED_MODULE_17__ = __webpack_require__(/*! ./OutdatedHint */ "./src/review-page/components/OutdatedHint.js");
+/* harmony import */ var _shared_device__WEBPACK_IMPORTED_MODULE_18__ = __webpack_require__(/*! ../../shared/device */ "./src/shared/device.js");
+/* harmony import */ var _utils_comment_flags__WEBPACK_IMPORTED_MODULE_19__ = __webpack_require__(/*! ../utils/comment-flags */ "./src/review-page/utils/comment-flags.js");
+/* harmony import */ var _utils_comment_tree__WEBPACK_IMPORTED_MODULE_20__ = __webpack_require__(/*! ../utils/comment-tree */ "./src/review-page/utils/comment-tree.js");
+/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_21__ = __webpack_require__(/*! react/jsx-runtime */ "react/jsx-runtime");
+/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_21___default = /*#__PURE__*/__webpack_require__.n(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_21__);
 
 
 
@@ -3636,10 +3906,20 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
+
+
+
+
+const DEVICE_ICONS = {
+  desktop: _wordpress_icons__WEBPACK_IMPORTED_MODULE_4__["default"],
+  tablet: _wordpress_icons__WEBPACK_IMPORTED_MODULE_6__["default"],
+  mobile: _wordpress_icons__WEBPACK_IMPORTED_MODULE_5__["default"]
+};
 
 
 const HIGHLIGHT_CLASS = 'flow-inline-highlight';
 const MEDIA_HIGHLIGHT_CLASS = 'flow-inline-highlight-media';
+const CONTROL_HIGHLIGHT_CLASS = 'flow-inline-highlight-control';
 function getInitials(name) {
   if (!name) {
     return '?';
@@ -3654,29 +3934,29 @@ function CommentAuthorRow({
   comment,
   className = 'flow-thread-popover__header'
 }) {
-  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_13__.jsxs)("div", {
+  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_21__.jsxs)("div", {
     className: className,
-    children: [comment.avatarUrl ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_13__.jsx)("img", {
+    children: [comment.avatarUrl ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_21__.jsx)("img", {
       className: "flow-thread-popover__avatar flow-thread-popover__avatar--img",
       src: comment.avatarUrl,
       alt: "",
       width: "28",
       height: "28"
-    }) : /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_13__.jsx)("span", {
+    }) : /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_21__.jsx)("span", {
       className: "flow-thread-popover__avatar flow-thread-popover__avatar--fallback",
       "aria-hidden": "true",
       children: getInitials(comment.author)
-    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_13__.jsxs)("span", {
+    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_21__.jsxs)("span", {
       className: "flow-thread-popover__byline",
-      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_13__.jsx)("span", {
+      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_21__.jsx)("span", {
         className: "flow-thread-popover__author",
         title: comment.author,
         children: comment.author
-      }), comment.isAgent && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_13__.jsx)("span", {
+      }), comment.isAgent && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_21__.jsx)("span", {
         className: "flow-thread-popover__agent",
         children: "AI"
       })]
-    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_13__.jsx)("span", {
+    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_21__.jsx)("span", {
       className: "flow-thread-popover__date",
       children: comment.date
     })]
@@ -3700,9 +3980,9 @@ function collectThreadFlat(all, rootId) {
   return all.filter(c => idSet.has(Number(c.id)));
 }
 function findMarkElement(commentId) {
-  const selector = `.${HIGHLIGHT_CLASS}[data-comment-id="${commentId}"], .${MEDIA_HIGHLIGHT_CLASS}, .flow-inline-pin[data-comment-id="${commentId}"]`;
+  const selector = `.${HIGHLIGHT_CLASS}[data-comment-id="${commentId}"], .${MEDIA_HIGHLIGHT_CLASS}, .${CONTROL_HIGHLIGHT_CLASS}, .flow-inline-pin[data-comment-id="${commentId}"]`;
   const matches = el => Number(el.dataset.commentId) === commentId || (el.dataset.commentIds || '').split(' ').includes(String(commentId));
-  const iframeDoc = (0,_utils_iframe_bridge__WEBPACK_IMPORTED_MODULE_8__.getIframeDoc)();
+  const iframeDoc = (0,_utils_iframe_bridge__WEBPACK_IMPORTED_MODULE_12__.getIframeDoc)();
   if (iframeDoc) {
     const inIframe = [...iframeDoc.querySelectorAll(selector)].find(matches);
     if (inIframe) {
@@ -3744,7 +4024,7 @@ function markRectToViewport(rect, inIframe, popoverHeight = 320) {
     markWidth = rect.width;
     contentWidth = window.innerWidth;
   } else {
-    const iframe = (0,_utils_iframe_bridge__WEBPACK_IMPORTED_MODULE_8__.getIframe)();
+    const iframe = (0,_utils_iframe_bridge__WEBPACK_IMPORTED_MODULE_12__.getIframe)();
     if (!iframe) {
       markTop = rect.top;
       markBottom = rect.bottom;
@@ -3755,7 +4035,7 @@ function markRectToViewport(rect, inIframe, popoverHeight = 320) {
       const iframeRect = iframe.getBoundingClientRect();
       // Iframe is visually transform-scaled in ReviewBar; rect coords
       // are iframe-internal so multiply before mapping to parent.
-      const s = (0,_utils_iframe_bridge__WEBPACK_IMPORTED_MODULE_8__.getIframeScale)();
+      const s = (0,_utils_iframe_bridge__WEBPACK_IMPORTED_MODULE_12__.getIframeScale)();
       markTop = iframeRect.top + rect.top * s;
       markBottom = iframeRect.top + rect.bottom * s;
       left = iframeRect.left + rect.left * s + rect.width * s / 2;
@@ -3800,7 +4080,7 @@ function markRectToViewport(rect, inIframe, popoverHeight = 320) {
  *   namespace.
  */
 function InlineThreadPopover({
-  api = _utils_comment_api__WEBPACK_IMPORTED_MODULE_10__.defaultCommentApi
+  api = _utils_comment_api__WEBPACK_IMPORTED_MODULE_14__.defaultCommentApi
 } = {}) {
   const [thread, setThread] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useState)(null);
   (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
@@ -3816,7 +4096,7 @@ function InlineThreadPopover({
   // Replying to a resolved thread almost always means the fix was wrong, so
   // reopening is the default. The box is visible, so it is easy to opt out.
   const [reopen, setReopen] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useState)(true);
-  const commentsRef = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useRef)(_utils_api__WEBPACK_IMPORTED_MODULE_9__.pageData.inlineComments || []);
+  const commentsRef = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useRef)(_utils_api__WEBPACK_IMPORTED_MODULE_13__.pageData.inlineComments || []);
   const openThreadRootIdRef = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useRef)(null);
   const popoverRef = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useRef)(null);
   const [caretOffset, setCaretOffset] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useState)(0);
@@ -3868,7 +4148,7 @@ function InlineThreadPopover({
       return;
     }
     const flat = collectThreadFlat(commentsRef.current, rid);
-    const trees = (0,_utils_comment_tree__WEBPACK_IMPORTED_MODULE_12__.buildCommentTree)(flat);
+    const trees = (0,_utils_comment_tree__WEBPACK_IMPORTED_MODULE_20__.buildCommentTree)(flat);
     const next = trees.find(t => Number(t.id) === Number(rid));
     if (next) {
       setThread(next);
@@ -3970,7 +4250,7 @@ function InlineThreadPopover({
       return;
     }
     const flat = collectThreadFlat(commentsRef.current, id);
-    const trees = (0,_utils_comment_tree__WEBPACK_IMPORTED_MODULE_12__.buildCommentTree)(flat);
+    const trees = (0,_utils_comment_tree__WEBPACK_IMPORTED_MODULE_20__.buildCommentTree)(flat);
     const nextThread = trees.find(t => Number(t.id) === id);
     if (!nextThread) {
       return;
@@ -4029,32 +4309,45 @@ function InlineThreadPopover({
     return () => window.cancelAnimationFrame(id);
   }, [thread, repositionToThreadAnchor]);
 
-  // "View original" links carry the comment to reopen once its highlight exists.
+  // "View original" links and "View <device>" carry the comment to reopen once its highlight exists.
   (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
-    const url = new URL(window.location.href);
-    const target = Number(url.searchParams.get('flow_focus_comment'));
-    if (!target) {
-      return undefined;
-    }
-    url.searchParams.delete('flow_focus_comment');
-    window.history.replaceState(null, '', url.toString());
-    let tries = 0;
     let timer = 0;
-    const attempt = () => {
-      if (findMarkElement(target)) {
-        window.dispatchEvent(new CustomEvent('flow:scroll-to-highlight', {
-          detail: {
-            commentId: target
-          }
-        }));
-        return;
-      }
-      if (++tries < 40) {
-        timer = setTimeout(attempt, 300);
+    const focusWhenReady = target => {
+      clearTimeout(timer);
+      let tries = 0;
+      const attempt = () => {
+        if (findMarkElement(target)) {
+          window.dispatchEvent(new CustomEvent('flow:scroll-to-highlight', {
+            detail: {
+              commentId: target
+            }
+          }));
+          return;
+        }
+        if (++tries < 40) {
+          timer = setTimeout(attempt, 300);
+        }
+      };
+      attempt();
+    };
+    const onFocusRequest = e => {
+      const target = Number(e?.detail?.commentId || 0);
+      if (target) {
+        focusWhenReady(target);
       }
     };
-    attempt();
-    return () => clearTimeout(timer);
+    window.addEventListener('flow:focus-comment-when-ready', onFocusRequest);
+    const url = new URL(window.location.href);
+    const target = Number(url.searchParams.get('flow_focus_comment'));
+    if (target) {
+      url.searchParams.delete('flow_focus_comment');
+      window.history.replaceState(null, '', url.toString());
+      focusWhenReady(target);
+    }
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('flow:focus-comment-when-ready', onFocusRequest);
+    };
   }, []);
   (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
     window.addEventListener('flow:inline-comment-focus', showPopover);
@@ -4097,7 +4390,7 @@ function InlineThreadPopover({
       } catch {}
     };
     const onIframeReady = e => attachIframeScroll(e.detail?.iframe);
-    const onIframeRemoved = () => detachIframeScroll((0,_utils_iframe_bridge__WEBPACK_IMPORTED_MODULE_8__.getIframe)());
+    const onIframeRemoved = () => detachIframeScroll((0,_utils_iframe_bridge__WEBPACK_IMPORTED_MODULE_12__.getIframe)());
     window.addEventListener('scroll', onViewportChange, {
       capture: true,
       passive: true
@@ -4107,7 +4400,7 @@ function InlineThreadPopover({
     });
     window.addEventListener('flow:iframe-ready', onIframeReady);
     window.addEventListener('flow:iframe-removed', onIframeRemoved);
-    attachIframeScroll((0,_utils_iframe_bridge__WEBPACK_IMPORTED_MODULE_8__.getIframe)());
+    attachIframeScroll((0,_utils_iframe_bridge__WEBPACK_IMPORTED_MODULE_12__.getIframe)());
     return () => {
       if (rafId) {
         window.cancelAnimationFrame(rafId);
@@ -4116,7 +4409,7 @@ function InlineThreadPopover({
       window.removeEventListener('resize', onViewportChange);
       window.removeEventListener('flow:iframe-ready', onIframeReady);
       window.removeEventListener('flow:iframe-removed', onIframeRemoved);
-      detachIframeScroll((0,_utils_iframe_bridge__WEBPACK_IMPORTED_MODULE_8__.getIframe)());
+      detachIframeScroll((0,_utils_iframe_bridge__WEBPACK_IMPORTED_MODULE_12__.getIframe)());
     };
   }, [thread, repositionToThreadAnchor]);
   (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
@@ -4172,13 +4465,13 @@ function InlineThreadPopover({
     return () => window.removeEventListener('flow:inline-thread-hover-dismiss', onDismiss);
   }, [handleClose]);
   const handleMouseDown = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useCallback)(e => {
-    if ((0,_utils_dom_helpers__WEBPACK_IMPORTED_MODULE_7__.eventHitsShadowNode)(e, popoverRef.current)) {
+    if ((0,_utils_dom_helpers__WEBPACK_IMPORTED_MODULE_11__.eventHitsShadowNode)(e, popoverRef.current)) {
       return;
     }
-    if ((0,_utils_dom_helpers__WEBPACK_IMPORTED_MODULE_7__.eventInsidePortalUI)(e)) {
+    if ((0,_utils_dom_helpers__WEBPACK_IMPORTED_MODULE_11__.eventInsidePortalUI)(e)) {
       return;
     }
-    const mark = (0,_utils_dom_helpers__WEBPACK_IMPORTED_MODULE_7__.closestFromEventTarget)(e.target, `.${HIGHLIGHT_CLASS}, .${MEDIA_HIGHLIGHT_CLASS}, .flow-inline-pin`);
+    const mark = (0,_utils_dom_helpers__WEBPACK_IMPORTED_MODULE_11__.closestFromEventTarget)(e.target, `.${HIGHLIGHT_CLASS}, .${MEDIA_HIGHLIGHT_CLASS}, .${CONTROL_HIGHLIGHT_CLASS}, .flow-inline-pin`);
     if (mark) {
       return;
     }
@@ -4198,12 +4491,12 @@ function InlineThreadPopover({
       } catch {}
     };
     document.addEventListener('mousedown', handleMouseDown);
-    attachIframe((0,_utils_iframe_bridge__WEBPACK_IMPORTED_MODULE_8__.getIframe)());
+    attachIframe((0,_utils_iframe_bridge__WEBPACK_IMPORTED_MODULE_12__.getIframe)());
     const onIframeReady = e => {
       attachIframe(e.detail?.iframe);
     };
     const onIframeRemoved = () => {
-      detachIframe((0,_utils_iframe_bridge__WEBPACK_IMPORTED_MODULE_8__.getIframe)());
+      detachIframe((0,_utils_iframe_bridge__WEBPACK_IMPORTED_MODULE_12__.getIframe)());
       openThreadRootIdRef.current = null;
       setThread(null);
       setPosition(null);
@@ -4213,7 +4506,7 @@ function InlineThreadPopover({
     window.addEventListener('flow:iframe-removed', onIframeRemoved);
     return () => {
       document.removeEventListener('mousedown', handleMouseDown);
-      detachIframe((0,_utils_iframe_bridge__WEBPACK_IMPORTED_MODULE_8__.getIframe)());
+      detachIframe((0,_utils_iframe_bridge__WEBPACK_IMPORTED_MODULE_12__.getIframe)());
       window.removeEventListener('flow:iframe-ready', onIframeReady);
       window.removeEventListener('flow:iframe-removed', onIframeRemoved);
     };
@@ -4239,12 +4532,12 @@ function InlineThreadPopover({
     window.dispatchEvent(new CustomEvent('flow:inline-comment-resolved', {
       detail: {
         commentId: thread.id,
-        userId: _utils_api__WEBPACK_IMPORTED_MODULE_9__.pageData.currentUserId
+        userId: _utils_api__WEBPACK_IMPORTED_MODULE_13__.pageData.currentUserId
       }
     }));
     window.dispatchEvent(new CustomEvent('flow:author-resubmit-activity', {
       detail: {
-        userId: _utils_api__WEBPACK_IMPORTED_MODULE_9__.pageData.currentUserId,
+        userId: _utils_api__WEBPACK_IMPORTED_MODULE_13__.pageData.currentUserId,
         kind: 'comment_resolved'
       }
     }));
@@ -4264,28 +4557,37 @@ function InlineThreadPopover({
         comment
       }
     }));
-    if (thread.isResolved && reopen && (0,_utils_api__WEBPACK_IMPORTED_MODULE_9__.canReopenComments)()) {
-      await api.updateComment(thread.id, {
-        resolved: false
-      });
-      const tid = Number(thread.id);
-      // Update the ref before rebuilding: the rebuild reads from it.
-      commentsRef.current = commentsRef.current.map(c => Number(c.id) === tid ? {
-        ...c,
-        isResolved: false
-      } : c);
-      window.dispatchEvent(new CustomEvent('flow:highlight-resolve', {
-        detail: {
-          commentId: thread.id,
+    if (thread.isResolved && reopen && (0,_utils_api__WEBPACK_IMPORTED_MODULE_13__.canReopenComments)()) {
+      // The reply already posted above; reopening the thread is
+      // best-effort on top of that. Letting this throw would leave
+      // the editor thinking the whole submit failed — the reviewer
+      // retries, and that posts a second copy of the same reply.
+      try {
+        await api.updateComment(thread.id, {
           resolved: false
-        }
-      }));
-      window.dispatchEvent(new CustomEvent('flow:inline-comment-resolved', {
-        detail: {
-          commentId: thread.id,
-          resolved: false
-        }
-      }));
+        });
+        const tid = Number(thread.id);
+        // Update the ref before rebuilding: the rebuild reads from it.
+        commentsRef.current = commentsRef.current.map(c => Number(c.id) === tid ? {
+          ...c,
+          isResolved: false
+        } : c);
+        window.dispatchEvent(new CustomEvent('flow:highlight-resolve', {
+          detail: {
+            commentId: thread.id,
+            resolved: false
+          }
+        }));
+        window.dispatchEvent(new CustomEvent('flow:inline-comment-resolved', {
+          detail: {
+            commentId: thread.id,
+            resolved: false
+          }
+        }));
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.warn('[Flow] Reply posted, but reopening the thread failed.', err);
+      }
     }
     rebuildOpenThread();
     setReplying(false);
@@ -4295,8 +4597,15 @@ function InlineThreadPopover({
     return null;
   }
   const replies = thread.replies || [];
+  const pinnedOn = (0,_shared_device__WEBPACK_IMPORTED_MODULE_18__.pinOnOtherDevice)((0,_utils_comment_flags__WEBPACK_IMPORTED_MODULE_19__.parseDescriptor)(thread.blockClientId));
+  // Same rule as the sidebar: another screen size explains the drift better than "outdated".
+  const iframeDoc = (0,_utils_iframe_bridge__WEBPACK_IMPORTED_MODULE_12__.getIframeDoc)();
+  const contentRoot = iframeDoc ? (0,_utils_iframe_bridge__WEBPACK_IMPORTED_MODULE_12__.resolveCommentContentRoot)(iframeDoc) || iframeDoc.body : null;
+  const isOutdated = !thread.isResolved && !pinnedOn && !!contentRoot && (0,_utils_comment_flags__WEBPACK_IMPORTED_MODULE_19__.isAnchorOutdated)(thread, contentRoot);
+  const originalUrl = (0,_utils_comment_flags__WEBPACK_IMPORTED_MODULE_19__.issueUrl)(thread, isOutdated);
+  const flagged = !!pinnedOn || isOutdated;
   const placement = position.placement || 'below';
-  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_13__.jsxs)("div", {
+  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_21__.jsxs)("div", {
     ref: popoverRef,
     onMouseEnter: () => {
       window.dispatchEvent(new CustomEvent('flow:inline-thread-pointer', {
@@ -4312,7 +4621,7 @@ function InlineThreadPopover({
         }
       }));
     },
-    className: `flow-thread-popover flow-thread-popover--${placement}`,
+    className: `flow-thread-popover flow-thread-popover--${placement}${flagged ? ' flow-thread-popover--flagged' : ''}`,
     style: {
       position: 'fixed',
       top: `${position.top}px`,
@@ -4321,94 +4630,194 @@ function InlineThreadPopover({
       zIndex: 1_000_001,
       visibility: position.offscreen ? 'hidden' : undefined
     },
-    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_13__.jsx)("span", {
+    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_21__.jsx)("span", {
       className: "flow-thread-popover__caret",
       style: {
         left: `${caretOffset}px`
       },
       "aria-hidden": "true"
-    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_13__.jsxs)("div", {
+    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_21__.jsxs)("div", {
       className: "flow-thread-popover__card",
-      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_13__.jsxs)("div", {
-        className: "flow-thread-popover__header-actions",
-        children: [!thread.isResolved && (0,_utils_api__WEBPACK_IMPORTED_MODULE_9__.canResolveComments)() && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_13__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_1__.Button, {
-          icon: _icons_comment_resolve__WEBPACK_IMPORTED_MODULE_4__["default"],
-          size: "small",
-          className: "flow-thread-popover__resolve-icon",
-          label: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_5__.__)('Mark as resolved', 'jumplinks-editorial-workflow'),
-          onClick: handleResolve
-        }), (0,_wordpress_hooks__WEBPACK_IMPORTED_MODULE_6__.applyFilters)('flow_ew_comment_card_actions', null, {
-          comment: thread
-        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_13__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_1__.Button, {
-          icon: _wordpress_icons__WEBPACK_IMPORTED_MODULE_2__["default"],
-          className: "flow-thread-popover__close",
-          label: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_5__.__)('Close', 'jumplinks-editorial-workflow'),
-          onClick: handleClose
-        })]
-      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_13__.jsx)(CommentAuthorRow, {
-        comment: thread
-      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_13__.jsx)("div", {
-        className: "flow-thread-popover__body",
-        dangerouslySetInnerHTML: {
-          __html: thread.html
-        }
-      }), (0,_wordpress_hooks__WEBPACK_IMPORTED_MODULE_6__.applyFilters)('flow_ew_comment_card_footer', null, {
-        comment: thread
-      }), replies.length > 0 && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_13__.jsx)("div", {
-        className: "flow-thread-popover__replies",
-        children: replies.map(reply => /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_13__.jsxs)("div", {
-          className: "flow-thread-popover__reply",
-          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_13__.jsx)(CommentAuthorRow, {
-            comment: reply,
-            className: "flow-thread-popover__reply-header"
-          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_13__.jsx)("span", {
-            className: "flow-thread-popover__reply-actions",
-            children: (0,_wordpress_hooks__WEBPACK_IMPORTED_MODULE_6__.applyFilters)('flow_ew_comment_card_actions', null, {
-              comment: reply
-            })
-          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_13__.jsx)("div", {
-            className: "flow-thread-popover__reply-body",
-            dangerouslySetInnerHTML: {
-              __html: reply.html
-            }
-          }), (0,_wordpress_hooks__WEBPACK_IMPORTED_MODULE_6__.applyFilters)('flow_ew_comment_card_footer', null, {
-            comment: reply
-          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_13__.jsx)("div", {
-            className: "flow-comment-env-row",
-            children: (0,_wordpress_hooks__WEBPACK_IMPORTED_MODULE_6__.applyFilters)('flow_ew_comment_byline_extras', null, {
-              comment: reply
-            })
+      children: [flagged && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_21__.jsx)("div", {
+        className: "flow-inline-anchor flow-inline-anchor--outdated flow-thread-popover__flag",
+        children: pinnedOn ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_21__.jsx)(_PinnedOnHint__WEBPACK_IMPORTED_MODULE_16__["default"], {
+          device: pinnedOn
+        }) : /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_21__.jsx)(_OutdatedHint__WEBPACK_IMPORTED_MODULE_17__["default"], {})
+      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_21__.jsxs)("div", {
+        className: "flow-thread-popover__card-body",
+        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_21__.jsxs)("div", {
+          className: "flow-thread-popover__header-actions",
+          children: [!thread.isResolved && (0,_utils_api__WEBPACK_IMPORTED_MODULE_13__.canResolveComments)() && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_21__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_1__.Button, {
+            icon: _icons_comment_resolve__WEBPACK_IMPORTED_MODULE_8__["default"],
+            size: "small",
+            className: "flow-thread-popover__resolve-icon",
+            label: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_9__.__)('Mark as resolved', 'jumplinks-editorial-workflow'),
+            onClick: handleResolve
+          }), (0,_wordpress_hooks__WEBPACK_IMPORTED_MODULE_10__.applyFilters)('flow_ew_comment_card_actions', null, {
+            comment: thread
+          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_21__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_1__.Button, {
+            icon: _wordpress_icons__WEBPACK_IMPORTED_MODULE_3__["default"],
+            className: "flow-thread-popover__close",
+            label: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_9__.__)('Close', 'jumplinks-editorial-workflow'),
+            onClick: handleClose
           })]
-        }, reply.id))
-      }), thread.isResolved && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_13__.jsx)("div", {
-        className: "flow-thread-popover__resolved-badge",
-        children: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_5__.__)('Resolved', 'jumplinks-editorial-workflow')
-      }), replying && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_13__.jsxs)("div", {
-        className: "flow-thread-popover__reply-editor",
-        children: [thread.isResolved && (0,_utils_api__WEBPACK_IMPORTED_MODULE_9__.canReopenComments)() && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_13__.jsxs)("label", {
-          className: "flow-thread-popover__reopen",
-          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_13__.jsx)("input", {
-            type: "checkbox",
-            checked: reopen,
-            onChange: e => setReopen(e.target.checked)
-          }), (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_5__.__)('Reopen this thread', 'jumplinks-editorial-workflow')]
-        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_13__.jsx)(_CommentEditor__WEBPACK_IMPORTED_MODULE_11__["default"], {
-          autoFocus: true,
-          onSubmit: handleReplySubmit,
-          onCancel: () => setReplying(false),
-          submitLabel: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_5__.__)('Reply', 'jumplinks-editorial-workflow')
-        })]
-      }), !replying && !(0,_utils_api__WEBPACK_IMPORTED_MODULE_9__.isReviewReadOnly)() && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_13__.jsxs)("div", {
-        className: "flow-thread-popover__actions",
-        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_13__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_1__.Button, {
-          className: "flow-btn--text flow-thread-popover__reply-btn",
-          icon: _icons_comment_reply__WEBPACK_IMPORTED_MODULE_3__["default"],
-          onClick: () => setReplying(true),
-          children: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_5__.__)('Reply', 'jumplinks-editorial-workflow')
-        }), (0,_wordpress_hooks__WEBPACK_IMPORTED_MODULE_6__.applyFilters)('flow_ew_comment_byline_extras', null, {
+        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_21__.jsx)(CommentAuthorRow, {
           comment: thread
+        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_21__.jsx)("div", {
+          className: "flow-thread-popover__body",
+          dangerouslySetInnerHTML: {
+            __html: thread.html
+          }
+        }), (0,_wordpress_hooks__WEBPACK_IMPORTED_MODULE_10__.applyFilters)('flow_ew_comment_card_footer', null, {
+          comment: thread
+        }), replies.length > 0 && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_21__.jsx)("div", {
+          className: "flow-thread-popover__replies",
+          children: replies.map(reply => /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_21__.jsxs)("div", {
+            className: "flow-thread-popover__reply",
+            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_21__.jsx)(CommentAuthorRow, {
+              comment: reply,
+              className: "flow-thread-popover__reply-header"
+            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_21__.jsx)("span", {
+              className: "flow-thread-popover__reply-actions",
+              children: (0,_wordpress_hooks__WEBPACK_IMPORTED_MODULE_10__.applyFilters)('flow_ew_comment_card_actions', null, {
+                comment: reply
+              })
+            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_21__.jsx)("div", {
+              className: "flow-thread-popover__reply-body",
+              dangerouslySetInnerHTML: {
+                __html: reply.html
+              }
+            }), (0,_wordpress_hooks__WEBPACK_IMPORTED_MODULE_10__.applyFilters)('flow_ew_comment_card_footer', null, {
+              comment: reply
+            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_21__.jsx)("div", {
+              className: "flow-comment-env-row",
+              children: (0,_wordpress_hooks__WEBPACK_IMPORTED_MODULE_10__.applyFilters)('flow_ew_comment_byline_extras', null, {
+                comment: reply
+              })
+            })]
+          }, reply.id))
+        }), thread.isResolved && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_21__.jsx)("div", {
+          className: "flow-thread-popover__resolved-badge",
+          children: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_9__.__)('Resolved', 'jumplinks-editorial-workflow')
+        }), replying && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_21__.jsxs)("div", {
+          className: "flow-thread-popover__reply-editor",
+          children: [thread.isResolved && (0,_utils_api__WEBPACK_IMPORTED_MODULE_13__.canReopenComments)() && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_21__.jsxs)("label", {
+            className: "flow-thread-popover__reopen",
+            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_21__.jsx)("input", {
+              type: "checkbox",
+              checked: reopen,
+              onChange: e => setReopen(e.target.checked)
+            }), (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_9__.__)('Reopen this thread', 'jumplinks-editorial-workflow')]
+          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_21__.jsx)(_CommentEditor__WEBPACK_IMPORTED_MODULE_15__["default"], {
+            autoFocus: true,
+            onSubmit: handleReplySubmit,
+            onCancel: () => setReplying(false),
+            submitLabel: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_9__.__)('Reply', 'jumplinks-editorial-workflow')
+          })]
+        }), !replying && !(0,_utils_api__WEBPACK_IMPORTED_MODULE_13__.isReviewReadOnly)() && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_21__.jsxs)("div", {
+          className: "flow-thread-popover__actions",
+          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_21__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_1__.Button, {
+            className: "flow-btn--text flow-thread-popover__reply-btn",
+            icon: _icons_comment_reply__WEBPACK_IMPORTED_MODULE_7__["default"],
+            onClick: () => setReplying(true),
+            children: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_9__.__)('Reply', 'jumplinks-editorial-workflow')
+          }), pinnedOn && (0,_shared_device__WEBPACK_IMPORTED_MODULE_18__.canPreviewDevices)() && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_21__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_1__.Button, {
+            className: "flow-btn--text flow-thread-popover__reply-btn flow-thread-popover__issue-btn",
+            icon: DEVICE_ICONS[pinnedOn],
+            onClick: () => (0,_utils_comment_flags__WEBPACK_IMPORTED_MODULE_19__.showPinOnDevice)(thread.id, pinnedOn),
+            children: (0,_shared_device__WEBPACK_IMPORTED_MODULE_18__.viewDeviceLabel)(pinnedOn)
+          }), originalUrl && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_21__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_1__.Button, {
+            className: "flow-btn--text flow-thread-popover__reply-btn flow-thread-popover__issue-btn",
+            icon: _wordpress_icons__WEBPACK_IMPORTED_MODULE_2__["default"],
+            href: originalUrl,
+            children: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_9__.__)('View original', 'jumplinks-editorial-workflow')
+          }), (0,_wordpress_hooks__WEBPACK_IMPORTED_MODULE_10__.applyFilters)('flow_ew_comment_byline_extras', null, {
+            comment: thread
+          })]
         })]
       })]
+    })]
+  });
+}
+
+/***/ },
+
+/***/ "./src/review-page/components/OutdatedHint.js"
+/*!****************************************************!*\
+  !*** ./src/review-page/components/OutdatedHint.js ***!
+  \****************************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (/* binding */ OutdatedHint)
+/* harmony export */ });
+/* harmony import */ var _wordpress_components__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @wordpress/components */ "@wordpress/components");
+/* harmony import */ var _wordpress_components__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_wordpress_components__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var _wordpress_i18n__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @wordpress/i18n */ "@wordpress/i18n");
+/* harmony import */ var _wordpress_i18n__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(_wordpress_i18n__WEBPACK_IMPORTED_MODULE_1__);
+/* harmony import */ var _icons_alert_warning__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../icons/alert-warning */ "./src/review-page/icons/alert-warning.js");
+/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! react/jsx-runtime */ "react/jsx-runtime");
+/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__);
+
+
+
+
+// Quote on the left, warning on the right. The icon matches the resolve
+// check and covers both lines of the banner.
+
+function OutdatedHint() {
+  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.Fragment, {
+    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("span", {
+      className: "flow-inline-anchor__hint",
+      children: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_1__.__)('Potentially outdated comment.', 'jumplinks-editorial-workflow')
+    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("span", {
+      className: "flow-inline-anchor__alert",
+      "aria-hidden": "true",
+      children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_0__.Icon, {
+        icon: _icons_alert_warning__WEBPACK_IMPORTED_MODULE_2__["default"],
+        size: 20
+      })
+    })]
+  });
+}
+
+/***/ },
+
+/***/ "./src/review-page/components/PinnedOnHint.js"
+/*!****************************************************!*\
+  !*** ./src/review-page/components/PinnedOnHint.js ***!
+  \****************************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (/* binding */ PinnedOnHint)
+/* harmony export */ });
+/* harmony import */ var _wordpress_components__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @wordpress/components */ "@wordpress/components");
+/* harmony import */ var _wordpress_components__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_wordpress_components__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var _icons_alert_warning__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../icons/alert-warning */ "./src/review-page/icons/alert-warning.js");
+/* harmony import */ var _shared_device__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../../shared/device */ "./src/shared/device.js");
+/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! react/jsx-runtime */ "react/jsx-runtime");
+/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__);
+
+
+
+
+function PinnedOnHint({
+  device
+}) {
+  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.Fragment, {
+    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("span", {
+      className: "flow-inline-anchor__hint",
+      children: (0,_shared_device__WEBPACK_IMPORTED_MODULE_2__.pinnedOnLabel)(device)
+    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("span", {
+      className: "flow-inline-anchor__alert",
+      "aria-hidden": "true",
+      children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_0__.Icon, {
+        icon: _icons_alert_warning__WEBPACK_IMPORTED_MODULE_1__["default"],
+        size: 20
+      })
     })]
   });
 }
@@ -4505,10 +4914,10 @@ function ReviewActions({
         })
       }) : null, !actionsSlot && canActFinal ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsxs)("div", {
         className: "flow-bar__actions",
-        children: [!isApproved ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_0__.Button, {
+        children: [!isApproved && totalCommentCount > 0 && myVote !== 'changes_requested' ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_0__.Button, {
           className: "flow-bar__btn--request-changes",
           onClick: () => doAction('request-changes', (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_1__.__)('✓ Changes requested — author notified.', 'jumplinks-editorial-workflow'), 'changes_requested'),
-          disabled: isBusy || totalCommentCount === 0 || myVote === 'changes_requested',
+          disabled: isBusy,
           children: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_1__.__)('Request Changes', 'jumplinks-editorial-workflow')
         }) : null, isApproved ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_0__.Button, {
           variant: "secondary",
@@ -4518,6 +4927,7 @@ function ReviewActions({
           children: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_1__.__)('Revoke Approval', 'jumplinks-editorial-workflow')
         }) : /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_0__.Button, {
           variant: "primary",
+          className: "flow-bar__btn--approve",
           onClick: () => doAction('approve', (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_1__.__)('✓ Approval recorded.', 'jumplinks-editorial-workflow'), 'approved'),
           disabled: isBusy,
           children: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_1__.__)('Approve', 'jumplinks-editorial-workflow')
@@ -6017,6 +6427,40 @@ __webpack_require__.r(__webpack_exports__);
 
 const pageData = window.flowReviewPage || {};
 _wordpress_api_fetch__WEBPACK_IMPORTED_MODULE_0___default().use(_wordpress_api_fetch__WEBPACK_IMPORTED_MODULE_0___default().createNonceMiddleware(pageData.nonce));
+function shareToken() {
+  for (const source of [window.location.href, pageData.contentOnlyUrl]) {
+    try {
+      const params = new URL(source || '', window.location.href).searchParams;
+      if (params.get('flow_token') && params.get('flow_token_ts')) {
+        return {
+          token: params.get('flow_token'),
+          ts: params.get('flow_token_ts')
+        };
+      }
+    } catch {}
+  }
+  return null;
+}
+
+// A logged-out visitor on a public review proves they hold the share link.
+_wordpress_api_fetch__WEBPACK_IMPORTED_MODULE_0___default().use((options, next) => {
+  const target = String(options.url || options.path || '');
+  if (Number(pageData.currentUserId || 0) > 0 || !/(^|\/)flow(-pro)?\/v1\//.test(target)) {
+    return next(options);
+  }
+  const share = shareToken();
+  if (!share) {
+    return next(options);
+  }
+  return next({
+    ...options,
+    headers: {
+      ...(options.headers || {}),
+      'X-Flow-Token': share.token,
+      'X-Flow-Token-Ts': share.ts
+    }
+  });
+});
 
 // Build a full URL directly instead of using apiFetch's path/middleware
 // machinery — apiFetch resolves `path` against a global default root that
@@ -6211,6 +6655,80 @@ const defaultCommentApi = {
     method: 'DELETE'
   }))
 };
+
+/***/ },
+
+/***/ "./src/review-page/utils/comment-flags.js"
+/*!************************************************!*\
+  !*** ./src/review-page/utils/comment-flags.js ***!
+  \************************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   isAnchorOutdated: () => (/* binding */ isAnchorOutdated),
+/* harmony export */   issueUrl: () => (/* binding */ issueUrl),
+/* harmony export */   parseDescriptor: () => (/* binding */ parseDescriptor),
+/* harmony export */   showPinOnDevice: () => (/* binding */ showPinOnDevice)
+/* harmony export */ });
+/* harmony import */ var _api__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./api */ "./src/review-page/utils/api.js");
+/* harmony import */ var _text_anchor__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./text-anchor */ "./src/review-page/utils/text-anchor.js");
+/* harmony import */ var _shared_device__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../../shared/device */ "./src/shared/device.js");
+
+
+
+function parseDescriptor(raw) {
+  try {
+    return JSON.parse(raw || '');
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * A comment whose anchor no longer resolves, or only by searching the
+ * element's text rather than its saved path and offsets: the content moved.
+ */
+function isAnchorOutdated(comment, root) {
+  const descriptor = parseDescriptor(comment.blockClientId);
+  if (!descriptor) {
+    return true;
+  }
+  try {
+    const matchInfo = {};
+    const range = (0,_text_anchor__WEBPACK_IMPORTED_MODULE_1__.deserializeRange)(descriptor, root, matchInfo);
+    return !range || matchInfo.exact === false;
+  } catch {
+    return true;
+  }
+}
+
+// The page as it was when the comment was raised, or '' when already there or unknown.
+// Resolved, or still open but its text is gone from this version (outdated).
+function issueUrl(thread, isOutdated) {
+  const revisionId = Number(thread.revisionId || 0);
+  if (!_api__WEBPACK_IMPORTED_MODULE_0__.pageData.canViewRevisions || !(thread.isResolved || isOutdated) || !revisionId || revisionId === Number(_api__WEBPACK_IMPORTED_MODULE_0__.pageData.revisionId || 0)) {
+    return '';
+  }
+  const url = new URL(window.location.href);
+  url.searchParams.set('flow_revision_id', String(revisionId));
+  url.searchParams.set('flow_focus_comment', String(thread.id));
+  return url.toString();
+}
+
+/** Switch the preview to the pin's device, then reopen the pin once the page reloads. */
+function showPinOnDevice(commentId, device) {
+  const onReady = () => {
+    window.removeEventListener('flow:iframe-ready', onReady);
+    window.dispatchEvent(new CustomEvent('flow:focus-comment-when-ready', {
+      detail: {
+        commentId
+      }
+    }));
+  };
+  window.addEventListener('flow:iframe-ready', onReady);
+  (0,_shared_device__WEBPACK_IMPORTED_MODULE_2__.previewDevice)(device);
+}
 
 /***/ },
 
@@ -7083,12 +7601,14 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _text_anchor__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./text-anchor */ "./src/review-page/utils/text-anchor.js");
 /* harmony import */ var _pin_marker__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./pin-marker */ "./src/review-page/utils/pin-marker.js");
 /* harmony import */ var _dom_helpers__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./dom-helpers */ "./src/review-page/utils/dom-helpers.js");
-/* harmony import */ var _iframe_bridge__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./iframe-bridge */ "./src/review-page/utils/iframe-bridge.js");
-/* harmony import */ var _commentable_chrome__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./commentable-chrome */ "./src/review-page/utils/commentable-chrome.js");
-/* harmony import */ var _preview_link_guard__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./preview-link-guard */ "./src/review-page/utils/preview-link-guard.js");
-/* harmony import */ var _comment_visibility__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./comment-visibility */ "./src/review-page/utils/comment-visibility.js");
-/* harmony import */ var _reveal_hidden_target__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./reveal-hidden-target */ "./src/review-page/utils/reveal-hidden-target.js");
-/* harmony import */ var _dom_observer_policy__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./dom-observer-policy */ "./src/review-page/utils/dom-observer-policy.js");
+/* harmony import */ var _shared_device__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../../shared/device */ "./src/shared/device.js");
+/* harmony import */ var _iframe_bridge__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./iframe-bridge */ "./src/review-page/utils/iframe-bridge.js");
+/* harmony import */ var _commentable_chrome__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./commentable-chrome */ "./src/review-page/utils/commentable-chrome.js");
+/* harmony import */ var _preview_link_guard__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./preview-link-guard */ "./src/review-page/utils/preview-link-guard.js");
+/* harmony import */ var _comment_visibility__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./comment-visibility */ "./src/review-page/utils/comment-visibility.js");
+/* harmony import */ var _reveal_hidden_target__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./reveal-hidden-target */ "./src/review-page/utils/reveal-hidden-target.js");
+/* harmony import */ var _dom_observer_policy__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ./dom-observer-policy */ "./src/review-page/utils/dom-observer-policy.js");
+
 
 
 
@@ -7100,6 +7620,7 @@ __webpack_require__.r(__webpack_exports__);
 
 const HIGHLIGHT_CLASS = 'flow-inline-highlight';
 const MEDIA_HIGHLIGHT_CLASS = 'flow-inline-highlight-media';
+const CONTROL_HIGHLIGHT_CLASS = 'flow-inline-highlight-control';
 const ACTIVE_CLASS = 'flow-inline-highlight--active';
 // While inline comments are hidden, the one picked in the sidebar stays visible.
 const REVEALED_CLASS = 'flow-inline-highlight--revealed';
@@ -7114,7 +7635,7 @@ function hasRootInlineComments(comments) {
   return (comments || []).some(c => !c.parentId && c.blockClientId);
 }
 function onHighlightClick(e) {
-  let mark = (0,_dom_helpers__WEBPACK_IMPORTED_MODULE_2__.closestFromEventTarget)(e.target, `.${HIGHLIGHT_CLASS}, .${MEDIA_HIGHLIGHT_CLASS}, .${_pin_marker__WEBPACK_IMPORTED_MODULE_1__.PIN_CLASS}[data-comment-id]`);
+  let mark = (0,_dom_helpers__WEBPACK_IMPORTED_MODULE_2__.closestFromEventTarget)(e.target, `.${HIGHLIGHT_CLASS}, .${MEDIA_HIGHLIGHT_CLASS}, .${CONTROL_HIGHLIGHT_CLASS}, .${_pin_marker__WEBPACK_IMPORTED_MODULE_1__.PIN_CLASS}[data-comment-id]`);
   if (!mark) {
     const overlay = (0,_dom_helpers__WEBPACK_IMPORTED_MODULE_2__.closestFromEventTarget)(e.target, '.flow-embed-overlay');
     const sibling = overlay?.flowMedia || overlay?.parentElement?.querySelector?.('img, video, iframe') || null;
@@ -7126,7 +7647,7 @@ function onHighlightClick(e) {
     return;
   }
   // Hidden comments stay inert until the sidebar opens one.
-  if (mark.ownerDocument.documentElement.classList.contains(_comment_visibility__WEBPACK_IMPORTED_MODULE_6__.COMMENTS_HIDDEN_CLASS) && !mark.classList.contains(REVEALED_CLASS)) {
+  if (mark.ownerDocument.documentElement.classList.contains(_comment_visibility__WEBPACK_IMPORTED_MODULE_7__.COMMENTS_HIDDEN_CLASS) && !mark.classList.contains(REVEALED_CLASS)) {
     return;
   }
   let commentId = Number(mark.dataset.commentId);
@@ -7146,7 +7667,7 @@ function onHighlightClick(e) {
 }
 function queryHighlights(selector) {
   const results = [...document.querySelectorAll(selector)];
-  const iframeDoc = (0,_iframe_bridge__WEBPACK_IMPORTED_MODULE_3__.getIframeDoc)();
+  const iframeDoc = (0,_iframe_bridge__WEBPACK_IMPORTED_MODULE_4__.getIframeDoc)();
   if (iframeDoc) {
     results.push(...iframeDoc.querySelectorAll(selector));
   }
@@ -7160,7 +7681,7 @@ function hasCommentId(el, commentId) {
   return ids.includes(commentId);
 }
 function queryHighlightedByCommentId(commentId) {
-  const selector = `.${HIGHLIGHT_CLASS}, .${MEDIA_HIGHLIGHT_CLASS}, .${_pin_marker__WEBPACK_IMPORTED_MODULE_1__.PIN_CLASS}[data-comment-id]`;
+  const selector = `.${HIGHLIGHT_CLASS}, .${MEDIA_HIGHLIGHT_CLASS}, .${CONTROL_HIGHLIGHT_CLASS}, .${_pin_marker__WEBPACK_IMPORTED_MODULE_1__.PIN_CLASS}[data-comment-id]`;
   const all = queryHighlights(selector);
   return all.filter(el => hasCommentId(el, commentId));
 }
@@ -7186,6 +7707,16 @@ function applyMediaHighlight(commentId, descriptor, optionalRoot) {
   addCommentId(media, commentId);
   return media;
 }
+function applyControlHighlight(commentId, descriptor, optionalRoot) {
+  const control = (0,_text_anchor__WEBPACK_IMPORTED_MODULE_0__.resolveControlNode)(descriptor, optionalRoot);
+  if (!control) {
+    return null;
+  }
+  control.classList.add(CONTROL_HIGHLIGHT_CLASS);
+  (0,_text_anchor__WEBPACK_IMPORTED_MODULE_0__.paintButtonLabelMetrics)(control);
+  addCommentId(control, commentId);
+  return control;
+}
 function applyPinMarker(commentId, descriptor, optionalRoot) {
   const anchor = (0,_text_anchor__WEBPACK_IMPORTED_MODULE_0__.resolvePinNode)(descriptor, optionalRoot);
   if (!anchor) {
@@ -7198,7 +7729,8 @@ function applyPinMarker(commentId, descriptor, optionalRoot) {
   });
   pin.flowAnchor = anchor;
   pin.flowDescriptor = descriptor;
-  const reposition = () => (0,_pin_marker__WEBPACK_IMPORTED_MODULE_1__.placePinOnAnchor)(pin, pin.flowAnchor, descriptor.x, descriptor.y);
+  pin.classList.toggle(_pin_marker__WEBPACK_IMPORTED_MODULE_1__.PIN_OTHER_DEVICE_CLASS, !!(0,_shared_device__WEBPACK_IMPORTED_MODULE_3__.pinOnOtherDevice)(descriptor));
+  const reposition = () => (0,_pin_marker__WEBPACK_IMPORTED_MODULE_1__.placePinOnAnchor)(pin, pin.flowAnchor, descriptor);
   reposition();
   (0,_pin_marker__WEBPACK_IMPORTED_MODULE_1__.observePinAnchor)(pin, anchor, reposition);
   return pin;
@@ -7214,14 +7746,14 @@ function repositionPins(doc) {
         return;
       }
       pin.flowAnchor = anchor;
-      (0,_pin_marker__WEBPACK_IMPORTED_MODULE_1__.observePinAnchor)(pin, anchor, () => (0,_pin_marker__WEBPACK_IMPORTED_MODULE_1__.placePinOnAnchor)(pin, pin.flowAnchor, pin.flowDescriptor.x, pin.flowDescriptor.y));
+      (0,_pin_marker__WEBPACK_IMPORTED_MODULE_1__.observePinAnchor)(pin, anchor, () => (0,_pin_marker__WEBPACK_IMPORTED_MODULE_1__.placePinOnAnchor)(pin, pin.flowAnchor, pin.flowDescriptor));
     }
-    (0,_pin_marker__WEBPACK_IMPORTED_MODULE_1__.placePinOnAnchor)(pin, pin.flowAnchor, pin.flowDescriptor.x, pin.flowDescriptor.y);
+    (0,_pin_marker__WEBPACK_IMPORTED_MODULE_1__.placePinOnAnchor)(pin, pin.flowAnchor, pin.flowDescriptor);
   });
 }
 function findMark(commentId) {
-  const selector = `.${HIGHLIGHT_CLASS}[data-comment-id="${commentId}"], .${MEDIA_HIGHLIGHT_CLASS}, .${_pin_marker__WEBPACK_IMPORTED_MODULE_1__.PIN_CLASS}[data-comment-id="${commentId}"]`;
-  const iframeDoc = (0,_iframe_bridge__WEBPACK_IMPORTED_MODULE_3__.getIframeDoc)();
+  const selector = `.${HIGHLIGHT_CLASS}[data-comment-id="${commentId}"], .${MEDIA_HIGHLIGHT_CLASS}, .${CONTROL_HIGHLIGHT_CLASS}, .${_pin_marker__WEBPACK_IMPORTED_MODULE_1__.PIN_CLASS}[data-comment-id="${commentId}"]`;
+  const iframeDoc = (0,_iframe_bridge__WEBPACK_IMPORTED_MODULE_4__.getIframeDoc)();
   if (iframeDoc) {
     const inIframe = [...iframeDoc.querySelectorAll(selector)].find(el => hasCommentId(el, commentId));
     if (inIframe) {
@@ -7266,6 +7798,10 @@ function handleAdd(e) {
     applyMediaHighlight(commentId, rangeDescriptor);
     return;
   }
+  if (rangeDescriptor?.type === 'control') {
+    applyControlHighlight(commentId, rangeDescriptor);
+    return;
+  }
   if (rangeDescriptor?.type === 'pin') {
     applyPinMarker(commentId, rangeDescriptor);
     return;
@@ -7297,6 +7833,16 @@ function removeHighlightForComment(commentId) {
     removeCommentId(media, commentId);
     if (!media.dataset.commentIds) {
       media.classList.remove(MEDIA_HIGHLIGHT_CLASS, ACTIVE_CLASS, RESOLVED_CLASS);
+    }
+  });
+  queryHighlights(`.${CONTROL_HIGHLIGHT_CLASS}`).forEach(control => {
+    if (!hasCommentId(control, commentId)) {
+      return;
+    }
+    removeCommentId(control, commentId);
+    if (!control.dataset.commentIds) {
+      control.classList.remove(CONTROL_HIGHLIGHT_CLASS, ACTIVE_CLASS, RESOLVED_CLASS);
+      (0,_text_anchor__WEBPACK_IMPORTED_MODULE_0__.clearButtonLabelMetrics)(control);
     }
   });
 }
@@ -7360,8 +7906,8 @@ function handleScrollTo(e) {
   };
   // Comments inside a closed accordion or tab: open it first.
   const target = mark.flowAnchor || mark;
-  if ((0,_reveal_hidden_target__WEBPACK_IMPORTED_MODULE_7__.isHiddenTarget)(target)) {
-    (0,_reveal_hidden_target__WEBPACK_IMPORTED_MODULE_7__.revealHiddenTarget)(target).then(() => {
+  if ((0,_reveal_hidden_target__WEBPACK_IMPORTED_MODULE_8__.isHiddenTarget)(target)) {
+    (0,_reveal_hidden_target__WEBPACK_IMPORTED_MODULE_8__.revealHiddenTarget)(target).then(() => {
       repositionPins(mark.ownerDocument);
       scroll();
     });
@@ -7386,6 +7932,13 @@ function collectAnchoredCommentIds(contentRoot, doc) {
   for (const scope of scopes) {
     scope.querySelectorAll(`.${HIGHLIGHT_CLASS}[data-comment-id], .${_pin_marker__WEBPACK_IMPORTED_MODULE_1__.PIN_CLASS}[data-comment-id]`).forEach(el => ids.add(String(el.dataset.commentId)));
     scope.querySelectorAll(`.${MEDIA_HIGHLIGHT_CLASS}[data-comment-ids]`).forEach(el => {
+      (el.dataset.commentIds || '').split(' ').forEach(id => {
+        if (id) {
+          ids.add(id);
+        }
+      });
+    });
+    scope.querySelectorAll(`.${CONTROL_HIGHLIGHT_CLASS}[data-comment-ids]`).forEach(el => {
       (el.dataset.commentIds || '').split(' ').forEach(id => {
         if (id) {
           ids.add(id);
@@ -7420,6 +7973,13 @@ function wrapCommentsInRoot(contentRoot, comments) {
         const media = applyMediaHighlight(c.id, descriptor, effectiveRoot);
         if (media && c.isResolved) {
           media.classList.add(RESOLVED_CLASS);
+        }
+        continue;
+      }
+      if (descriptor?.type === 'control') {
+        const control = applyControlHighlight(c.id, descriptor, effectiveRoot);
+        if (control && c.isResolved) {
+          control.classList.add(RESOLVED_CLASS);
         }
         continue;
       }
@@ -7462,18 +8022,20 @@ function attachManagerToDoc(doc, options = {}) {
     skipLinkGuard = false,
     withNotice = true
   } = options;
-  (0,_iframe_bridge__WEBPACK_IMPORTED_MODULE_3__.injectHighlightStyles)(doc);
+  (0,_iframe_bridge__WEBPACK_IMPORTED_MODULE_4__.injectHighlightStyles)(doc);
   let linkGuardCleanup = null;
+  const formGuardCleanup = (0,_preview_link_guard__WEBPACK_IMPORTED_MODULE_6__.installPreviewFormGuard)(doc);
   if (!skipLinkGuard) {
-    linkGuardCleanup = (0,_preview_link_guard__WEBPACK_IMPORTED_MODULE_5__.installPreviewLinkGuard)(doc);
+    linkGuardCleanup = (0,_preview_link_guard__WEBPACK_IMPORTED_MODULE_6__.installPreviewLinkGuard)(doc);
   } else if (doc.documentElement) {
     doc.documentElement.classList.add('flow-clickable-links');
-    linkGuardCleanup = (0,_preview_link_guard__WEBPACK_IMPORTED_MODULE_5__.installLinkDragSelect)(doc);
+    linkGuardCleanup = (0,_preview_link_guard__WEBPACK_IMPORTED_MODULE_6__.installLinkDragSelect)(doc);
   }
-  const wrapRoot = (0,_iframe_bridge__WEBPACK_IMPORTED_MODULE_3__.resolveCommentContentRoot)(doc) || doc.body;
+  const wrapRoot = (0,_iframe_bridge__WEBPACK_IMPORTED_MODULE_4__.resolveCommentContentRoot)(doc) || doc.body;
   const clickRoot = doc.body || doc.documentElement;
   if (!wrapRoot || !clickRoot) {
     return () => {
+      formGuardCleanup();
       if (linkGuardCleanup) {
         linkGuardCleanup();
       }
@@ -7483,7 +8045,7 @@ function attachManagerToDoc(doc, options = {}) {
   repositionPins(doc);
   applyRevealed();
   if (withNotice) {
-    (0,_commentable_chrome__WEBPACK_IMPORTED_MODULE_4__.installCommentableChrome)({
+    (0,_commentable_chrome__WEBPACK_IMPORTED_MODULE_5__.installCommentableChrome)({
       withNotice: !hasRootInlineComments(allComments)
     });
   }
@@ -7507,7 +8069,7 @@ function attachManagerToDoc(doc, options = {}) {
   };
   const isFlowChromeNode = node => node?.nodeType === 1 && (node.classList?.contains(HIGHLIGHT_CLASS) || node.classList?.contains(MEDIA_HIGHLIGHT_CLASS) || node.classList?.contains(_pin_marker__WEBPACK_IMPORTED_MODULE_1__.PIN_CLASS) || node.closest?.(`.${HIGHLIGHT_CLASS}, .${MEDIA_HIGHLIGHT_CLASS}, .${_pin_marker__WEBPACK_IMPORTED_MODULE_1__.PIN_CLASS}`));
   const mo = new MutationObserver(mutations => {
-    const ownWrite = mutations.every(m => (0,_dom_observer_policy__WEBPACK_IMPORTED_MODULE_8__.shouldIgnoreHighlightMutation)([...m.addedNodes, ...m.removedNodes].map(node => ({
+    const ownWrite = mutations.every(m => (0,_dom_observer_policy__WEBPACK_IMPORTED_MODULE_9__.shouldIgnoreHighlightMutation)([...m.addedNodes, ...m.removedNodes].map(node => ({
       nodeType: node.nodeType,
       chrome: isFlowChromeNode(node)
     })), isFlowChromeNode(m.target)));
@@ -7544,6 +8106,7 @@ function attachManagerToDoc(doc, options = {}) {
     clickRoot.removeEventListener('click', onHighlightClick);
     doc.removeEventListener('pointerdown', onPagePointerDown, true);
     view?.removeEventListener('resize', onResize);
+    formGuardCleanup();
     if (linkGuardCleanup) {
       linkGuardCleanup();
     }
@@ -7562,7 +8125,7 @@ function handleIframeReady(e) {
     iframeCleanup();
     iframeCleanup = null;
   }
-  (0,_commentable_chrome__WEBPACK_IMPORTED_MODULE_4__.removeCommentableNotice)();
+  (0,_commentable_chrome__WEBPACK_IMPORTED_MODULE_5__.removeCommentableNotice)();
   iframeCleanup = attachManagerToDoc(iframe.contentDocument, {
     skipLinkGuard: highlightManagerMode === 'site-review',
     withNotice: highlightManagerMode !== 'site-review'
@@ -7635,7 +8198,7 @@ function handleCommentDeleted(e) {
  *   `'site-review'`: skip the link guard so the reviewer can browse the
  *   site inside the iframe via the theme's regular menus. The iframe
  *   keeps firing `flow:iframe-ready` on every navigation, so the manager
- *   re-binds each new page.
+ *   re-binds each new page. Form posts are blocked in both modes.
  */
 function initHighlights(inlineComments, options = {}) {
   allComments = [...(inlineComments || [])];
@@ -7659,11 +8222,11 @@ function handleCommentsReset(e) {
     return;
   }
   allComments = [...next];
-  const doc = (0,_iframe_bridge__WEBPACK_IMPORTED_MODULE_3__.getIframeDoc)();
+  const doc = (0,_iframe_bridge__WEBPACK_IMPORTED_MODULE_4__.getIframeDoc)();
   if (!doc) {
     return;
   }
-  const wrapRoot = (0,_iframe_bridge__WEBPACK_IMPORTED_MODULE_3__.resolveCommentContentRoot)(doc) || doc.body;
+  const wrapRoot = (0,_iframe_bridge__WEBPACK_IMPORTED_MODULE_4__.resolveCommentContentRoot)(doc) || doc.body;
   if (!wrapRoot) {
     return;
   }
@@ -7825,6 +8388,10 @@ const HIGHLIGHT_CSS = `
 	   the text being commented on stays highlighted. */
 	background-color: rgba(128, 188, 254, 0.6);
 }
+::highlight(flow-comment-draft-flash) {
+	/* Brief wash on text the reviewer points at while a draft is open. */
+	background-color: rgba(255, 212, 59, 0.9);
+}
 .flow-inline-highlight {
 	/* Highlights are <mark>s; keep the page's text colour, not the UA black. */
 	color: inherit;
@@ -7909,6 +8476,25 @@ iframe.flow-inline-highlight-media {
 .flow-inline-pin.flow-inline-highlight--resolved .flow-inline-pin__dot {
 	fill: #458037;
 }
+.flow-inline-pin.flow-inline-highlight--resolved:hover {
+	background: transparent;
+}
+.flow-inline-pin.flow-inline-highlight--resolved:hover .flow-inline-pin__body {
+	fill: #6cc97a;
+}
+.flow-inline-pin__alert {
+	display: none;
+	fill: #e69500;
+}
+.flow-inline-pin--other-device .flow-inline-pin__dot {
+	display: none;
+}
+.flow-inline-pin--other-device .flow-inline-pin__alert {
+	display: inline;
+}
+.flow-inline-pin.flow-inline-highlight--resolved .flow-inline-pin__alert {
+	fill: #458037;
+}
 .flow-inline-pin--offer {
 	pointer-events: none;
 	opacity: 0.85;
@@ -7940,6 +8526,10 @@ html.flow-resolved-hidden .flow-inline-pin.flow-inline-highlight--resolved:not(.
 }
 a[href],
 button,
+input[type="submit"],
+input[type="button"],
+input[type="reset"],
+input[type="image"],
 [role="button"],
 [role="tab"],
 summary {
@@ -7948,8 +8538,64 @@ summary {
 	user-select: text;
 	-webkit-user-drag: none;
 }
+/* A submit input has no text node, so ::selection cannot paint its label.
+   The label box is measured in JS (--flow-label-*) and only those words
+   are washed, the same as a link hover. An image input has no label, so
+   it keeps the full-control wash below. */
+input.flow-link-hover-selection.flow-button-label-mark,
+input.flow-link-hover-selection.flow-button-label-mark:hover,
+input.flow-link-hover-selection.flow-button-label-mark:focus {
+	background-image: linear-gradient(rgba(128, 188, 254, 0.6), rgba(128, 188, 254, 0.6)) !important;
+	background-repeat: no-repeat !important;
+	background-position: var(--flow-label-x) var(--flow-label-y) !important;
+	background-size: var(--flow-label-w) var(--flow-label-h) !important;
+}
+input.flow-inline-highlight-control {
+	box-shadow: inset 0 0 0 999px rgba(255, 212, 59, 0.45), inset 0 -2px 0 rgba(255, 183, 0, 0.6) !important;
+	cursor: pointer;
+}
+input.flow-inline-highlight-control.flow-button-label-mark {
+	box-shadow: none !important;
+	background-image:
+		linear-gradient(#e69500, #e69500),
+		linear-gradient(rgba(255, 212, 59, 0.45), rgba(255, 212, 59, 0.45)) !important;
+	background-repeat: no-repeat, no-repeat !important;
+	background-position:
+		var(--flow-label-x) var(--flow-label-line),
+		var(--flow-label-x) var(--flow-label-y) !important;
+	background-size:
+		var(--flow-label-w) 2px,
+		var(--flow-label-w) var(--flow-label-h) !important;
+}
+input.flow-inline-highlight-control.flow-inline-highlight--active {
+	box-shadow: inset 0 0 0 999px rgba(255, 183, 0, 0.55), inset 0 -2px 0 #e69500 !important;
+}
+input.flow-inline-highlight-control.flow-inline-highlight--active.flow-button-label-mark {
+	box-shadow: none !important;
+	background-image:
+		linear-gradient(#e69500, #e69500),
+		linear-gradient(rgba(255, 183, 0, 0.55), rgba(255, 183, 0, 0.55)) !important;
+}
+input.flow-inline-highlight-control.flow-inline-highlight--resolved {
+	box-shadow: inset 0 0 0 999px rgba(130, 214, 142, 0.4), inset 0 -2px 0 rgba(130, 214, 142, 0.5) !important;
+}
+input.flow-inline-highlight-control.flow-inline-highlight--resolved.flow-button-label-mark {
+	box-shadow: none !important;
+	background-image:
+		linear-gradient(rgba(69, 128, 55, 0.7), rgba(69, 128, 55, 0.7)),
+		linear-gradient(rgba(130, 214, 142, 0.4), rgba(130, 214, 142, 0.4)) !important;
+}
+html.flow-comments-hidden input.flow-inline-highlight-control:not(.flow-inline-highlight--revealed),
+html.flow-resolved-hidden input.flow-inline-highlight-control.flow-inline-highlight--resolved:not(.flow-inline-highlight--revealed) {
+	box-shadow: none !important;
+	background-image: none !important;
+}
 html.flow-clickable-links a[href],
 html.flow-clickable-links button,
+html.flow-clickable-links input[type="submit"],
+html.flow-clickable-links input[type="button"],
+html.flow-clickable-links input[type="reset"],
+html.flow-clickable-links input[type="image"],
 html.flow-clickable-links [role="button"],
 html.flow-clickable-links [role="tab"],
 html.flow-clickable-links summary {
@@ -9525,6 +10171,102 @@ function mountInShadow(hostEl, cssText, Tree) {
 
 /***/ },
 
+/***/ "./src/review-page/utils/pin-geometry.js"
+/*!***********************************************!*\
+  !*** ./src/review-page/utils/pin-geometry.js ***!
+  \***********************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   axisAnchor: () => (/* binding */ axisAnchor),
+/* harmony export */   axisPosition: () => (/* binding */ axisPosition),
+/* harmony export */   pickSnapTarget: () => (/* binding */ pickSnapTarget)
+/* harmony export */ });
+/**
+ * Where a pin sits on its element, one axis at a time. A click near an edge
+ * keeps its pixel distance from that edge when the element resizes (a pin
+ * 20px from a card's corner stays 20px from it on a phone); a click in the
+ * middle keeps its share of the size. Distances are negative outside the box,
+ * for a pin dropped in the margin next to the element.
+ */
+
+const SNAP_RANGE_PX = 240;
+const SNAP_TIE_PX = 24;
+
+/**
+ * @param {number} point Client coordinate of the click.
+ * @param {number} start Element's start (left or top).
+ * @param {number} size  Element's width or height.
+ * @return {{edge:'start'|'end', px:number}} Distance in from the nearer edge.
+ */
+function axisAnchor(point, start, size) {
+  const fromStart = point - start;
+  const fromEnd = start + size - point;
+  return fromStart <= fromEnd ? {
+    edge: 'start',
+    px: Math.round(fromStart)
+  } : {
+    edge: 'end',
+    px: Math.round(fromEnd)
+  };
+}
+
+/**
+ * @param {number} start
+ * @param {number} size
+ * @param {number} fraction Share of the size, the fallback and older pins' only data.
+ * @param {{edge:string, px:number}|undefined} anchor
+ * @return {number} Client coordinate for the pin's tip.
+ */
+function axisPosition(start, size, fraction, anchor) {
+  const px = Number(anchor?.px);
+  // Past the middle the edge is no longer the nearer one; keep the proportion.
+  if (anchor && Number.isFinite(px) && px <= size / 2) {
+    return anchor.edge === 'end' ? start + size - px : start + px;
+  }
+  const share = Math.min(1, Math.max(0, Number(fraction) || 0));
+  return start + share * size;
+}
+function distanceToRect(x, y, rect) {
+  const dx = Math.max(rect.left - x, 0, x - rect.right);
+  const dy = Math.max(rect.top - y, 0, y - rect.bottom);
+  return Math.hypot(dx, dy);
+}
+
+/**
+ * A click in a container's gap belongs to the block beside it, not the whole
+ * container. Among the nearest candidates, the smallest box wins, so a
+ * paragraph beats the group that wraps it.
+ *
+ * @param {{x:number,y:number}} point
+ * @param {Array<{el:*, rect:{left:number,top:number,right:number,bottom:number,width:number,height:number}}>} candidates
+ * @return {*} The chosen candidate's `el`, or null when none is near enough.
+ */
+function pickSnapTarget(point, candidates) {
+  const distances = candidates.map(c => distanceToRect(point.x, point.y, c.rect));
+  const nearest = Math.min(Infinity, ...distances);
+  if (nearest > SNAP_RANGE_PX) {
+    return null;
+  }
+  let best = null;
+  candidates.forEach((c, i) => {
+    if (distances[i] > nearest + SNAP_TIE_PX) {
+      return;
+    }
+    const area = c.rect.width * c.rect.height;
+    if (!best || area < best.area) {
+      best = {
+        el: c.el,
+        area
+      };
+    }
+  });
+  return best ? best.el : null;
+}
+
+/***/ },
+
 /***/ "./src/review-page/utils/pin-marker.js"
 /*!*********************************************!*\
   !*** ./src/review-page/utils/pin-marker.js ***!
@@ -9535,6 +10277,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   PIN_CLASS: () => (/* binding */ PIN_CLASS),
 /* harmony export */   PIN_OFFER_CLASS: () => (/* binding */ PIN_OFFER_CLASS),
+/* harmony export */   PIN_OTHER_DEVICE_CLASS: () => (/* binding */ PIN_OTHER_DEVICE_CLASS),
 /* harmony export */   createPinElement: () => (/* binding */ createPinElement),
 /* harmony export */   observePinAnchor: () => (/* binding */ observePinAnchor),
 /* harmony export */   placePinAtClientPoint: () => (/* binding */ placePinAtClientPoint),
@@ -9543,6 +10286,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ });
 /* harmony import */ var _reveal_hidden_target__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./reveal-hidden-target */ "./src/review-page/utils/reveal-hidden-target.js");
 /* harmony import */ var _dom_observer_policy__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./dom-observer-policy */ "./src/review-page/utils/dom-observer-policy.js");
+/* harmony import */ var _pin_geometry__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./pin-geometry */ "./src/review-page/utils/pin-geometry.js");
+
 
 
 
@@ -9557,6 +10302,8 @@ const PIN_OFFER_CLASS = 'flow-inline-pin--offer';
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const PIN_BODY_PATH = 'M12 1.5C7.305 1.5 3.5 5.305 3.5 10c0 5.95 7.43 11.93 7.746 12.18a1.2 1.2 0 0 0 1.508 0C13.07 21.93 20.5 15.95 20.5 10c0-4.695-3.805-8.5-8.5-8.5Z';
 const PIN_DOT_PATH = 'M12 13.25a3.25 3.25 0 1 0 0-6.5 3.25 3.25 0 0 0 0 6.5Z';
+const PIN_ALERT_PATH = 'M10.9 4.9h2.2v6.2h-2.2zM12 15.6a1.3 1.3 0 1 0 0-2.6 1.3 1.3 0 0 0 0 2.6Z';
+const PIN_OTHER_DEVICE_CLASS = 'flow-inline-pin--other-device';
 
 /** @type {WeakMap<Document, {watch: Function}>} */
 const docObservers = new WeakMap();
@@ -9587,7 +10334,7 @@ function createPinElement(doc, {
   const svg = doc.createElementNS(SVG_NS, 'svg');
   svg.setAttribute('viewBox', '0 0 24 24');
   svg.setAttribute('aria-hidden', 'true');
-  [[PIN_BODY_PATH, 'flow-inline-pin__body'], [PIN_DOT_PATH, 'flow-inline-pin__dot']].forEach(([d, className]) => {
+  [[PIN_BODY_PATH, 'flow-inline-pin__body'], [PIN_DOT_PATH, 'flow-inline-pin__dot'], [PIN_ALERT_PATH, 'flow-inline-pin__alert']].forEach(([d, className]) => {
     const path = doc.createElementNS(SVG_NS, 'path');
     path.setAttribute('d', d);
     path.setAttribute('class', className);
@@ -9624,11 +10371,11 @@ function placePinAtClientPoint(pin, clientX, clientY) {
   pin.style.left = `${left}px`;
   pin.style.top = `${top}px`;
 }
-function placePinOnAnchor(pin, anchor, x, y) {
+function placePinOnAnchor(pin, anchor, descriptor) {
   const rect = anchor.getBoundingClientRect();
   // A pin on a closed accordion or tab would float at its zero-size box.
   pin.style.visibility = (0,_reveal_hidden_target__WEBPACK_IMPORTED_MODULE_0__.isHiddenTarget)(anchor) ? 'hidden' : '';
-  placePinAtClientPoint(pin, rect.left + Number(x || 0) * rect.width, rect.top + Number(y || 0) * rect.height);
+  placePinAtClientPoint(pin, (0,_pin_geometry__WEBPACK_IMPORTED_MODULE_2__.axisPosition)(rect.left, rect.width, descriptor?.x, descriptor?.ax), (0,_pin_geometry__WEBPACK_IMPORTED_MODULE_2__.axisPosition)(rect.top, rect.height, descriptor?.y, descriptor?.ay));
 }
 function observePinAnchor(pin, anchor, reposition) {
   pin.flowCleanup?.();
@@ -9658,6 +10405,7 @@ function removePin(pin) {
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   installLinkDragSelect: () => (/* binding */ installLinkDragSelect),
+/* harmony export */   installPreviewFormGuard: () => (/* binding */ installPreviewFormGuard),
 /* harmony export */   installPreviewLinkGuard: () => (/* binding */ installPreviewLinkGuard)
 /* harmony export */ });
 function installPreviewLinkGuard(doc) {
@@ -9827,6 +10575,67 @@ function installLinkDragSelect(doc) {
     doc.removeEventListener('mousedown', onMouseDown, true);
     doc.removeEventListener('dragstart', onDragStart, true);
     doc.removeEventListener('click', onClick, true);
+  };
+}
+const FORM_SUBMITTER = 'input[type="submit" i], input[type="image" i], button[type="submit" i], button:not([type])';
+
+// The preview is for reading and commenting. A form post (search, contact,
+// login, the theme's own comment form) leaves that page the same way a link
+// does. Flow's own forms live outside this document, in the review chrome.
+function installPreviewFormGuard(doc) {
+  if (!doc?.documentElement) {
+    return () => {};
+  }
+  const onClick = e => {
+    if (e.button !== 0 || e.metaKey || e.ctrlKey) {
+      return;
+    }
+    const submitter = e.target?.closest?.(FORM_SUBMITTER);
+    if (!submitter?.form) {
+      return;
+    }
+    e.preventDefault();
+  };
+  const onSubmit = e => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+  doc.addEventListener('click', onClick, true);
+  doc.addEventListener('submit', onSubmit, true);
+  const view = doc.defaultView;
+  const proto = view?.HTMLFormElement?.prototype;
+  let restoreSubmit = null;
+  if (proto && typeof proto.submit === 'function') {
+    const originalSubmit = proto.submit;
+    const originalRequest = proto.requestSubmit;
+    const blocked = () => {};
+    try {
+      proto.submit = blocked;
+      if (typeof originalRequest === 'function') {
+        proto.requestSubmit = blocked;
+      }
+      restoreSubmit = () => {
+        try {
+          if (proto.submit === blocked) {
+            proto.submit = originalSubmit;
+          }
+          if (typeof originalRequest === 'function' && proto.requestSubmit === blocked) {
+            proto.requestSubmit = originalRequest;
+          }
+        } catch {
+          // iframe torn down; nothing to restore.
+        }
+      };
+    } catch {
+      restoreSubmit = null;
+    }
+  }
+  return () => {
+    doc.removeEventListener('click', onClick, true);
+    doc.removeEventListener('submit', onSubmit, true);
+    if (restoreSubmit) {
+      restoreSubmit();
+    }
   };
 }
 
@@ -10203,10 +11012,16 @@ function useSingleCommentForm(isOpen, close) {
 
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   BUTTON_LABEL_MARK_CLASS: () => (/* binding */ BUTTON_LABEL_MARK_CLASS),
+/* harmony export */   buttonInputLabel: () => (/* binding */ buttonInputLabel),
+/* harmony export */   clearButtonLabelMetrics: () => (/* binding */ clearButtonLabelMetrics),
 /* harmony export */   clearHighlight: () => (/* binding */ clearHighlight),
 /* harmony export */   contentRanges: () => (/* binding */ contentRanges),
 /* harmony export */   deserializeRange: () => (/* binding */ deserializeRange),
+/* harmony export */   isButtonInput: () => (/* binding */ isButtonInput),
 /* harmony export */   mediaForOverlaySelection: () => (/* binding */ mediaForOverlaySelection),
+/* harmony export */   paintButtonLabelMetrics: () => (/* binding */ paintButtonLabelMetrics),
+/* harmony export */   resolveControlNode: () => (/* binding */ resolveControlNode),
 /* harmony export */   resolveMediaNode: () => (/* binding */ resolveMediaNode),
 /* harmony export */   resolvePinNode: () => (/* binding */ resolvePinNode),
 /* harmony export */   serializeMediaAnchor: () => (/* binding */ serializeMediaAnchor),
@@ -10216,24 +11031,28 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ });
 /* harmony import */ var _wordpress_i18n__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @wordpress/i18n */ "@wordpress/i18n");
 /* harmony import */ var _wordpress_i18n__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_wordpress_i18n__WEBPACK_IMPORTED_MODULE_0__);
-/* harmony import */ var _iframe_bridge__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./iframe-bridge */ "./src/review-page/utils/iframe-bridge.js");
+/* harmony import */ var _shared_device__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../../shared/device */ "./src/shared/device.js");
+/* harmony import */ var _pin_geometry__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./pin-geometry */ "./src/review-page/utils/pin-geometry.js");
+/* harmony import */ var _iframe_bridge__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./iframe-bridge */ "./src/review-page/utils/iframe-bridge.js");
+
+
 
 
 const HIGHLIGHT_CLASS = 'flow-inline-highlight';
 function getContentRoot() {
-  const root = (0,_iframe_bridge__WEBPACK_IMPORTED_MODULE_1__.getActiveContentRoot)();
+  const root = (0,_iframe_bridge__WEBPACK_IMPORTED_MODULE_3__.getActiveContentRoot)();
   if (root) {
     return root;
   }
-  const iframeDoc = (0,_iframe_bridge__WEBPACK_IMPORTED_MODULE_1__.getIframeDoc)();
+  const iframeDoc = (0,_iframe_bridge__WEBPACK_IMPORTED_MODULE_3__.getIframeDoc)();
   return iframeDoc?.body || document.body;
 }
 function getContentRootForNode(node) {
   const doc = node.ownerDocument || document;
-  return (0,_iframe_bridge__WEBPACK_IMPORTED_MODULE_1__.resolveCommentContentRoot)(doc, node) || doc.body;
+  return (0,_iframe_bridge__WEBPACK_IMPORTED_MODULE_3__.resolveCommentContentRoot)(doc, node) || doc.body;
 }
 function getContentRootForDocument(doc) {
-  return (0,_iframe_bridge__WEBPACK_IMPORTED_MODULE_1__.resolveCommentContentRoot)(doc) || doc?.body;
+  return (0,_iframe_bridge__WEBPACK_IMPORTED_MODULE_3__.resolveCommentContentRoot)(doc) || doc?.body;
 }
 function getCssPath(node, root) {
   const parts = [];
@@ -10297,6 +11116,117 @@ function elementOf(node) {
 }
 function nodeInEmbedOverlay(node) {
   return !!elementOf(node)?.closest?.('.flow-embed-overlay');
+}
+
+// Submit and button inputs carry their label in the value, not a text node,
+// so a hover selection has to select the control itself. The blue wash is
+// painted on the words only; see paintButtonLabelMetrics.
+const BUTTON_INPUT = 'input[type="submit" i], input[type="button" i], input[type="reset" i], input[type="image" i]';
+const BUTTON_LABEL_MARK_CLASS = 'flow-button-label-mark';
+const labelMeasureCanvas = new WeakMap();
+function isButtonInput(node) {
+  return !!node?.matches?.(BUTTON_INPUT);
+}
+function buttonInputLabel(node) {
+  if (!isButtonInput(node)) {
+    return '';
+  }
+  if (node.matches('input[type="image" i]')) {
+    return (node.getAttribute('alt') || node.getAttribute('value') || '').trim();
+  }
+  return (node.value || node.getAttribute('value') || '').trim();
+}
+function displayedButtonLabel(label, textTransform) {
+  if (textTransform === 'uppercase') {
+    return label.toUpperCase();
+  }
+  if (textTransform === 'lowercase') {
+    return label.toLowerCase();
+  }
+  if (textTransform === 'capitalize') {
+    return label.replace(/\b\w/g, char => char.toUpperCase());
+  }
+  return label;
+}
+
+// ::selection cannot paint an input's value. Measure the label and expose
+// its box as custom properties so the highlight CSS can cover the words
+// and leave the rest of the button alone.
+function paintButtonLabelMetrics(node) {
+  clearButtonLabelMetrics(node);
+  if (!isButtonInput(node) || node.matches('input[type="image" i]')) {
+    return false;
+  }
+  const view = node.ownerDocument?.defaultView;
+  const label = buttonInputLabel(node);
+  if (!view || !label) {
+    return false;
+  }
+  let canvas = labelMeasureCanvas.get(view);
+  if (!canvas) {
+    canvas = node.ownerDocument.createElement('canvas');
+    labelMeasureCanvas.set(view, canvas);
+  }
+  const ctx = canvas.getContext('2d');
+  if (!ctx) {
+    return false;
+  }
+  const cs = view.getComputedStyle(node);
+  const text = displayedButtonLabel(label, cs.textTransform);
+  ctx.font = `${cs.fontStyle} ${cs.fontVariant} ${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+  if ('letterSpacing' in ctx) {
+    ctx.letterSpacing = cs.letterSpacing;
+  }
+  const metrics = ctx.measureText(text);
+  let width = metrics.width;
+  const spacing = parseFloat(cs.letterSpacing);
+  if (!('letterSpacing' in ctx) && Number.isFinite(spacing) && text.length > 1) {
+    width += spacing * (text.length - 1);
+  }
+  if (!(width > 0)) {
+    return false;
+  }
+  const padL = parseFloat(cs.paddingLeft) || 0;
+  const padR = parseFloat(cs.paddingRight) || 0;
+  const inner = Math.max(0, node.clientWidth - padL - padR);
+  width = Math.min(width, inner || width);
+  const align = cs.textAlign;
+  const rtl = cs.direction === 'rtl';
+  const onLeft = align === 'left' || align === 'start' && !rtl || align === 'end' && rtl;
+  const onRight = align === 'right' || align === 'end' && !rtl || align === 'start' && rtl;
+  let x = padL + Math.max(0, (inner - width) / 2);
+  if (onLeft) {
+    x = padL;
+  } else if (onRight) {
+    x = padL + Math.max(0, inner - width);
+  }
+  const fontSize = parseFloat(cs.fontSize) || 16;
+  const glyphs = (metrics.actualBoundingBoxAscent || 0) + (metrics.actualBoundingBoxDescent || 0);
+  const height = Math.max(fontSize * 1.35, glyphs + 4);
+  const y = Math.max(0, (node.clientHeight - height) / 2);
+  node.style.setProperty('--flow-label-x', `${Math.round(x)}px`);
+  node.style.setProperty('--flow-label-y', `${Math.round(y)}px`);
+  node.style.setProperty('--flow-label-w', `${Math.round(width)}px`);
+  node.style.setProperty('--flow-label-h', `${Math.round(height)}px`);
+  node.style.setProperty('--flow-label-line', `${Math.round(y + height - 2)}px`);
+  node.classList.add(BUTTON_LABEL_MARK_CLASS);
+  return true;
+}
+function clearButtonLabelMetrics(node) {
+  if (!node?.style) {
+    return;
+  }
+  node.classList?.remove(BUTTON_LABEL_MARK_CLASS);
+  for (const name of ['--flow-label-x', '--flow-label-y', '--flow-label-w', '--flow-label-h', '--flow-label-line']) {
+    node.style.removeProperty(name);
+  }
+}
+function buttonInputFromRange(range) {
+  if (!range || range.startContainer !== range.endContainer || range.startContainer.nodeType !== Node.ELEMENT_NODE || range.endOffset !== range.startOffset + 1) {
+    return null;
+  }
+  const node = range.startContainer.childNodes[range.startOffset];
+  return isButtonInput(node) ? node : null;
 }
 
 // Text nodes the range covers, with the slice of each that is actually inside it.
@@ -10427,6 +11357,23 @@ function serializeRange(range) {
   const startEl = range.startContainer.nodeType === Node.TEXT_NODE ? range.startContainer.parentElement : range.startContainer;
   const endEl = range.endContainer.nodeType === Node.TEXT_NODE ? range.endContainer.parentElement : range.endContainer;
   const doc = range.startContainer.ownerDocument || document;
+  const button = buttonInputFromRange(range);
+  if (button) {
+    const label = buttonInputLabel(button);
+    if (!label) {
+      return null;
+    }
+    const descriptor = {
+      type: 'control',
+      nodePath: getCssPath(button, root),
+      text: label,
+      rootType: root === doc.body ? 'body' : 'content'
+    };
+    if (button.id) {
+      descriptor.elementId = button.id;
+    }
+    return descriptor;
+  }
   const text = contentText(range);
   // Nothing but overlay chrome. Callers attach the image instead.
   if (!text.trim()) {
@@ -10473,6 +11420,49 @@ function serializeMediaAnchor(mediaEl, labelText = '') {
   };
 }
 const PIN_TEXT_LIMIT = 160;
+const SNAP_SCAN_LIMIT = 1500;
+const SNAP_SKIP_TAGS = /^(SCRIPT|STYLE|NOSCRIPT|TEMPLATE|BR|HR|SOURCE|TRACK|META|LINK)$/;
+const SNAP_REPLACED_TAGS = /^(IMG|VIDEO|IFRAME|SVG|CANVAS|INPUT|BUTTON|SELECT|TEXTAREA|PICTURE)$/i;
+
+/**
+ * The element directly under the click is a container only when the click
+ * missed all its children (a gap, padding or margin). Anchor to the nearest
+ * block inside it instead, so the pin follows that block when the layout
+ * reflows on another screen size.
+ */
+function snapPinTarget(target, point) {
+  const view = target.ownerDocument.defaultView || window;
+  const walker = target.ownerDocument.createTreeWalker(target, NodeFilter.SHOW_ELEMENT);
+  const candidates = [];
+  let scanned = 0;
+  let node = walker.nextNode();
+  while (node && scanned++ < SNAP_SCAN_LIMIT) {
+    const current = node;
+    node = walker.nextNode();
+    if (SNAP_SKIP_TAGS.test(current.tagName) || current.closest('.flow-inline-pin, .flow-embed-overlay')) {
+      continue;
+    }
+    const rect = current.getBoundingClientRect();
+    if (!rect.width || !rect.height) {
+      continue;
+    }
+    const display = view.getComputedStyle(current).display;
+    if (display === 'none' || display === 'contents' || display === 'inline' && !SNAP_REPLACED_TAGS.test(current.tagName)) {
+      continue;
+    }
+    candidates.push({
+      el: current,
+      rect
+    });
+  }
+  if (!candidates.length) {
+    return target;
+  }
+  return (0,_pin_geometry__WEBPACK_IMPORTED_MODULE_2__.pickSnapTarget)({
+    x: point.clientX,
+    y: point.clientY
+  }, candidates) || target;
+}
 
 /**
  * A pin is a click on a spot rather than a selection: the element under the
@@ -10492,11 +11482,12 @@ function serializePinAnchor(el, point, optionalRoot) {
   if (target === doc.documentElement) {
     target = doc.body;
   }
-  const isBody = target === doc.body;
-  const root = isBody ? doc.body : optionalRoot || getContentRootForNode(target);
+  const root = target === doc.body ? doc.body : optionalRoot || getContentRootForNode(target);
   if (!root || !root.contains(target)) {
     return null;
   }
+  target = snapPinTarget(target, point);
+  const isBody = target === doc.body;
   const rect = target.getBoundingClientRect();
   const fraction = (value, start, size) => size > 0 ? Math.round(Math.min(1, Math.max(0, (value - start) / size)) * 10000) / 10000 : 0;
   const visibleText = (target.innerText || target.textContent || '').replace(/\s+/g, ' ').trim().slice(0, PIN_TEXT_LIMIT);
@@ -10505,6 +11496,8 @@ function serializePinAnchor(el, point, optionalRoot) {
     nodePath: isBody ? '' : getCssPath(target, root),
     x: fraction(point.clientX, rect.left, rect.width),
     y: fraction(point.clientY, rect.top, rect.height),
+    ax: (0,_pin_geometry__WEBPACK_IMPORTED_MODULE_2__.axisAnchor)(point.clientX, rect.left, rect.width),
+    ay: (0,_pin_geometry__WEBPACK_IMPORTED_MODULE_2__.axisAnchor)(point.clientY, rect.top, rect.height),
     rootType: root === doc.body ? 'body' : 'content',
     text: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_0__.__)('Pinned comment', 'jumplinks-editorial-workflow'),
     element: {
@@ -10517,13 +11510,40 @@ function serializePinAnchor(el, point, optionalRoot) {
   if (target.id) {
     descriptor.elementId = target.id;
   }
+  // The spot only holds on the screen size it was placed on.
+  const width = Math.round(doc.defaultView?.innerWidth || 0);
+  descriptor.viewport = {
+    device: (0,_shared_device__WEBPACK_IMPORTED_MODULE_1__.currentDevice)(),
+    width
+  };
   return descriptor;
+}
+function resolveControlNode(descriptor, optionalRoot) {
+  if (descriptor?.type !== 'control') {
+    return null;
+  }
+  const doc = optionalRoot?.ownerDocument || (0,_iframe_bridge__WEBPACK_IMPORTED_MODULE_3__.getIframeDoc)() || document;
+  const root = descriptor.rootType === 'body' ? doc.body : optionalRoot || getContentRootForDocument(doc);
+  if (!root) {
+    return null;
+  }
+  let el = null;
+  if (descriptor.elementId) {
+    const byId = doc.getElementById(descriptor.elementId);
+    if (byId && root.contains(byId)) {
+      el = byId;
+    }
+  }
+  if (!el && descriptor.nodePath) {
+    el = resolvePathToNode(descriptor.nodePath, root);
+  }
+  return isButtonInput(el) ? el : null;
 }
 function resolvePinNode(descriptor, optionalRoot) {
   if (descriptor?.type !== 'pin') {
     return null;
   }
-  const doc = optionalRoot?.ownerDocument || (0,_iframe_bridge__WEBPACK_IMPORTED_MODULE_1__.getIframeDoc)() || document;
+  const doc = optionalRoot?.ownerDocument || (0,_iframe_bridge__WEBPACK_IMPORTED_MODULE_3__.getIframeDoc)() || document;
   const root = descriptor.rootType === 'body' ? doc.body : optionalRoot || getContentRootForDocument(doc);
   if (!root) {
     return null;
@@ -10534,8 +11554,9 @@ function resolvePinNode(descriptor, optionalRoot) {
       return byId;
     }
   }
+  // No path: the click landed on the root itself (a margin of the content).
   if (!descriptor.nodePath) {
-    return descriptor.rootType === 'body' ? doc.body : null;
+    return root;
   }
   const exact = resolvePathToNode(descriptor.nodePath, root);
   if (exact) {
@@ -10657,7 +11678,7 @@ function resolveMediaNode(descriptor, optionalRoot) {
   if (!MEDIA_TYPES.includes(descriptor?.type)) {
     return null;
   }
-  const root = optionalRoot || getContentRootForDocument((0,_iframe_bridge__WEBPACK_IMPORTED_MODULE_1__.getIframeDoc)() || document);
+  const root = optionalRoot || getContentRootForDocument((0,_iframe_bridge__WEBPACK_IMPORTED_MODULE_3__.getIframeDoc)() || document);
   if (!root) {
     return null;
   }
@@ -10672,7 +11693,18 @@ function resolveMediaNode(descriptor, optionalRoot) {
   }
   return media || null;
 }
-function deserializeRange(descriptor, optionalRoot) {
+
+/**
+ * @param {Object}      descriptor
+ * @param {Element}      [optionalRoot]
+ * @param {{exact?: boolean}} [matchInfo]
+ *   Optional out-param. When a range is returned, callers that care whether
+ *   it came from an exact path+text match versus a same-element fuzzy text
+ *   search (content shifted since the comment was saved) can read
+ *   `matchInfo.exact` afterwards. Unset for pin/media descriptors, where
+ *   resolution is a direct element lookup rather than a text search.
+ */
+function deserializeRange(descriptor, optionalRoot, matchInfo) {
   if (descriptor?.type === 'pin') {
     const el = resolvePinNode(descriptor, optionalRoot);
     if (!el) {
@@ -10682,10 +11714,23 @@ function deserializeRange(descriptor, optionalRoot) {
     range.selectNode(el);
     return range;
   }
+  if (descriptor?.type === 'control') {
+    const el = resolveControlNode(descriptor, optionalRoot);
+    if (!el) {
+      return null;
+    }
+    const range = (el.ownerDocument || document).createRange();
+    range.selectNode(el);
+    if (matchInfo) {
+      const label = buttonInputLabel(el);
+      matchInfo.exact = !descriptor.text || label === String(descriptor.text).trim();
+    }
+    return range;
+  }
   const isMedia = MEDIA_TYPES.includes(descriptor?.type);
-  let root = optionalRoot || (isMedia ? getContentRootForDocument((0,_iframe_bridge__WEBPACK_IMPORTED_MODULE_1__.getIframeDoc)() || document) : getContentRoot());
+  let root = optionalRoot || (isMedia ? getContentRootForDocument((0,_iframe_bridge__WEBPACK_IMPORTED_MODULE_3__.getIframeDoc)() || document) : getContentRoot());
   if (descriptor?.rootType === 'body') {
-    const doc = root?.ownerDocument || (0,_iframe_bridge__WEBPACK_IMPORTED_MODULE_1__.getIframeDoc)() || document;
+    const doc = root?.ownerDocument || (0,_iframe_bridge__WEBPACK_IMPORTED_MODULE_3__.getIframeDoc)() || document;
     root = doc?.body || root;
   }
   if (!root) {
@@ -10698,7 +11743,13 @@ function deserializeRange(descriptor, optionalRoot) {
   // contentText drops overlay chips, so a drag across a photo still matches
   // the saved quote after those labels are left out of it.
   if (range && (range.toString() === descriptor.text || contentText(range) === descriptor.text)) {
+    if (matchInfo) {
+      matchInfo.exact = true;
+    }
     return range;
+  }
+  if (matchInfo) {
+    matchInfo.exact = false;
   }
 
   // Look again only inside the element the comment was on: the same word in
@@ -10783,7 +11834,7 @@ function wrapRangeAcrossNodes(range, commentId) {
 function clearHighlight(commentId) {
   const selector = `.${HIGHLIGHT_CLASS}[data-comment-id="${commentId}"]`;
   const marks = [...document.querySelectorAll(selector)];
-  const iframeDoc = (0,_iframe_bridge__WEBPACK_IMPORTED_MODULE_1__.getIframeDoc)();
+  const iframeDoc = (0,_iframe_bridge__WEBPACK_IMPORTED_MODULE_3__.getIframeDoc)();
   if (iframeDoc) {
     marks.push(...iframeDoc.querySelectorAll(selector));
   }
@@ -10849,6 +11900,129 @@ function useDropdownToggleGuard() {
     };
   }, []);
   return wrapperRef;
+}
+
+/***/ },
+
+/***/ "./src/shared/device.js"
+/*!******************************!*\
+  !*** ./src/shared/device.js ***!
+  \******************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   canPreviewDevices: () => (/* binding */ canPreviewDevices),
+/* harmony export */   currentDevice: () => (/* binding */ currentDevice),
+/* harmony export */   detectRealDevice: () => (/* binding */ detectRealDevice),
+/* harmony export */   isValidDevice: () => (/* binding */ isValidDevice),
+/* harmony export */   persistDevice: () => (/* binding */ persistDevice),
+/* harmony export */   pinOnOtherDevice: () => (/* binding */ pinOnOtherDevice),
+/* harmony export */   pinViewportDevice: () => (/* binding */ pinViewportDevice),
+/* harmony export */   pinnedOnLabel: () => (/* binding */ pinnedOnLabel),
+/* harmony export */   previewDevice: () => (/* binding */ previewDevice),
+/* harmony export */   readStoredDevice: () => (/* binding */ readStoredDevice),
+/* harmony export */   viewDeviceLabel: () => (/* binding */ viewDeviceLabel)
+/* harmony export */ });
+/* harmony import */ var _wordpress_i18n__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @wordpress/i18n */ "@wordpress/i18n");
+/* harmony import */ var _wordpress_i18n__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_wordpress_i18n__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var _wordpress_hooks__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @wordpress/hooks */ "@wordpress/hooks");
+/* harmony import */ var _wordpress_hooks__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(_wordpress_hooks__WEBPACK_IMPORTED_MODULE_1__);
+
+
+const DEVICE_SESSION_KEY = 'flow_review_device';
+function isValidDevice(value) {
+  return value === 'desktop' || value === 'tablet' || value === 'mobile';
+}
+
+/** Coarse only — iOS reports every phone as "iPhone", so an exact model is never reliable. */
+function detectRealDevice() {
+  const ua = navigator.userAgent || '';
+  if (/iPad/.test(ua) || /Macintosh/.test(ua) && navigator.maxTouchPoints > 1) {
+    return 'tablet';
+  }
+  if (/Mobi|iPhone|iPod|Windows Phone/.test(ua)) {
+    return 'mobile';
+  }
+  if (/Android/.test(ua)) {
+    return /Mobile/.test(ua) ? 'mobile' : 'tablet';
+  }
+  return 'desktop';
+}
+
+/** The device preview picked in the View menu; 'desktop' when none. */
+function readStoredDevice() {
+  try {
+    const stored = sessionStorage.getItem(DEVICE_SESSION_KEY);
+    return isValidDevice(stored) ? stored : 'desktop';
+  } catch (_err) {
+    return 'desktop';
+  }
+}
+function persistDevice(device) {
+  try {
+    if (device === 'desktop') {
+      sessionStorage.removeItem(DEVICE_SESSION_KEY);
+    } else {
+      sessionStorage.setItem(DEVICE_SESSION_KEY, device);
+    }
+  } catch (_err) {
+    // Storage disabled — selection only survives this load.
+  }
+}
+function hasDeviceSwitcher() {
+  return (0,_wordpress_hooks__WEBPACK_IMPORTED_MODULE_1__.hasFilter)('flow_ew_view_dropdown_extras', 'flow-pro/device-switcher');
+}
+
+/** What the page is being viewed as: the preview when one is on, else the real device. */
+function currentDevice() {
+  // Without the switcher nothing applies a stored preview, so it would mislabel the view.
+  const preview = hasDeviceSwitcher() ? readStoredDevice() : 'desktop';
+  return preview !== 'desktop' ? preview : detectRealDevice();
+}
+function pinnedOnLabel(device) {
+  const labels = {
+    desktop: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_0__.__)('Pinned on desktop.', 'jumplinks-editorial-workflow'),
+    tablet: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_0__.__)('Pinned on tablet.', 'jumplinks-editorial-workflow'),
+    mobile: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_0__.__)('Pinned on mobile.', 'jumplinks-editorial-workflow')
+  };
+  return labels[device] || '';
+}
+function viewDeviceLabel(device) {
+  const labels = {
+    desktop: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_0__.__)('View desktop', 'jumplinks-editorial-workflow'),
+    tablet: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_0__.__)('View tablet', 'jumplinks-editorial-workflow'),
+    mobile: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_0__.__)('View mobile', 'jumplinks-editorial-workflow')
+  };
+  return labels[device] || '';
+}
+
+/** Only a desktop can simulate the other sizes, and only with Pro's switcher. */
+function canPreviewDevices() {
+  return detectRealDevice() === 'desktop' && hasDeviceSwitcher();
+}
+function previewDevice(device) {
+  if (!isValidDevice(device)) {
+    return;
+  }
+  persistDevice(device);
+  window.dispatchEvent(new CustomEvent('flow:set-device-preview', {
+    detail: {
+      device
+    }
+  }));
+}
+
+/** The device a pin was placed on; '' for older pins that never recorded one. */
+function pinViewportDevice(descriptor) {
+  const device = descriptor?.viewport?.device;
+  return descriptor?.type === 'pin' && isValidDevice(device) ? device : '';
+}
+
+/** The pin's device when it differs from what is on screen, else ''. */
+function pinOnOtherDevice(descriptor) {
+  const device = pinViewportDevice(descriptor);
+  return device && device !== currentDevice() ? device : '';
 }
 
 /***/ },
@@ -10985,7 +12159,7 @@ __webpack_require__.r(__webpack_exports__);
   \**************************************/
 (module) {
 
-module.exports = "/*\n * Flow Review — Top Bar styles.\n * Injected into Shadow root #1. Fully isolated from theme CSS.\n * wp-components styles are cloned in from document.head at mount time.\n */\n.flow-confirm-dialog {\n  position: fixed;\n  inset: 0;\n  z-index: 1000003;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  padding: 16px;\n}\n\n.flow-confirm-dialog__backdrop {\n  position: absolute;\n  inset: 0;\n  margin: 0;\n  padding: 0;\n  border: 0;\n  background: rgba(0, 0, 0, 0.45);\n  cursor: default;\n}\n\n.flow-confirm-dialog__panel {\n  position: relative;\n  width: 100%;\n  max-width: min(420px, 100% - 32px);\n  font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Oxygen-Sans, Ubuntu, Cantarell, \"Helvetica Neue\", sans-serif;\n  font-size: 13px;\n  line-height: 1.4;\n  color: #c92122;\n  background: #ffebea;\n  border: 1px solid #ffd1d0;\n  border-left-width: 4px;\n  border-left-color: #c92122;\n  border-radius: 2px;\n  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16);\n}\n\n.flow-confirm-dialog__alert {\n  display: flex;\n  align-items: flex-start;\n  gap: 12px;\n  padding: 12px 16px;\n}\n\n.flow-confirm-dialog__icon {\n  display: flex;\n  flex-shrink: 0;\n  align-items: center;\n  justify-content: center;\n  width: 24px;\n  height: 24px;\n  color: #c92122;\n}\n.flow-confirm-dialog__icon svg {\n  display: block;\n  width: 24px;\n  height: 24px;\n}\n\n.flow-confirm-dialog__content {\n  flex: 1 1 auto;\n  min-width: 0;\n}\n\n.flow-confirm-dialog__title {\n  margin: 0 0 2px;\n  font-size: inherit;\n  font-weight: 600;\n  line-height: inherit;\n  color: inherit;\n}\n\n.flow-confirm-dialog__message {\n  margin: 0;\n  font-size: inherit;\n  font-weight: 400;\n  line-height: inherit;\n  color: inherit;\n}\n\n.flow-confirm-dialog__actions {\n  display: flex;\n  justify-content: flex-end;\n  gap: 8px;\n  padding: 0 16px 12px;\n}\n.flow-confirm-dialog__actions .components-button {\n  flex: 0 0 auto;\n  white-space: nowrap;\n}\n\n.flow-confirm-dialog__confirm.components-button {\n  min-width: 80px;\n  justify-content: center;\n  background: #c92122 !important;\n  border: 1px solid #c92122 !important;\n  color: #fff !important;\n  box-shadow: none !important;\n}\n.flow-confirm-dialog__confirm.components-button:hover:not(:disabled), .flow-confirm-dialog__confirm.components-button:active:not(:disabled) {\n  background: #b32d2e !important;\n  border-color: #b32d2e !important;\n  color: #fff !important;\n}\n.flow-confirm-dialog__confirm.components-button:focus:not(:disabled) {\n  box-shadow: 0 0 0 var(--wp-admin-border-width-focus, 2px) #fff, 0 0 0 calc(var(--wp-admin-border-width-focus, 2px) + 1px) #c92122 !important;\n  outline: 1px solid transparent;\n}\n\n.flow-confirm-dialog__panel--warning {\n  color: #1e1e1e;\n  background: #fcf0ce;\n  border-color: #f2dda4;\n  border-left-color: #dba617;\n}\n.flow-confirm-dialog__panel--warning .flow-confirm-dialog__icon {\n  color: #957500;\n}\n.flow-confirm-dialog__panel--warning .flow-confirm-dialog__confirm.components-button {\n  background: #dba617 !important;\n  border-color: #dba617 !important;\n  color: #1d2327 !important;\n}\n.flow-confirm-dialog__panel--warning .flow-confirm-dialog__confirm.components-button:hover:not(:disabled), .flow-confirm-dialog__panel--warning .flow-confirm-dialog__confirm.components-button:active:not(:disabled) {\n  background: #c4950f !important;\n  border-color: #c4950f !important;\n  color: #1d2327 !important;\n}\n.flow-confirm-dialog__panel--warning .flow-confirm-dialog__confirm.components-button:focus:not(:disabled) {\n  box-shadow: 0 0 0 var(--wp-admin-border-width-focus, 2px) #fff, 0 0 0 calc(var(--wp-admin-border-width-focus, 2px) + 1px) #dba617 !important;\n}\n\n.flow-confirm-dialog__panel--neutral {\n  color: #1e1e1e;\n  background: #fff;\n  border-color: #e0e0e0;\n  border-left-width: 1px;\n  border-left-color: #e0e0e0;\n  max-width: min(480px, 100% - 32px);\n}\n.flow-confirm-dialog__panel--neutral .flow-confirm-dialog__title {\n  margin-bottom: 8px;\n}\n\n.flow-revisions {\n  display: flex;\n  flex-direction: column;\n  max-height: min(360px, 60vh);\n  margin: 0;\n  padding: 0;\n  overflow-y: auto;\n  list-style: none;\n}\n.flow-revisions li {\n  margin: 0;\n}\n\n.flow-revisions__item {\n  display: flex;\n  flex-wrap: wrap;\n  align-items: center;\n  gap: 4px 8px;\n  padding: 8px;\n  border-radius: 2px;\n  color: #1e1e1e;\n  text-decoration: none;\n}\n.flow-revisions__item:hover, .flow-revisions__item:focus-visible {\n  background: #f6f7f7;\n}\n.flow-revisions__item.is-viewing {\n  background: #f6f7f7;\n  font-weight: 600;\n}\n\n.flow-revisions__date {\n  font-variant-numeric: tabular-nums;\n}\n\n.flow-revisions__tag {\n  padding: 0 6px;\n  border: 1px solid #e0e0e0;\n  border-radius: 10px;\n  font-size: 11px;\n  font-weight: 500;\n  color: #757575;\n}\n\n.flow-revisions__resolved {\n  margin-left: auto;\n  font-size: 12px;\n  color: #757575;\n}\n\n*,\n*::before,\n*::after {\n  box-sizing: border-box;\n}\n\n:host {\n  display: block;\n  position: fixed;\n  top: 0;\n  left: 0;\n  right: 0;\n  height: 64px;\n  z-index: 999999;\n  font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Oxygen-Sans, Ubuntu, Cantarell, \"Helvetica Neue\", sans-serif;\n  font-size: 13px;\n  line-height: 1.4;\n  color: #1e1e1e;\n  -webkit-font-smoothing: antialiased;\n  -moz-osx-font-smoothing: grayscale;\n}\n\nbutton,\ninput,\nselect,\ntextarea {\n  font-family: inherit;\n  font-size: inherit;\n  line-height: inherit;\n  color: inherit;\n}\n\n.components-button {\n  font-weight: 600;\n}\n\n.flow-bar {\n  height: 64px;\n  background: #fff;\n  border-bottom: 1px solid #e0e0e0;\n  display: flex;\n  align-items: center;\n  padding: 0 16px 0 0;\n  position: relative;\n}\n.flow-bar__left {\n  display: flex;\n  align-items: center;\n  gap: 10px;\n  min-width: 0;\n  flex: 1;\n}\n.flow-bar__right {\n  display: flex;\n  align-items: center;\n  gap: 8px;\n  flex-shrink: 0;\n}\n.flow-bar__wp-logo {\n  position: relative;\n  flex-shrink: 0;\n  width: 64px;\n  height: 64px;\n  overflow: hidden;\n}\n.flow-bar__wp-logo-link {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  width: 100%;\n  height: 100%;\n  color: #fff;\n  text-decoration: none;\n}\n.flow-bar__wp-logo-link:hover, .flow-bar__wp-logo-link:active {\n  color: #fff;\n}\n.flow-bar__wp-logo-link:focus {\n  box-shadow: none;\n  outline: none;\n}\n.flow-bar__wp-logo-icon {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  width: 100%;\n  height: 100%;\n  clip-path: inset(0% round 0px);\n  transition: clip-path 0.2s ease;\n}\n.flow-bar__wp-logo-icon svg {\n  fill: currentColor;\n  display: block;\n  background: #1e1e1e;\n  padding: 12px;\n  width: 100%;\n  height: 100%;\n}\n.flow-bar__wp-logo-icon .flow-bar__brand-logo {\n  box-sizing: border-box;\n  display: block;\n  height: 100%;\n  object-fit: contain;\n  padding: 12px;\n  width: 100%;\n}\n.flow-bar__wp-logo--custom.flow-bar__wp-logo--bg-dark .flow-bar__wp-logo-icon {\n  background: #1e1e1e;\n}\n.flow-bar__wp-logo--custom.flow-bar__wp-logo--bg-light::after {\n  content: \"\";\n  position: absolute;\n  top: 0;\n  right: 0;\n  bottom: 0;\n  width: 1px;\n  background: #e0e0e0;\n  pointer-events: none;\n}\n.flow-bar__wp-logo--custom.flow-bar__wp-logo--bg-light .flow-bar__wp-logo-icon {\n  background: #fff;\n}\n.flow-bar__wp-logo-back {\n  position: absolute;\n  top: 0;\n  left: 0;\n  width: 64px;\n  height: 64px;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  background-color: #ccc;\n  color: #1e1e1e;\n  pointer-events: none;\n  opacity: 0;\n  transform: scale(0.2);\n  clip-path: inset(0% round 0px);\n  transition: opacity 0.2s ease, transform 0.2s ease, clip-path 0.2s ease;\n}\n.flow-bar__wp-logo-back svg {\n  fill: currentColor;\n}\n.flow-bar__wp-logo:not(.flow-bar__wp-logo--static):hover .flow-bar__wp-logo-icon, .flow-bar__wp-logo:focus-within .flow-bar__wp-logo-icon {\n  clip-path: inset(22% round 2px);\n}\n.flow-bar__wp-logo:hover .flow-bar__wp-logo-back, .flow-bar__wp-logo:focus-within .flow-bar__wp-logo-back {\n  opacity: 1;\n  transform: scale(1);\n  clip-path: inset(22% round 2px);\n}\n.flow-bar__sidebar-toggle.components-button, .flow-bar__comments-toggle.components-button, .flow-bar__edit-post.components-button {\n  height: 32px;\n  min-width: 32px;\n  padding: 4px;\n  flex-shrink: 0;\n  border-radius: 2px;\n  color: #1e1e1e;\n}\n.flow-bar__sidebar-toggle.components-button svg, .flow-bar__comments-toggle.components-button svg, .flow-bar__edit-post.components-button svg {\n  fill: currentColor;\n}\n.flow-bar__sidebar-toggle.components-button:focus:not(:disabled), .flow-bar__comments-toggle.components-button:focus:not(:disabled), .flow-bar__edit-post.components-button:focus:not(:disabled) {\n  box-shadow: 0 0 0 var(--wp-admin-border-width-focus, 2px) var(--wp-admin-theme-color, #007cba), inset 0 0 0 1px #fff;\n  outline: 1px solid transparent;\n}\n.flow-bar__edit-post.components-button {\n  text-decoration: none;\n  border: 1px solid #1e1e1e;\n  box-shadow: none;\n}\n.flow-bar__edit-post.components-button:hover:not(:disabled), .flow-bar__edit-post.components-button:active:not(:disabled), .flow-bar__edit-post.components-button:visited {\n  color: #1e1e1e;\n}\n.flow-bar__edit-post.components-button:hover:not(:disabled) {\n  background: #f6f7f7;\n}\n.flow-bar__sidebar-toggle.components-button.is-pressed, .flow-bar__comments-toggle.components-button.is-pressed {\n  background: #1e1e1e;\n  color: #fff;\n}\n.flow-bar__badge {\n  display: inline-flex;\n  align-items: center;\n  flex-shrink: 0;\n  gap: 4px;\n  font-size: 11px;\n  font-weight: 500;\n  line-height: 1.4;\n  padding: 2px 8px;\n  border-radius: 10px;\n  white-space: nowrap;\n  color: #5e777b;\n  background: #e6f3f5;\n  border: 1px solid #cde3e7;\n}\n.flow-bar__badge__dot {\n  width: 5px;\n  height: 5px;\n  border-radius: 50%;\n  background: currentColor;\n  flex-shrink: 0;\n}\n.flow-bar__badge--in_review {\n  color: #957500;\n  background: #fcf0ce;\n  border-color: #f2dda4;\n}\n.flow-bar__badge--approved {\n  color: #458037;\n  background: #e7f5e4;\n  border-color: #cae8c4;\n}\n.flow-bar__badge--changes_requested {\n  color: #c92122;\n  background: #ffebea;\n  border-color: #ffd1d0;\n}\n.flow-bar__badge--open_review {\n  color: #1579a5;\n  background: #dff4ff;\n  border-color: #b6e6ff;\n}\n.flow-bar__badge--self_review {\n  color: #5b3fa6;\n  background: #efe9fb;\n  border-color: #d9ccf4;\n}\n.flow-bar__badge--cancelled {\n  color: #50575e;\n  background: #f0f0f1;\n  border-color: #dcdcde;\n}\n.flow-bar__title {\n  display: flex;\n  align-items: baseline;\n  gap: 0.35em;\n  min-width: 0;\n  font-size: 14px;\n  line-height: 1.35;\n  white-space: nowrap;\n  overflow: hidden;\n}\n.flow-bar__title-prefix {\n  flex-shrink: 0;\n  color: #757575;\n  font-weight: 400;\n}\n.flow-bar__title-name, .flow-bar__title-type {\n  font-weight: 600;\n  color: #1e1e1e;\n}\n.flow-bar__title-name {\n  flex: 0 1 auto;\n  min-width: 0;\n  max-width: min(22ch, 18vw);\n  overflow: hidden;\n  text-overflow: ellipsis;\n}\n.flow-bar__title-type {\n  flex-shrink: 0;\n}\n.flow-bar__title-suffix {\n  flex-shrink: 0;\n  display: inline-flex;\n  align-items: baseline;\n  gap: 0.35em;\n}\n.flow-bar__title-dot {\n  color: #757575;\n  font-weight: 400;\n}\n.flow-bar__title--simple {\n  display: block;\n  font-weight: 500;\n  color: #1e1e1e;\n  text-overflow: ellipsis;\n}\n.flow-bar__meta {\n  position: absolute;\n  left: 50%;\n  transform: translateX(-50%);\n  max-width: 42%;\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  gap: 3px;\n  text-align: center;\n  pointer-events: none;\n}\n.flow-bar__latest-link {\n  font-size: 11px;\n  font-weight: 600;\n  color: #458037;\n  text-decoration: underline;\n  white-space: nowrap;\n  pointer-events: auto;\n}\n.flow-bar__latest-link:hover, .flow-bar__latest-link:focus {\n  color: #36662b;\n}\n.flow-bar__revisions-link {\n  margin: 0;\n  padding: 0;\n  border: 0;\n  background: none;\n  font-family: inherit;\n  font-size: 11px;\n  font-weight: 500;\n  color: var(--wp-admin-theme-color, #2271b1);\n  text-decoration: underline;\n  white-space: nowrap;\n  cursor: pointer;\n  pointer-events: auto;\n}\n.flow-bar__revisions-link:hover, .flow-bar__revisions-link:focus {\n  color: var(--wp-admin-theme-color-darker-10, #135e96);\n}\n.flow-bar__nav-lock {\n  color: #957500;\n  background: #fcf0ce;\n  border: 0;\n  margin: 0;\n  padding: 2px 6px 2px 8px;\n  font-family: inherit;\n  line-height: inherit;\n  cursor: pointer;\n  pointer-events: auto;\n}\n.flow-bar__nav-lock:hover, .flow-bar__nav-lock:focus-visible {\n  filter: brightness(0.96);\n}\n.flow-bar__nav-lock:focus-visible {\n  outline: 2px solid currentColor;\n  outline-offset: 1px;\n}\n.flow-bar__nav-lock svg {\n  height: 14px;\n  width: 14px;\n}\n.flow-bar__nav-lock-off {\n  fill: currentColor;\n  opacity: 0.8;\n}\n.flow-bar__freshness-row {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  flex-wrap: nowrap;\n  gap: 6px;\n  max-width: 100%;\n}\n.flow-bar__freshness {\n  display: inline-flex;\n  align-items: center;\n  gap: 4px;\n  font-size: 11px;\n  font-weight: 500;\n  padding: 2px 8px;\n  border-radius: 10px;\n  white-space: nowrap;\n}\n.flow-bar__freshness--latest {\n  color: #458037;\n  background: #e7f5e4;\n}\n.flow-bar__freshness--outdated {\n  color: #957500;\n  background: #fcf0ce;\n}\n.flow-bar__freshness--debug {\n  color: #957500;\n  background: #fcf0ce;\n}\n.flow-bar__freshness--cancelled {\n  color: #50575e;\n  background: #f0f0f1;\n}\n.flow-bar__freshness-icon {\n  display: inline-flex;\n  flex-shrink: 0;\n  width: 14px;\n  height: 14px;\n}\n.flow-bar__freshness-icon svg {\n  display: block;\n  width: 14px;\n  height: 14px;\n}\n.flow-bar__freshness-link {\n  color: var(--wp-admin-theme-color, #2271b1);\n  text-decoration: underline;\n  cursor: pointer;\n  pointer-events: auto;\n}\n.flow-bar__freshness-link:hover, .flow-bar__freshness-link:focus {\n  color: var(--wp-admin-theme-color-darker-10, #135e96);\n}\n.flow-bar__freshness-snapshot {\n  font-size: 10px;\n  color: #757575;\n  white-space: nowrap;\n  overflow: hidden;\n  text-overflow: ellipsis;\n  max-width: 100%;\n}\n.flow-bar__actions {\n  display: flex;\n  align-items: center;\n  gap: 8px;\n  flex-shrink: 0;\n}\n.flow-bar__btn--request-changes.components-button {\n  background: transparent !important;\n  border: 1px solid #1e1e1e !important;\n  color: #1e1e1e !important;\n  box-shadow: none !important;\n}\n.flow-bar__btn--request-changes.components-button:hover:not(:disabled), .flow-bar__btn--request-changes.components-button:active:not(:disabled) {\n  background: #f6f7f7 !important;\n  border-color: #1e1e1e !important;\n  color: #1e1e1e !important;\n}\n.flow-bar__btn--request-changes.components-button:focus:not(:disabled) {\n  box-shadow: 0 0 0 var(--wp-admin-border-width-focus, 2px) #fff, 0 0 0 calc(var(--wp-admin-border-width-focus, 2px) + 1px) #1e1e1e !important;\n  outline: 1px solid transparent;\n}\n.flow-bar__btn--request-changes.components-button:disabled, .flow-bar__btn--request-changes.components-button[aria-disabled=true] {\n  background: #f6f7f7 !important;\n  border-color: #ddd !important;\n  color: #8c8f94 !important;\n  opacity: 1 !important;\n}\n.flow-bar__btn--request-changes.flow-bar__btn--cancel-review.components-button {\n  border-color: #d63638 !important;\n  color: #d63638 !important;\n}\n.flow-bar__btn--request-changes.flow-bar__btn--cancel-review.components-button:hover:not(:disabled), .flow-bar__btn--request-changes.flow-bar__btn--cancel-review.components-button:active:not(:disabled) {\n  background: #fcf0f1 !important;\n  border-color: #b32d2e !important;\n  color: #b32d2e !important;\n}\n.flow-bar__btn--request-changes.flow-bar__btn--cancel-review.components-button:focus:not(:disabled) {\n  box-shadow: 0 0 0 var(--wp-admin-border-width-focus, 2px) #fff, 0 0 0 calc(var(--wp-admin-border-width-focus, 2px) + 1px) #d63638 !important;\n}\n.flow-bar__btn--revoke.components-button {\n  background: #d63638 !important;\n  border-color: #d63638 !important;\n  color: #fff !important;\n  box-shadow: none !important;\n}\n.flow-bar__btn--revoke.components-button:hover:not(:disabled), .flow-bar__btn--revoke.components-button:active:not(:disabled) {\n  background: #b32d2e !important;\n  border-color: #b32d2e !important;\n  color: #fff !important;\n}\n.flow-bar__btn--revoke.components-button:focus:not(:disabled) {\n  box-shadow: 0 0 0 var(--wp-admin-border-width-focus, 2px) #fff, 0 0 0 calc(var(--wp-admin-border-width-focus, 2px) + 1px) #d63638 !important;\n  outline: 1px solid transparent;\n}\n.flow-bar__btn--revoke.components-button:disabled, .flow-bar__btn--revoke.components-button[aria-disabled=true] {\n  background: #f6f7f7 !important;\n  border-color: #ddd !important;\n  color: #8c8f94 !important;\n  opacity: 1 !important;\n  cursor: not-allowed;\n}\n\n.flow-bar__view-dropdown {\n  margin: 0;\n}\n\n@media (max-width: 1600px) {\n  .flow-bar__meta {\n    position: static;\n    transform: none;\n    max-width: none;\n    flex-direction: row;\n    align-items: center;\n    gap: 6px;\n    text-align: right;\n    pointer-events: auto;\n  }\n  .flow-bar__freshness-snapshot {\n    display: none;\n  }\n}\n@media (max-width: 1400px) {\n  .flow-bar__title-prefix,\n  .flow-bar__title-suffix {\n    display: none;\n  }\n  .flow-bar__edit-post.components-button {\n    display: none !important;\n  }\n}\n.flow-bar__snackbar-list.components-snackbar-list {\n  position: fixed;\n  left: 16px;\n  bottom: calc(16px + var(--flow-ew-upsell-bar-height, 0px));\n  width: auto;\n  max-width: min(420px, 100vw - 32px);\n  pointer-events: none;\n  z-index: 1000000;\n}\n\n.flow-bar__snackbar-list .components-snackbar-list__notice-container {\n  padding-top: 0;\n  pointer-events: auto;\n}\n\n.flow-bar__snackbar.components-snackbar {\n  cursor: default;\n  min-height: 32px;\n  max-width: 360px;\n}\n\n.flow-bar__snackbar .components-snackbar__content {\n  display: block;\n}\n\n.flow-bar__snackbar-link {\n  display: block;\n  margin-top: 4px;\n  color: #fff;\n  font-weight: 600;\n  text-decoration: underline;\n}\n.flow-bar__snackbar-link:hover, .flow-bar__snackbar-link:focus {\n  color: #fff;\n  opacity: 0.85;\n}\n\n@media (max-width: 782px) {\n  .flow-bar {\n    padding: 0 8px 0 0;\n    gap: 4px;\n  }\n  .flow-bar__wp-logo, .flow-bar__wp-logo-back {\n    width: 48px;\n  }\n  .flow-bar__brand-logo {\n    padding: 8px;\n  }\n  .flow-bar__edit-post.components-button, .flow-bar__title, .flow-bar__meta, .flow-bar__badge {\n    display: none !important;\n  }\n  .flow-bar__right {\n    gap: 6px;\n  }\n  .flow-bar__actions {\n    gap: 6px;\n  }\n  .flow-bar__btn--request-changes.components-button, .flow-bar__btn--revoke.components-button {\n    padding-left: 10px !important;\n    padding-right: 10px !important;\n  }\n}\n@media (max-width: 782px) {\n  .flow-bar {\n    gap: 2px;\n  }\n  .flow-bar .flow-bar__comments-toggle.components-button,\n  .flow-bar .flow-bar__activity-toggle.components-button,\n  .flow-bar .flow-bar__view-dropdown .components-button {\n    justify-content: center;\n    width: 48px;\n    min-width: 48px;\n    height: 48px;\n    padding: 0 !important;\n  }\n  .flow-bar .flow-bar__comments-toggle.components-button svg,\n  .flow-bar .flow-bar__activity-toggle.components-button svg,\n  .flow-bar .flow-bar__view-dropdown .components-button svg {\n    width: 32px;\n    height: 32px;\n    margin: 0;\n  }\n  .flow-bar__right,\n  .flow-bar__actions {\n    gap: 4px !important;\n  }\n}\n.flow-bar__action-stack {\n  display: flex;\n  align-items: center;\n  gap: 8px;\n}\n\n@media (max-width: 782px) {\n  .flow-bar__action-stack {\n    display: none;\n  }\n}\n.flow-bar__action-group {\n  display: contents;\n}\n\n@media (max-width: 782px) {\n  .flow-bar:not(.flow-bar--site-review) .flow-bar__action-group {\n    display: none;\n  }\n  .flow-bar--comments-open:not(.flow-bar--site-review) .flow-bar__action-group {\n    position: fixed;\n    right: 0;\n    bottom: var(--flow-ew-upsell-bar-height, 0px);\n    width: 80vw;\n    display: flex;\n    gap: 8px;\n    padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));\n    border-top: 1px solid #e0e0e0;\n    background: #fff;\n  }\n  .flow-bar--comments-open:not(.flow-bar--site-review) .flow-bar__action-group .flow-bar__actions {\n    flex: 1 1 auto;\n    display: flex;\n    gap: 8px;\n  }\n  .flow-bar--comments-open:not(.flow-bar--site-review) .flow-bar__action-group .components-button {\n    flex: 1 1 0;\n    justify-content: center;\n    height: 40px;\n  }\n}\n@media (max-width: 782px) {\n  :host([data-nav-locked]) .flow-bar__view-dropdown-wrap {\n    position: relative;\n  }\n  :host([data-nav-locked]) .flow-bar__view-dropdown-wrap::after {\n    content: \"!\";\n    position: absolute;\n    top: 5px;\n    right: 5px;\n    width: 13px;\n    height: 13px;\n    border-radius: 50%;\n    background: #dba617;\n    box-shadow: 0 0 0 2px #fff;\n    color: #fff;\n    font-size: 10px;\n    font-weight: 700;\n    line-height: 13px;\n    text-align: center;\n    pointer-events: none;\n  }\n}";
+module.exports = "/*\n * Flow Review — Top Bar styles.\n * Injected into Shadow root #1. Fully isolated from theme CSS.\n * wp-components styles are cloned in from document.head at mount time.\n */\n.flow-confirm-dialog {\n  position: fixed;\n  inset: 0;\n  z-index: 1000003;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  padding: 16px;\n}\n\n.flow-confirm-dialog__backdrop {\n  position: absolute;\n  inset: 0;\n  margin: 0;\n  padding: 0;\n  border: 0;\n  background: rgba(0, 0, 0, 0.45);\n  cursor: default;\n}\n\n.flow-confirm-dialog__panel {\n  position: relative;\n  width: 100%;\n  max-width: min(420px, 100% - 32px);\n  font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Oxygen-Sans, Ubuntu, Cantarell, \"Helvetica Neue\", sans-serif;\n  font-size: 13px;\n  line-height: 1.4;\n  color: #c92122;\n  background: #ffebea;\n  border: 1px solid #ffd1d0;\n  border-left-width: 4px;\n  border-left-color: #c92122;\n  border-radius: 2px;\n  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16);\n}\n\n.flow-confirm-dialog__alert {\n  display: flex;\n  align-items: flex-start;\n  gap: 12px;\n  padding: 12px 16px;\n}\n\n.flow-confirm-dialog__icon {\n  display: flex;\n  flex-shrink: 0;\n  align-items: center;\n  justify-content: center;\n  width: 24px;\n  height: 24px;\n  color: #c92122;\n}\n.flow-confirm-dialog__icon svg {\n  display: block;\n  width: 24px;\n  height: 24px;\n}\n\n.flow-confirm-dialog__content {\n  flex: 1 1 auto;\n  min-width: 0;\n}\n\n.flow-confirm-dialog__title {\n  margin: 0 0 2px;\n  font-size: inherit;\n  font-weight: 600;\n  line-height: inherit;\n  color: inherit;\n}\n\n.flow-confirm-dialog__message {\n  margin: 0;\n  font-size: inherit;\n  font-weight: 400;\n  line-height: inherit;\n  color: inherit;\n}\n\n.flow-confirm-dialog__actions {\n  display: flex;\n  justify-content: flex-end;\n  gap: 8px;\n  padding: 0 16px 12px;\n}\n.flow-confirm-dialog__actions .components-button {\n  flex: 0 0 auto;\n  white-space: nowrap;\n}\n\n.flow-confirm-dialog__confirm.components-button {\n  min-width: 80px;\n  justify-content: center;\n  background: #c92122 !important;\n  border: 1px solid #c92122 !important;\n  color: #fff !important;\n  box-shadow: none !important;\n}\n.flow-confirm-dialog__confirm.components-button:hover:not(:disabled), .flow-confirm-dialog__confirm.components-button:active:not(:disabled) {\n  background: #b32d2e !important;\n  border-color: #b32d2e !important;\n  color: #fff !important;\n}\n.flow-confirm-dialog__confirm.components-button:focus:not(:disabled) {\n  box-shadow: 0 0 0 var(--wp-admin-border-width-focus, 2px) #fff, 0 0 0 calc(var(--wp-admin-border-width-focus, 2px) + 1px) #c92122 !important;\n  outline: 1px solid transparent;\n}\n\n.flow-confirm-dialog__panel--warning {\n  color: #1e1e1e;\n  background: #fcf0ce;\n  border-color: #f2dda4;\n  border-left-color: #dba617;\n}\n.flow-confirm-dialog__panel--warning .flow-confirm-dialog__icon {\n  color: #957500;\n}\n.flow-confirm-dialog__panel--warning .flow-confirm-dialog__confirm.components-button {\n  background: #dba617 !important;\n  border-color: #dba617 !important;\n  color: #1d2327 !important;\n}\n.flow-confirm-dialog__panel--warning .flow-confirm-dialog__confirm.components-button:hover:not(:disabled), .flow-confirm-dialog__panel--warning .flow-confirm-dialog__confirm.components-button:active:not(:disabled) {\n  background: #c4950f !important;\n  border-color: #c4950f !important;\n  color: #1d2327 !important;\n}\n.flow-confirm-dialog__panel--warning .flow-confirm-dialog__confirm.components-button:focus:not(:disabled) {\n  box-shadow: 0 0 0 var(--wp-admin-border-width-focus, 2px) #fff, 0 0 0 calc(var(--wp-admin-border-width-focus, 2px) + 1px) #dba617 !important;\n}\n\n.flow-confirm-dialog__panel--neutral {\n  color: #1e1e1e;\n  background: #fff;\n  border-color: #e0e0e0;\n  border-left-width: 1px;\n  border-left-color: #e0e0e0;\n  max-width: min(480px, 100% - 32px);\n}\n.flow-confirm-dialog__panel--neutral .flow-confirm-dialog__title {\n  margin-bottom: 8px;\n}\n\n.flow-revisions {\n  display: flex;\n  flex-direction: column;\n  max-height: min(360px, 60vh);\n  margin: 0;\n  padding: 0;\n  overflow-y: auto;\n  list-style: none;\n}\n.flow-revisions li {\n  margin: 0;\n}\n\n.flow-revisions__item {\n  display: flex;\n  flex-wrap: wrap;\n  align-items: center;\n  gap: 4px 8px;\n  padding: 8px;\n  border-radius: 2px;\n  color: #1e1e1e;\n  text-decoration: none;\n}\n.flow-revisions__item:hover, .flow-revisions__item:focus-visible {\n  background: #f6f7f7;\n}\n.flow-revisions__item.is-viewing {\n  background: #f6f7f7;\n  font-weight: 600;\n}\n\n.flow-revisions__date {\n  font-variant-numeric: tabular-nums;\n}\n\n.flow-revisions__tag {\n  padding: 0 6px;\n  border: 1px solid #e0e0e0;\n  border-radius: 10px;\n  font-size: 11px;\n  font-weight: 500;\n  color: #757575;\n}\n\n.flow-revisions__resolved {\n  margin-left: auto;\n  font-size: 12px;\n  color: #757575;\n}\n\n*,\n*::before,\n*::after {\n  box-sizing: border-box;\n}\n\n:host {\n  display: block;\n  position: fixed;\n  top: 0;\n  left: 0;\n  right: 0;\n  height: 64px;\n  z-index: 999999;\n  font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Oxygen-Sans, Ubuntu, Cantarell, \"Helvetica Neue\", sans-serif;\n  font-size: 13px;\n  line-height: 1.4;\n  color: #1e1e1e;\n  -webkit-font-smoothing: antialiased;\n  -moz-osx-font-smoothing: grayscale;\n}\n\nbutton,\ninput,\nselect,\ntextarea {\n  font-family: inherit;\n  font-size: inherit;\n  line-height: inherit;\n  color: inherit;\n}\n\n.components-button {\n  font-weight: 600;\n}\n\n.flow-bar {\n  height: 64px;\n  background: #fff;\n  border-bottom: 1px solid #e0e0e0;\n  display: flex;\n  align-items: center;\n  padding: 0 16px 0 0;\n  position: relative;\n}\n.flow-bar__left {\n  display: flex;\n  align-items: center;\n  gap: 10px;\n  min-width: 0;\n  flex: 1;\n}\n.flow-bar__right {\n  display: flex;\n  align-items: center;\n  gap: 8px;\n  flex-shrink: 0;\n}\n.flow-bar__wp-logo {\n  position: relative;\n  flex-shrink: 0;\n  width: 64px;\n  height: 64px;\n  overflow: hidden;\n}\n.flow-bar__wp-logo-link {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  width: 100%;\n  height: 100%;\n  color: #fff;\n  text-decoration: none;\n}\n.flow-bar__wp-logo-link:hover, .flow-bar__wp-logo-link:active {\n  color: #fff;\n}\n.flow-bar__wp-logo-link:focus {\n  box-shadow: none;\n  outline: none;\n}\n.flow-bar__wp-logo-icon {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  width: 100%;\n  height: 100%;\n  clip-path: inset(0% round 0px);\n  transition: clip-path 0.2s ease;\n}\n.flow-bar__wp-logo-icon svg {\n  fill: currentColor;\n  display: block;\n  background: #1e1e1e;\n  padding: 12px;\n  width: 100%;\n  height: 100%;\n}\n.flow-bar__wp-logo-icon .flow-bar__brand-logo {\n  box-sizing: border-box;\n  display: block;\n  height: 100%;\n  object-fit: contain;\n  padding: 12px;\n  width: 100%;\n}\n.flow-bar__wp-logo--custom.flow-bar__wp-logo--bg-dark .flow-bar__wp-logo-icon {\n  background: #1e1e1e;\n}\n.flow-bar__wp-logo--custom.flow-bar__wp-logo--bg-light::after {\n  content: \"\";\n  position: absolute;\n  top: 0;\n  right: 0;\n  bottom: 0;\n  width: 1px;\n  background: #e0e0e0;\n  pointer-events: none;\n}\n.flow-bar__wp-logo--custom.flow-bar__wp-logo--bg-light .flow-bar__wp-logo-icon {\n  background: #fff;\n}\n.flow-bar__wp-logo-back {\n  position: absolute;\n  top: 0;\n  left: 0;\n  width: 64px;\n  height: 64px;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  background-color: #ccc;\n  color: #1e1e1e;\n  pointer-events: none;\n  opacity: 0;\n  transform: scale(0.2);\n  clip-path: inset(0% round 0px);\n  transition: opacity 0.2s ease, transform 0.2s ease, clip-path 0.2s ease;\n}\n.flow-bar__wp-logo-back svg {\n  fill: currentColor;\n}\n.flow-bar__wp-logo:not(.flow-bar__wp-logo--static):hover .flow-bar__wp-logo-icon, .flow-bar__wp-logo:focus-within .flow-bar__wp-logo-icon {\n  clip-path: inset(22% round 2px);\n}\n.flow-bar__wp-logo:hover .flow-bar__wp-logo-back, .flow-bar__wp-logo:focus-within .flow-bar__wp-logo-back {\n  opacity: 1;\n  transform: scale(1);\n  clip-path: inset(22% round 2px);\n}\n.flow-bar__sidebar-toggle.components-button, .flow-bar__comments-toggle.components-button, .flow-bar__edit-post.components-button {\n  height: 32px;\n  min-width: 32px;\n  padding: 4px;\n  flex-shrink: 0;\n  border-radius: 2px;\n  color: #1e1e1e;\n}\n.flow-bar__sidebar-toggle.components-button svg, .flow-bar__comments-toggle.components-button svg, .flow-bar__edit-post.components-button svg {\n  fill: currentColor;\n}\n.flow-bar__sidebar-toggle.components-button:focus:not(:disabled), .flow-bar__comments-toggle.components-button:focus:not(:disabled), .flow-bar__edit-post.components-button:focus:not(:disabled) {\n  box-shadow: 0 0 0 var(--wp-admin-border-width-focus, 2px) var(--wp-admin-theme-color, #007cba), inset 0 0 0 1px #fff;\n  outline: 1px solid transparent;\n}\n.flow-bar__edit-post.components-button {\n  text-decoration: none;\n  border: 1px solid #1e1e1e;\n  box-shadow: none;\n}\n.flow-bar__edit-post.components-button:hover:not(:disabled), .flow-bar__edit-post.components-button:active:not(:disabled), .flow-bar__edit-post.components-button:visited {\n  color: #1e1e1e;\n}\n.flow-bar__edit-post.components-button:hover:not(:disabled) {\n  background: #f6f7f7;\n}\n.flow-bar__sidebar-toggle.components-button.is-pressed, .flow-bar__comments-toggle.components-button.is-pressed {\n  background: #1e1e1e;\n  color: #fff;\n}\n.flow-bar__badge {\n  display: inline-flex;\n  align-items: center;\n  flex-shrink: 0;\n  gap: 4px;\n  font-size: 11px;\n  font-weight: 500;\n  line-height: 1.4;\n  padding: 2px 8px;\n  border-radius: 10px;\n  white-space: nowrap;\n  color: #5e777b;\n  background: #e6f3f5;\n  border: 1px solid #cde3e7;\n}\n.flow-bar__badge__dot {\n  width: 5px;\n  height: 5px;\n  border-radius: 50%;\n  background: currentColor;\n  flex-shrink: 0;\n}\n.flow-bar__badge--in_review {\n  color: #957500;\n  background: #fcf0ce;\n  border-color: #f2dda4;\n}\n.flow-bar__badge--approved {\n  color: #458037;\n  background: #e7f5e4;\n  border-color: #cae8c4;\n}\n.flow-bar__badge--changes_requested {\n  color: #c92122;\n  background: #ffebea;\n  border-color: #ffd1d0;\n}\n.flow-bar__badge--open_review {\n  color: #1579a5;\n  background: #dff4ff;\n  border-color: #b6e6ff;\n}\n.flow-bar__badge--self_review {\n  color: #5b3fa6;\n  background: #efe9fb;\n  border-color: #d9ccf4;\n}\n.flow-bar__badge--cancelled {\n  color: #50575e;\n  background: #f0f0f1;\n  border-color: #dcdcde;\n}\n.flow-bar__title {\n  display: flex;\n  align-items: baseline;\n  gap: 0.35em;\n  min-width: 0;\n  font-size: 14px;\n  line-height: 1.35;\n  white-space: nowrap;\n  overflow: hidden;\n}\n.flow-bar__title-prefix {\n  flex-shrink: 0;\n  color: #757575;\n  font-weight: 400;\n}\n.flow-bar__title-name, .flow-bar__title-type {\n  font-weight: 600;\n  color: #1e1e1e;\n}\n.flow-bar__title-name {\n  flex: 0 1 auto;\n  min-width: 0;\n  max-width: min(22ch, 18vw);\n  overflow: hidden;\n  text-overflow: ellipsis;\n}\n.flow-bar__title-type {\n  flex-shrink: 0;\n}\n.flow-bar__title-suffix {\n  flex-shrink: 0;\n  display: inline-flex;\n  align-items: baseline;\n  gap: 0.35em;\n}\n.flow-bar__title-dot {\n  color: #757575;\n  font-weight: 400;\n}\n.flow-bar__title--simple {\n  display: block;\n  font-weight: 500;\n  color: #1e1e1e;\n  text-overflow: ellipsis;\n}\n.flow-bar__meta {\n  position: absolute;\n  left: 50%;\n  transform: translateX(-50%);\n  max-width: 42%;\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  gap: 3px;\n  text-align: center;\n  pointer-events: none;\n}\n.flow-bar__latest-link {\n  font-size: 11px;\n  font-weight: 600;\n  color: #458037;\n  text-decoration: underline;\n  white-space: nowrap;\n  pointer-events: auto;\n}\n.flow-bar__latest-link:hover, .flow-bar__latest-link:focus {\n  color: #36662b;\n}\n.flow-bar__revisions-link {\n  margin: 0;\n  padding: 0;\n  border: 0;\n  background: none;\n  font-family: inherit;\n  font-size: 11px;\n  font-weight: 500;\n  color: var(--wp-admin-theme-color, #2271b1);\n  text-decoration: underline;\n  white-space: nowrap;\n  cursor: pointer;\n  pointer-events: auto;\n}\n.flow-bar__revisions-link:hover, .flow-bar__revisions-link:focus {\n  color: var(--wp-admin-theme-color-darker-10, #135e96);\n}\n.flow-bar__nav-lock {\n  color: #957500;\n  background: #fcf0ce;\n  border: 0;\n  margin: 0;\n  padding: 2px 6px 2px 8px;\n  font-family: inherit;\n  line-height: inherit;\n  cursor: pointer;\n  pointer-events: auto;\n}\n.flow-bar__nav-lock:hover, .flow-bar__nav-lock:focus-visible {\n  filter: brightness(0.96);\n}\n.flow-bar__nav-lock:focus-visible {\n  outline: 2px solid currentColor;\n  outline-offset: 1px;\n}\n.flow-bar__nav-lock svg {\n  height: 14px;\n  width: 14px;\n}\n.flow-bar__nav-lock-off {\n  fill: currentColor;\n  opacity: 0.8;\n}\n.flow-bar__freshness-row {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  flex-wrap: nowrap;\n  gap: 6px;\n  max-width: 100%;\n}\n.flow-bar__freshness {\n  display: inline-flex;\n  align-items: center;\n  gap: 4px;\n  font-size: 11px;\n  font-weight: 500;\n  padding: 2px 8px;\n  border-radius: 10px;\n  white-space: nowrap;\n}\n.flow-bar__freshness--latest {\n  color: #458037;\n  background: #e7f5e4;\n}\n.flow-bar__freshness--outdated {\n  color: #957500;\n  background: #fcf0ce;\n}\n.flow-bar__freshness--debug {\n  color: #957500;\n  background: #fcf0ce;\n}\n.flow-bar__freshness--cancelled {\n  color: #50575e;\n  background: #f0f0f1;\n}\n.flow-bar__freshness-icon {\n  display: inline-flex;\n  flex-shrink: 0;\n  width: 14px;\n  height: 14px;\n}\n.flow-bar__freshness-icon svg {\n  display: block;\n  width: 14px;\n  height: 14px;\n}\n.flow-bar__freshness-link {\n  color: var(--wp-admin-theme-color, #2271b1);\n  text-decoration: underline;\n  cursor: pointer;\n  pointer-events: auto;\n}\n.flow-bar__freshness-link:hover, .flow-bar__freshness-link:focus {\n  color: var(--wp-admin-theme-color-darker-10, #135e96);\n}\n.flow-bar__freshness-snapshot {\n  font-size: 10px;\n  color: #757575;\n  white-space: nowrap;\n  overflow: hidden;\n  text-overflow: ellipsis;\n  max-width: 100%;\n}\n.flow-bar__actions {\n  display: flex;\n  align-items: center;\n  gap: 8px;\n  flex-shrink: 0;\n}\n.flow-bar__btn--request-changes.components-button {\n  background: transparent !important;\n  border: 1px solid #d63638 !important;\n  color: #d63638 !important;\n  box-shadow: none !important;\n}\n.flow-bar__btn--request-changes.components-button:hover:not(:disabled), .flow-bar__btn--request-changes.components-button:active:not(:disabled) {\n  background: #fcf0f1 !important;\n  border-color: #b32d2e !important;\n  color: #b32d2e !important;\n}\n.flow-bar__btn--request-changes.components-button:focus:not(:disabled) {\n  box-shadow: 0 0 0 var(--wp-admin-border-width-focus, 2px) #fff, 0 0 0 calc(var(--wp-admin-border-width-focus, 2px) + 1px) #d63638 !important;\n  outline: 1px solid transparent;\n}\n.flow-bar__btn--request-changes.flow-bar__btn--cancel-review.components-button {\n  border-color: #d63638 !important;\n  color: #d63638 !important;\n}\n.flow-bar__btn--request-changes.flow-bar__btn--cancel-review.components-button:hover:not(:disabled), .flow-bar__btn--request-changes.flow-bar__btn--cancel-review.components-button:active:not(:disabled) {\n  background: #fcf0f1 !important;\n  border-color: #b32d2e !important;\n  color: #b32d2e !important;\n}\n.flow-bar__btn--request-changes.flow-bar__btn--cancel-review.components-button:focus:not(:disabled) {\n  box-shadow: 0 0 0 var(--wp-admin-border-width-focus, 2px) #fff, 0 0 0 calc(var(--wp-admin-border-width-focus, 2px) + 1px) #d63638 !important;\n}\n.flow-bar__btn--revoke.components-button {\n  background: #d63638 !important;\n  border-color: #d63638 !important;\n  color: #fff !important;\n  box-shadow: none !important;\n}\n.flow-bar__btn--revoke.components-button:hover:not(:disabled), .flow-bar__btn--revoke.components-button:active:not(:disabled) {\n  background: #b32d2e !important;\n  border-color: #b32d2e !important;\n  color: #fff !important;\n}\n.flow-bar__btn--revoke.components-button:focus:not(:disabled) {\n  box-shadow: 0 0 0 var(--wp-admin-border-width-focus, 2px) #fff, 0 0 0 calc(var(--wp-admin-border-width-focus, 2px) + 1px) #d63638 !important;\n  outline: 1px solid transparent;\n}\n.flow-bar__btn--revoke.components-button:disabled, .flow-bar__btn--revoke.components-button[aria-disabled=true] {\n  background: #f6f7f7 !important;\n  border-color: #ddd !important;\n  color: #8c8f94 !important;\n  opacity: 1 !important;\n  cursor: not-allowed;\n}\n\n.flow-bar__view-dropdown {\n  margin: 0;\n}\n\n@media (max-width: 1600px) {\n  .flow-bar__meta {\n    position: static;\n    transform: none;\n    max-width: none;\n    flex-direction: row;\n    align-items: center;\n    gap: 6px;\n    text-align: right;\n    pointer-events: auto;\n  }\n  .flow-bar__freshness-snapshot {\n    display: none;\n  }\n}\n@media (max-width: 1400px) {\n  .flow-bar__title-prefix,\n  .flow-bar__title-suffix {\n    display: none;\n  }\n  .flow-bar__edit-post.components-button {\n    display: none !important;\n  }\n}\n.flow-bar__snackbar-list.components-snackbar-list {\n  position: fixed;\n  left: 16px;\n  bottom: calc(16px + var(--flow-ew-upsell-bar-height, 0px));\n  width: auto;\n  max-width: min(420px, 100vw - 32px);\n  pointer-events: none;\n  z-index: 1000000;\n}\n\n.flow-bar__snackbar-list .components-snackbar-list__notice-container {\n  padding-top: 0;\n  pointer-events: auto;\n}\n\n.flow-bar__snackbar.components-snackbar {\n  cursor: default;\n  min-height: 32px;\n  max-width: 360px;\n}\n\n.flow-bar__snackbar .components-snackbar__content {\n  display: block;\n}\n\n.flow-bar__snackbar-link {\n  display: block;\n  margin-top: 4px;\n  color: #fff;\n  font-weight: 600;\n  text-decoration: underline;\n}\n.flow-bar__snackbar-link:hover, .flow-bar__snackbar-link:focus {\n  color: #fff;\n  opacity: 0.85;\n}\n\n@media (max-width: 782px) {\n  .flow-bar {\n    padding: 0 8px 0 0;\n    gap: 4px;\n  }\n  .flow-bar__wp-logo, .flow-bar__wp-logo-back {\n    width: 48px;\n  }\n  .flow-bar__brand-logo {\n    padding: 8px;\n  }\n  .flow-bar__edit-post.components-button, .flow-bar__title, .flow-bar__meta, .flow-bar__badge {\n    display: none !important;\n  }\n  .flow-bar__right {\n    gap: 6px;\n  }\n  .flow-bar__actions {\n    gap: 6px;\n  }\n  .flow-bar__btn--request-changes.components-button, .flow-bar__btn--revoke.components-button {\n    padding-left: 10px !important;\n    padding-right: 10px !important;\n  }\n}\n@media (max-width: 782px) {\n  .flow-bar {\n    gap: 2px;\n  }\n  .flow-bar .flow-bar__comments-toggle.components-button,\n  .flow-bar .flow-bar__activity-toggle.components-button,\n  .flow-bar .flow-bar__view-dropdown .components-button {\n    justify-content: center;\n    width: 48px;\n    min-width: 48px;\n    height: 48px;\n    padding: 0 !important;\n  }\n  .flow-bar .flow-bar__comments-toggle.components-button svg,\n  .flow-bar .flow-bar__activity-toggle.components-button svg,\n  .flow-bar .flow-bar__view-dropdown .components-button svg {\n    width: 32px;\n    height: 32px;\n    margin: 0;\n  }\n  .flow-bar__right,\n  .flow-bar__actions {\n    gap: 4px !important;\n  }\n}\n.flow-bar__action-stack {\n  display: flex;\n  align-items: center;\n  gap: 8px;\n}\n\n@media (max-width: 782px) {\n  .flow-bar__action-stack {\n    display: none;\n  }\n}\n.flow-bar__action-group {\n  display: contents;\n}\n\n@media (max-width: 782px) {\n  .flow-bar:not(.flow-bar--site-review) .flow-bar__action-group {\n    display: none;\n  }\n  .flow-bar--comments-open:not(.flow-bar--site-review) .flow-bar__action-group {\n    position: fixed;\n    right: 0;\n    bottom: var(--flow-ew-upsell-bar-height, 0px);\n    width: 80vw;\n    display: flex;\n    gap: 8px;\n    padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));\n    border-top: 1px solid #e0e0e0;\n    background: #fff;\n  }\n  .flow-bar--comments-open:not(.flow-bar--site-review) .flow-bar__action-group .flow-bar__actions {\n    flex: 1 1 auto;\n    display: flex;\n    gap: 8px;\n  }\n  .flow-bar--comments-open:not(.flow-bar--site-review) .flow-bar__action-group .components-button {\n    flex: 1 1 0;\n    justify-content: center;\n    height: 40px;\n  }\n}\n@media (max-width: 782px) {\n  :host([data-nav-locked]) .flow-bar__view-dropdown-wrap {\n    position: relative;\n  }\n  :host([data-nav-locked]) .flow-bar__view-dropdown-wrap::after {\n    content: \"!\";\n    position: absolute;\n    top: 5px;\n    right: 5px;\n    width: 13px;\n    height: 13px;\n    border-radius: 50%;\n    background: #dba617;\n    box-shadow: 0 0 0 2px #fff;\n    color: #fff;\n    font-size: 10px;\n    font-weight: 700;\n    line-height: 13px;\n    text-align: center;\n    pointer-events: none;\n  }\n}";
 
 /***/ },
 
@@ -10995,7 +12169,7 @@ module.exports = "/*\n * Flow Review — Top Bar styles.\n * Injected into Shado
   \******************************************/
 (module) {
 
-module.exports = "/**\n * Flow Editorial Workflow — Inline comment popover styles.\n * Mounted into a Shadow DOM root (see src/review-page/index.js → mountInShadow),\n * so theme / page-builder CSS in the parent document cannot leak in.\n */\n.flow-confirm-dialog {\n  position: fixed;\n  inset: 0;\n  z-index: 1000003;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  padding: 16px;\n}\n\n.flow-confirm-dialog__backdrop {\n  position: absolute;\n  inset: 0;\n  margin: 0;\n  padding: 0;\n  border: 0;\n  background: rgba(0, 0, 0, 0.45);\n  cursor: default;\n}\n\n.flow-confirm-dialog__panel {\n  position: relative;\n  width: 100%;\n  max-width: min(420px, 100% - 32px);\n  font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Oxygen-Sans, Ubuntu, Cantarell, \"Helvetica Neue\", sans-serif;\n  font-size: 13px;\n  line-height: 1.4;\n  color: #c92122;\n  background: #ffebea;\n  border: 1px solid #ffd1d0;\n  border-left-width: 4px;\n  border-left-color: #c92122;\n  border-radius: 2px;\n  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16);\n}\n\n.flow-confirm-dialog__alert {\n  display: flex;\n  align-items: flex-start;\n  gap: 12px;\n  padding: 12px 16px;\n}\n\n.flow-confirm-dialog__icon {\n  display: flex;\n  flex-shrink: 0;\n  align-items: center;\n  justify-content: center;\n  width: 24px;\n  height: 24px;\n  color: #c92122;\n}\n.flow-confirm-dialog__icon svg {\n  display: block;\n  width: 24px;\n  height: 24px;\n}\n\n.flow-confirm-dialog__content {\n  flex: 1 1 auto;\n  min-width: 0;\n}\n\n.flow-confirm-dialog__title {\n  margin: 0 0 2px;\n  font-size: inherit;\n  font-weight: 600;\n  line-height: inherit;\n  color: inherit;\n}\n\n.flow-confirm-dialog__message {\n  margin: 0;\n  font-size: inherit;\n  font-weight: 400;\n  line-height: inherit;\n  color: inherit;\n}\n\n.flow-confirm-dialog__actions {\n  display: flex;\n  justify-content: flex-end;\n  gap: 8px;\n  padding: 0 16px 12px;\n}\n.flow-confirm-dialog__actions .components-button {\n  flex: 0 0 auto;\n  white-space: nowrap;\n}\n\n.flow-confirm-dialog__confirm.components-button {\n  min-width: 80px;\n  justify-content: center;\n  background: #c92122 !important;\n  border: 1px solid #c92122 !important;\n  color: #fff !important;\n  box-shadow: none !important;\n}\n.flow-confirm-dialog__confirm.components-button:hover:not(:disabled), .flow-confirm-dialog__confirm.components-button:active:not(:disabled) {\n  background: #b32d2e !important;\n  border-color: #b32d2e !important;\n  color: #fff !important;\n}\n.flow-confirm-dialog__confirm.components-button:focus:not(:disabled) {\n  box-shadow: 0 0 0 var(--wp-admin-border-width-focus, 2px) #fff, 0 0 0 calc(var(--wp-admin-border-width-focus, 2px) + 1px) #c92122 !important;\n  outline: 1px solid transparent;\n}\n\n.flow-confirm-dialog__panel--warning {\n  color: #1e1e1e;\n  background: #fcf0ce;\n  border-color: #f2dda4;\n  border-left-color: #dba617;\n}\n.flow-confirm-dialog__panel--warning .flow-confirm-dialog__icon {\n  color: #957500;\n}\n.flow-confirm-dialog__panel--warning .flow-confirm-dialog__confirm.components-button {\n  background: #dba617 !important;\n  border-color: #dba617 !important;\n  color: #1d2327 !important;\n}\n.flow-confirm-dialog__panel--warning .flow-confirm-dialog__confirm.components-button:hover:not(:disabled), .flow-confirm-dialog__panel--warning .flow-confirm-dialog__confirm.components-button:active:not(:disabled) {\n  background: #c4950f !important;\n  border-color: #c4950f !important;\n  color: #1d2327 !important;\n}\n.flow-confirm-dialog__panel--warning .flow-confirm-dialog__confirm.components-button:focus:not(:disabled) {\n  box-shadow: 0 0 0 var(--wp-admin-border-width-focus, 2px) #fff, 0 0 0 calc(var(--wp-admin-border-width-focus, 2px) + 1px) #dba617 !important;\n}\n\n.flow-confirm-dialog__panel--neutral {\n  color: #1e1e1e;\n  background: #fff;\n  border-color: #e0e0e0;\n  border-left-width: 1px;\n  border-left-color: #e0e0e0;\n  max-width: min(480px, 100% - 32px);\n}\n.flow-confirm-dialog__panel--neutral .flow-confirm-dialog__title {\n  margin-bottom: 8px;\n}\n\n.flow-revisions {\n  display: flex;\n  flex-direction: column;\n  max-height: min(360px, 60vh);\n  margin: 0;\n  padding: 0;\n  overflow-y: auto;\n  list-style: none;\n}\n.flow-revisions li {\n  margin: 0;\n}\n\n.flow-revisions__item {\n  display: flex;\n  flex-wrap: wrap;\n  align-items: center;\n  gap: 4px 8px;\n  padding: 8px;\n  border-radius: 2px;\n  color: #1e1e1e;\n  text-decoration: none;\n}\n.flow-revisions__item:hover, .flow-revisions__item:focus-visible {\n  background: #f6f7f7;\n}\n.flow-revisions__item.is-viewing {\n  background: #f6f7f7;\n  font-weight: 600;\n}\n\n.flow-revisions__date {\n  font-variant-numeric: tabular-nums;\n}\n\n.flow-revisions__tag {\n  padding: 0 6px;\n  border: 1px solid #e0e0e0;\n  border-radius: 10px;\n  font-size: 11px;\n  font-weight: 500;\n  color: #757575;\n}\n\n.flow-revisions__resolved {\n  margin-left: auto;\n  font-size: 12px;\n  color: #757575;\n}\n\n.flow-btn--text.components-button {\n  background: transparent !important;\n  border: none !important;\n  box-shadow: none !important;\n  color: var(--wp-admin-theme-color, #007cba);\n}\n.flow-btn--text.components-button:hover:not(:disabled), .flow-btn--text.components-button:active:not(:disabled) {\n  color: var(--wp-admin-theme-color, #007cba);\n  background: #f0f6fc !important;\n}\n.flow-btn--text.components-button:focus:not(:disabled) {\n  box-shadow: 0 0 0 var(--wp-admin-border-width-focus, 2px) #fff, 0 0 0 calc(var(--wp-admin-border-width-focus, 2px) + 1px) var(--wp-admin-theme-color, #007cba) !important;\n  outline: 1px solid transparent;\n}\n.flow-btn--text.components-button:disabled, .flow-btn--text.components-button[aria-disabled=true] {\n  background: transparent !important;\n  border: none !important;\n  color: #8c8f94 !important;\n  opacity: 1 !important;\n}\n\n.flow-btn--cancel.components-button {\n  min-width: 80px !important;\n  text-decoration: underline;\n  text-underline-offset: 2px;\n}\n.flow-btn--cancel.components-button:hover:not(:disabled), .flow-btn--cancel.components-button:active:not(:disabled) {\n  text-decoration: none;\n}\n\n.flow-comment-editor__submit-btn.components-button {\n  background: transparent !important;\n  border: 1px solid var(--wp-admin-theme-color, #007cba) !important;\n  color: var(--wp-admin-theme-color, #007cba) !important;\n  box-shadow: none !important;\n}\n.flow-comment-editor__submit-btn.components-button:hover:not(:disabled), .flow-comment-editor__submit-btn.components-button:active:not(:disabled) {\n  background: #f0f6fc !important;\n  border-color: var(--wp-admin-theme-color, #007cba) !important;\n  color: var(--wp-admin-theme-color, #007cba) !important;\n}\n.flow-comment-editor__submit-btn.components-button:focus:not(:disabled) {\n  box-shadow: 0 0 0 var(--wp-admin-border-width-focus, 2px) #fff, 0 0 0 calc(var(--wp-admin-border-width-focus, 2px) + 1px) var(--wp-admin-theme-color, #007cba) !important;\n  outline: 1px solid transparent;\n}\n.flow-comment-editor__submit-btn.components-button:disabled, .flow-comment-editor__submit-btn.components-button[aria-disabled=true] {\n  background: transparent !important;\n  border-color: #dcdcde !important;\n  color: #757575 !important;\n  opacity: 1 !important;\n}\n\n.flow-inline-popover {\n  pointer-events: auto;\n}\n.flow-inline-popover__btn {\n  --popover-btn-bg: #fff;\n  display: flex;\n  align-items: center;\n  gap: 10px;\n  min-height: 44px;\n  padding: 10px 16px;\n  background: var(--popover-btn-bg);\n  color: var(--wp-admin-theme-color, #007cba);\n  border: 1px solid var(--wp-admin-theme-color, #007cba);\n  border-radius: 2px;\n  font-size: 18px;\n  font-weight: 400;\n  font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif;\n  cursor: pointer;\n  position: relative;\n  box-shadow: 0 2px 2px rgba(0, 0, 0, 0.06);\n  white-space: nowrap;\n  overflow: visible;\n  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;\n}\n.flow-inline-popover__btn:hover {\n  --popover-btn-bg: #f0f6fc;\n  background: var(--popover-btn-bg);\n  border-color: var(--wp-admin-theme-color, #007cba);\n  color: var(--wp-admin-theme-color, #007cba);\n}\n.flow-inline-popover__btn:focus-visible {\n  outline: 2px solid var(--wp-admin-theme-color, #007cba);\n  outline-offset: 2px;\n}\n.flow-inline-popover__btn::before {\n  content: \"\";\n  position: absolute;\n  top: calc(50% + var(--flow-caret-offset-y, 0px));\n  left: -6px;\n  z-index: 1;\n  width: 10px;\n  height: 10px;\n  box-sizing: border-box;\n  background: var(--popover-btn-bg);\n  border-left: 1px solid var(--wp-admin-theme-color, #007cba);\n  border-bottom: 1px solid var(--wp-admin-theme-color, #007cba);\n  transform: translateY(-50%) rotate(45deg);\n  transition: background 0.15s ease, border-color 0.15s ease;\n  pointer-events: none;\n}\n.flow-inline-popover__btn::after {\n  content: \"\";\n  position: absolute;\n  top: calc(50% + var(--flow-caret-offset-y, 0px));\n  left: 0;\n  z-index: 2;\n  width: 1px;\n  height: 14px;\n  background: var(--popover-btn-bg);\n  transform: translateY(-50%);\n  pointer-events: none;\n}\n.flow-inline-popover--flipped .flow-inline-popover__btn::before {\n  left: auto;\n  right: -6px;\n  border-left: 0;\n  border-bottom: 0;\n  border-top: 1px solid var(--wp-admin-theme-color, #007cba);\n  border-right: 1px solid var(--wp-admin-theme-color, #007cba);\n}\n.flow-inline-popover--flipped .flow-inline-popover__btn::after {\n  left: auto;\n  right: 0;\n}\n.flow-inline-popover--flipped .flow-inline-popover__editor-wrap::before {\n  left: auto;\n  right: -6px;\n  border-left: 0;\n  border-bottom: 0;\n  border-top: 1px solid #e0e0e0;\n  border-right: 1px solid #e0e0e0;\n}\n.flow-inline-popover--flipped .flow-inline-popover__editor-wrap::after {\n  left: auto;\n  right: 0;\n}\n.flow-inline-popover--below .flow-inline-popover__btn::before, .flow-inline-popover--below.flow-inline-popover--flipped .flow-inline-popover__btn::before {\n  top: -6px;\n  right: auto;\n  left: calc(50% + var(--flow-caret-offset-x, 0px));\n  border: 0;\n  border-left: 1px solid var(--wp-admin-theme-color, #007cba);\n  border-top: 1px solid var(--wp-admin-theme-color, #007cba);\n  transform: translateX(-50%) rotate(45deg);\n}\n.flow-inline-popover--below .flow-inline-popover__btn::after, .flow-inline-popover--below.flow-inline-popover--flipped .flow-inline-popover__btn::after {\n  top: 0;\n  right: auto;\n  left: calc(50% + var(--flow-caret-offset-x, 0px));\n  width: 14px;\n  height: 1px;\n  transform: translateX(-50%);\n}\n.flow-inline-popover--below.flow-inline-popover--above .flow-inline-popover__btn::before {\n  top: auto;\n  bottom: -6px;\n  border-left: 0;\n  border-top: 0;\n  border-right: 1px solid var(--wp-admin-theme-color, #007cba);\n  border-bottom: 1px solid var(--wp-admin-theme-color, #007cba);\n}\n.flow-inline-popover--below.flow-inline-popover--above .flow-inline-popover__btn::after {\n  top: auto;\n  bottom: 0;\n}\n.flow-inline-popover--below .flow-inline-popover__editor-wrap::before, .flow-inline-popover--below.flow-inline-popover--flipped .flow-inline-popover__editor-wrap::before {\n  top: -6px;\n  right: auto;\n  left: calc(50% + var(--flow-caret-offset-x, 0px));\n  border: 0;\n  border-left: 1px solid #e0e0e0;\n  border-top: 1px solid #e0e0e0;\n  transform: translateX(-50%) rotate(45deg);\n}\n.flow-inline-popover--below .flow-inline-popover__editor-wrap::after, .flow-inline-popover--below.flow-inline-popover--flipped .flow-inline-popover__editor-wrap::after {\n  top: 0;\n  right: auto;\n  left: calc(50% + var(--flow-caret-offset-x, 0px));\n  width: 14px;\n  height: 1px;\n  transform: translateX(-50%);\n}\n.flow-inline-popover--below.flow-inline-popover--above .flow-inline-popover__editor-wrap::before {\n  top: auto;\n  bottom: -6px;\n  border-left: 0;\n  border-top: 0;\n  border-right: 1px solid #e0e0e0;\n  border-bottom: 1px solid #e0e0e0;\n}\n.flow-inline-popover--below.flow-inline-popover--above .flow-inline-popover__editor-wrap::after {\n  top: auto;\n  bottom: 0;\n}\n.flow-inline-popover__btn-label {\n  font-size: 18px;\n  line-height: 1.2;\n}\n.flow-inline-popover__btn-icon {\n  width: 22px;\n  height: 22px;\n  color: var(--wp-admin-theme-color, #007cba);\n  flex: 0 0 auto;\n}\n.flow-inline-popover__btn-icon svg {\n  fill: currentColor;\n}\n.flow-inline-popover--editor {\n  width: min(380px, 100vw - 24px);\n}\n.flow-inline-popover__editor-wrap {\n  position: relative;\n  background: #fff;\n  border: 1px solid #e0e0e0;\n  border-radius: 4px;\n  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);\n  padding: 12px;\n}\n.flow-inline-popover__editor-wrap::before {\n  content: \"\";\n  position: absolute;\n  top: calc(50% + var(--flow-caret-offset-y, 0px));\n  left: -6px;\n  z-index: 1;\n  width: 10px;\n  height: 10px;\n  box-sizing: border-box;\n  background: #fff;\n  border-left: 1px solid #e0e0e0;\n  border-bottom: 1px solid #e0e0e0;\n  transform: translateY(-50%) rotate(45deg);\n  pointer-events: none;\n}\n.flow-inline-popover__editor-wrap::after {\n  content: \"\";\n  position: absolute;\n  top: calc(50% + var(--flow-caret-offset-y, 0px));\n  left: 0;\n  z-index: 2;\n  width: 1px;\n  height: 14px;\n  background: #fff;\n  transform: translateY(-50%);\n  pointer-events: none;\n}\n.flow-inline-popover__editor-wrap {\n  font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif;\n  font-size: 13px;\n  line-height: 1.4;\n  color: #1e1e1e;\n}\n.flow-inline-popover__editor-wrap .flow-comment-editor {\n  display: flex;\n  flex-direction: column;\n}\n.flow-inline-popover__editor-wrap .flow-comment-editor__toolbar {\n  display: flex;\n  align-items: stretch;\n  gap: 0;\n  padding: 0;\n  background: #fff;\n  border: 1px solid #1d2327;\n  border-bottom: 0;\n  border-radius: 2px 2px 0 0;\n  overflow-x: auto;\n  overflow-y: hidden;\n}\n.flow-inline-popover__editor-wrap .flow-comment-editor__toolbar .components-button {\n  min-width: 32px !important;\n  width: auto !important;\n  height: 36px !important;\n  padding: 0 6px !important;\n  border-radius: 0;\n  border-left: 1px solid #1d2327;\n  color: #1e1e1e;\n  box-shadow: none;\n  flex-shrink: 0;\n}\n.flow-inline-popover__editor-wrap .flow-comment-editor__toolbar .components-button:hover:not(:disabled) {\n  background: #f0f0f0;\n}\n.flow-inline-popover__editor-wrap .flow-comment-editor__toolbar .components-button.is-pressed:not(:disabled) {\n  background: #f0f6fc;\n  color: var(--wp-admin-theme-color, #007cba);\n}\n.flow-inline-popover__editor-wrap .flow-comment-editor__toolbar .components-button.is-small,\n.flow-inline-popover__editor-wrap .flow-comment-editor__toolbar .components-button[data-size=small] {\n  min-width: 32px !important;\n  width: auto !important;\n  height: 36px !important;\n  padding: 0 6px !important;\n  border-radius: 0;\n}\n.flow-inline-popover__editor-wrap .flow-comment-editor__toolbar-group {\n  display: flex;\n  align-items: stretch;\n  flex-shrink: 0;\n  border-left: 1px solid #1d2327;\n}\n.flow-inline-popover__editor-wrap .flow-comment-editor__toolbar-group .components-button {\n  border-left: 0;\n}\n.flow-inline-popover__editor-wrap .flow-comment-editor__block-select {\n  height: 36px;\n  padding: 0 10px;\n  border: 0;\n  border-radius: 0;\n  background: #fff;\n  font-size: 12px;\n  cursor: pointer;\n  flex-shrink: 0;\n  min-width: 84px;\n}\n.flow-inline-popover__editor-wrap .flow-comment-editor__block-select:hover {\n  background: #f0f0f0;\n}\n.flow-inline-popover__editor-wrap .flow-comment-editor__block-select:focus {\n  outline: none;\n  box-shadow: inset 0 0 0 2px var(--wp-admin-theme-color, #007cba);\n}\n.flow-inline-popover__editor-wrap .flow-comment-editor__toolbar-sep {\n  display: none;\n}\n.flow-inline-popover__editor-wrap .flow-comment-editor__content {\n  border: 1px solid #1d2327;\n  border-radius: 0 0 2px 2px;\n  background: #fff;\n  cursor: text;\n}\n.flow-inline-popover__editor-wrap .flow-comment-editor__content:focus-within {\n  border-color: var(--wp-admin-theme-color, #007cba);\n  box-shadow: 0 0 0 1px var(--wp-admin-theme-color, #007cba);\n}\n.flow-inline-popover__editor-wrap .flow-comment-editor__content .ProseMirror {\n  position: relative;\n  min-height: 75px;\n  max-height: 200px;\n  overflow-y: auto;\n  padding: 8px 10px;\n  line-height: 1.6;\n  outline: none;\n  word-break: break-word;\n}\n.flow-inline-popover__editor-wrap .flow-comment-editor__content .ProseMirror p.is-editor-empty:first-child::before {\n  content: attr(data-placeholder);\n  color: #949494;\n  pointer-events: none;\n  float: left;\n  height: 0;\n}\n.flow-inline-popover__editor-wrap .flow-comment-editor__content .ProseMirror ul, .flow-inline-popover__editor-wrap .flow-comment-editor__content .ProseMirror ol {\n  padding-left: 1.5em;\n  margin: 0.3em 0;\n}\n.flow-inline-popover__editor-wrap .flow-comment-editor__content .ProseMirror li {\n  margin: 0.1em 0;\n}\n.flow-inline-popover__editor-wrap .flow-comment-editor__content .ProseMirror a {\n  color: var(--wp-admin-theme-color, #007cba);\n  text-decoration: underline;\n}\n.flow-inline-popover__editor-wrap .flow-comment-editor__content .ProseMirror strong {\n  font-weight: 600;\n}\n.flow-inline-popover__editor-wrap .flow-comment-editor__content .ProseMirror em {\n  font-style: italic;\n}\n.flow-inline-popover__editor-wrap .flow-comment-editor--basic .flow-comment-editor__content {\n  border-radius: 2px;\n}\n.flow-inline-popover__editor-wrap .flow-comment-editor__textarea {\n  display: block;\n  width: 100%;\n  min-height: 75px;\n  max-height: 200px;\n  margin: 0;\n  padding: 8px 10px;\n  border: 0;\n  border-radius: inherit;\n  background: #fff;\n  font-family: inherit;\n  font-size: 13px;\n  line-height: 1.6;\n  resize: vertical;\n  box-sizing: border-box;\n  outline: none;\n  color: #1e1e1e;\n}\n.flow-inline-popover__editor-wrap .flow-comment-editor__textarea::placeholder {\n  color: #949494;\n}\n.flow-inline-popover__editor-wrap .flow-comment-editor__link-row {\n  display: flex;\n  align-items: center;\n  gap: 4px;\n  padding: 4px 6px;\n  background: #f6f7f7;\n  border: 1px solid #1d2327;\n  border-top: none;\n  border-bottom: none;\n}\n.flow-inline-popover__editor-wrap .flow-comment-editor__link-input {\n  flex: 1;\n  height: 28px;\n  padding: 0 6px;\n  border: 1px solid #949494;\n  border-radius: 2px;\n  background: #fff;\n  font-size: 12px;\n}\n.flow-inline-popover__editor-wrap .flow-comment-editor__link-input:focus {\n  outline: none;\n  border-color: var(--wp-admin-theme-color, #007cba);\n  box-shadow: 0 0 0 1px var(--wp-admin-theme-color, #007cba);\n}\n.flow-inline-popover__editor-wrap .flow-comment-editor__submit-row {\n  display: flex;\n  gap: 8px;\n  margin-top: 10px;\n  justify-content: flex-start;\n  flex-wrap: wrap;\n}\n.flow-inline-popover__editor-wrap .flow-comment-editor__submit-row .flow-comment-editor__submit-btn.components-button {\n  flex: 0 0 auto;\n  min-width: 100px;\n  justify-content: center;\n}\n.flow-inline-popover__editor-wrap .flow-comment-editor__submit-row .flow-btn--cancel.components-button {\n  flex: 0 0 auto;\n  min-width: 80px !important;\n  justify-content: center;\n}\n.flow-inline-popover__editor-wrap .flow-comment-editor__submit-row .flow-comment-editor__submit-btn:disabled,\n.flow-inline-popover__editor-wrap .flow-comment-editor__submit-row .flow-comment-editor__submit-btn[aria-disabled=true] {\n  background: transparent !important;\n  border-color: #dcdcde !important;\n  color: #757575 !important;\n  opacity: 1 !important;\n}\n.flow-inline-popover__editor-wrap .flow-comment-editor__error {\n  margin: 8px 0 0;\n  padding: 6px 10px;\n  background: #fcf0f1;\n  border: 1px solid #cc1818;\n  border-radius: 2px;\n  color: #cc1818;\n  font-size: 12px;\n}\n.flow-inline-popover__anchor-label {\n  font-size: 12px;\n  font-style: italic;\n  color: #757575;\n  margin-bottom: 8px;\n  padding: 6px 10px;\n  background: #f6f7f7;\n  border-radius: 2px;\n  overflow: hidden;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n}\n\n.flow-thread-popover {\n  pointer-events: auto;\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n}\n@media (max-width: 600px) {\n  .flow-thread-popover {\n    left: 16px !important;\n    right: 16px !important;\n    transform: none !important;\n    align-items: stretch;\n  }\n}\n.flow-thread-popover__caret {\n  position: relative;\n  width: 16px;\n  height: 8px;\n  flex: 0 0 auto;\n  align-self: center;\n  margin-bottom: -1px;\n  z-index: 2;\n  pointer-events: none;\n}\n.flow-thread-popover__caret::before {\n  content: \"\";\n  position: absolute;\n  left: 50%;\n  top: 0;\n  transform: translateX(-50%);\n  border-left: 8px solid transparent;\n  border-right: 8px solid transparent;\n  border-bottom: 8px solid #e0e0e0;\n}\n.flow-thread-popover__caret::after {\n  content: \"\";\n  position: absolute;\n  left: 50%;\n  top: 1px;\n  transform: translateX(-50%);\n  border-left: 7px solid transparent;\n  border-right: 7px solid transparent;\n  border-bottom: 7px solid #fff;\n}\n.flow-thread-popover--above {\n  flex-direction: column-reverse;\n}\n.flow-thread-popover--above .flow-thread-popover__caret {\n  margin-bottom: 0;\n  margin-top: -1px;\n}\n.flow-thread-popover--above .flow-thread-popover__caret::before {\n  top: auto;\n  bottom: 0;\n  border-bottom: 0;\n  border-top: 8px solid #e0e0e0;\n}\n.flow-thread-popover--above .flow-thread-popover__caret::after {\n  top: auto;\n  bottom: 1px;\n  border-bottom: 0;\n  border-top: 7px solid #fff;\n}\n.flow-thread-popover__card {\n  width: 360px;\n  max-width: calc(100vw - 32px);\n}\n@media (max-width: 600px) {\n  .flow-thread-popover__card {\n    width: auto;\n    max-width: 100%;\n  }\n}\n.flow-thread-popover__card {\n  background: #fff;\n  border: 1px solid #e0e0e0;\n  border-radius: 6px;\n  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);\n  padding: 14px;\n  font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif;\n  font-size: 13px;\n  line-height: 1.5;\n  color: #1e1e1e;\n  position: relative;\n  z-index: 1;\n}\n.flow-thread-popover__header, .flow-thread-popover__reply-header {\n  display: grid;\n  grid-template-columns: auto minmax(0, 1fr);\n  grid-template-rows: auto auto;\n  column-gap: 8px;\n  row-gap: 1px;\n  align-items: center;\n}\n.flow-thread-popover__header {\n  margin-bottom: 6px;\n  padding-right: 56px;\n}\n.flow-thread-popover__header-actions {\n  position: absolute;\n  top: 8px;\n  right: 8px;\n  z-index: 2;\n  display: flex;\n  align-items: center;\n  gap: 4px;\n}\n.flow-thread-popover__close.components-button {\n  position: static;\n  min-width: 0 !important;\n  width: 32px !important;\n  height: 32px !important;\n  padding: 4px !important;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  color: #1e1e1e !important;\n  background: transparent !important;\n  border: none !important;\n  box-shadow: none !important;\n  border-radius: 2px;\n  transition: background-color 0.15s ease;\n}\n.flow-thread-popover__close.components-button .components-button__icon,\n.flow-thread-popover__close.components-button svg {\n  margin: 0;\n  fill: currentColor;\n  width: 20px;\n  height: 20px;\n}\n.flow-thread-popover__close.components-button:hover:not(:disabled), .flow-thread-popover__close.components-button:focus-visible:not(:disabled), .flow-thread-popover__close.components-button:active:not(:disabled) {\n  color: #1e1e1e !important;\n  background: #ebebeb !important;\n  box-shadow: none !important;\n}\n.flow-thread-popover__resolve-icon.components-button {\n  min-width: 0 !important;\n  width: 32px !important;\n  height: 32px !important;\n  padding: 4px !important;\n  background: transparent !important;\n  border: none !important;\n  box-shadow: none !important;\n  border-radius: 2px !important;\n  transition: background-color 0.15s ease;\n}\n.flow-thread-popover__resolve-icon.components-button svg {\n  width: 20px;\n  height: 20px;\n}\n.flow-thread-popover__resolve-icon.components-button svg .flow-comment-resolve__default,\n.flow-thread-popover__resolve-icon.components-button svg .flow-comment-resolve__hover {\n  transition: opacity 0.15s ease;\n}\n.flow-thread-popover__resolve-icon.components-button svg .flow-comment-resolve__hover {\n  opacity: 0;\n}\n.flow-thread-popover__resolve-icon.components-button:hover:not(:disabled), .flow-thread-popover__resolve-icon.components-button:focus-visible:not(:disabled) {\n  background: #e7f5e4 !important;\n}\n.flow-thread-popover__resolve-icon.components-button:hover:not(:disabled) svg .flow-comment-resolve__default, .flow-thread-popover__resolve-icon.components-button:focus-visible:not(:disabled) svg .flow-comment-resolve__default {\n  opacity: 0;\n}\n.flow-thread-popover__resolve-icon.components-button:hover:not(:disabled) svg .flow-comment-resolve__hover, .flow-thread-popover__resolve-icon.components-button:focus-visible:not(:disabled) svg .flow-comment-resolve__hover {\n  opacity: 1;\n}\n.flow-thread-popover__reply-header {\n  margin-bottom: 4px;\n  padding-right: 36px;\n}\n.flow-thread-popover__reply-actions {\n  position: absolute;\n  top: 6px;\n  right: 0;\n  display: flex;\n}\n.flow-thread-popover__avatar {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  width: 28px;\n  height: 28px;\n  border-radius: 50%;\n  font-size: 11px;\n  font-weight: 600;\n  line-height: 1;\n  flex-shrink: 0;\n  user-select: none;\n  grid-column: 1;\n  grid-row: 1/span 2;\n  align-self: center;\n}\n.flow-thread-popover__avatar--fallback {\n  background: #dcdcde;\n  color: #757575;\n}\n.flow-thread-popover__avatar--img {\n  display: block;\n  object-fit: cover;\n  background: transparent;\n}\n.flow-thread-popover__byline {\n  display: flex;\n  align-items: center;\n  gap: 6px;\n  min-width: 0;\n  grid-column: 2;\n  grid-row: 1;\n}\n.flow-thread-popover__author {\n  font-weight: 600;\n  font-size: 12px;\n  color: #1e1e1e;\n  min-width: 0;\n  overflow: hidden;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n}\n.flow-thread-popover__agent {\n  flex: none;\n  padding: 0 5px;\n  border: 1px solid #c3c4c7;\n  border-radius: 2px;\n  font-size: 9px;\n  font-weight: 600;\n  line-height: 15px;\n  letter-spacing: 0.04em;\n  color: #757575;\n}\n.flow-thread-popover__date {\n  font-size: 11px;\n  color: #757575;\n  line-height: 1.2;\n  white-space: nowrap;\n  grid-column: 2;\n  grid-row: 2;\n}\n.flow-thread-popover__body {\n  font-size: 13px;\n  line-height: 1.6;\n  word-break: break-word;\n}\n.flow-thread-popover__body > * {\n  margin: 0;\n}\n.flow-thread-popover__body > * + * {\n  margin-top: 0.3em;\n}\n.flow-thread-popover__body strong {\n  font-weight: 600;\n}\n.flow-thread-popover__body em {\n  font-style: italic;\n}\n.flow-thread-popover__body a {\n  color: var(--wp-admin-theme-color, #007cba);\n  text-decoration: underline;\n}\n.flow-thread-popover__body ul, .flow-thread-popover__body ol {\n  padding-left: 1.4em;\n  margin: 0.3em 0;\n}\n.flow-thread-popover__replies {\n  margin-top: 10px;\n  padding-top: 10px;\n  border-top: 1px solid #e0e0e0;\n}\n.flow-thread-popover__reply {\n  position: relative;\n  padding: 8px 0 4px;\n}\n.flow-thread-popover__reply:last-child {\n  margin-bottom: 0;\n}\n.flow-thread-popover__reply-body {\n  font-size: 13px;\n  line-height: 1.6;\n  color: #1e1e1e;\n  word-break: break-word;\n}\n.flow-thread-popover__reply-body > * {\n  margin: 0;\n}\n.flow-thread-popover__reply-body > * + * {\n  margin-top: 0.4em;\n}\n.flow-thread-popover__reply-editor {\n  margin-top: 10px;\n  padding-top: 10px;\n  border-top: 1px solid #e0e0e0;\n}\n.flow-thread-popover__actions {\n  display: flex;\n  gap: 8px;\n  margin-top: 12px;\n  padding-top: 10px;\n  justify-content: flex-start;\n}\n.flow-thread-popover__actions .components-button {\n  min-height: 30px;\n}\n.flow-thread-popover__reply-btn.components-button.has-icon.has-text {\n  margin-left: 0;\n  margin-right: 12px;\n  gap: 8px !important;\n  text-decoration: underline;\n  text-underline-offset: 2px;\n}\n.flow-thread-popover__reply-btn.components-button.has-icon.has-text:hover:not(:disabled), .flow-thread-popover__reply-btn.components-button.has-icon.has-text:focus-visible:not(:disabled) {\n  text-decoration: none;\n}\n.flow-thread-popover__reply-btn.components-button.has-icon.has-text svg,\n.flow-thread-popover__reply-btn.components-button.has-icon.has-text .components-button__icon {\n  margin-right: 0 !important;\n}\n.flow-thread-popover__resolved-badge {\n  margin-top: 10px;\n  padding: 0 8px;\n  height: 26px;\n  background: #edfaee;\n  border: 1px solid #82d68e;\n  border-radius: 3px;\n  color: #1a6b28;\n  font-size: 11px;\n  font-weight: 600;\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  white-space: nowrap;\n  margin-left: auto;\n}\n.flow-thread-popover .flow-comment-editor {\n  display: flex;\n  flex-direction: column;\n}\n.flow-thread-popover .flow-comment-editor__toolbar {\n  display: flex;\n  align-items: stretch;\n  gap: 0;\n  padding: 0;\n  background: #fff;\n  border: 1px solid #1d2327;\n  border-bottom: 0;\n  border-radius: 2px 2px 0 0;\n  overflow-x: auto;\n  overflow-y: hidden;\n}\n.flow-thread-popover .flow-comment-editor__toolbar .components-button {\n  min-width: 32px !important;\n  width: auto !important;\n  height: 36px !important;\n  padding: 0 6px !important;\n  border-radius: 0;\n  border-left: 1px solid #1d2327;\n  color: #1e1e1e;\n  box-shadow: none;\n  flex-shrink: 0;\n}\n.flow-thread-popover .flow-comment-editor__toolbar .components-button:hover:not(:disabled) {\n  background: #f0f0f0;\n}\n.flow-thread-popover .flow-comment-editor__toolbar .components-button.is-pressed:not(:disabled) {\n  background: #f0f6fc;\n  color: var(--wp-admin-theme-color, #007cba);\n}\n.flow-thread-popover .flow-comment-editor__toolbar .components-button.is-small,\n.flow-thread-popover .flow-comment-editor__toolbar .components-button[data-size=small] {\n  min-width: 32px !important;\n  width: auto !important;\n  height: 36px !important;\n  padding: 0 6px !important;\n  border-radius: 0;\n}\n.flow-thread-popover .flow-comment-editor__toolbar-group {\n  display: flex;\n  align-items: stretch;\n  flex-shrink: 0;\n  border-left: 1px solid #1d2327;\n}\n.flow-thread-popover .flow-comment-editor__toolbar-group .components-button {\n  border-left: 0;\n}\n.flow-thread-popover .flow-comment-editor__block-select {\n  height: 36px;\n  padding: 0 10px;\n  border: 0;\n  border-radius: 0;\n  background: #fff;\n  font-size: 12px;\n  cursor: pointer;\n  flex-shrink: 0;\n  min-width: 84px;\n}\n.flow-thread-popover .flow-comment-editor__block-select:hover {\n  background: #f0f0f0;\n}\n.flow-thread-popover .flow-comment-editor__block-select:focus {\n  outline: none;\n  box-shadow: inset 0 0 0 2px var(--wp-admin-theme-color, #007cba);\n}\n.flow-thread-popover .flow-comment-editor__toolbar-sep {\n  display: none;\n}\n.flow-thread-popover .flow-comment-editor__content {\n  border: 1px solid #1d2327;\n  border-radius: 0 0 2px 2px;\n  background: #fff;\n  cursor: text;\n}\n.flow-thread-popover .flow-comment-editor__content:focus-within {\n  border-color: var(--wp-admin-theme-color, #007cba);\n  box-shadow: 0 0 0 1px var(--wp-admin-theme-color, #007cba);\n}\n.flow-thread-popover .flow-comment-editor__content .ProseMirror {\n  position: relative;\n  min-height: 75px;\n  max-height: 150px;\n  overflow-y: auto;\n  padding: 8px 10px;\n  line-height: 1.6;\n  outline: none;\n  word-break: break-word;\n}\n.flow-thread-popover .flow-comment-editor__content .ProseMirror p.is-editor-empty:first-child::before {\n  content: attr(data-placeholder);\n  color: #949494;\n  pointer-events: none;\n  float: left;\n  height: 0;\n}\n.flow-thread-popover .flow-comment-editor__content .ProseMirror ul, .flow-thread-popover .flow-comment-editor__content .ProseMirror ol {\n  padding-left: 1.5em;\n  margin: 0.3em 0;\n}\n.flow-thread-popover .flow-comment-editor__content .ProseMirror li {\n  margin: 0.1em 0;\n}\n.flow-thread-popover .flow-comment-editor__content .ProseMirror a {\n  color: var(--wp-admin-theme-color, #007cba);\n  text-decoration: underline;\n}\n.flow-thread-popover .flow-comment-editor__content .ProseMirror strong {\n  font-weight: 600;\n}\n.flow-thread-popover .flow-comment-editor__content .ProseMirror em {\n  font-style: italic;\n}\n.flow-thread-popover .flow-comment-editor--basic .flow-comment-editor__content {\n  border-radius: 2px;\n}\n.flow-thread-popover .flow-comment-editor__textarea {\n  display: block;\n  width: 100%;\n  min-height: 75px;\n  max-height: 150px;\n  margin: 0;\n  padding: 8px 10px;\n  border: 0;\n  border-radius: inherit;\n  background: #fff;\n  font-family: inherit;\n  font-size: 13px;\n  line-height: 1.6;\n  resize: vertical;\n  box-sizing: border-box;\n  outline: none;\n  color: #1e1e1e;\n}\n.flow-thread-popover .flow-comment-editor__textarea::placeholder {\n  color: #949494;\n}\n.flow-thread-popover .flow-comment-editor__link-row {\n  display: flex;\n  align-items: center;\n  gap: 4px;\n  padding: 4px 6px;\n  background: #f6f7f7;\n  border: 1px solid #1d2327;\n  border-top: none;\n  border-bottom: none;\n}\n.flow-thread-popover .flow-comment-editor__link-input {\n  flex: 1;\n  height: 28px;\n  padding: 0 6px;\n  border: 1px solid #949494;\n  border-radius: 2px;\n  background: #fff;\n  font-size: 12px;\n}\n.flow-thread-popover .flow-comment-editor__link-input:focus {\n  outline: none;\n  border-color: var(--wp-admin-theme-color, #007cba);\n  box-shadow: 0 0 0 1px var(--wp-admin-theme-color, #007cba);\n}\n.flow-thread-popover .flow-comment-editor__submit-row {\n  display: flex;\n  gap: 8px;\n  margin-top: 10px;\n  justify-content: flex-start;\n}\n.flow-thread-popover .flow-comment-editor__submit-row .flow-comment-editor__submit-btn.components-button {\n  flex: 0 0 auto;\n  min-width: 80px;\n  justify-content: center;\n}\n.flow-thread-popover .flow-comment-editor__submit-row .flow-btn--cancel.components-button {\n  flex: 0 0 auto;\n  min-width: 80px !important;\n  justify-content: center;\n}\n.flow-thread-popover .flow-comment-editor__submit-row .flow-comment-editor__submit-btn:disabled,\n.flow-thread-popover .flow-comment-editor__submit-row .flow-comment-editor__submit-btn[aria-disabled=true] {\n  background: transparent !important;\n  border-color: #dcdcde !important;\n  color: #757575 !important;\n  opacity: 1 !important;\n}\n.flow-thread-popover .flow-comment-editor__error {\n  margin: 8px 0 0;\n  padding: 6px 10px;\n  background: #fcf0f1;\n  border: 1px solid #cc1818;\n  border-radius: 2px;\n  color: #cc1818;\n  font-size: 12px;\n}\n\n.flow-thread-popover__reopen {\n  display: flex;\n  align-items: center;\n  gap: 6px;\n  margin-bottom: 8px;\n  font-size: 12px;\n  cursor: pointer;\n}\n.flow-thread-popover__reopen input {\n  margin: 0;\n}\n\n.flow-inline-popover--below.flow-inline-popover--editor {\n  width: calc(100vw - 16px);\n  max-width: calc(100vw - 16px);\n}\n.flow-inline-popover--below.flow-inline-popover--editor .flow-inline-popover__editor-wrap {\n  box-sizing: border-box;\n  width: 100%;\n  max-width: none;\n}\n\n.ProseMirror,\n.ProseMirror p {\n  font-size: inherit;\n}\n\n.ProseMirror {\n  white-space: pre-wrap;\n  white-space: break-spaces;\n  word-wrap: break-word;\n  font-variant-ligatures: none;\n  font-feature-settings: \"liga\" 0;\n}\n\n.ProseMirror [contenteditable=false] {\n  white-space: normal;\n}\n\n.ProseMirror pre {\n  white-space: pre-wrap;\n}\n\n@supports (-webkit-touch-callout: none) {\n  textarea,\n  input,\n  select,\n  [contenteditable=true] {\n    font-size: 16px !important;\n  }\n}";
+module.exports = "/**\n * Flow Editorial Workflow — Inline comment popover styles.\n * Mounted into a Shadow DOM root (see src/review-page/index.js → mountInShadow),\n * so theme / page-builder CSS in the parent document cannot leak in.\n */\n.flow-confirm-dialog {\n  position: fixed;\n  inset: 0;\n  z-index: 1000003;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  padding: 16px;\n}\n\n.flow-confirm-dialog__backdrop {\n  position: absolute;\n  inset: 0;\n  margin: 0;\n  padding: 0;\n  border: 0;\n  background: rgba(0, 0, 0, 0.45);\n  cursor: default;\n}\n\n.flow-confirm-dialog__panel {\n  position: relative;\n  width: 100%;\n  max-width: min(420px, 100% - 32px);\n  font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Oxygen-Sans, Ubuntu, Cantarell, \"Helvetica Neue\", sans-serif;\n  font-size: 13px;\n  line-height: 1.4;\n  color: #c92122;\n  background: #ffebea;\n  border: 1px solid #ffd1d0;\n  border-left-width: 4px;\n  border-left-color: #c92122;\n  border-radius: 2px;\n  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16);\n}\n\n.flow-confirm-dialog__alert {\n  display: flex;\n  align-items: flex-start;\n  gap: 12px;\n  padding: 12px 16px;\n}\n\n.flow-confirm-dialog__icon {\n  display: flex;\n  flex-shrink: 0;\n  align-items: center;\n  justify-content: center;\n  width: 24px;\n  height: 24px;\n  color: #c92122;\n}\n.flow-confirm-dialog__icon svg {\n  display: block;\n  width: 24px;\n  height: 24px;\n}\n\n.flow-confirm-dialog__content {\n  flex: 1 1 auto;\n  min-width: 0;\n}\n\n.flow-confirm-dialog__title {\n  margin: 0 0 2px;\n  font-size: inherit;\n  font-weight: 600;\n  line-height: inherit;\n  color: inherit;\n}\n\n.flow-confirm-dialog__message {\n  margin: 0;\n  font-size: inherit;\n  font-weight: 400;\n  line-height: inherit;\n  color: inherit;\n}\n\n.flow-confirm-dialog__actions {\n  display: flex;\n  justify-content: flex-end;\n  gap: 8px;\n  padding: 0 16px 12px;\n}\n.flow-confirm-dialog__actions .components-button {\n  flex: 0 0 auto;\n  white-space: nowrap;\n}\n\n.flow-confirm-dialog__confirm.components-button {\n  min-width: 80px;\n  justify-content: center;\n  background: #c92122 !important;\n  border: 1px solid #c92122 !important;\n  color: #fff !important;\n  box-shadow: none !important;\n}\n.flow-confirm-dialog__confirm.components-button:hover:not(:disabled), .flow-confirm-dialog__confirm.components-button:active:not(:disabled) {\n  background: #b32d2e !important;\n  border-color: #b32d2e !important;\n  color: #fff !important;\n}\n.flow-confirm-dialog__confirm.components-button:focus:not(:disabled) {\n  box-shadow: 0 0 0 var(--wp-admin-border-width-focus, 2px) #fff, 0 0 0 calc(var(--wp-admin-border-width-focus, 2px) + 1px) #c92122 !important;\n  outline: 1px solid transparent;\n}\n\n.flow-confirm-dialog__panel--warning {\n  color: #1e1e1e;\n  background: #fcf0ce;\n  border-color: #f2dda4;\n  border-left-color: #dba617;\n}\n.flow-confirm-dialog__panel--warning .flow-confirm-dialog__icon {\n  color: #957500;\n}\n.flow-confirm-dialog__panel--warning .flow-confirm-dialog__confirm.components-button {\n  background: #dba617 !important;\n  border-color: #dba617 !important;\n  color: #1d2327 !important;\n}\n.flow-confirm-dialog__panel--warning .flow-confirm-dialog__confirm.components-button:hover:not(:disabled), .flow-confirm-dialog__panel--warning .flow-confirm-dialog__confirm.components-button:active:not(:disabled) {\n  background: #c4950f !important;\n  border-color: #c4950f !important;\n  color: #1d2327 !important;\n}\n.flow-confirm-dialog__panel--warning .flow-confirm-dialog__confirm.components-button:focus:not(:disabled) {\n  box-shadow: 0 0 0 var(--wp-admin-border-width-focus, 2px) #fff, 0 0 0 calc(var(--wp-admin-border-width-focus, 2px) + 1px) #dba617 !important;\n}\n\n.flow-confirm-dialog__panel--neutral {\n  color: #1e1e1e;\n  background: #fff;\n  border-color: #e0e0e0;\n  border-left-width: 1px;\n  border-left-color: #e0e0e0;\n  max-width: min(480px, 100% - 32px);\n}\n.flow-confirm-dialog__panel--neutral .flow-confirm-dialog__title {\n  margin-bottom: 8px;\n}\n\n.flow-revisions {\n  display: flex;\n  flex-direction: column;\n  max-height: min(360px, 60vh);\n  margin: 0;\n  padding: 0;\n  overflow-y: auto;\n  list-style: none;\n}\n.flow-revisions li {\n  margin: 0;\n}\n\n.flow-revisions__item {\n  display: flex;\n  flex-wrap: wrap;\n  align-items: center;\n  gap: 4px 8px;\n  padding: 8px;\n  border-radius: 2px;\n  color: #1e1e1e;\n  text-decoration: none;\n}\n.flow-revisions__item:hover, .flow-revisions__item:focus-visible {\n  background: #f6f7f7;\n}\n.flow-revisions__item.is-viewing {\n  background: #f6f7f7;\n  font-weight: 600;\n}\n\n.flow-revisions__date {\n  font-variant-numeric: tabular-nums;\n}\n\n.flow-revisions__tag {\n  padding: 0 6px;\n  border: 1px solid #e0e0e0;\n  border-radius: 10px;\n  font-size: 11px;\n  font-weight: 500;\n  color: #757575;\n}\n\n.flow-revisions__resolved {\n  margin-left: auto;\n  font-size: 12px;\n  color: #757575;\n}\n\n.flow-btn--text.components-button {\n  background: transparent !important;\n  border: none !important;\n  box-shadow: none !important;\n  color: var(--wp-admin-theme-color, #007cba);\n}\n.flow-btn--text.components-button:hover:not(:disabled), .flow-btn--text.components-button:active:not(:disabled) {\n  color: var(--wp-admin-theme-color, #007cba);\n  background: #f0f6fc !important;\n}\n.flow-btn--text.components-button:focus:not(:disabled) {\n  box-shadow: 0 0 0 var(--wp-admin-border-width-focus, 2px) #fff, 0 0 0 calc(var(--wp-admin-border-width-focus, 2px) + 1px) var(--wp-admin-theme-color, #007cba) !important;\n  outline: 1px solid transparent;\n}\n.flow-btn--text.components-button:disabled, .flow-btn--text.components-button[aria-disabled=true] {\n  background: transparent !important;\n  border: none !important;\n  color: #8c8f94 !important;\n  opacity: 1 !important;\n}\n\n.flow-btn--cancel.components-button {\n  min-width: 80px !important;\n  text-decoration: underline;\n  text-underline-offset: 2px;\n}\n.flow-btn--cancel.components-button:hover:not(:disabled), .flow-btn--cancel.components-button:active:not(:disabled) {\n  text-decoration: none;\n}\n\n.flow-comment-editor__submit-btn.components-button {\n  background: transparent !important;\n  border: 1px solid var(--wp-admin-theme-color, #007cba) !important;\n  color: var(--wp-admin-theme-color, #007cba) !important;\n  box-shadow: none !important;\n}\n.flow-comment-editor__submit-btn.components-button:hover:not(:disabled), .flow-comment-editor__submit-btn.components-button:active:not(:disabled) {\n  background: #f0f6fc !important;\n  border-color: var(--wp-admin-theme-color, #007cba) !important;\n  color: var(--wp-admin-theme-color, #007cba) !important;\n}\n.flow-comment-editor__submit-btn.components-button:focus:not(:disabled) {\n  box-shadow: 0 0 0 var(--wp-admin-border-width-focus, 2px) #fff, 0 0 0 calc(var(--wp-admin-border-width-focus, 2px) + 1px) var(--wp-admin-theme-color, #007cba) !important;\n  outline: 1px solid transparent;\n}\n.flow-comment-editor__submit-btn.components-button:disabled, .flow-comment-editor__submit-btn.components-button[aria-disabled=true] {\n  background: transparent !important;\n  border-color: #dcdcde !important;\n  color: #757575 !important;\n  opacity: 1 !important;\n}\n\n.flow-inline-popover {\n  pointer-events: auto;\n}\n.flow-inline-popover__btn {\n  --popover-btn-bg: #fff;\n  display: flex;\n  align-items: center;\n  gap: 10px;\n  min-height: 44px;\n  padding: 10px 16px;\n  background: var(--popover-btn-bg);\n  color: var(--wp-admin-theme-color, #007cba);\n  border: 1px solid var(--wp-admin-theme-color, #007cba);\n  border-radius: 2px;\n  font-size: 18px;\n  font-weight: 400;\n  font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif;\n  cursor: pointer;\n  position: relative;\n  box-shadow: 0 2px 2px rgba(0, 0, 0, 0.06);\n  white-space: nowrap;\n  overflow: visible;\n  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;\n}\n.flow-inline-popover__btn:hover {\n  --popover-btn-bg: #f0f6fc;\n  background: var(--popover-btn-bg);\n  border-color: var(--wp-admin-theme-color, #007cba);\n  color: var(--wp-admin-theme-color, #007cba);\n}\n.flow-inline-popover__btn:focus-visible {\n  outline: 2px solid var(--wp-admin-theme-color, #007cba);\n  outline-offset: 2px;\n}\n.flow-inline-popover__btn::before {\n  content: \"\";\n  position: absolute;\n  top: calc(50% + var(--flow-caret-offset-y, 0px));\n  left: -6px;\n  z-index: 1;\n  width: 10px;\n  height: 10px;\n  box-sizing: border-box;\n  background: var(--popover-btn-bg);\n  border-left: 1px solid var(--wp-admin-theme-color, #007cba);\n  border-bottom: 1px solid var(--wp-admin-theme-color, #007cba);\n  transform: translateY(-50%) rotate(45deg);\n  transition: background 0.15s ease, border-color 0.15s ease;\n  pointer-events: none;\n}\n.flow-inline-popover__btn::after {\n  content: \"\";\n  position: absolute;\n  top: calc(50% + var(--flow-caret-offset-y, 0px));\n  left: 0;\n  z-index: 2;\n  width: 1px;\n  height: 14px;\n  background: var(--popover-btn-bg);\n  transform: translateY(-50%);\n  pointer-events: none;\n}\n.flow-inline-popover--flipped .flow-inline-popover__btn::before {\n  left: auto;\n  right: -6px;\n  border-left: 0;\n  border-bottom: 0;\n  border-top: 1px solid var(--wp-admin-theme-color, #007cba);\n  border-right: 1px solid var(--wp-admin-theme-color, #007cba);\n}\n.flow-inline-popover--flipped .flow-inline-popover__btn::after {\n  left: auto;\n  right: 0;\n}\n.flow-inline-popover--flipped .flow-inline-popover__editor-wrap::before {\n  left: auto;\n  right: -6px;\n  border-left: 0;\n  border-bottom: 0;\n  border-top: 1px solid #e0e0e0;\n  border-right: 1px solid #e0e0e0;\n}\n.flow-inline-popover--flipped .flow-inline-popover__editor-wrap::after {\n  left: auto;\n  right: 0;\n}\n.flow-inline-popover--below .flow-inline-popover__btn::before, .flow-inline-popover--below.flow-inline-popover--flipped .flow-inline-popover__btn::before {\n  top: -6px;\n  right: auto;\n  left: calc(50% + var(--flow-caret-offset-x, 0px));\n  border: 0;\n  border-left: 1px solid var(--wp-admin-theme-color, #007cba);\n  border-top: 1px solid var(--wp-admin-theme-color, #007cba);\n  transform: translateX(-50%) rotate(45deg);\n}\n.flow-inline-popover--below .flow-inline-popover__btn::after, .flow-inline-popover--below.flow-inline-popover--flipped .flow-inline-popover__btn::after {\n  top: 0;\n  right: auto;\n  left: calc(50% + var(--flow-caret-offset-x, 0px));\n  width: 14px;\n  height: 1px;\n  transform: translateX(-50%);\n}\n.flow-inline-popover--below.flow-inline-popover--above .flow-inline-popover__btn::before {\n  top: auto;\n  bottom: -6px;\n  border-left: 0;\n  border-top: 0;\n  border-right: 1px solid var(--wp-admin-theme-color, #007cba);\n  border-bottom: 1px solid var(--wp-admin-theme-color, #007cba);\n}\n.flow-inline-popover--below.flow-inline-popover--above .flow-inline-popover__btn::after {\n  top: auto;\n  bottom: 0;\n}\n.flow-inline-popover--below .flow-inline-popover__editor-wrap::before, .flow-inline-popover--below.flow-inline-popover--flipped .flow-inline-popover__editor-wrap::before {\n  top: -6px;\n  right: auto;\n  left: calc(50% + var(--flow-caret-offset-x, 0px));\n  border: 0;\n  border-left: 1px solid #e0e0e0;\n  border-top: 1px solid #e0e0e0;\n  transform: translateX(-50%) rotate(45deg);\n}\n.flow-inline-popover--below .flow-inline-popover__editor-wrap::after, .flow-inline-popover--below.flow-inline-popover--flipped .flow-inline-popover__editor-wrap::after {\n  top: 0;\n  right: auto;\n  left: calc(50% + var(--flow-caret-offset-x, 0px));\n  width: 14px;\n  height: 1px;\n  transform: translateX(-50%);\n}\n.flow-inline-popover--below.flow-inline-popover--above .flow-inline-popover__editor-wrap::before {\n  top: auto;\n  bottom: -6px;\n  border-left: 0;\n  border-top: 0;\n  border-right: 1px solid #e0e0e0;\n  border-bottom: 1px solid #e0e0e0;\n}\n.flow-inline-popover--below.flow-inline-popover--above .flow-inline-popover__editor-wrap::after {\n  top: auto;\n  bottom: 0;\n}\n.flow-inline-popover__btn-label {\n  font-size: 18px;\n  line-height: 1.2;\n}\n.flow-inline-popover__btn-icon {\n  width: 22px;\n  height: 22px;\n  color: var(--wp-admin-theme-color, #007cba);\n  flex: 0 0 auto;\n}\n.flow-inline-popover__btn-icon svg {\n  fill: currentColor;\n}\n.flow-inline-popover--editor {\n  width: min(380px, 100vw - 24px);\n}\n.flow-inline-popover--pointed .flow-inline-popover__editor-wrap {\n  animation: flow-ew-popover-point 0.7s ease;\n}\n@keyframes flow-ew-popover-point {\n  0% {\n    box-shadow: 0 0 0 3px rgba(255, 212, 59, 0.95), 0 4px 16px rgba(0, 0, 0, 0.15);\n  }\n  100% {\n    box-shadow: 0 0 0 0 rgba(255, 212, 59, 0), 0 4px 16px rgba(0, 0, 0, 0.15);\n  }\n}\n.flow-inline-popover__editor-wrap {\n  position: relative;\n  background: #fff;\n  border: 1px solid #e0e0e0;\n  border-radius: 4px;\n  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);\n  padding: 12px;\n}\n.flow-inline-popover__editor-wrap::before {\n  content: \"\";\n  position: absolute;\n  top: calc(50% + var(--flow-caret-offset-y, 0px));\n  left: -6px;\n  z-index: 1;\n  width: 10px;\n  height: 10px;\n  box-sizing: border-box;\n  background: #fff;\n  border-left: 1px solid #e0e0e0;\n  border-bottom: 1px solid #e0e0e0;\n  transform: translateY(-50%) rotate(45deg);\n  pointer-events: none;\n}\n.flow-inline-popover__editor-wrap::after {\n  content: \"\";\n  position: absolute;\n  top: calc(50% + var(--flow-caret-offset-y, 0px));\n  left: 0;\n  z-index: 2;\n  width: 1px;\n  height: 14px;\n  background: #fff;\n  transform: translateY(-50%);\n  pointer-events: none;\n}\n.flow-inline-popover__editor-wrap {\n  font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif;\n  font-size: 13px;\n  line-height: 1.4;\n  color: #1e1e1e;\n}\n.flow-inline-popover__editor-wrap .flow-comment-editor {\n  display: flex;\n  flex-direction: column;\n}\n.flow-inline-popover__editor-wrap .flow-comment-editor__toolbar {\n  display: flex;\n  align-items: stretch;\n  gap: 0;\n  padding: 0;\n  background: #fff;\n  border: 1px solid #1d2327;\n  border-bottom: 0;\n  border-radius: 2px 2px 0 0;\n  overflow-x: auto;\n  overflow-y: hidden;\n}\n.flow-inline-popover__editor-wrap .flow-comment-editor__toolbar .components-button {\n  min-width: 32px !important;\n  width: auto !important;\n  height: 36px !important;\n  padding: 0 6px !important;\n  border-radius: 0;\n  border-left: 1px solid #1d2327;\n  color: #1e1e1e;\n  box-shadow: none;\n  flex-shrink: 0;\n}\n.flow-inline-popover__editor-wrap .flow-comment-editor__toolbar .components-button:hover:not(:disabled) {\n  background: #f0f0f0;\n}\n.flow-inline-popover__editor-wrap .flow-comment-editor__toolbar .components-button.is-pressed:not(:disabled) {\n  background: #f0f6fc;\n  color: var(--wp-admin-theme-color, #007cba);\n}\n.flow-inline-popover__editor-wrap .flow-comment-editor__toolbar .components-button.is-small,\n.flow-inline-popover__editor-wrap .flow-comment-editor__toolbar .components-button[data-size=small] {\n  min-width: 32px !important;\n  width: auto !important;\n  height: 36px !important;\n  padding: 0 6px !important;\n  border-radius: 0;\n}\n.flow-inline-popover__editor-wrap .flow-comment-editor__toolbar-group {\n  display: flex;\n  align-items: stretch;\n  flex-shrink: 0;\n  border-left: 1px solid #1d2327;\n}\n.flow-inline-popover__editor-wrap .flow-comment-editor__toolbar-group .components-button {\n  border-left: 0;\n}\n.flow-inline-popover__editor-wrap .flow-comment-editor__block-select {\n  height: 36px;\n  padding: 0 10px;\n  border: 0;\n  border-radius: 0;\n  background: #fff;\n  font-size: 12px;\n  cursor: pointer;\n  flex-shrink: 0;\n  min-width: 84px;\n}\n.flow-inline-popover__editor-wrap .flow-comment-editor__block-select:hover {\n  background: #f0f0f0;\n}\n.flow-inline-popover__editor-wrap .flow-comment-editor__block-select:focus {\n  outline: none;\n  box-shadow: inset 0 0 0 2px var(--wp-admin-theme-color, #007cba);\n}\n.flow-inline-popover__editor-wrap .flow-comment-editor__toolbar-sep {\n  display: none;\n}\n.flow-inline-popover__editor-wrap .flow-comment-editor__content {\n  border: 1px solid #1d2327;\n  border-radius: 0 0 2px 2px;\n  background: #fff;\n  cursor: text;\n}\n.flow-inline-popover__editor-wrap .flow-comment-editor__content:focus-within {\n  border-color: var(--wp-admin-theme-color, #007cba);\n  box-shadow: 0 0 0 1px var(--wp-admin-theme-color, #007cba);\n}\n.flow-inline-popover__editor-wrap .flow-comment-editor__content .ProseMirror {\n  position: relative;\n  min-height: 75px;\n  max-height: 200px;\n  overflow-y: auto;\n  padding: 8px 10px;\n  line-height: 1.6;\n  outline: none;\n  word-break: break-word;\n}\n.flow-inline-popover__editor-wrap .flow-comment-editor__content .ProseMirror p.is-editor-empty:first-child::before {\n  content: attr(data-placeholder);\n  color: #949494;\n  pointer-events: none;\n  float: left;\n  height: 0;\n}\n.flow-inline-popover__editor-wrap .flow-comment-editor__content .ProseMirror ul, .flow-inline-popover__editor-wrap .flow-comment-editor__content .ProseMirror ol {\n  padding-left: 1.5em;\n  margin: 0.3em 0;\n}\n.flow-inline-popover__editor-wrap .flow-comment-editor__content .ProseMirror li {\n  margin: 0.1em 0;\n}\n.flow-inline-popover__editor-wrap .flow-comment-editor__content .ProseMirror a {\n  color: var(--wp-admin-theme-color, #007cba);\n  text-decoration: underline;\n}\n.flow-inline-popover__editor-wrap .flow-comment-editor__content .ProseMirror strong {\n  font-weight: 600;\n}\n.flow-inline-popover__editor-wrap .flow-comment-editor__content .ProseMirror em {\n  font-style: italic;\n}\n.flow-inline-popover__editor-wrap .flow-comment-editor--basic .flow-comment-editor__content {\n  border-radius: 2px;\n}\n.flow-inline-popover__editor-wrap .flow-comment-editor__textarea {\n  display: block;\n  width: 100%;\n  min-height: 75px;\n  max-height: 200px;\n  margin: 0;\n  padding: 8px 10px;\n  border: 0;\n  border-radius: inherit;\n  background: #fff;\n  font-family: inherit;\n  font-size: 13px;\n  line-height: 1.6;\n  resize: vertical;\n  box-sizing: border-box;\n  outline: none;\n  color: #1e1e1e;\n}\n.flow-inline-popover__editor-wrap .flow-comment-editor__textarea::placeholder {\n  color: #949494;\n}\n.flow-inline-popover__editor-wrap .flow-comment-editor__link-row {\n  display: flex;\n  align-items: center;\n  gap: 4px;\n  padding: 4px 6px;\n  background: #f6f7f7;\n  border: 1px solid #1d2327;\n  border-top: none;\n  border-bottom: none;\n}\n.flow-inline-popover__editor-wrap .flow-comment-editor__link-input {\n  flex: 1;\n  height: 28px;\n  padding: 0 6px;\n  border: 1px solid #949494;\n  border-radius: 2px;\n  background: #fff;\n  font-size: 12px;\n}\n.flow-inline-popover__editor-wrap .flow-comment-editor__link-input:focus {\n  outline: none;\n  border-color: var(--wp-admin-theme-color, #007cba);\n  box-shadow: 0 0 0 1px var(--wp-admin-theme-color, #007cba);\n}\n.flow-inline-popover__editor-wrap .flow-comment-editor__submit-row {\n  display: flex;\n  gap: 8px;\n  margin-top: 10px;\n  justify-content: flex-start;\n  flex-wrap: wrap;\n}\n.flow-inline-popover__editor-wrap .flow-comment-editor__submit-row .flow-comment-editor__submit-btn.components-button {\n  flex: 0 0 auto;\n  min-width: 100px;\n  justify-content: center;\n}\n.flow-inline-popover__editor-wrap .flow-comment-editor__submit-row .flow-btn--cancel.components-button {\n  flex: 0 0 auto;\n  min-width: 80px !important;\n  justify-content: center;\n}\n.flow-inline-popover__editor-wrap .flow-comment-editor__submit-row .flow-comment-editor__submit-btn:disabled,\n.flow-inline-popover__editor-wrap .flow-comment-editor__submit-row .flow-comment-editor__submit-btn[aria-disabled=true] {\n  background: transparent !important;\n  border-color: #dcdcde !important;\n  color: #757575 !important;\n  opacity: 1 !important;\n}\n.flow-inline-popover__editor-wrap .flow-comment-editor__error {\n  margin: 8px 0 0;\n  padding: 6px 10px;\n  background: #fcf0f1;\n  border: 1px solid #cc1818;\n  border-radius: 2px;\n  color: #cc1818;\n  font-size: 12px;\n}\n.flow-inline-popover__anchor-label {\n  font-size: 12px;\n  font-style: italic;\n  color: #757575;\n  margin-bottom: 8px;\n  padding: 6px 10px;\n  background: #f6f7f7;\n  border-radius: 2px;\n  overflow: hidden;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n}\n\n.flow-thread-popover {\n  pointer-events: auto;\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n}\n@media (max-width: 600px) {\n  .flow-thread-popover {\n    left: 16px !important;\n    right: 16px !important;\n    transform: none !important;\n    align-items: stretch;\n  }\n}\n.flow-thread-popover__caret {\n  position: relative;\n  width: 16px;\n  height: 8px;\n  flex: 0 0 auto;\n  align-self: center;\n  margin-bottom: -1px;\n  z-index: 2;\n  pointer-events: none;\n}\n.flow-thread-popover__caret::before {\n  content: \"\";\n  position: absolute;\n  left: 50%;\n  top: 0;\n  transform: translateX(-50%);\n  border-left: 8px solid transparent;\n  border-right: 8px solid transparent;\n  border-bottom: 8px solid #e0e0e0;\n}\n.flow-thread-popover__caret::after {\n  content: \"\";\n  position: absolute;\n  left: 50%;\n  top: 1px;\n  transform: translateX(-50%);\n  border-left: 7px solid transparent;\n  border-right: 7px solid transparent;\n  border-bottom: 7px solid #fff;\n}\n.flow-thread-popover--flagged:not(.flow-thread-popover--above) .flow-thread-popover__caret::after {\n  border-bottom-color: #fff6cc;\n}\n.flow-thread-popover--above {\n  flex-direction: column-reverse;\n}\n.flow-thread-popover--above .flow-thread-popover__caret {\n  margin-bottom: 0;\n  margin-top: -1px;\n}\n.flow-thread-popover--above .flow-thread-popover__caret::before {\n  top: auto;\n  bottom: 0;\n  border-bottom: 0;\n  border-top: 8px solid #e0e0e0;\n}\n.flow-thread-popover--above .flow-thread-popover__caret::after {\n  top: auto;\n  bottom: 1px;\n  border-bottom: 0;\n  border-top: 7px solid #fff;\n}\n.flow-thread-popover__card {\n  width: 360px;\n  max-width: calc(100vw - 32px);\n}\n@media (max-width: 600px) {\n  .flow-thread-popover__card {\n    width: auto;\n    max-width: 100%;\n  }\n}\n.flow-thread-popover__card {\n  background: #fff;\n  border: 1px solid #e0e0e0;\n  border-radius: 6px;\n  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);\n  padding: 14px;\n  font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif;\n  font-size: 13px;\n  line-height: 1.5;\n  color: #1e1e1e;\n  position: relative;\n  z-index: 1;\n}\n.flow-thread-popover__header, .flow-thread-popover__reply-header {\n  display: grid;\n  grid-template-columns: auto minmax(0, 1fr);\n  grid-template-rows: auto auto;\n  column-gap: 8px;\n  row-gap: 1px;\n  align-items: center;\n}\n.flow-thread-popover__header {\n  margin-bottom: 6px;\n  padding-right: 56px;\n}\n.flow-thread-popover__card-body {\n  position: relative;\n}\n.flow-thread-popover__card-body > .flow-thread-popover__header-actions {\n  top: -6px;\n  right: -6px;\n}\n.flow-thread-popover__flag {\n  display: grid;\n  grid-template-columns: minmax(0, 1fr) 20px;\n  column-gap: 8px;\n  align-items: center;\n  margin: -14px -14px 12px;\n  padding: 10px 16px;\n  border-radius: 6px 6px 0 0;\n  background: #fff6cc;\n  color: #7a5a00;\n  font-size: 11px;\n  font-weight: 600;\n  line-height: 1.5;\n}\n.flow-thread-popover__flag .flow-inline-anchor__hint {\n  grid-column: 1;\n}\n.flow-thread-popover__flag .flow-inline-anchor__alert {\n  display: inline-flex;\n  grid-column: 2;\n  color: #7a5a00;\n}\n.flow-thread-popover__flag .flow-inline-anchor__alert svg {\n  display: block;\n  width: 20px;\n  height: 20px;\n  fill: currentColor;\n}\n.flow-thread-popover__header-actions {\n  position: absolute;\n  top: 8px;\n  right: 8px;\n  z-index: 2;\n  display: flex;\n  align-items: center;\n  gap: 4px;\n}\n.flow-thread-popover__close.components-button {\n  position: static;\n  min-width: 0 !important;\n  width: 32px !important;\n  height: 32px !important;\n  padding: 4px !important;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  color: #1e1e1e !important;\n  background: transparent !important;\n  border: none !important;\n  box-shadow: none !important;\n  border-radius: 2px;\n  transition: background-color 0.15s ease;\n}\n.flow-thread-popover__close.components-button .components-button__icon,\n.flow-thread-popover__close.components-button svg {\n  margin: 0;\n  fill: currentColor;\n  width: 20px;\n  height: 20px;\n}\n.flow-thread-popover__close.components-button:hover:not(:disabled), .flow-thread-popover__close.components-button:focus-visible:not(:disabled), .flow-thread-popover__close.components-button:active:not(:disabled) {\n  color: #1e1e1e !important;\n  background: #ebebeb !important;\n  box-shadow: none !important;\n}\n.flow-thread-popover__resolve-icon.components-button {\n  min-width: 0 !important;\n  width: 32px !important;\n  height: 32px !important;\n  padding: 4px !important;\n  background: transparent !important;\n  border: none !important;\n  box-shadow: none !important;\n  border-radius: 2px !important;\n  transition: background-color 0.15s ease;\n}\n.flow-thread-popover__resolve-icon.components-button svg {\n  width: 20px;\n  height: 20px;\n}\n.flow-thread-popover__resolve-icon.components-button svg .flow-comment-resolve__default,\n.flow-thread-popover__resolve-icon.components-button svg .flow-comment-resolve__hover {\n  transition: opacity 0.15s ease;\n}\n.flow-thread-popover__resolve-icon.components-button svg .flow-comment-resolve__hover {\n  opacity: 0;\n}\n.flow-thread-popover__resolve-icon.components-button:hover:not(:disabled), .flow-thread-popover__resolve-icon.components-button:focus-visible:not(:disabled) {\n  background: #e7f5e4 !important;\n}\n.flow-thread-popover__resolve-icon.components-button:hover:not(:disabled) svg .flow-comment-resolve__default, .flow-thread-popover__resolve-icon.components-button:focus-visible:not(:disabled) svg .flow-comment-resolve__default {\n  opacity: 0;\n}\n.flow-thread-popover__resolve-icon.components-button:hover:not(:disabled) svg .flow-comment-resolve__hover, .flow-thread-popover__resolve-icon.components-button:focus-visible:not(:disabled) svg .flow-comment-resolve__hover {\n  opacity: 1;\n}\n.flow-thread-popover__reply-header {\n  margin-bottom: 4px;\n  padding-right: 36px;\n}\n.flow-thread-popover__reply-actions {\n  position: absolute;\n  top: 6px;\n  right: 0;\n  display: flex;\n}\n.flow-thread-popover__avatar {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  width: 28px;\n  height: 28px;\n  border-radius: 50%;\n  font-size: 11px;\n  font-weight: 600;\n  line-height: 1;\n  flex-shrink: 0;\n  user-select: none;\n  grid-column: 1;\n  grid-row: 1/span 2;\n  align-self: center;\n}\n.flow-thread-popover__avatar--fallback {\n  background: #dcdcde;\n  color: #757575;\n}\n.flow-thread-popover__avatar--img {\n  display: block;\n  object-fit: cover;\n  background: transparent;\n}\n.flow-thread-popover__byline {\n  display: flex;\n  align-items: center;\n  gap: 6px;\n  min-width: 0;\n  grid-column: 2;\n  grid-row: 1;\n}\n.flow-thread-popover__author {\n  font-weight: 600;\n  font-size: 12px;\n  color: #1e1e1e;\n  min-width: 0;\n  overflow: hidden;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n}\n.flow-thread-popover__agent {\n  flex: none;\n  padding: 0 5px;\n  border: 1px solid #c3c4c7;\n  border-radius: 2px;\n  font-size: 9px;\n  font-weight: 600;\n  line-height: 15px;\n  letter-spacing: 0.04em;\n  color: #757575;\n}\n.flow-thread-popover__date {\n  font-size: 11px;\n  color: #757575;\n  line-height: 1.2;\n  white-space: nowrap;\n  grid-column: 2;\n  grid-row: 2;\n}\n.flow-thread-popover__body {\n  font-size: 13px;\n  line-height: 1.6;\n  word-break: break-word;\n}\n.flow-thread-popover__body > * {\n  margin: 0;\n}\n.flow-thread-popover__body > * + * {\n  margin-top: 0.3em;\n}\n.flow-thread-popover__body strong {\n  font-weight: 600;\n}\n.flow-thread-popover__body em {\n  font-style: italic;\n}\n.flow-thread-popover__body a {\n  color: var(--wp-admin-theme-color, #007cba);\n  text-decoration: underline;\n}\n.flow-thread-popover__body ul, .flow-thread-popover__body ol {\n  padding-left: 1.4em;\n  margin: 0.3em 0;\n}\n.flow-thread-popover__replies {\n  margin-top: 10px;\n  padding-top: 10px;\n  border-top: 1px solid #e0e0e0;\n}\n.flow-thread-popover__reply {\n  position: relative;\n  padding: 8px 0 4px;\n}\n.flow-thread-popover__reply:last-child {\n  margin-bottom: 0;\n}\n.flow-thread-popover__reply-body {\n  font-size: 13px;\n  line-height: 1.6;\n  color: #1e1e1e;\n  word-break: break-word;\n}\n.flow-thread-popover__reply-body > * {\n  margin: 0;\n}\n.flow-thread-popover__reply-body > * + * {\n  margin-top: 0.4em;\n}\n.flow-thread-popover__reply-editor {\n  margin-top: 10px;\n  padding-top: 10px;\n  border-top: 1px solid #e0e0e0;\n}\n.flow-thread-popover__actions {\n  display: flex;\n  gap: 8px;\n  margin-top: 12px;\n  padding-top: 10px;\n  justify-content: flex-start;\n}\n.flow-thread-popover__actions .components-button {\n  min-height: 30px;\n}\n.flow-thread-popover__reply-btn.components-button.has-icon.has-text {\n  margin-left: 0;\n  margin-right: 12px;\n  gap: 8px !important;\n  text-decoration: underline;\n  text-underline-offset: 2px;\n}\n.flow-thread-popover__reply-btn.components-button.has-icon.has-text:hover:not(:disabled), .flow-thread-popover__reply-btn.components-button.has-icon.has-text:focus-visible:not(:disabled) {\n  text-decoration: none;\n}\n.flow-thread-popover__reply-btn.components-button.has-icon.has-text svg,\n.flow-thread-popover__reply-btn.components-button.has-icon.has-text .components-button__icon {\n  margin-right: 0 !important;\n}\n.flow-thread-popover__issue-btn.components-button.has-icon.has-text {\n  color: #957500 !important;\n}\n.flow-thread-popover__issue-btn.components-button.has-icon.has-text svg {\n  fill: currentColor;\n}\n.flow-thread-popover__issue-btn.components-button.has-icon.has-text:hover:not(:disabled), .flow-thread-popover__issue-btn.components-button.has-icon.has-text:focus-visible:not(:disabled) {\n  background: #fcf0ce !important;\n  color: #957500 !important;\n}\n.flow-thread-popover__resolved-badge {\n  margin-top: 10px;\n  padding: 0 8px;\n  height: 26px;\n  background: #edfaee;\n  border: 1px solid #82d68e;\n  border-radius: 3px;\n  color: #1a6b28;\n  font-size: 11px;\n  font-weight: 600;\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  white-space: nowrap;\n  margin-left: auto;\n}\n.flow-thread-popover .flow-comment-editor {\n  display: flex;\n  flex-direction: column;\n}\n.flow-thread-popover .flow-comment-editor__toolbar {\n  display: flex;\n  align-items: stretch;\n  gap: 0;\n  padding: 0;\n  background: #fff;\n  border: 1px solid #1d2327;\n  border-bottom: 0;\n  border-radius: 2px 2px 0 0;\n  overflow-x: auto;\n  overflow-y: hidden;\n}\n.flow-thread-popover .flow-comment-editor__toolbar .components-button {\n  min-width: 32px !important;\n  width: auto !important;\n  height: 36px !important;\n  padding: 0 6px !important;\n  border-radius: 0;\n  border-left: 1px solid #1d2327;\n  color: #1e1e1e;\n  box-shadow: none;\n  flex-shrink: 0;\n}\n.flow-thread-popover .flow-comment-editor__toolbar .components-button:hover:not(:disabled) {\n  background: #f0f0f0;\n}\n.flow-thread-popover .flow-comment-editor__toolbar .components-button.is-pressed:not(:disabled) {\n  background: #f0f6fc;\n  color: var(--wp-admin-theme-color, #007cba);\n}\n.flow-thread-popover .flow-comment-editor__toolbar .components-button.is-small,\n.flow-thread-popover .flow-comment-editor__toolbar .components-button[data-size=small] {\n  min-width: 32px !important;\n  width: auto !important;\n  height: 36px !important;\n  padding: 0 6px !important;\n  border-radius: 0;\n}\n.flow-thread-popover .flow-comment-editor__toolbar-group {\n  display: flex;\n  align-items: stretch;\n  flex-shrink: 0;\n  border-left: 1px solid #1d2327;\n}\n.flow-thread-popover .flow-comment-editor__toolbar-group .components-button {\n  border-left: 0;\n}\n.flow-thread-popover .flow-comment-editor__block-select {\n  height: 36px;\n  padding: 0 10px;\n  border: 0;\n  border-radius: 0;\n  background: #fff;\n  font-size: 12px;\n  cursor: pointer;\n  flex-shrink: 0;\n  min-width: 84px;\n}\n.flow-thread-popover .flow-comment-editor__block-select:hover {\n  background: #f0f0f0;\n}\n.flow-thread-popover .flow-comment-editor__block-select:focus {\n  outline: none;\n  box-shadow: inset 0 0 0 2px var(--wp-admin-theme-color, #007cba);\n}\n.flow-thread-popover .flow-comment-editor__toolbar-sep {\n  display: none;\n}\n.flow-thread-popover .flow-comment-editor__content {\n  border: 1px solid #1d2327;\n  border-radius: 0 0 2px 2px;\n  background: #fff;\n  cursor: text;\n}\n.flow-thread-popover .flow-comment-editor__content:focus-within {\n  border-color: var(--wp-admin-theme-color, #007cba);\n  box-shadow: 0 0 0 1px var(--wp-admin-theme-color, #007cba);\n}\n.flow-thread-popover .flow-comment-editor__content .ProseMirror {\n  position: relative;\n  min-height: 75px;\n  max-height: 150px;\n  overflow-y: auto;\n  padding: 8px 10px;\n  line-height: 1.6;\n  outline: none;\n  word-break: break-word;\n}\n.flow-thread-popover .flow-comment-editor__content .ProseMirror p.is-editor-empty:first-child::before {\n  content: attr(data-placeholder);\n  color: #949494;\n  pointer-events: none;\n  float: left;\n  height: 0;\n}\n.flow-thread-popover .flow-comment-editor__content .ProseMirror ul, .flow-thread-popover .flow-comment-editor__content .ProseMirror ol {\n  padding-left: 1.5em;\n  margin: 0.3em 0;\n}\n.flow-thread-popover .flow-comment-editor__content .ProseMirror li {\n  margin: 0.1em 0;\n}\n.flow-thread-popover .flow-comment-editor__content .ProseMirror a {\n  color: var(--wp-admin-theme-color, #007cba);\n  text-decoration: underline;\n}\n.flow-thread-popover .flow-comment-editor__content .ProseMirror strong {\n  font-weight: 600;\n}\n.flow-thread-popover .flow-comment-editor__content .ProseMirror em {\n  font-style: italic;\n}\n.flow-thread-popover .flow-comment-editor--basic .flow-comment-editor__content {\n  border-radius: 2px;\n}\n.flow-thread-popover .flow-comment-editor__textarea {\n  display: block;\n  width: 100%;\n  min-height: 75px;\n  max-height: 150px;\n  margin: 0;\n  padding: 8px 10px;\n  border: 0;\n  border-radius: inherit;\n  background: #fff;\n  font-family: inherit;\n  font-size: 13px;\n  line-height: 1.6;\n  resize: vertical;\n  box-sizing: border-box;\n  outline: none;\n  color: #1e1e1e;\n}\n.flow-thread-popover .flow-comment-editor__textarea::placeholder {\n  color: #949494;\n}\n.flow-thread-popover .flow-comment-editor__link-row {\n  display: flex;\n  align-items: center;\n  gap: 4px;\n  padding: 4px 6px;\n  background: #f6f7f7;\n  border: 1px solid #1d2327;\n  border-top: none;\n  border-bottom: none;\n}\n.flow-thread-popover .flow-comment-editor__link-input {\n  flex: 1;\n  height: 28px;\n  padding: 0 6px;\n  border: 1px solid #949494;\n  border-radius: 2px;\n  background: #fff;\n  font-size: 12px;\n}\n.flow-thread-popover .flow-comment-editor__link-input:focus {\n  outline: none;\n  border-color: var(--wp-admin-theme-color, #007cba);\n  box-shadow: 0 0 0 1px var(--wp-admin-theme-color, #007cba);\n}\n.flow-thread-popover .flow-comment-editor__submit-row {\n  display: flex;\n  gap: 8px;\n  margin-top: 10px;\n  justify-content: flex-start;\n}\n.flow-thread-popover .flow-comment-editor__submit-row .flow-comment-editor__submit-btn.components-button {\n  flex: 0 0 auto;\n  min-width: 80px;\n  justify-content: center;\n}\n.flow-thread-popover .flow-comment-editor__submit-row .flow-btn--cancel.components-button {\n  flex: 0 0 auto;\n  min-width: 80px !important;\n  justify-content: center;\n}\n.flow-thread-popover .flow-comment-editor__submit-row .flow-comment-editor__submit-btn:disabled,\n.flow-thread-popover .flow-comment-editor__submit-row .flow-comment-editor__submit-btn[aria-disabled=true] {\n  background: transparent !important;\n  border-color: #dcdcde !important;\n  color: #757575 !important;\n  opacity: 1 !important;\n}\n.flow-thread-popover .flow-comment-editor__error {\n  margin: 8px 0 0;\n  padding: 6px 10px;\n  background: #fcf0f1;\n  border: 1px solid #cc1818;\n  border-radius: 2px;\n  color: #cc1818;\n  font-size: 12px;\n}\n\n.flow-thread-popover__reopen {\n  display: flex;\n  align-items: center;\n  gap: 6px;\n  margin-bottom: 8px;\n  font-size: 12px;\n  cursor: pointer;\n}\n.flow-thread-popover__reopen input {\n  margin: 0;\n}\n\n.flow-inline-popover--below.flow-inline-popover--editor {\n  width: calc(100vw - 16px);\n  max-width: calc(100vw - 16px);\n}\n.flow-inline-popover--below.flow-inline-popover--editor .flow-inline-popover__editor-wrap {\n  box-sizing: border-box;\n  width: 100%;\n  max-width: none;\n}\n\n.ProseMirror,\n.ProseMirror p {\n  font-size: inherit;\n}\n\n.ProseMirror {\n  white-space: pre-wrap;\n  white-space: break-spaces;\n  word-wrap: break-word;\n  font-variant-ligatures: none;\n  font-feature-settings: \"liga\" 0;\n}\n\n.ProseMirror [contenteditable=false] {\n  white-space: normal;\n}\n\n.ProseMirror pre {\n  white-space: pre-wrap;\n}\n\n@supports (-webkit-touch-callout: none) {\n  textarea,\n  input,\n  select,\n  [contenteditable=true] {\n    font-size: 16px !important;\n  }\n}";
 
 /***/ },
 
@@ -11005,7 +12179,7 @@ module.exports = "/**\n * Flow Editorial Workflow — Inline comment popover sty
   \******************************************/
 (module) {
 
-module.exports = ".flow-confirm-dialog {\n  position: fixed;\n  inset: 0;\n  z-index: 1000003;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  padding: 16px;\n}\n\n.flow-confirm-dialog__backdrop {\n  position: absolute;\n  inset: 0;\n  margin: 0;\n  padding: 0;\n  border: 0;\n  background: rgba(0, 0, 0, 0.45);\n  cursor: default;\n}\n\n.flow-confirm-dialog__panel {\n  position: relative;\n  width: 100%;\n  max-width: min(420px, 100% - 32px);\n  font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Oxygen-Sans, Ubuntu, Cantarell, \"Helvetica Neue\", sans-serif;\n  font-size: 13px;\n  line-height: 1.4;\n  color: #c92122;\n  background: #ffebea;\n  border: 1px solid #ffd1d0;\n  border-left-width: 4px;\n  border-left-color: #c92122;\n  border-radius: 2px;\n  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16);\n}\n\n.flow-confirm-dialog__alert {\n  display: flex;\n  align-items: flex-start;\n  gap: 12px;\n  padding: 12px 16px;\n}\n\n.flow-confirm-dialog__icon {\n  display: flex;\n  flex-shrink: 0;\n  align-items: center;\n  justify-content: center;\n  width: 24px;\n  height: 24px;\n  color: #c92122;\n}\n.flow-confirm-dialog__icon svg {\n  display: block;\n  width: 24px;\n  height: 24px;\n}\n\n.flow-confirm-dialog__content {\n  flex: 1 1 auto;\n  min-width: 0;\n}\n\n.flow-confirm-dialog__title {\n  margin: 0 0 2px;\n  font-size: inherit;\n  font-weight: 600;\n  line-height: inherit;\n  color: inherit;\n}\n\n.flow-confirm-dialog__message {\n  margin: 0;\n  font-size: inherit;\n  font-weight: 400;\n  line-height: inherit;\n  color: inherit;\n}\n\n.flow-confirm-dialog__actions {\n  display: flex;\n  justify-content: flex-end;\n  gap: 8px;\n  padding: 0 16px 12px;\n}\n.flow-confirm-dialog__actions .components-button {\n  flex: 0 0 auto;\n  white-space: nowrap;\n}\n\n.flow-confirm-dialog__confirm.components-button {\n  min-width: 80px;\n  justify-content: center;\n  background: #c92122 !important;\n  border: 1px solid #c92122 !important;\n  color: #fff !important;\n  box-shadow: none !important;\n}\n.flow-confirm-dialog__confirm.components-button:hover:not(:disabled), .flow-confirm-dialog__confirm.components-button:active:not(:disabled) {\n  background: #b32d2e !important;\n  border-color: #b32d2e !important;\n  color: #fff !important;\n}\n.flow-confirm-dialog__confirm.components-button:focus:not(:disabled) {\n  box-shadow: 0 0 0 var(--wp-admin-border-width-focus, 2px) #fff, 0 0 0 calc(var(--wp-admin-border-width-focus, 2px) + 1px) #c92122 !important;\n  outline: 1px solid transparent;\n}\n\n.flow-confirm-dialog__panel--warning {\n  color: #1e1e1e;\n  background: #fcf0ce;\n  border-color: #f2dda4;\n  border-left-color: #dba617;\n}\n.flow-confirm-dialog__panel--warning .flow-confirm-dialog__icon {\n  color: #957500;\n}\n.flow-confirm-dialog__panel--warning .flow-confirm-dialog__confirm.components-button {\n  background: #dba617 !important;\n  border-color: #dba617 !important;\n  color: #1d2327 !important;\n}\n.flow-confirm-dialog__panel--warning .flow-confirm-dialog__confirm.components-button:hover:not(:disabled), .flow-confirm-dialog__panel--warning .flow-confirm-dialog__confirm.components-button:active:not(:disabled) {\n  background: #c4950f !important;\n  border-color: #c4950f !important;\n  color: #1d2327 !important;\n}\n.flow-confirm-dialog__panel--warning .flow-confirm-dialog__confirm.components-button:focus:not(:disabled) {\n  box-shadow: 0 0 0 var(--wp-admin-border-width-focus, 2px) #fff, 0 0 0 calc(var(--wp-admin-border-width-focus, 2px) + 1px) #dba617 !important;\n}\n\n.flow-confirm-dialog__panel--neutral {\n  color: #1e1e1e;\n  background: #fff;\n  border-color: #e0e0e0;\n  border-left-width: 1px;\n  border-left-color: #e0e0e0;\n  max-width: min(480px, 100% - 32px);\n}\n.flow-confirm-dialog__panel--neutral .flow-confirm-dialog__title {\n  margin-bottom: 8px;\n}\n\n.flow-revisions {\n  display: flex;\n  flex-direction: column;\n  max-height: min(360px, 60vh);\n  margin: 0;\n  padding: 0;\n  overflow-y: auto;\n  list-style: none;\n}\n.flow-revisions li {\n  margin: 0;\n}\n\n.flow-revisions__item {\n  display: flex;\n  flex-wrap: wrap;\n  align-items: center;\n  gap: 4px 8px;\n  padding: 8px;\n  border-radius: 2px;\n  color: #1e1e1e;\n  text-decoration: none;\n}\n.flow-revisions__item:hover, .flow-revisions__item:focus-visible {\n  background: #f6f7f7;\n}\n.flow-revisions__item.is-viewing {\n  background: #f6f7f7;\n  font-weight: 600;\n}\n\n.flow-revisions__date {\n  font-variant-numeric: tabular-nums;\n}\n\n.flow-revisions__tag {\n  padding: 0 6px;\n  border: 1px solid #e0e0e0;\n  border-radius: 10px;\n  font-size: 11px;\n  font-weight: 500;\n  color: #757575;\n}\n\n.flow-revisions__resolved {\n  margin-left: auto;\n  font-size: 12px;\n  color: #757575;\n}\n\n*,\n*::before,\n*::after {\n  box-sizing: border-box;\n}\n\n:host {\n  display: block;\n  position: fixed;\n  top: 64px;\n  right: 0;\n  width: 360px;\n  height: calc(100vh - 64px - var(--flow-ew-upsell-bar-height, 0px));\n  height: calc(100dvh - 64px - var(--flow-ew-upsell-bar-height, 0px));\n  z-index: 999998;\n  overflow: hidden;\n  background: #fff;\n  border-left: 1px solid #e0e0e0;\n  box-shadow: -1px 0 0 0 rgba(0, 0, 0, 0.05);\n  font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Oxygen-Sans, Ubuntu, Cantarell, \"Helvetica Neue\", sans-serif;\n  font-size: 13px;\n  line-height: 1.4;\n  color: #1e1e1e;\n  -webkit-font-smoothing: antialiased;\n  -moz-osx-font-smoothing: grayscale;\n  transform: translateX(0);\n  opacity: 1;\n  transition: transform 180ms ease, opacity 180ms ease;\n  will-change: transform, opacity;\n}\n\n@media (max-width: 782px) {\n  :host {\n    width: 80vw;\n    max-width: 80vw;\n    border-left: 0;\n  }\n}\n:host([data-open=false]) {\n  transform: translateX(100%);\n  opacity: 0;\n  pointer-events: none;\n}\n\n@media (prefers-reduced-motion: reduce) {\n  :host {\n    transition: none;\n  }\n}\nbutton,\ninput,\nselect,\ntextarea {\n  font-family: inherit;\n  font-size: inherit;\n  line-height: inherit;\n  color: inherit;\n}\n\n.components-button {\n  font-weight: 600;\n}\n\n.flow-sidebar {\n  display: flex;\n  flex-direction: column;\n  height: 100%;\n  background: #fff;\n}\n.flow-sidebar__tablist-and-close {\n  display: flex;\n  flex-direction: column;\n  height: 100%;\n  position: relative;\n}\n.flow-sidebar__header {\n  flex: 0 0 auto;\n  display: flex;\n  align-items: stretch;\n  gap: 0;\n  height: 48px;\n  padding: 0 8px 0 0;\n  border-bottom: 1px solid #e0e0e0;\n  background: #fff;\n}\n@media (max-width: 782px) {\n  .flow-sidebar__header {\n    padding-right: 16px;\n  }\n}\n.flow-sidebar__header-close.components-button {\n  flex: 0 0 auto;\n  align-self: center;\n  width: 36px;\n  min-width: 36px;\n  height: 36px;\n  padding: 0;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  color: #1e1e1e;\n}\n.flow-sidebar__header-close.components-button .components-button__icon,\n.flow-sidebar__header-close.components-button svg {\n  margin: 0;\n  fill: currentColor;\n}\n.flow-sidebar__tab-panel {\n  display: flex;\n  flex-direction: column;\n  flex: 1 1 auto;\n  min-height: 0;\n}\n.flow-sidebar__tabs {\n  flex: 1 1 auto;\n  display: flex;\n  align-items: stretch;\n  min-width: 0;\n}\n@media (max-width: 782px) {\n  .flow-sidebar__tab {\n    flex: 1 1 0;\n    min-width: 0;\n    padding-left: 8px;\n    padding-right: 8px;\n  }\n}\n.flow-sidebar__tab {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  min-width: 144px;\n  padding: 10px 16px;\n  background: none;\n  border: 0;\n  border-bottom: 2px solid transparent;\n  font-family: inherit;\n  font-size: 13px;\n  font-weight: 500;\n  color: #757575;\n  cursor: pointer;\n  white-space: nowrap;\n  transition: color 0.1s ease, border-color 0.1s ease;\n}\n.flow-sidebar__tab:hover {\n  color: #1e1e1e;\n}\n.flow-sidebar__tab--active {\n  color: #1e1e1e;\n  font-weight: 600;\n  border-bottom-color: var(--wp-admin-theme-color, #007cba);\n}\n.flow-sidebar__tab-label {\n  vertical-align: middle;\n}\n.flow-sidebar__tab-count {\n  box-sizing: border-box;\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  margin-left: 6px;\n  min-width: 18px;\n  height: 18px;\n  padding: 0 6px;\n  border-radius: 999px;\n  font-size: 10px;\n  font-weight: 700;\n  line-height: 1;\n  font-variant-numeric: tabular-nums;\n  color: #fff;\n  background: #cc1818;\n  border: 0;\n}\n.flow-sidebar__tab-count--comments {\n  background: var(--wp-admin-theme-color, var(--wp-admin-theme-color, #007cba));\n}\n.flow-sidebar__tab-count--resolved {\n  background: #458037;\n}\n.flow-sidebar__tab:not(.flow-sidebar__tab--active) .flow-sidebar__tab-count {\n  background: #e0e0e0;\n  color: #757575;\n}\n.flow-sidebar__section-divider {\n  flex-shrink: 0;\n  border-top: 2px solid #e0e0e0;\n}\n.flow-sidebar__tab-scroll {\n  display: flex;\n  flex-direction: column;\n  flex-grow: 1;\n  overflow-y: auto;\n  scrollbar-gutter: auto;\n  background: #fff;\n}\n.flow-sidebar__tab-content {\n  display: flex;\n  flex-direction: column;\n  flex-grow: 1;\n  min-height: 0;\n}\n.flow-sidebar__body {\n  padding: 12px;\n  flex-shrink: 0;\n}\n.flow-sidebar__add-general.flow-comment-thread__reply-btn.components-button {\n  margin-left: 0 !important;\n}\n.flow-sidebar__placeholder {\n  padding: 24px 16px;\n  color: #757575;\n  font-size: 13px;\n  text-align: center;\n}\n\n.flow-inline-comments-empty {\n  padding: 20px 16px 24px;\n  text-align: left;\n  color: #1e1e1e;\n  border-top: 1px solid #e0e0e0;\n}\n.flow-inline-comments-empty__icon-wrap {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  width: 48px;\n  height: 48px;\n  margin: 0 auto 14px;\n  border-radius: 50%;\n  background: #f0f6fc;\n  color: var(--wp-admin-theme-color, #007cba);\n}\n.flow-inline-comments-empty__icon-wrap svg {\n  fill: currentColor;\n}\n.flow-inline-comments-empty__title {\n  margin: 0 0 8px;\n  font-size: 15px;\n  font-weight: 600;\n  line-height: 1.3;\n  text-align: center;\n  color: #1e1e1e;\n}\n.flow-inline-comments-empty__lead {\n  margin: 0 0 14px;\n  font-size: 13px;\n  line-height: 1.4;\n  color: #1e1e1e;\n  text-align: center;\n}\n.flow-inline-comments-empty__list {\n  margin: 0;\n  padding: 0 0 0 1.1em;\n  font-size: 12px;\n  line-height: 1.5;\n  color: #757575;\n}\n.flow-inline-comments-empty__list li {\n  margin-bottom: 8px;\n}\n.flow-inline-comments-empty__list li:last-child {\n  margin-bottom: 0;\n}\n\n.flow-btn--text.components-button {\n  background: transparent !important;\n  border: none !important;\n  box-shadow: none !important;\n  color: var(--wp-admin-theme-color, #007cba);\n}\n.flow-btn--text.components-button:hover:not(:disabled), .flow-btn--text.components-button:active:not(:disabled) {\n  color: var(--wp-admin-theme-color, #007cba);\n  background: #f0f6fc !important;\n}\n.flow-btn--text.components-button:focus:not(:disabled) {\n  box-shadow: 0 0 0 var(--wp-admin-border-width-focus, 2px) #fff, 0 0 0 calc(var(--wp-admin-border-width-focus, 2px) + 1px) var(--wp-admin-theme-color, #007cba) !important;\n  outline: 1px solid transparent;\n}\n.flow-btn--text.components-button:disabled, .flow-btn--text.components-button[aria-disabled=true] {\n  background: transparent !important;\n  border: none !important;\n  color: #8c8f94 !important;\n  opacity: 1 !important;\n}\n\n.flow-btn--cancel.components-button {\n  min-width: 80px !important;\n  text-decoration: underline;\n  text-underline-offset: 2px;\n}\n.flow-btn--cancel.components-button:hover:not(:disabled), .flow-btn--cancel.components-button:active:not(:disabled) {\n  text-decoration: none;\n}\n\n.flow-comment-editor__submit-btn.components-button {\n  background: transparent !important;\n  border: 1px solid var(--wp-admin-theme-color, #007cba) !important;\n  color: var(--wp-admin-theme-color, #007cba) !important;\n  box-shadow: none !important;\n}\n.flow-comment-editor__submit-btn.components-button:hover:not(:disabled), .flow-comment-editor__submit-btn.components-button:active:not(:disabled) {\n  background: #f0f6fc !important;\n  border-color: var(--wp-admin-theme-color, #007cba) !important;\n  color: var(--wp-admin-theme-color, #007cba) !important;\n}\n.flow-comment-editor__submit-btn.components-button:focus:not(:disabled) {\n  box-shadow: 0 0 0 var(--wp-admin-border-width-focus, 2px) #fff, 0 0 0 calc(var(--wp-admin-border-width-focus, 2px) + 1px) var(--wp-admin-theme-color, #007cba) !important;\n  outline: 1px solid transparent;\n}\n.flow-comment-editor__submit-btn.components-button:disabled, .flow-comment-editor__submit-btn.components-button[aria-disabled=true] {\n  background: transparent !important;\n  border-color: #dcdcde !important;\n  color: #757575 !important;\n  opacity: 1 !important;\n}\n\n.flow-comment-threads {\n  display: flex;\n  flex-direction: column;\n  gap: 12px;\n  padding: 12px;\n}\n\n.flow-comment-threads > .flow-comment-thread:hover {\n  border-color: #666a70;\n}\n\n.flow-comment-thread {\n  border: 1px solid #e0e0e0;\n  border-radius: 4px;\n  background: #fff;\n  overflow: hidden;\n  transition: border-color 0.1s ease;\n  --flow-comment-fade-bg: #fff;\n}\n.flow-comment-thread__replies {\n  padding: 0 12px 4px 12px;\n  margin: 0 0 0 6px;\n  border-left: 1px solid #e0e0e0;\n}\n.flow-comment-thread__toggle {\n  display: block;\n  padding: 4px 0 8px;\n  background: none;\n  border: 0;\n  color: var(--wp-admin-theme-color, #007cba);\n  font-size: 12px;\n  font-weight: 400;\n  cursor: pointer;\n  text-decoration: underline;\n  text-underline-offset: 2px;\n}\n.flow-comment-thread__toggle:hover {\n  text-decoration: underline;\n}\n.flow-comment-thread__reply-editor {\n  padding: 0 12px 12px;\n}\n.flow-comment-thread__resolve-row {\n  padding: 12px;\n  display: flex;\n  align-items: center;\n  gap: 12px;\n  justify-content: flex-start;\n}\n.flow-comment-thread__resolve-row .components-button {\n  min-height: 30px;\n  margin-left: 0;\n  margin-right: 0;\n}\n.flow-comment-thread__resolve-row .flow-comment-thread__reply-btn.components-button.has-icon.has-text {\n  margin-left: 0;\n  margin-right: 0;\n  flex-shrink: 0;\n  white-space: nowrap;\n}\n@media (max-width: 782px) {\n  .flow-comment-thread__resolve-row {\n    gap: 8px;\n  }\n}\n.flow-comment-thread__reply-btn.components-button.has-icon.has-text {\n  margin-left: 12px;\n  margin-right: 12px;\n  gap: 8px !important;\n  border-radius: 2px;\n  text-decoration: underline;\n  text-underline-offset: 2px;\n  transition: background-color 0.15s ease;\n}\n.flow-comment-thread__reply-btn.components-button.has-icon.has-text:hover:not(:disabled), .flow-comment-thread__reply-btn.components-button.has-icon.has-text:focus-visible:not(:disabled) {\n  background: #e8edfc !important;\n  text-decoration: none;\n}\n.flow-comment-thread__reply-btn.components-button.has-icon.has-text svg,\n.flow-comment-thread__reply-btn.components-button.has-icon.has-text .components-button__icon {\n  margin-right: 0 !important;\n}\n.flow-comment-thread__issue-btn.components-button.has-icon.has-text {\n  color: #957500 !important;\n}\n.flow-comment-thread__issue-btn.components-button.has-icon.has-text svg {\n  fill: currentColor;\n}\n.flow-comment-thread__issue-btn.components-button.has-icon.has-text:hover:not(:disabled), .flow-comment-thread__issue-btn.components-button.has-icon.has-text:focus-visible:not(:disabled) {\n  background: #fcf0ce !important;\n  color: #957500 !important;\n}\n\n.flow-comment-card {\n  padding: 12px;\n}\n.flow-comment-card__header {\n  display: grid;\n  grid-template-columns: auto minmax(0, 1fr) auto;\n  grid-template-rows: auto auto;\n  column-gap: 8px;\n  row-gap: 1px;\n  align-items: center;\n  margin-bottom: 6px;\n}\n.flow-comment-card__avatar {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  width: 28px;\n  height: 28px;\n  border-radius: 50%;\n  font-size: 11px;\n  font-weight: 600;\n  line-height: 1;\n  user-select: none;\n  grid-column: 1;\n  grid-row: 1/span 2;\n  align-self: center;\n}\n.flow-comment-card__avatar--fallback {\n  background: #dcdcde;\n  color: #757575;\n}\n.flow-comment-card__avatar--img {\n  display: block;\n  object-fit: cover;\n  background: transparent;\n}\n.flow-comment-card__byline {\n  display: flex;\n  align-items: center;\n  gap: 6px;\n  min-width: 0;\n  grid-column: 2;\n  grid-row: 1;\n}\n.flow-comment-card__author {\n  font-weight: 600;\n  font-size: 12px;\n  color: #1e1e1e;\n  white-space: nowrap;\n  min-width: 0;\n  overflow: hidden;\n  text-overflow: ellipsis;\n}\n.flow-comment-card__agent {\n  flex: none;\n  padding: 0 5px;\n  border: 1px solid #c3c4c7;\n  border-radius: 2px;\n  font-size: 9px;\n  font-weight: 600;\n  line-height: 15px;\n  letter-spacing: 0.04em;\n  color: #757575;\n}\n.flow-comment-card__date {\n  font-size: 11px;\n  color: #757575;\n  white-space: nowrap;\n  line-height: 1.2;\n  grid-column: 2;\n  grid-row: 2;\n  min-width: 0;\n  overflow: hidden;\n  text-overflow: ellipsis;\n}\n.flow-comment-card__date-short {\n  display: none;\n}\n@media (max-width: 782px) {\n  .flow-comment-card__date-full {\n    display: none;\n  }\n  .flow-comment-card__date-short {\n    display: inline;\n  }\n}\n.flow-comment-card__actions {\n  display: flex;\n  align-items: center;\n  gap: 4px;\n  grid-column: 3;\n  grid-row: 1/span 2;\n  align-self: center;\n}\n@media (max-width: 782px) {\n  .flow-comment-card__actions {\n    gap: 0;\n  }\n}\n.flow-comment-card__action-btn.components-button {\n  min-width: 0 !important;\n  width: 28px !important;\n  height: 28px !important;\n  padding: 0 !important;\n  color: #757575;\n  border-radius: 2px;\n}\n.flow-comment-card__action-btn.components-button:hover:not(:disabled) {\n  color: #1e1e1e;\n  background: #f0f0f0;\n}\n.flow-comment-card__action-btn.components-button.flow-comment-card__action-btn--destructive {\n  color: #d63638;\n}\n.flow-comment-card__action-btn.components-button.flow-comment-card__action-btn--destructive:hover:not(:disabled) {\n  color: #b32d2e;\n  background: #fcf0f1;\n}\n.flow-comment-card__action-btn.components-button svg {\n  width: 20px;\n  height: 20px;\n}\n.flow-comment-card__menu {\n  display: flex;\n  align-items: center;\n  gap: 4px;\n}\n.flow-comment-card__action-icon.components-button {\n  min-width: 0 !important;\n  width: 24px !important;\n  height: 24px !important;\n  padding: 0 !important;\n  color: #1e1e1e !important;\n  background: transparent !important;\n  border: none !important;\n  box-shadow: none !important;\n  border-radius: 2px;\n  transition: background-color 0.15s ease;\n}\n.flow-comment-card__action-icon.components-button svg {\n  width: 24px;\n  height: 24px;\n}\n.flow-comment-card__action-icon.components-button:hover:not(:disabled), .flow-comment-card__action-icon.components-button:focus-visible:not(:disabled), .flow-comment-card__action-icon.components-button:active:not(:disabled) {\n  color: #1e1e1e !important;\n  box-shadow: none !important;\n}\n.flow-comment-card__action-icon--edit.components-button, .flow-comment-card__action-icon--destructive.components-button, .flow-comment-card__action-icon--close.components-button, .flow-comment-card__menu-trigger.components-button {\n  width: 32px !important;\n  height: 32px !important;\n  padding: 4px !important;\n}\n.flow-comment-card__action-icon--edit.components-button svg, .flow-comment-card__action-icon--destructive.components-button svg, .flow-comment-card__action-icon--close.components-button svg, .flow-comment-card__menu-trigger.components-button svg {\n  width: 20px;\n  height: 20px;\n}\n.flow-comment-card__action-icon--edit.components-button:hover:not(:disabled), .flow-comment-card__action-icon--edit.components-button:focus-visible:not(:disabled) {\n  background: #e8edfc !important;\n}\n.flow-comment-card__action-icon--destructive.components-button {\n  color: #c92222 !important;\n}\n.flow-comment-card__action-icon--destructive.components-button:hover:not(:disabled), .flow-comment-card__action-icon--destructive.components-button:focus-visible:not(:disabled), .flow-comment-card__action-icon--destructive.components-button:active:not(:disabled) {\n  color: #c92222 !important;\n  background: #ffeaea !important;\n}\n.flow-comment-card__action-icon--close.components-button:hover:not(:disabled), .flow-comment-card__action-icon--close.components-button:focus-visible:not(:disabled) {\n  background: #ebebeb !important;\n}\n.flow-comment-card__menu-trigger.components-button:hover:not(:disabled), .flow-comment-card__menu-trigger.components-button:focus-visible:not(:disabled), .flow-comment-card__menu-trigger.components-button:active:not(:disabled) {\n  color: #1e1e1e !important;\n  background: #ebebeb !important;\n  box-shadow: none !important;\n}\n.flow-comment-card__resolve-icon.components-button {\n  min-width: 0 !important;\n  width: 32px !important;\n  height: 32px !important;\n  padding: 4px !important;\n  color: #458037 !important;\n  background: transparent !important;\n  border: none !important;\n  box-shadow: none !important;\n  border-radius: 2px !important;\n  transition: background-color 0.15s ease;\n}\n.flow-comment-card__resolve-icon.components-button svg {\n  width: 20px;\n  height: 20px;\n}\n.flow-comment-card__resolve-icon.components-button svg .flow-comment-resolve__default,\n.flow-comment-card__resolve-icon.components-button svg .flow-comment-resolve__hover {\n  transition: opacity 0.15s ease;\n}\n.flow-comment-card__resolve-icon.components-button svg .flow-comment-resolve__hover {\n  opacity: 0;\n}\n.flow-comment-card__resolve-icon.components-button:hover:not(:disabled), .flow-comment-card__resolve-icon.components-button:focus-visible:not(:disabled), .flow-comment-card__resolve-icon.components-button:active:not(:disabled) {\n  color: #458037 !important;\n  background: #e7f5e4 !important;\n  box-shadow: none !important;\n}\n.flow-comment-card__resolve-icon.components-button:hover:not(:disabled) svg .flow-comment-resolve__default, .flow-comment-card__resolve-icon.components-button:focus-visible:not(:disabled) svg .flow-comment-resolve__default, .flow-comment-card__resolve-icon.components-button:active:not(:disabled) svg .flow-comment-resolve__default {\n  opacity: 0;\n}\n.flow-comment-card__resolve-icon.components-button:hover:not(:disabled) svg .flow-comment-resolve__hover, .flow-comment-card__resolve-icon.components-button:focus-visible:not(:disabled) svg .flow-comment-resolve__hover, .flow-comment-card__resolve-icon.components-button:active:not(:disabled) svg .flow-comment-resolve__hover {\n  opacity: 1;\n}\n.flow-comment-card__action-btn--collapse.components-button {\n  min-width: 0 !important;\n  width: 32px !important;\n  height: 32px !important;\n  padding: 4px !important;\n  color: #1e1e1e;\n  border-radius: 2px;\n  transition: background-color 0.15s ease;\n}\n.flow-comment-card__action-btn--collapse.components-button:hover:not(:disabled), .flow-comment-card__action-btn--collapse.components-button:focus-visible:not(:disabled) {\n  color: #1e1e1e;\n  background: #ebebeb !important;\n}\n.flow-comment-card__action-btn--collapse.components-button svg {\n  width: 20px;\n  height: 20px;\n}\n.flow-comment-card__action-btn--reply.components-button {\n  opacity: 1;\n  color: var(--wp-admin-theme-color, #007cba);\n}\n.flow-comment-card__action-btn--reply.components-button:hover:not(:disabled) {\n  color: var(--wp-admin-theme-color, #007cba);\n  background: #f0f6fc;\n}\n.flow-comment-card__resolved-icon {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  width: 24px;\n  height: 24px;\n  flex-shrink: 0;\n}\n.flow-comment-card__resolved-icon svg {\n  width: 24px;\n  height: 24px;\n}\n.flow-comment-card__body {\n  font-size: 13px;\n  line-height: 1.6;\n  color: #1e1e1e;\n  word-break: break-word;\n}\n.flow-comment-card__body > * {\n  margin: 0;\n}\n.flow-comment-card__body > * + * {\n  margin-top: 0.4em;\n}\n.flow-comment-card__body strong {\n  font-weight: 600;\n}\n.flow-comment-card__body em {\n  font-style: italic;\n}\n.flow-comment-card__body ul,\n.flow-comment-card__body ol {\n  padding-left: 1.4em;\n  margin: 0.3em 0;\n}\n.flow-comment-card__body a {\n  color: var(--wp-admin-theme-color, #007cba);\n  text-decoration: underline;\n}\n.flow-comment-card__body h1 {\n  font-size: 1.3em;\n  font-weight: 600;\n}\n.flow-comment-card__body h2 {\n  font-size: 1.1em;\n  font-weight: 600;\n}\n.flow-comment-card__body h3 {\n  font-size: 1em;\n  font-weight: 600;\n}\n.flow-comment-card__body--truncated {\n  max-height: 80px;\n  overflow: hidden;\n  position: relative;\n  cursor: pointer;\n}\n.flow-comment-card__body--truncated::after {\n  content: \"\";\n  position: absolute;\n  bottom: 0;\n  left: 0;\n  right: 0;\n  height: 24px;\n  background: linear-gradient(transparent, var(--flow-comment-fade-bg));\n  pointer-events: none;\n}\n.flow-comment-card__more {\n  display: inline-flex;\n  align-items: center;\n  margin-top: 6px;\n  padding: 0;\n  background: none;\n  border: 0;\n  color: var(--wp-admin-theme-color, #007cba);\n  font-size: 12px;\n  font-weight: 600;\n  cursor: pointer;\n}\n.flow-comment-card__more:hover, .flow-comment-card__more:focus-visible {\n  text-decoration: underline;\n}\n.flow-comment-card--reply {\n  padding: 8px 0 4px;\n}\n\n.flow-inline-anchor {\n  display: flex;\n  flex-direction: column;\n  align-items: flex-start;\n  gap: 2px;\n  width: 100%;\n  padding: 10px 16px;\n  margin: 0;\n  background: #f6f7f7;\n  border: 0;\n  color: var(--wp-admin-theme-color, #007cba);\n  font-size: 12px;\n  font-style: normal;\n  line-height: 1.5;\n  text-align: left;\n  overflow: hidden;\n  font-family: inherit;\n  text-decoration: none;\n  pointer-events: none;\n}\n.flow-inline-anchor__text {\n  display: block;\n  width: 100%;\n  overflow: hidden;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n  text-decoration: underline;\n  text-underline-offset: 2px;\n}\n.flow-inline-anchor__hint {\n  display: block;\n  font-size: 11px;\n  font-style: normal;\n  font-weight: 600;\n  color: #7a5a00;\n}\n.flow-inline-anchor__alert {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  width: 20px;\n  height: 20px;\n  grid-column: 2;\n  grid-row: 1/span 2;\n  align-self: center;\n  justify-self: end;\n  color: #7a5a00;\n}\n.flow-inline-anchor__alert svg {\n  display: block;\n  width: 20px;\n  height: 20px;\n}\n.flow-inline-anchor--outdated {\n  display: grid;\n  grid-template-columns: minmax(0, 1fr) 20px;\n  column-gap: 8px;\n  row-gap: 2px;\n  align-items: center;\n  background: #fff6cc;\n  color: #7a5a00;\n}\n.flow-inline-anchor--outdated .flow-inline-anchor__text,\n.flow-inline-anchor--outdated .flow-inline-anchor__hint {\n  grid-column: 1;\n}\n\n.flow-inline-thread--navigable:hover .flow-inline-anchor {\n  background: #eef3f8;\n}\n.flow-inline-thread--navigable:hover .flow-inline-anchor--outdated {\n  background: #ffefb3;\n}\n\n.flow-inline-thread--focused {\n  border-color: var(--wp-admin-theme-color, #007cba) !important;\n  box-shadow: 0 0 0 1px var(--wp-admin-theme-color, #007cba);\n}\n\n.flow-inline-thread {\n  border: 1px solid #e0e0e0;\n  border-radius: 4px;\n  background: #fff;\n  overflow: hidden;\n  transition: border-color 0.1s ease;\n}\n.flow-inline-thread--navigable {\n  cursor: pointer;\n}\n.flow-inline-thread--navigable:hover {\n  border-color: #666a70;\n}\n.flow-inline-thread .flow-comment-thread {\n  border: none;\n  border-radius: 0;\n  background: transparent;\n}\n.flow-inline-thread--outdated {\n  border-color: #e5c453;\n  background: #fff;\n}\n.flow-inline-thread--outdated.flow-inline-thread--navigable:hover {\n  border-color: #666a70;\n}\n\n.flow-comment-editor {\n  display: flex;\n  flex-direction: column;\n}\n.flow-comment-editor__toolbar {\n  display: flex;\n  align-items: stretch;\n  gap: 0;\n  padding: 0;\n  background: #fff;\n  border: 1px solid #1d2327;\n  border-bottom: 0;\n  border-radius: 2px 2px 0 0;\n  overflow-x: auto;\n  overflow-y: hidden;\n  scrollbar-gutter: stable;\n}\n.flow-comment-editor__toolbar .components-button {\n  min-width: 32px !important;\n  width: auto !important;\n  height: 36px !important;\n  padding: 0 4px !important;\n  border-radius: 0;\n  border-left: 1px solid #1d2327;\n  color: #1e1e1e;\n  box-shadow: none;\n  flex-shrink: 0;\n}\n.flow-comment-editor__toolbar .components-button:hover:not(:disabled) {\n  background: #f0f0f0;\n}\n.flow-comment-editor__toolbar .components-button.is-pressed:not(:disabled) {\n  background: #f0f6fc;\n  color: var(--wp-admin-theme-color, #007cba);\n}\n.flow-comment-editor__toolbar .components-button.is-small,\n.flow-comment-editor__toolbar .components-button[data-size=small] {\n  min-width: 32px !important;\n  width: auto !important;\n  height: 36px !important;\n  padding: 0 4px !important;\n  border-radius: 0;\n}\n@media (max-width: 782px) {\n  .flow-comment-editor__toolbar .components-button,\n  .flow-comment-editor__toolbar .components-button.is-small,\n  .flow-comment-editor__toolbar .components-button[data-size=small] {\n    min-width: 28px !important;\n    padding: 0 2px !important;\n  }\n}\n.flow-comment-editor__toolbar-group {\n  display: flex;\n  align-items: stretch;\n  flex-shrink: 0;\n  border-left: 1px solid #1d2327;\n}\n.flow-comment-editor__toolbar-group .components-button {\n  border-left: 0;\n}\n.flow-comment-editor__block-select {\n  height: 36px;\n  padding: 0 10px;\n  border: 0;\n  border-right: 0;\n  border-radius: 0;\n  background: #fff;\n  font-size: 12px;\n  cursor: pointer;\n  flex-shrink: 0;\n  min-width: 84px;\n}\n.flow-comment-editor__block-select:hover {\n  background: #f0f0f0;\n}\n.flow-comment-editor__block-select:focus {\n  outline: none;\n  box-shadow: inset 0 0 0 2px var(--wp-admin-theme-color, #007cba);\n}\n.flow-comment-editor__toolbar-sep {\n  display: none;\n}\n.flow-comment-editor__content {\n  border: 1px solid #1d2327;\n  border-radius: 0 0 2px 2px;\n  background: #fff;\n  cursor: text;\n}\n.flow-comment-editor__content:focus-within {\n  border-color: var(--wp-admin-theme-color, #007cba);\n  box-shadow: 0 0 0 1px var(--wp-admin-theme-color, #007cba);\n}\n.flow-comment-editor__content .ProseMirror {\n  position: relative;\n  min-height: 75px;\n  max-height: 280px;\n  overflow-y: auto;\n  padding: 8px 10px;\n  line-height: 1.6;\n  outline: none;\n  word-break: break-word;\n}\n.flow-comment-editor__content .ProseMirror p.is-editor-empty:first-child::before {\n  content: attr(data-placeholder);\n  color: #949494;\n  pointer-events: none;\n  float: left;\n  height: 0;\n}\n.flow-comment-editor__content .ProseMirror ul,\n.flow-comment-editor__content .ProseMirror ol {\n  padding-left: 1.5em;\n  margin: 0.3em 0;\n}\n.flow-comment-editor__content .ProseMirror li {\n  margin: 0.1em 0;\n}\n.flow-comment-editor__content .ProseMirror a {\n  color: var(--wp-admin-theme-color, #007cba);\n  text-decoration: underline;\n}\n.flow-comment-editor__content .ProseMirror strong {\n  font-weight: 600;\n}\n.flow-comment-editor__content .ProseMirror em {\n  font-style: italic;\n}\n.flow-comment-editor__content .ProseMirror h1,\n.flow-comment-editor__content .ProseMirror h2,\n.flow-comment-editor__content .ProseMirror h3 {\n  font-weight: 600;\n  line-height: 1.3;\n  margin: 0.5em 0 0.25em;\n}\n.flow-comment-editor__content .ProseMirror h1 {\n  font-size: 1.4em;\n}\n.flow-comment-editor__content .ProseMirror h2 {\n  font-size: 1.2em;\n}\n.flow-comment-editor__content .ProseMirror h3 {\n  font-size: 1.05em;\n}\n.flow-comment-editor--basic .flow-comment-editor__content {\n  border-radius: 2px;\n}\n.flow-comment-editor__textarea {\n  display: block;\n  width: 100%;\n  min-height: 75px;\n  max-height: 280px;\n  margin: 0;\n  padding: 8px 10px;\n  border: 0;\n  border-radius: inherit;\n  background: #fff;\n  font-family: inherit;\n  font-size: 13px;\n  line-height: 1.6;\n  resize: vertical;\n  box-sizing: border-box;\n  outline: none;\n  color: #1e1e1e;\n}\n.flow-comment-editor__textarea::placeholder {\n  color: #949494;\n}\n.flow-comment-editor__link-row {\n  display: flex;\n  align-items: center;\n  gap: 4px;\n  padding: 4px 6px;\n  background: #f6f7f7;\n  border: 1px solid #1d2327;\n  border-top: none;\n  border-bottom: none;\n}\n.flow-comment-editor__link-input {\n  flex: 1;\n  height: 28px;\n  padding: 0 6px;\n  border: 1px solid #949494;\n  border-radius: 2px;\n  background: #fff;\n  font-size: 12px;\n}\n.flow-comment-editor__link-input:focus {\n  outline: none;\n  border-color: var(--wp-admin-theme-color, #007cba);\n  box-shadow: 0 0 0 1px var(--wp-admin-theme-color, #007cba);\n}\n.flow-comment-editor__submit-row {\n  display: flex;\n  gap: 8px;\n  margin-top: 10px;\n  justify-content: flex-start;\n  flex-wrap: wrap;\n}\n.flow-comment-editor__submit-row .flow-comment-editor__submit-btn.components-button {\n  flex: 0 0 auto;\n  min-width: 120px;\n  justify-content: center;\n}\n.flow-comment-editor__submit-row .flow-btn--cancel.components-button {\n  flex: 0 0 auto;\n  min-width: 80px !important;\n  justify-content: center;\n}\n.flow-comment-editor__submit-row .flow-comment-editor__submit-btn:disabled,\n.flow-comment-editor__submit-row .flow-comment-editor__submit-btn[aria-disabled=true] {\n  background: transparent !important;\n  border-color: #dcdcde !important;\n  color: #757575 !important;\n  opacity: 1 !important;\n}\n.flow-comment-editor__error {\n  margin: 8px 0 0;\n  padding: 6px 10px;\n  background: #fcf0f1;\n  border: 1px solid #cc1818;\n  border-radius: 2px;\n  color: #cc1818;\n  font-size: 12px;\n}\n\n.flow-comment-thread__reopen {\n  display: flex;\n  align-items: center;\n  gap: 6px;\n  margin-bottom: 8px;\n  font-size: 12px;\n  cursor: pointer;\n}\n.flow-comment-thread__reopen input {\n  margin: 0;\n}\n\n.flow-sidebar__footer {\n  display: none;\n}\n\n@media (max-width: 782px) {\n  .flow-sidebar__footer {\n    flex: 0 0 auto;\n    display: flex;\n    gap: 8px;\n    padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));\n    border-top: 1px solid #e0e0e0;\n    background: #fff;\n  }\n  .flow-sidebar__footer .flow-bar__action-stack {\n    flex: 1 1 auto;\n    display: flex;\n    gap: 8px;\n  }\n  .flow-sidebar__footer .components-button {\n    flex: 1 1 0;\n    justify-content: center;\n    height: 40px;\n  }\n  .flow-sidebar__footer .flow-bar__btn--revoke.components-button {\n    background: #d63638 !important;\n    border-color: #d63638 !important;\n    color: #fff !important;\n    box-shadow: none !important;\n  }\n  .flow-sidebar__footer .flow-bar__btn--revoke.components-button:hover:not(:disabled), .flow-sidebar__footer .flow-bar__btn--revoke.components-button:active:not(:disabled) {\n    background: #b32d2e !important;\n    border-color: #b32d2e !important;\n  }\n}\n@media (max-width: 782px) {\n  .flow-sidebar__tab-panel {\n    padding-bottom: var(--flow-ew-mobile-actions-height, 0px);\n  }\n}\n.ProseMirror,\n.ProseMirror p {\n  font-size: inherit;\n}\n\n.ProseMirror {\n  white-space: pre-wrap;\n  white-space: break-spaces;\n  word-wrap: break-word;\n  font-variant-ligatures: none;\n  font-feature-settings: \"liga\" 0;\n}\n\n.ProseMirror [contenteditable=false] {\n  white-space: normal;\n}\n\n.ProseMirror pre {\n  white-space: pre-wrap;\n}\n\n@supports (-webkit-touch-callout: none) {\n  textarea,\n  input,\n  select,\n  [contenteditable=true] {\n    font-size: 16px !important;\n  }\n}";
+module.exports = ".flow-confirm-dialog {\n  position: fixed;\n  inset: 0;\n  z-index: 1000003;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  padding: 16px;\n}\n\n.flow-confirm-dialog__backdrop {\n  position: absolute;\n  inset: 0;\n  margin: 0;\n  padding: 0;\n  border: 0;\n  background: rgba(0, 0, 0, 0.45);\n  cursor: default;\n}\n\n.flow-confirm-dialog__panel {\n  position: relative;\n  width: 100%;\n  max-width: min(420px, 100% - 32px);\n  font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Oxygen-Sans, Ubuntu, Cantarell, \"Helvetica Neue\", sans-serif;\n  font-size: 13px;\n  line-height: 1.4;\n  color: #c92122;\n  background: #ffebea;\n  border: 1px solid #ffd1d0;\n  border-left-width: 4px;\n  border-left-color: #c92122;\n  border-radius: 2px;\n  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16);\n}\n\n.flow-confirm-dialog__alert {\n  display: flex;\n  align-items: flex-start;\n  gap: 12px;\n  padding: 12px 16px;\n}\n\n.flow-confirm-dialog__icon {\n  display: flex;\n  flex-shrink: 0;\n  align-items: center;\n  justify-content: center;\n  width: 24px;\n  height: 24px;\n  color: #c92122;\n}\n.flow-confirm-dialog__icon svg {\n  display: block;\n  width: 24px;\n  height: 24px;\n}\n\n.flow-confirm-dialog__content {\n  flex: 1 1 auto;\n  min-width: 0;\n}\n\n.flow-confirm-dialog__title {\n  margin: 0 0 2px;\n  font-size: inherit;\n  font-weight: 600;\n  line-height: inherit;\n  color: inherit;\n}\n\n.flow-confirm-dialog__message {\n  margin: 0;\n  font-size: inherit;\n  font-weight: 400;\n  line-height: inherit;\n  color: inherit;\n}\n\n.flow-confirm-dialog__actions {\n  display: flex;\n  justify-content: flex-end;\n  gap: 8px;\n  padding: 0 16px 12px;\n}\n.flow-confirm-dialog__actions .components-button {\n  flex: 0 0 auto;\n  white-space: nowrap;\n}\n\n.flow-confirm-dialog__confirm.components-button {\n  min-width: 80px;\n  justify-content: center;\n  background: #c92122 !important;\n  border: 1px solid #c92122 !important;\n  color: #fff !important;\n  box-shadow: none !important;\n}\n.flow-confirm-dialog__confirm.components-button:hover:not(:disabled), .flow-confirm-dialog__confirm.components-button:active:not(:disabled) {\n  background: #b32d2e !important;\n  border-color: #b32d2e !important;\n  color: #fff !important;\n}\n.flow-confirm-dialog__confirm.components-button:focus:not(:disabled) {\n  box-shadow: 0 0 0 var(--wp-admin-border-width-focus, 2px) #fff, 0 0 0 calc(var(--wp-admin-border-width-focus, 2px) + 1px) #c92122 !important;\n  outline: 1px solid transparent;\n}\n\n.flow-confirm-dialog__panel--warning {\n  color: #1e1e1e;\n  background: #fcf0ce;\n  border-color: #f2dda4;\n  border-left-color: #dba617;\n}\n.flow-confirm-dialog__panel--warning .flow-confirm-dialog__icon {\n  color: #957500;\n}\n.flow-confirm-dialog__panel--warning .flow-confirm-dialog__confirm.components-button {\n  background: #dba617 !important;\n  border-color: #dba617 !important;\n  color: #1d2327 !important;\n}\n.flow-confirm-dialog__panel--warning .flow-confirm-dialog__confirm.components-button:hover:not(:disabled), .flow-confirm-dialog__panel--warning .flow-confirm-dialog__confirm.components-button:active:not(:disabled) {\n  background: #c4950f !important;\n  border-color: #c4950f !important;\n  color: #1d2327 !important;\n}\n.flow-confirm-dialog__panel--warning .flow-confirm-dialog__confirm.components-button:focus:not(:disabled) {\n  box-shadow: 0 0 0 var(--wp-admin-border-width-focus, 2px) #fff, 0 0 0 calc(var(--wp-admin-border-width-focus, 2px) + 1px) #dba617 !important;\n}\n\n.flow-confirm-dialog__panel--neutral {\n  color: #1e1e1e;\n  background: #fff;\n  border-color: #e0e0e0;\n  border-left-width: 1px;\n  border-left-color: #e0e0e0;\n  max-width: min(480px, 100% - 32px);\n}\n.flow-confirm-dialog__panel--neutral .flow-confirm-dialog__title {\n  margin-bottom: 8px;\n}\n\n.flow-revisions {\n  display: flex;\n  flex-direction: column;\n  max-height: min(360px, 60vh);\n  margin: 0;\n  padding: 0;\n  overflow-y: auto;\n  list-style: none;\n}\n.flow-revisions li {\n  margin: 0;\n}\n\n.flow-revisions__item {\n  display: flex;\n  flex-wrap: wrap;\n  align-items: center;\n  gap: 4px 8px;\n  padding: 8px;\n  border-radius: 2px;\n  color: #1e1e1e;\n  text-decoration: none;\n}\n.flow-revisions__item:hover, .flow-revisions__item:focus-visible {\n  background: #f6f7f7;\n}\n.flow-revisions__item.is-viewing {\n  background: #f6f7f7;\n  font-weight: 600;\n}\n\n.flow-revisions__date {\n  font-variant-numeric: tabular-nums;\n}\n\n.flow-revisions__tag {\n  padding: 0 6px;\n  border: 1px solid #e0e0e0;\n  border-radius: 10px;\n  font-size: 11px;\n  font-weight: 500;\n  color: #757575;\n}\n\n.flow-revisions__resolved {\n  margin-left: auto;\n  font-size: 12px;\n  color: #757575;\n}\n\n*,\n*::before,\n*::after {\n  box-sizing: border-box;\n}\n\n:host {\n  display: block;\n  position: fixed;\n  top: 64px;\n  right: 0;\n  width: 360px;\n  height: calc(100vh - 64px - var(--flow-ew-upsell-bar-height, 0px));\n  height: calc(100dvh - 64px - var(--flow-ew-upsell-bar-height, 0px));\n  z-index: 999998;\n  overflow: hidden;\n  background: #fff;\n  border-left: 1px solid #e0e0e0;\n  box-shadow: -1px 0 0 0 rgba(0, 0, 0, 0.05);\n  font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Oxygen-Sans, Ubuntu, Cantarell, \"Helvetica Neue\", sans-serif;\n  font-size: 13px;\n  line-height: 1.4;\n  color: #1e1e1e;\n  -webkit-font-smoothing: antialiased;\n  -moz-osx-font-smoothing: grayscale;\n  transform: translateX(0);\n  opacity: 1;\n  transition: transform 180ms ease, opacity 180ms ease;\n  will-change: transform, opacity;\n}\n\n@media (max-width: 782px) {\n  :host {\n    width: 80vw;\n    max-width: 80vw;\n    border-left: 0;\n  }\n}\n:host([data-open=false]) {\n  transform: translateX(100%);\n  opacity: 0;\n  pointer-events: none;\n}\n\n@media (prefers-reduced-motion: reduce) {\n  :host {\n    transition: none;\n  }\n}\nbutton,\ninput,\nselect,\ntextarea {\n  font-family: inherit;\n  font-size: inherit;\n  line-height: inherit;\n  color: inherit;\n}\n\n.components-button {\n  font-weight: 600;\n}\n\n.flow-sidebar {\n  display: flex;\n  flex-direction: column;\n  height: 100%;\n  background: #fff;\n}\n.flow-sidebar__tablist-and-close {\n  display: flex;\n  flex-direction: column;\n  height: 100%;\n  position: relative;\n}\n.flow-sidebar__header {\n  flex: 0 0 auto;\n  display: flex;\n  align-items: stretch;\n  gap: 0;\n  height: 48px;\n  padding: 0 8px 0 0;\n  border-bottom: 1px solid #e0e0e0;\n  background: #fff;\n}\n@media (max-width: 782px) {\n  .flow-sidebar__header {\n    padding-right: 16px;\n  }\n}\n.flow-sidebar__header-close.components-button {\n  flex: 0 0 auto;\n  align-self: center;\n  width: 36px;\n  min-width: 36px;\n  height: 36px;\n  padding: 0;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  color: #1e1e1e;\n}\n.flow-sidebar__header-close.components-button .components-button__icon,\n.flow-sidebar__header-close.components-button svg {\n  margin: 0;\n  fill: currentColor;\n}\n.flow-sidebar__tab-panel {\n  display: flex;\n  flex-direction: column;\n  flex: 1 1 auto;\n  min-height: 0;\n}\n.flow-sidebar__tabs {\n  flex: 1 1 auto;\n  display: flex;\n  align-items: stretch;\n  min-width: 0;\n}\n@media (max-width: 782px) {\n  .flow-sidebar__tab {\n    flex: 1 1 0;\n    min-width: 0;\n    padding-left: 8px;\n    padding-right: 8px;\n  }\n}\n.flow-sidebar__tab {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  min-width: 144px;\n  padding: 10px 16px;\n  background: none;\n  border: 0;\n  border-bottom: 2px solid transparent;\n  font-family: inherit;\n  font-size: 13px;\n  font-weight: 500;\n  color: #757575;\n  cursor: pointer;\n  white-space: nowrap;\n  transition: color 0.1s ease, border-color 0.1s ease;\n}\n.flow-sidebar__tab:hover {\n  color: #1e1e1e;\n}\n.flow-sidebar__tab--active {\n  color: #1e1e1e;\n  font-weight: 600;\n  border-bottom-color: var(--wp-admin-theme-color, #007cba);\n}\n.flow-sidebar__tab-label {\n  vertical-align: middle;\n}\n.flow-sidebar__tab-count {\n  box-sizing: border-box;\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  margin-left: 6px;\n  min-width: 18px;\n  height: 18px;\n  padding: 0 6px;\n  border-radius: 999px;\n  font-size: 10px;\n  font-weight: 700;\n  line-height: 1;\n  font-variant-numeric: tabular-nums;\n  color: #fff;\n  background: #cc1818;\n  border: 0;\n}\n.flow-sidebar__tab-count--comments {\n  background: var(--wp-admin-theme-color, var(--wp-admin-theme-color, #007cba));\n}\n.flow-sidebar__tab-count--resolved {\n  background: #458037;\n}\n.flow-sidebar__tab:not(.flow-sidebar__tab--active) .flow-sidebar__tab-count {\n  background: #e0e0e0;\n  color: #757575;\n}\n.flow-sidebar__section-divider {\n  flex-shrink: 0;\n  border-top: 2px solid #e0e0e0;\n}\n.flow-sidebar__tab-scroll {\n  display: flex;\n  flex-direction: column;\n  flex-grow: 1;\n  overflow-y: auto;\n  scrollbar-gutter: auto;\n  background: #fff;\n}\n.flow-sidebar__tab-content {\n  display: flex;\n  flex-direction: column;\n  flex-grow: 1;\n  min-height: 0;\n}\n.flow-sidebar__body {\n  padding: 12px;\n  flex-shrink: 0;\n}\n.flow-sidebar__add-general.flow-comment-thread__reply-btn.components-button {\n  margin-left: 0 !important;\n}\n.flow-sidebar__placeholder {\n  padding: 24px 16px;\n  color: #757575;\n  font-size: 13px;\n  text-align: center;\n}\n\n.flow-inline-comments-empty {\n  padding: 20px 16px 24px;\n  text-align: left;\n  color: #1e1e1e;\n  border-top: 1px solid #e0e0e0;\n}\n.flow-inline-comments-empty__icon-wrap {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  width: 48px;\n  height: 48px;\n  margin: 0 auto 14px;\n  border-radius: 50%;\n  background: #f0f6fc;\n  color: var(--wp-admin-theme-color, #007cba);\n}\n.flow-inline-comments-empty__icon-wrap svg {\n  fill: currentColor;\n}\n.flow-inline-comments-empty__title {\n  margin: 0 0 8px;\n  font-size: 15px;\n  font-weight: 600;\n  line-height: 1.3;\n  text-align: center;\n  color: #1e1e1e;\n}\n.flow-inline-comments-empty__lead {\n  margin: 0 0 14px;\n  font-size: 13px;\n  line-height: 1.4;\n  color: #1e1e1e;\n  text-align: center;\n}\n.flow-inline-comments-empty__list {\n  margin: 0;\n  padding: 0 0 0 1.1em;\n  font-size: 12px;\n  line-height: 1.5;\n  color: #757575;\n}\n.flow-inline-comments-empty__list li {\n  margin-bottom: 8px;\n}\n.flow-inline-comments-empty__list li:last-child {\n  margin-bottom: 0;\n}\n\n.flow-btn--text.components-button {\n  background: transparent !important;\n  border: none !important;\n  box-shadow: none !important;\n  color: var(--wp-admin-theme-color, #007cba);\n}\n.flow-btn--text.components-button:hover:not(:disabled), .flow-btn--text.components-button:active:not(:disabled) {\n  color: var(--wp-admin-theme-color, #007cba);\n  background: #f0f6fc !important;\n}\n.flow-btn--text.components-button:focus:not(:disabled) {\n  box-shadow: 0 0 0 var(--wp-admin-border-width-focus, 2px) #fff, 0 0 0 calc(var(--wp-admin-border-width-focus, 2px) + 1px) var(--wp-admin-theme-color, #007cba) !important;\n  outline: 1px solid transparent;\n}\n.flow-btn--text.components-button:disabled, .flow-btn--text.components-button[aria-disabled=true] {\n  background: transparent !important;\n  border: none !important;\n  color: #8c8f94 !important;\n  opacity: 1 !important;\n}\n\n.flow-btn--cancel.components-button {\n  min-width: 80px !important;\n  text-decoration: underline;\n  text-underline-offset: 2px;\n}\n.flow-btn--cancel.components-button:hover:not(:disabled), .flow-btn--cancel.components-button:active:not(:disabled) {\n  text-decoration: none;\n}\n\n.flow-comment-editor__submit-btn.components-button {\n  background: transparent !important;\n  border: 1px solid var(--wp-admin-theme-color, #007cba) !important;\n  color: var(--wp-admin-theme-color, #007cba) !important;\n  box-shadow: none !important;\n}\n.flow-comment-editor__submit-btn.components-button:hover:not(:disabled), .flow-comment-editor__submit-btn.components-button:active:not(:disabled) {\n  background: #f0f6fc !important;\n  border-color: var(--wp-admin-theme-color, #007cba) !important;\n  color: var(--wp-admin-theme-color, #007cba) !important;\n}\n.flow-comment-editor__submit-btn.components-button:focus:not(:disabled) {\n  box-shadow: 0 0 0 var(--wp-admin-border-width-focus, 2px) #fff, 0 0 0 calc(var(--wp-admin-border-width-focus, 2px) + 1px) var(--wp-admin-theme-color, #007cba) !important;\n  outline: 1px solid transparent;\n}\n.flow-comment-editor__submit-btn.components-button:disabled, .flow-comment-editor__submit-btn.components-button[aria-disabled=true] {\n  background: transparent !important;\n  border-color: #dcdcde !important;\n  color: #757575 !important;\n  opacity: 1 !important;\n}\n\n.flow-comment-threads {\n  display: flex;\n  flex-direction: column;\n  gap: 12px;\n  padding: 12px;\n}\n\n.flow-comment-threads > .flow-comment-thread:hover {\n  border-color: #666a70;\n}\n\n.flow-comment-thread {\n  border: 1px solid #e0e0e0;\n  border-radius: 4px;\n  background: #fff;\n  overflow: hidden;\n  transition: border-color 0.1s ease;\n  --flow-comment-fade-bg: #fff;\n}\n.flow-comment-thread__replies {\n  padding: 0 12px 4px 12px;\n  margin: 0 0 0 6px;\n  border-left: 1px solid #e0e0e0;\n}\n.flow-comment-thread__toggle {\n  display: block;\n  padding: 4px 0 8px;\n  background: none;\n  border: 0;\n  color: var(--wp-admin-theme-color, #007cba);\n  font-size: 12px;\n  font-weight: 400;\n  cursor: pointer;\n  text-decoration: underline;\n  text-underline-offset: 2px;\n}\n.flow-comment-thread__toggle:hover {\n  text-decoration: underline;\n}\n.flow-comment-thread__reply-editor {\n  padding: 0 12px 12px;\n}\n.flow-comment-thread__resolve-row {\n  padding: 12px;\n  display: flex;\n  align-items: center;\n  gap: 12px;\n  justify-content: flex-start;\n}\n.flow-comment-thread__resolve-row .components-button {\n  min-height: 30px;\n  margin-left: 0;\n  margin-right: 0;\n}\n.flow-comment-thread__resolve-row .flow-comment-thread__reply-btn.components-button.has-icon.has-text {\n  margin-left: 0;\n  margin-right: 0;\n  flex-shrink: 0;\n  white-space: nowrap;\n}\n@media (max-width: 782px) {\n  .flow-comment-thread__resolve-row {\n    gap: 8px;\n  }\n}\n.flow-comment-thread__reply-btn.components-button.has-icon.has-text {\n  margin-left: 12px;\n  margin-right: 12px;\n  gap: 8px !important;\n  border-radius: 2px;\n  text-decoration: underline;\n  text-underline-offset: 2px;\n  transition: background-color 0.15s ease;\n}\n.flow-comment-thread__reply-btn.components-button.has-icon.has-text:hover:not(:disabled), .flow-comment-thread__reply-btn.components-button.has-icon.has-text:focus-visible:not(:disabled) {\n  background: #e8edfc !important;\n  text-decoration: none;\n}\n.flow-comment-thread__reply-btn.components-button.has-icon.has-text svg,\n.flow-comment-thread__reply-btn.components-button.has-icon.has-text .components-button__icon {\n  margin-right: 0 !important;\n}\n.flow-comment-thread__issue-btn.components-button.has-icon.has-text {\n  color: #957500 !important;\n}\n.flow-comment-thread__issue-btn.components-button.has-icon.has-text svg {\n  fill: currentColor;\n}\n.flow-comment-thread__issue-btn.components-button.has-icon.has-text:hover:not(:disabled), .flow-comment-thread__issue-btn.components-button.has-icon.has-text:focus-visible:not(:disabled) {\n  background: #fcf0ce !important;\n  color: #957500 !important;\n}\n\n.flow-comment-card {\n  padding: 12px;\n}\n.flow-comment-card__header {\n  display: grid;\n  grid-template-columns: auto minmax(0, 1fr) auto;\n  grid-template-rows: auto auto;\n  column-gap: 8px;\n  row-gap: 1px;\n  align-items: center;\n  margin-bottom: 6px;\n}\n.flow-comment-card__avatar {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  width: 28px;\n  height: 28px;\n  border-radius: 50%;\n  font-size: 11px;\n  font-weight: 600;\n  line-height: 1;\n  user-select: none;\n  grid-column: 1;\n  grid-row: 1/span 2;\n  align-self: center;\n}\n.flow-comment-card__avatar--fallback {\n  background: #dcdcde;\n  color: #757575;\n}\n.flow-comment-card__avatar--img {\n  display: block;\n  object-fit: cover;\n  background: transparent;\n}\n.flow-comment-card__byline {\n  display: flex;\n  align-items: center;\n  gap: 6px;\n  min-width: 0;\n  grid-column: 2;\n  grid-row: 1;\n}\n.flow-comment-card__author {\n  font-weight: 600;\n  font-size: 12px;\n  color: #1e1e1e;\n  white-space: nowrap;\n  min-width: 0;\n  overflow: hidden;\n  text-overflow: ellipsis;\n}\n.flow-comment-card__agent {\n  flex: none;\n  padding: 0 5px;\n  border: 1px solid #c3c4c7;\n  border-radius: 2px;\n  font-size: 9px;\n  font-weight: 600;\n  line-height: 15px;\n  letter-spacing: 0.04em;\n  color: #757575;\n}\n.flow-comment-card__date {\n  font-size: 11px;\n  color: #757575;\n  white-space: nowrap;\n  line-height: 1.2;\n  grid-column: 2;\n  grid-row: 2;\n  min-width: 0;\n  overflow: hidden;\n  text-overflow: ellipsis;\n}\n.flow-comment-card__date-short {\n  display: none;\n}\n@media (max-width: 782px) {\n  .flow-comment-card__date-full {\n    display: none;\n  }\n  .flow-comment-card__date-short {\n    display: inline;\n  }\n}\n.flow-comment-card__actions {\n  display: flex;\n  align-items: center;\n  gap: 4px;\n  grid-column: 3;\n  grid-row: 1/span 2;\n  align-self: center;\n}\n@media (max-width: 782px) {\n  .flow-comment-card__actions {\n    gap: 0;\n  }\n}\n.flow-comment-card__action-btn.components-button {\n  min-width: 0 !important;\n  width: 28px !important;\n  height: 28px !important;\n  padding: 0 !important;\n  color: #757575;\n  border-radius: 2px;\n}\n.flow-comment-card__action-btn.components-button:hover:not(:disabled) {\n  color: #1e1e1e;\n  background: #f0f0f0;\n}\n.flow-comment-card__action-btn.components-button.flow-comment-card__action-btn--destructive {\n  color: #d63638;\n}\n.flow-comment-card__action-btn.components-button.flow-comment-card__action-btn--destructive:hover:not(:disabled) {\n  color: #b32d2e;\n  background: #fcf0f1;\n}\n.flow-comment-card__action-btn.components-button svg {\n  width: 20px;\n  height: 20px;\n}\n.flow-comment-card__menu {\n  display: flex;\n  align-items: center;\n  gap: 4px;\n}\n.flow-comment-card__action-icon.components-button {\n  min-width: 0 !important;\n  width: 24px !important;\n  height: 24px !important;\n  padding: 0 !important;\n  color: #1e1e1e !important;\n  background: transparent !important;\n  border: none !important;\n  box-shadow: none !important;\n  border-radius: 2px;\n  transition: background-color 0.15s ease;\n}\n.flow-comment-card__action-icon.components-button svg {\n  width: 24px;\n  height: 24px;\n}\n.flow-comment-card__action-icon.components-button:hover:not(:disabled), .flow-comment-card__action-icon.components-button:focus-visible:not(:disabled), .flow-comment-card__action-icon.components-button:active:not(:disabled) {\n  color: #1e1e1e !important;\n  box-shadow: none !important;\n}\n.flow-comment-card__action-icon--edit.components-button, .flow-comment-card__action-icon--destructive.components-button, .flow-comment-card__action-icon--close.components-button, .flow-comment-card__menu-trigger.components-button {\n  width: 32px !important;\n  height: 32px !important;\n  padding: 4px !important;\n}\n.flow-comment-card__action-icon--edit.components-button svg, .flow-comment-card__action-icon--destructive.components-button svg, .flow-comment-card__action-icon--close.components-button svg, .flow-comment-card__menu-trigger.components-button svg {\n  width: 20px;\n  height: 20px;\n}\n.flow-comment-card__action-icon--edit.components-button:hover:not(:disabled), .flow-comment-card__action-icon--edit.components-button:focus-visible:not(:disabled) {\n  background: #e8edfc !important;\n}\n.flow-comment-card__action-icon--destructive.components-button {\n  color: #c92222 !important;\n}\n.flow-comment-card__action-icon--destructive.components-button:hover:not(:disabled), .flow-comment-card__action-icon--destructive.components-button:focus-visible:not(:disabled), .flow-comment-card__action-icon--destructive.components-button:active:not(:disabled) {\n  color: #c92222 !important;\n  background: #ffeaea !important;\n}\n.flow-comment-card__action-icon--close.components-button:hover:not(:disabled), .flow-comment-card__action-icon--close.components-button:focus-visible:not(:disabled) {\n  background: #ebebeb !important;\n}\n.flow-comment-card__menu-trigger.components-button:hover:not(:disabled), .flow-comment-card__menu-trigger.components-button:focus-visible:not(:disabled), .flow-comment-card__menu-trigger.components-button:active:not(:disabled) {\n  color: #1e1e1e !important;\n  background: #ebebeb !important;\n  box-shadow: none !important;\n}\n.flow-comment-card__resolve-icon.components-button {\n  min-width: 0 !important;\n  width: 32px !important;\n  height: 32px !important;\n  padding: 4px !important;\n  color: #458037 !important;\n  background: transparent !important;\n  border: none !important;\n  box-shadow: none !important;\n  border-radius: 2px !important;\n  transition: background-color 0.15s ease;\n}\n.flow-comment-card__resolve-icon.components-button svg {\n  width: 20px;\n  height: 20px;\n}\n.flow-comment-card__resolve-icon.components-button svg .flow-comment-resolve__default,\n.flow-comment-card__resolve-icon.components-button svg .flow-comment-resolve__hover {\n  transition: opacity 0.15s ease;\n}\n.flow-comment-card__resolve-icon.components-button svg .flow-comment-resolve__hover {\n  opacity: 0;\n}\n.flow-comment-card__resolve-icon.components-button:hover:not(:disabled), .flow-comment-card__resolve-icon.components-button:focus-visible:not(:disabled), .flow-comment-card__resolve-icon.components-button:active:not(:disabled) {\n  color: #458037 !important;\n  background: #e7f5e4 !important;\n  box-shadow: none !important;\n}\n.flow-comment-card__resolve-icon.components-button:hover:not(:disabled) svg .flow-comment-resolve__default, .flow-comment-card__resolve-icon.components-button:focus-visible:not(:disabled) svg .flow-comment-resolve__default, .flow-comment-card__resolve-icon.components-button:active:not(:disabled) svg .flow-comment-resolve__default {\n  opacity: 0;\n}\n.flow-comment-card__resolve-icon.components-button:hover:not(:disabled) svg .flow-comment-resolve__hover, .flow-comment-card__resolve-icon.components-button:focus-visible:not(:disabled) svg .flow-comment-resolve__hover, .flow-comment-card__resolve-icon.components-button:active:not(:disabled) svg .flow-comment-resolve__hover {\n  opacity: 1;\n}\n@media (hover: hover) and (pointer: fine) {\n  .flow-comment-card__resolve-icon.components-button {\n    opacity: 0;\n    transition: opacity 0.15s ease, background-color 0.15s ease;\n  }\n  .flow-comment-thread:hover .flow-comment-card__resolve-icon.components-button, .flow-comment-thread:focus-within .flow-comment-card__resolve-icon.components-button, .flow-comment-card__resolve-icon.components-button:focus-visible {\n    opacity: 1;\n  }\n}\n.flow-comment-card__action-btn--collapse.components-button {\n  min-width: 0 !important;\n  width: 32px !important;\n  height: 32px !important;\n  padding: 4px !important;\n  color: #1e1e1e;\n  border-radius: 2px;\n  transition: background-color 0.15s ease;\n}\n.flow-comment-card__action-btn--collapse.components-button:hover:not(:disabled), .flow-comment-card__action-btn--collapse.components-button:focus-visible:not(:disabled) {\n  color: #1e1e1e;\n  background: #ebebeb !important;\n}\n.flow-comment-card__action-btn--collapse.components-button svg {\n  width: 20px;\n  height: 20px;\n}\n.flow-comment-card__action-btn--reply.components-button {\n  opacity: 1;\n  color: var(--wp-admin-theme-color, #007cba);\n}\n.flow-comment-card__action-btn--reply.components-button:hover:not(:disabled) {\n  color: var(--wp-admin-theme-color, #007cba);\n  background: #f0f6fc;\n}\n.flow-comment-card__resolved-icon {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  width: 24px;\n  height: 24px;\n  flex-shrink: 0;\n}\n.flow-comment-card__resolved-icon svg {\n  width: 24px;\n  height: 24px;\n}\n.flow-comment-card__body {\n  font-size: 13px;\n  line-height: 1.6;\n  color: #1e1e1e;\n  word-break: break-word;\n}\n.flow-comment-card__body > * {\n  margin: 0;\n}\n.flow-comment-card__body > * + * {\n  margin-top: 0.4em;\n}\n.flow-comment-card__body strong {\n  font-weight: 600;\n}\n.flow-comment-card__body em {\n  font-style: italic;\n}\n.flow-comment-card__body ul,\n.flow-comment-card__body ol {\n  padding-left: 1.4em;\n  margin: 0.3em 0;\n}\n.flow-comment-card__body a {\n  color: var(--wp-admin-theme-color, #007cba);\n  text-decoration: underline;\n}\n.flow-comment-card__body h1 {\n  font-size: 1.3em;\n  font-weight: 600;\n}\n.flow-comment-card__body h2 {\n  font-size: 1.1em;\n  font-weight: 600;\n}\n.flow-comment-card__body h3 {\n  font-size: 1em;\n  font-weight: 600;\n}\n.flow-comment-card__body--truncated {\n  max-height: 80px;\n  overflow: hidden;\n  position: relative;\n  cursor: pointer;\n}\n.flow-comment-card__body--truncated::after {\n  content: \"\";\n  position: absolute;\n  bottom: 0;\n  left: 0;\n  right: 0;\n  height: 24px;\n  background: linear-gradient(transparent, var(--flow-comment-fade-bg));\n  pointer-events: none;\n}\n.flow-comment-card__more {\n  display: inline-flex;\n  align-items: center;\n  margin-top: 6px;\n  padding: 0;\n  background: none;\n  border: 0;\n  color: var(--wp-admin-theme-color, #007cba);\n  font-size: 12px;\n  font-weight: 600;\n  cursor: pointer;\n}\n.flow-comment-card__more:hover, .flow-comment-card__more:focus-visible {\n  text-decoration: underline;\n}\n.flow-comment-card--reply {\n  padding: 8px 0 4px;\n}\n\n.flow-inline-anchor {\n  display: flex;\n  flex-direction: column;\n  align-items: flex-start;\n  gap: 2px;\n  width: 100%;\n  padding: 10px 16px;\n  margin: 0;\n  background: #f6f7f7;\n  border: 0;\n  color: var(--wp-admin-theme-color, #007cba);\n  font-size: 12px;\n  font-style: normal;\n  line-height: 1.5;\n  text-align: left;\n  overflow: hidden;\n  font-family: inherit;\n  text-decoration: none;\n  pointer-events: none;\n}\n.flow-inline-anchor__text {\n  display: block;\n  width: 100%;\n  overflow: hidden;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n  text-decoration: underline;\n  text-underline-offset: 2px;\n}\n.flow-inline-anchor__hint {\n  display: block;\n  font-size: 11px;\n  font-style: normal;\n  font-weight: 600;\n  color: #7a5a00;\n}\n.flow-inline-anchor__alert {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  width: 20px;\n  height: 20px;\n  grid-column: 2;\n  grid-row: 1/span 2;\n  align-self: center;\n  justify-self: end;\n  color: #7a5a00;\n}\n.flow-inline-anchor__alert svg {\n  display: block;\n  width: 20px;\n  height: 20px;\n}\n.flow-inline-anchor--outdated {\n  display: grid;\n  grid-template-columns: minmax(0, 1fr) 20px;\n  column-gap: 8px;\n  row-gap: 2px;\n  align-items: center;\n  background: #fff6cc;\n  color: #7a5a00;\n}\n.flow-inline-anchor--outdated .flow-inline-anchor__text,\n.flow-inline-anchor--outdated .flow-inline-anchor__hint {\n  grid-column: 1;\n}\n\n.flow-inline-thread--navigable:hover .flow-inline-anchor {\n  background: #eef3f8;\n}\n.flow-inline-thread--navigable:hover .flow-inline-anchor--outdated {\n  background: #ffefb3;\n}\n\n.flow-inline-thread--focused {\n  border-color: var(--wp-admin-theme-color, #007cba) !important;\n  box-shadow: 0 0 0 1px var(--wp-admin-theme-color, #007cba);\n}\n\n@media (hover: hover) and (pointer: fine) {\n  .flow-inline-thread--focused .flow-comment-card__resolve-icon.components-button {\n    opacity: 1;\n  }\n}\n.flow-inline-thread {\n  border: 1px solid #e0e0e0;\n  border-radius: 4px;\n  background: #fff;\n  overflow: hidden;\n  transition: border-color 0.1s ease;\n}\n.flow-inline-thread--navigable {\n  cursor: pointer;\n}\n.flow-inline-thread--navigable:hover {\n  border-color: #666a70;\n}\n.flow-inline-thread .flow-comment-thread {\n  border: none;\n  border-radius: 0;\n  background: transparent;\n}\n.flow-inline-thread--outdated {\n  border-color: #e5c453;\n  background: #fff;\n}\n.flow-inline-thread--outdated.flow-inline-thread--navigable:hover {\n  border-color: #666a70;\n}\n\n.flow-comment-editor {\n  display: flex;\n  flex-direction: column;\n}\n.flow-comment-editor__toolbar {\n  display: flex;\n  align-items: stretch;\n  gap: 0;\n  padding: 0;\n  background: #fff;\n  border: 1px solid #1d2327;\n  border-bottom: 0;\n  border-radius: 2px 2px 0 0;\n  overflow-x: auto;\n  overflow-y: hidden;\n  scrollbar-gutter: stable;\n}\n.flow-comment-editor__toolbar .components-button {\n  min-width: 32px !important;\n  width: auto !important;\n  height: 36px !important;\n  padding: 0 4px !important;\n  border-radius: 0;\n  border-left: 1px solid #1d2327;\n  color: #1e1e1e;\n  box-shadow: none;\n  flex-shrink: 0;\n}\n.flow-comment-editor__toolbar .components-button:hover:not(:disabled) {\n  background: #f0f0f0;\n}\n.flow-comment-editor__toolbar .components-button.is-pressed:not(:disabled) {\n  background: #f0f6fc;\n  color: var(--wp-admin-theme-color, #007cba);\n}\n.flow-comment-editor__toolbar .components-button.is-small,\n.flow-comment-editor__toolbar .components-button[data-size=small] {\n  min-width: 32px !important;\n  width: auto !important;\n  height: 36px !important;\n  padding: 0 4px !important;\n  border-radius: 0;\n}\n@media (max-width: 782px) {\n  .flow-comment-editor__toolbar .components-button,\n  .flow-comment-editor__toolbar .components-button.is-small,\n  .flow-comment-editor__toolbar .components-button[data-size=small] {\n    min-width: 28px !important;\n    padding: 0 2px !important;\n  }\n}\n.flow-comment-editor__toolbar-group {\n  display: flex;\n  align-items: stretch;\n  flex-shrink: 0;\n  border-left: 1px solid #1d2327;\n}\n.flow-comment-editor__toolbar-group .components-button {\n  border-left: 0;\n}\n.flow-comment-editor__block-select {\n  height: 36px;\n  padding: 0 10px;\n  border: 0;\n  border-right: 0;\n  border-radius: 0;\n  background: #fff;\n  font-size: 12px;\n  cursor: pointer;\n  flex-shrink: 0;\n  min-width: 84px;\n}\n.flow-comment-editor__block-select:hover {\n  background: #f0f0f0;\n}\n.flow-comment-editor__block-select:focus {\n  outline: none;\n  box-shadow: inset 0 0 0 2px var(--wp-admin-theme-color, #007cba);\n}\n.flow-comment-editor__toolbar-sep {\n  display: none;\n}\n.flow-comment-editor__content {\n  border: 1px solid #1d2327;\n  border-radius: 0 0 2px 2px;\n  background: #fff;\n  cursor: text;\n}\n.flow-comment-editor__content:focus-within {\n  border-color: var(--wp-admin-theme-color, #007cba);\n  box-shadow: 0 0 0 1px var(--wp-admin-theme-color, #007cba);\n}\n.flow-comment-editor__content .ProseMirror {\n  position: relative;\n  min-height: 75px;\n  max-height: 280px;\n  overflow-y: auto;\n  padding: 8px 10px;\n  line-height: 1.6;\n  outline: none;\n  word-break: break-word;\n}\n.flow-comment-editor__content .ProseMirror p.is-editor-empty:first-child::before {\n  content: attr(data-placeholder);\n  color: #949494;\n  pointer-events: none;\n  float: left;\n  height: 0;\n}\n.flow-comment-editor__content .ProseMirror ul,\n.flow-comment-editor__content .ProseMirror ol {\n  padding-left: 1.5em;\n  margin: 0.3em 0;\n}\n.flow-comment-editor__content .ProseMirror li {\n  margin: 0.1em 0;\n}\n.flow-comment-editor__content .ProseMirror a {\n  color: var(--wp-admin-theme-color, #007cba);\n  text-decoration: underline;\n}\n.flow-comment-editor__content .ProseMirror strong {\n  font-weight: 600;\n}\n.flow-comment-editor__content .ProseMirror em {\n  font-style: italic;\n}\n.flow-comment-editor__content .ProseMirror h1,\n.flow-comment-editor__content .ProseMirror h2,\n.flow-comment-editor__content .ProseMirror h3 {\n  font-weight: 600;\n  line-height: 1.3;\n  margin: 0.5em 0 0.25em;\n}\n.flow-comment-editor__content .ProseMirror h1 {\n  font-size: 1.4em;\n}\n.flow-comment-editor__content .ProseMirror h2 {\n  font-size: 1.2em;\n}\n.flow-comment-editor__content .ProseMirror h3 {\n  font-size: 1.05em;\n}\n.flow-comment-editor--basic .flow-comment-editor__content {\n  border-radius: 2px;\n}\n.flow-comment-editor__textarea {\n  display: block;\n  width: 100%;\n  min-height: 75px;\n  max-height: 280px;\n  margin: 0;\n  padding: 8px 10px;\n  border: 0;\n  border-radius: inherit;\n  background: #fff;\n  font-family: inherit;\n  font-size: 13px;\n  line-height: 1.6;\n  resize: vertical;\n  box-sizing: border-box;\n  outline: none;\n  color: #1e1e1e;\n}\n.flow-comment-editor__textarea::placeholder {\n  color: #949494;\n}\n.flow-comment-editor__link-row {\n  display: flex;\n  align-items: center;\n  gap: 4px;\n  padding: 4px 6px;\n  background: #f6f7f7;\n  border: 1px solid #1d2327;\n  border-top: none;\n  border-bottom: none;\n}\n.flow-comment-editor__link-input {\n  flex: 1;\n  height: 28px;\n  padding: 0 6px;\n  border: 1px solid #949494;\n  border-radius: 2px;\n  background: #fff;\n  font-size: 12px;\n}\n.flow-comment-editor__link-input:focus {\n  outline: none;\n  border-color: var(--wp-admin-theme-color, #007cba);\n  box-shadow: 0 0 0 1px var(--wp-admin-theme-color, #007cba);\n}\n.flow-comment-editor__submit-row {\n  display: flex;\n  gap: 8px;\n  margin-top: 10px;\n  justify-content: flex-start;\n  flex-wrap: wrap;\n}\n.flow-comment-editor__submit-row .flow-comment-editor__submit-btn.components-button {\n  flex: 0 0 auto;\n  min-width: 120px;\n  justify-content: center;\n}\n.flow-comment-editor__submit-row .flow-btn--cancel.components-button {\n  flex: 0 0 auto;\n  min-width: 80px !important;\n  justify-content: center;\n}\n.flow-comment-editor__submit-row .flow-comment-editor__submit-btn:disabled,\n.flow-comment-editor__submit-row .flow-comment-editor__submit-btn[aria-disabled=true] {\n  background: transparent !important;\n  border-color: #dcdcde !important;\n  color: #757575 !important;\n  opacity: 1 !important;\n}\n.flow-comment-editor__error {\n  margin: 8px 0 0;\n  padding: 6px 10px;\n  background: #fcf0f1;\n  border: 1px solid #cc1818;\n  border-radius: 2px;\n  color: #cc1818;\n  font-size: 12px;\n}\n\n.flow-comment-thread__reopen {\n  display: flex;\n  align-items: center;\n  gap: 6px;\n  margin-bottom: 8px;\n  font-size: 12px;\n  cursor: pointer;\n}\n.flow-comment-thread__reopen input {\n  margin: 0;\n}\n\n.flow-sidebar__footer {\n  display: none;\n}\n\n@media (max-width: 782px) {\n  .flow-sidebar__footer {\n    flex: 0 0 auto;\n    display: flex;\n    gap: 8px;\n    padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));\n    border-top: 1px solid #e0e0e0;\n    background: #fff;\n  }\n  .flow-sidebar__footer .flow-bar__action-stack {\n    flex: 1 1 auto;\n    display: flex;\n    gap: 8px;\n  }\n  .flow-sidebar__footer .components-button {\n    flex: 1 1 0;\n    justify-content: center;\n    height: 40px;\n  }\n  .flow-sidebar__footer .flow-bar__btn--revoke.components-button {\n    background: #d63638 !important;\n    border-color: #d63638 !important;\n    color: #fff !important;\n    box-shadow: none !important;\n  }\n  .flow-sidebar__footer .flow-bar__btn--revoke.components-button:hover:not(:disabled), .flow-sidebar__footer .flow-bar__btn--revoke.components-button:active:not(:disabled) {\n    background: #b32d2e !important;\n    border-color: #b32d2e !important;\n  }\n}\n@media (max-width: 782px) {\n  .flow-sidebar__tab-panel {\n    padding-bottom: var(--flow-ew-mobile-actions-height, 0px);\n  }\n}\n.ProseMirror,\n.ProseMirror p {\n  font-size: inherit;\n}\n\n.ProseMirror {\n  white-space: pre-wrap;\n  white-space: break-spaces;\n  word-wrap: break-word;\n  font-variant-ligatures: none;\n  font-feature-settings: \"liga\" 0;\n}\n\n.ProseMirror [contenteditable=false] {\n  white-space: normal;\n}\n\n.ProseMirror pre {\n  white-space: pre-wrap;\n}\n\n@supports (-webkit-touch-callout: none) {\n  textarea,\n  input,\n  select,\n  [contenteditable=true] {\n    font-size: 16px !important;\n  }\n}";
 
 /***/ },
 
@@ -11239,6 +12413,50 @@ __webpack_require__.r(__webpack_exports__);
 var external_default = /* @__PURE__ */ (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsx)(_wordpress_primitives__WEBPACK_IMPORTED_MODULE_0__.SVG, { xmlns: "http://www.w3.org/2000/svg", viewBox: "0 0 24 24", children: /* @__PURE__ */ (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsx)(_wordpress_primitives__WEBPACK_IMPORTED_MODULE_0__.Path, { d: "M19.5 4.5h-7V6h4.44l-5.97 5.97 1.06 1.06L18 7.06v4.44h1.5v-7Zm-13 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-3H17v3a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h3V5.5h-3Z" }) });
 
 //# sourceMappingURL=external.mjs.map
+
+
+/***/ },
+
+/***/ "./node_modules/@wordpress/icons/build-module/library/mobile.mjs"
+/*!***********************************************************************!*\
+  !*** ./node_modules/@wordpress/icons/build-module/library/mobile.mjs ***!
+  \***********************************************************************/
+(__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (/* binding */ mobile_default)
+/* harmony export */ });
+/* harmony import */ var _wordpress_primitives__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @wordpress/primitives */ "@wordpress/primitives");
+/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! react/jsx-runtime */ "react/jsx-runtime");
+// packages/icons/src/library/mobile.tsx
+
+
+var mobile_default = /* @__PURE__ */ (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsx)(_wordpress_primitives__WEBPACK_IMPORTED_MODULE_0__.SVG, { xmlns: "http://www.w3.org/2000/svg", viewBox: "0 0 24 24", children: /* @__PURE__ */ (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsx)(_wordpress_primitives__WEBPACK_IMPORTED_MODULE_0__.Path, { d: "M15 4H9c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h6c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm.5 14c0 .3-.2.5-.5.5H9c-.3 0-.5-.2-.5-.5V6c0-.3.2-.5.5-.5h6c.3 0 .5.2.5.5v12zm-4.5-.5h2V16h-2v1.5z" }) });
+
+//# sourceMappingURL=mobile.mjs.map
+
+
+/***/ },
+
+/***/ "./node_modules/@wordpress/icons/build-module/library/tablet.mjs"
+/*!***********************************************************************!*\
+  !*** ./node_modules/@wordpress/icons/build-module/library/tablet.mjs ***!
+  \***********************************************************************/
+(__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (/* binding */ tablet_default)
+/* harmony export */ });
+/* harmony import */ var _wordpress_primitives__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @wordpress/primitives */ "@wordpress/primitives");
+/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! react/jsx-runtime */ "react/jsx-runtime");
+// packages/icons/src/library/tablet.tsx
+
+
+var tablet_default = /* @__PURE__ */ (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsx)(_wordpress_primitives__WEBPACK_IMPORTED_MODULE_0__.SVG, { xmlns: "http://www.w3.org/2000/svg", viewBox: "0 0 24 24", children: /* @__PURE__ */ (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsx)(_wordpress_primitives__WEBPACK_IMPORTED_MODULE_0__.Path, { d: "M17 4H7c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm.5 14c0 .3-.2.5-.5.5H7c-.3 0-.5-.2-.5-.5V6c0-.3.2-.5.5-.5h10c.3 0 .5.2.5.5v12zm-7.5-.5h4V16h-4v1.5z" }) });
+
+//# sourceMappingURL=tablet.mjs.map
 
 
 /***/ }

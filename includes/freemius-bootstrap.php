@@ -292,6 +292,7 @@ if ( ! function_exists( 'flow_fs' ) ) {
 			// Per-post review meta written on every reviewed post.
 			delete_post_meta_by_key( '_flow_reviewer_id' );
 			delete_post_meta_by_key( '_flow_review_status' );
+			delete_post_meta_by_key( '_flow_ew_self_review_off' );
 			delete_metadata( 'user', 0, 'flow_ew_recent_invite_emails', '', true );
 
 			$flow_ew_caps  = array( 'flow_assign_reviewer', 'flow_review_posts', 'flow_manage_reviews' );
@@ -324,6 +325,7 @@ if ( ! function_exists( 'flow_fs' ) ) {
 				$wpdb->prefix . 'flow_pro_webhook_endpoints',
 				$wpdb->prefix . 'flow_pro_webhook_deliveries',
 				$wpdb->prefix . 'flow_pro_comment_reactions',
+				$wpdb->prefix . 'flow_pro_comment_environment',
 			);
 			foreach ( $flow_ew_pro_tables as $flow_ew_pro_table ) {
 				$flow_ew_pro_table = esc_sql( $flow_ew_pro_table );
@@ -343,6 +345,7 @@ if ( ! function_exists( 'flow_fs' ) ) {
 				'flow_ew_min_approvals',
 				'flow_ew_disable_mention_notifications',
 				'flow_ew_disable_public_reviews',
+				'flow_ew_pro_comment_environment_enabled',
 				'flow_ew_site_review_disabled',
 				'flow_ew_site_review_external_disabled',
 				'flow_ew_site_review_roles',

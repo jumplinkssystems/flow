@@ -110,7 +110,9 @@ export default function ReviewActions( {
 
 				{ ! actionsSlot && canActFinal ? (
 					<div className="flow-bar__actions">
-						{ ! isApproved ? (
+						{ ! isApproved &&
+						totalCommentCount > 0 &&
+						myVote !== 'changes_requested' ? (
 							<Button
 								className="flow-bar__btn--request-changes"
 								onClick={ () =>
@@ -123,11 +125,7 @@ export default function ReviewActions( {
 										'changes_requested'
 									)
 								}
-								disabled={
-									isBusy ||
-									totalCommentCount === 0 ||
-									myVote === 'changes_requested'
-								}
+								disabled={ isBusy }
 							>
 								{ __(
 									'Request Changes',
@@ -159,6 +157,7 @@ export default function ReviewActions( {
 						) : (
 							<Button
 								variant="primary"
+								className="flow-bar__btn--approve"
 								onClick={ () =>
 									doAction(
 										'approve',

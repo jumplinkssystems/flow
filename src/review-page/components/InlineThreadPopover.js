@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from '@wordpress/element';
 import { Button } from '@wordpress/components';
-import { closeSmall } from '@wordpress/icons';
+import { backup, closeSmall, desktop, mobile, tablet } from '@wordpress/icons';
 import commentReplyIcon from '../icons/comment-reply';
 import commentResolveIcon from '../icons/comment-resolve';
 import { __ } from '@wordpress/i18n';
@@ -14,6 +14,7 @@ import {
 	getIframe,
 	getIframeDoc,
 	getIframeScale,
+	resolveCommentContentRoot,
 } from '../utils/iframe-bridge';
 import {
 	pageData,
@@ -23,10 +24,26 @@ import {
 } from '../utils/api';
 import { defaultCommentApi } from '../utils/comment-api';
 import CommentEditor from './CommentEditor';
+import PinnedOnHint from './PinnedOnHint';
+import OutdatedHint from './OutdatedHint';
+import {
+	canPreviewDevices,
+	pinOnOtherDevice,
+	viewDeviceLabel,
+} from '../../shared/device';
+import {
+	isAnchorOutdated,
+	issueUrl,
+	parseDescriptor,
+	showPinOnDevice,
+} from '../utils/comment-flags';
+
+const DEVICE_ICONS = { desktop, tablet, mobile };
 import { buildCommentTree } from '../utils/comment-tree';
 
 const HIGHLIGHT_CLASS = 'flow-inline-highlight';
 const MEDIA_HIGHLIGHT_CLASS = 'flow-inline-highlight-media';
+const CONTROL_HIGHLIGHT_CLASS = 'flow-inline-highlight-control';
 
 function getInitials( name ) {
 	if ( ! name ) {
@@ -96,7 +113,7 @@ function collectThreadFlat( all, rootId ) {
 }
 
 function findMarkElement( commentId ) {
-	const selector = `.${ HIGHLIGHT_CLASS }[data-comment-id="${ commentId }"], .${ MEDIA_HIGHLIGHT_CLASS }, .flow-inline-pin[data-comment-id="${ commentId }"]`;
+	const selector = `.${ HIGHLIGHT_CLASS }[data-comment-id="${ commentId }"], .${ MEDIA_HIGHLIGHT_CLASS }, .${ CONTROL_HIGHLIGHT_CLASS }, .flow-inline-pin[data-comment-id="${ commentId }"]`;
 	const matches = ( el ) =>
 		Number( el.dataset.commentId ) === commentId ||
 		( el.dataset.commentIds || '' )
@@ -460,32 +477,52 @@ export default function InlineThreadPopover( {
 		return () => window.cancelAnimationFrame( id );
 	}, [ thread, repositionToThreadAnchor ] );
 
-	// "View original" links carry the comment to reopen once its highlight exists.
+	// "View original" links and "View <device>" carry the comment to reopen once its highlight exists.
 	useEffect( () => {
-		const url = new URL( window.location.href );
-		const target = Number( url.searchParams.get( 'flow_focus_comment' ) );
-		if ( ! target ) {
-			return undefined;
-		}
-		url.searchParams.delete( 'flow_focus_comment' );
-		window.history.replaceState( null, '', url.toString() );
-		let tries = 0;
 		let timer = 0;
-		const attempt = () => {
-			if ( findMarkElement( target ) ) {
-				window.dispatchEvent(
-					new CustomEvent( 'flow:scroll-to-highlight', {
-						detail: { commentId: target },
-					} )
-				);
-				return;
-			}
-			if ( ++tries < 40 ) {
-				timer = setTimeout( attempt, 300 );
+		const focusWhenReady = ( target ) => {
+			clearTimeout( timer );
+			let tries = 0;
+			const attempt = () => {
+				if ( findMarkElement( target ) ) {
+					window.dispatchEvent(
+						new CustomEvent( 'flow:scroll-to-highlight', {
+							detail: { commentId: target },
+						} )
+					);
+					return;
+				}
+				if ( ++tries < 40 ) {
+					timer = setTimeout( attempt, 300 );
+				}
+			};
+			attempt();
+		};
+		const onFocusRequest = ( e ) => {
+			const target = Number( e?.detail?.commentId || 0 );
+			if ( target ) {
+				focusWhenReady( target );
 			}
 		};
-		attempt();
-		return () => clearTimeout( timer );
+		window.addEventListener(
+			'flow:focus-comment-when-ready',
+			onFocusRequest
+		);
+
+		const url = new URL( window.location.href );
+		const target = Number( url.searchParams.get( 'flow_focus_comment' ) );
+		if ( target ) {
+			url.searchParams.delete( 'flow_focus_comment' );
+			window.history.replaceState( null, '', url.toString() );
+			focusWhenReady( target );
+		}
+		return () => {
+			clearTimeout( timer );
+			window.removeEventListener(
+				'flow:focus-comment-when-ready',
+				onFocusRequest
+			);
+		};
 	}, [] );
 
 	useEffect( () => {
@@ -646,7 +683,7 @@ export default function InlineThreadPopover( {
 			}
 			const mark = closestFromEventTarget(
 				e.target,
-				`.${ HIGHLIGHT_CLASS }, .${ MEDIA_HIGHLIGHT_CLASS }, .flow-inline-pin`
+				`.${ HIGHLIGHT_CLASS }, .${ MEDIA_HIGHLIGHT_CLASS }, .${ CONTROL_HIGHLIGHT_CLASS }, .flow-inline-pin`
 			);
 			if ( mark ) {
 				return;
@@ -761,22 +798,34 @@ export default function InlineThreadPopover( {
 			);
 
 			if ( thread.isResolved && reopen && canReopenComments() ) {
-				await api.updateComment( thread.id, { resolved: false } );
-				const tid = Number( thread.id );
-				// Update the ref before rebuilding: the rebuild reads from it.
-				commentsRef.current = commentsRef.current.map( ( c ) =>
-					Number( c.id ) === tid ? { ...c, isResolved: false } : c
-				);
-				window.dispatchEvent(
-					new CustomEvent( 'flow:highlight-resolve', {
-						detail: { commentId: thread.id, resolved: false },
-					} )
-				);
-				window.dispatchEvent(
-					new CustomEvent( 'flow:inline-comment-resolved', {
-						detail: { commentId: thread.id, resolved: false },
-					} )
-				);
+				// The reply already posted above; reopening the thread is
+				// best-effort on top of that. Letting this throw would leave
+				// the editor thinking the whole submit failed — the reviewer
+				// retries, and that posts a second copy of the same reply.
+				try {
+					await api.updateComment( thread.id, { resolved: false } );
+					const tid = Number( thread.id );
+					// Update the ref before rebuilding: the rebuild reads from it.
+					commentsRef.current = commentsRef.current.map( ( c ) =>
+						Number( c.id ) === tid ? { ...c, isResolved: false } : c
+					);
+					window.dispatchEvent(
+						new CustomEvent( 'flow:highlight-resolve', {
+							detail: { commentId: thread.id, resolved: false },
+						} )
+					);
+					window.dispatchEvent(
+						new CustomEvent( 'flow:inline-comment-resolved', {
+							detail: { commentId: thread.id, resolved: false },
+						} )
+					);
+				} catch ( err ) {
+					// eslint-disable-next-line no-console
+					console.warn(
+						'[Flow] Reply posted, but reopening the thread failed.',
+						err
+					);
+				}
 			}
 
 			rebuildOpenThread();
@@ -791,6 +840,21 @@ export default function InlineThreadPopover( {
 	}
 
 	const replies = thread.replies || [];
+	const pinnedOn = pinOnOtherDevice(
+		parseDescriptor( thread.blockClientId )
+	);
+	// Same rule as the sidebar: another screen size explains the drift better than "outdated".
+	const iframeDoc = getIframeDoc();
+	const contentRoot = iframeDoc
+		? resolveCommentContentRoot( iframeDoc ) || iframeDoc.body
+		: null;
+	const isOutdated =
+		! thread.isResolved &&
+		! pinnedOn &&
+		!! contentRoot &&
+		isAnchorOutdated( thread, contentRoot );
+	const originalUrl = issueUrl( thread, isOutdated );
+	const flagged = !! pinnedOn || isOutdated;
 
 	const placement = position.placement || 'below';
 
@@ -811,7 +875,9 @@ export default function InlineThreadPopover( {
 					} )
 				);
 			} }
-			className={ `flow-thread-popover flow-thread-popover--${ placement }` }
+			className={ `flow-thread-popover flow-thread-popover--${ placement }${
+				flagged ? ' flow-thread-popover--flagged' : ''
+			}` }
 			style={ {
 				position: 'fixed',
 				top: `${ position.top }px`,
@@ -827,128 +893,172 @@ export default function InlineThreadPopover( {
 				aria-hidden="true"
 			/>
 			<div className="flow-thread-popover__card">
-				<div className="flow-thread-popover__header-actions">
-					{ ! thread.isResolved && canResolveComments() && (
-						<Button
-							icon={ commentResolveIcon }
-							size="small"
-							className="flow-thread-popover__resolve-icon"
-							label={ __(
-								'Mark as resolved',
-								'jumplinks-editorial-workflow'
-							) }
-							onClick={ handleResolve }
-						/>
-					) }
-					{ applyFilters( 'flow_ew_comment_card_actions', null, {
-						comment: thread,
-					} ) }
-					<Button
-						icon={ closeSmall }
-						className="flow-thread-popover__close"
-						label={ __( 'Close', 'jumplinks-editorial-workflow' ) }
-						onClick={ handleClose }
-					/>
-				</div>
-				<CommentAuthorRow comment={ thread } />
-				<div
-					className="flow-thread-popover__body"
-					dangerouslySetInnerHTML={ { __html: thread.html } }
-				/>
-				{ applyFilters( 'flow_ew_comment_card_footer', null, {
-					comment: thread,
-				} ) }
-
-				{ replies.length > 0 && (
-					<div className="flow-thread-popover__replies">
-						{ replies.map( ( reply ) => (
-							<div
-								key={ reply.id }
-								className="flow-thread-popover__reply"
-							>
-								<CommentAuthorRow
-									comment={ reply }
-									className="flow-thread-popover__reply-header"
-								/>
-								<span className="flow-thread-popover__reply-actions">
-									{ applyFilters(
-										'flow_ew_comment_card_actions',
-										null,
-										{ comment: reply }
-									) }
-								</span>
-								<div
-									className="flow-thread-popover__reply-body"
-									dangerouslySetInnerHTML={ {
-										__html: reply.html,
-									} }
-								/>
-								{ applyFilters(
-									'flow_ew_comment_card_footer',
-									null,
-									{ comment: reply }
-								) }
-								<div className="flow-comment-env-row">
-									{ applyFilters(
-										'flow_ew_comment_byline_extras',
-										null,
-										{ comment: reply }
-									) }
-								</div>
-							</div>
-						) ) }
+				{ flagged && (
+					<div className="flow-inline-anchor flow-inline-anchor--outdated flow-thread-popover__flag">
+						{ pinnedOn ? (
+							<PinnedOnHint device={ pinnedOn } />
+						) : (
+							<OutdatedHint />
+						) }
 					</div>
 				) }
-
-				{ thread.isResolved && (
-					<div className="flow-thread-popover__resolved-badge">
-						{ __( 'Resolved', 'jumplinks-editorial-workflow' ) }
-					</div>
-				) }
-
-				{ replying && (
-					<div className="flow-thread-popover__reply-editor">
-						{ thread.isResolved && canReopenComments() && (
-							<label className="flow-thread-popover__reopen">
-								<input
-									type="checkbox"
-									checked={ reopen }
-									onChange={ ( e ) =>
-										setReopen( e.target.checked )
-									}
-								/>
-								{ __(
-									'Reopen this thread',
+				<div className="flow-thread-popover__card-body">
+					<div className="flow-thread-popover__header-actions">
+						{ ! thread.isResolved && canResolveComments() && (
+							<Button
+								icon={ commentResolveIcon }
+								size="small"
+								className="flow-thread-popover__resolve-icon"
+								label={ __(
+									'Mark as resolved',
 									'jumplinks-editorial-workflow'
 								) }
-							</label>
+								onClick={ handleResolve }
+							/>
 						) }
-						<CommentEditor
-							autoFocus
-							onSubmit={ handleReplySubmit }
-							onCancel={ () => setReplying( false ) }
-							submitLabel={ __(
-								'Reply',
-								'jumplinks-editorial-workflow'
-							) }
-						/>
-					</div>
-				) }
-
-				{ ! replying && ! isReviewReadOnly() && (
-					<div className="flow-thread-popover__actions">
-						<Button
-							className="flow-btn--text flow-thread-popover__reply-btn"
-							icon={ commentReplyIcon }
-							onClick={ () => setReplying( true ) }
-						>
-							{ __( 'Reply', 'jumplinks-editorial-workflow' ) }
-						</Button>
-						{ applyFilters( 'flow_ew_comment_byline_extras', null, {
+						{ applyFilters( 'flow_ew_comment_card_actions', null, {
 							comment: thread,
 						} ) }
+						<Button
+							icon={ closeSmall }
+							className="flow-thread-popover__close"
+							label={ __(
+								'Close',
+								'jumplinks-editorial-workflow'
+							) }
+							onClick={ handleClose }
+						/>
 					</div>
-				) }
+					<CommentAuthorRow comment={ thread } />
+					<div
+						className="flow-thread-popover__body"
+						dangerouslySetInnerHTML={ { __html: thread.html } }
+					/>
+					{ applyFilters( 'flow_ew_comment_card_footer', null, {
+						comment: thread,
+					} ) }
+
+					{ replies.length > 0 && (
+						<div className="flow-thread-popover__replies">
+							{ replies.map( ( reply ) => (
+								<div
+									key={ reply.id }
+									className="flow-thread-popover__reply"
+								>
+									<CommentAuthorRow
+										comment={ reply }
+										className="flow-thread-popover__reply-header"
+									/>
+									<span className="flow-thread-popover__reply-actions">
+										{ applyFilters(
+											'flow_ew_comment_card_actions',
+											null,
+											{ comment: reply }
+										) }
+									</span>
+									<div
+										className="flow-thread-popover__reply-body"
+										dangerouslySetInnerHTML={ {
+											__html: reply.html,
+										} }
+									/>
+									{ applyFilters(
+										'flow_ew_comment_card_footer',
+										null,
+										{ comment: reply }
+									) }
+									<div className="flow-comment-env-row">
+										{ applyFilters(
+											'flow_ew_comment_byline_extras',
+											null,
+											{ comment: reply }
+										) }
+									</div>
+								</div>
+							) ) }
+						</div>
+					) }
+
+					{ thread.isResolved && (
+						<div className="flow-thread-popover__resolved-badge">
+							{ __( 'Resolved', 'jumplinks-editorial-workflow' ) }
+						</div>
+					) }
+
+					{ replying && (
+						<div className="flow-thread-popover__reply-editor">
+							{ thread.isResolved && canReopenComments() && (
+								<label className="flow-thread-popover__reopen">
+									<input
+										type="checkbox"
+										checked={ reopen }
+										onChange={ ( e ) =>
+											setReopen( e.target.checked )
+										}
+									/>
+									{ __(
+										'Reopen this thread',
+										'jumplinks-editorial-workflow'
+									) }
+								</label>
+							) }
+							<CommentEditor
+								autoFocus
+								onSubmit={ handleReplySubmit }
+								onCancel={ () => setReplying( false ) }
+								submitLabel={ __(
+									'Reply',
+									'jumplinks-editorial-workflow'
+								) }
+							/>
+						</div>
+					) }
+
+					{ ! replying && ! isReviewReadOnly() && (
+						<div className="flow-thread-popover__actions">
+							<Button
+								className="flow-btn--text flow-thread-popover__reply-btn"
+								icon={ commentReplyIcon }
+								onClick={ () => setReplying( true ) }
+							>
+								{ __(
+									'Reply',
+									'jumplinks-editorial-workflow'
+								) }
+							</Button>
+							{ pinnedOn && canPreviewDevices() && (
+								<Button
+									className="flow-btn--text flow-thread-popover__reply-btn flow-thread-popover__issue-btn"
+									icon={ DEVICE_ICONS[ pinnedOn ] }
+									onClick={ () =>
+										showPinOnDevice( thread.id, pinnedOn )
+									}
+								>
+									{ viewDeviceLabel( pinnedOn ) }
+								</Button>
+							) }
+							{ originalUrl && (
+								<Button
+									className="flow-btn--text flow-thread-popover__reply-btn flow-thread-popover__issue-btn"
+									icon={ backup }
+									href={ originalUrl }
+								>
+									{ __(
+										'View original',
+										'jumplinks-editorial-workflow'
+									) }
+								</Button>
+							) }
+							{ applyFilters(
+								'flow_ew_comment_byline_extras',
+								null,
+								{
+									comment: thread,
+								}
+							) }
+						</div>
+					) }
+				</div>
 			</div>
 		</div>
 	);

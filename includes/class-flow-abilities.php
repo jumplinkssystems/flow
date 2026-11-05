@@ -679,6 +679,14 @@ TEXT;
 							'type'        => 'number',
 							'description' => 'For type "pin": where down the element the reviewer clicked, as a fraction of its height (0 = top, 1 = bottom).',
 						],
+						'viewport' => [
+							'type'        => 'object',
+							'description' => 'For type "pin": the screen it was placed on (desktop, tablet or mobile) and the page width in pixels. x and y match the layout at that size.',
+							'properties'  => [
+								'device' => [ 'type' => 'string' ],
+								'width'  => [ 'type' => 'integer' ],
+							],
+						],
 						'element'  => [
 							'type'        => 'object',
 							'description' => 'For type "pin": the element under the pin, so it can be found even if the path has drifted: its tag, id, first classes and the start of its visible text.',

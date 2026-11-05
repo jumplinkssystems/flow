@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from '@wordpress/element';
 import { Button } from '@wordpress/components';
-import { backup } from '@wordpress/icons';
+import { backup, desktop, tablet, mobile } from '@wordpress/icons';
 import commentReplyIcon from '../icons/comment-reply';
 import { __, sprintf } from '@wordpress/i18n';
 import { applyFilters } from '@wordpress/hooks';
@@ -11,26 +11,12 @@ import {
 } from '../utils/local-edit-registry';
 import CommentEditor from './CommentEditor';
 import { useSingleCommentForm } from '../utils/single-comment-form';
-import { pageData, canReopenComments } from '../utils/api';
-const COLLAPSED_REPLY_LIMIT = 1;
+import { canReopenComments } from '../utils/api';
+import { viewDeviceLabel } from '../../shared/device';
+import { issueUrl } from '../utils/comment-flags';
 
-// The page as it was when the comment was raised, or '' when already there or unknown.
-// Resolved, or still open but its text is gone from this version (outdated).
-function issueUrl( thread, isOutdated ) {
-	const revisionId = Number( thread.revisionId || 0 );
-	if (
-		! pageData.canViewRevisions ||
-		! ( thread.isResolved || isOutdated ) ||
-		! revisionId ||
-		revisionId === Number( pageData.revisionId || 0 )
-	) {
-		return '';
-	}
-	const url = new URL( window.location.href );
-	url.searchParams.set( 'flow_revision_id', String( revisionId ) );
-	url.searchParams.set( 'flow_focus_comment', String( thread.id ) );
-	return url.toString();
-}
+const DEVICE_ICONS = { desktop, tablet, mobile };
+const COLLAPSED_REPLY_LIMIT = 1;
 
 export default function CommentThread( {
 	thread,
@@ -40,6 +26,8 @@ export default function CommentThread( {
 	onResolve,
 	suppressBodyExpandClick = false,
 	isOutdated = false,
+	showOnDevice = '',
+	onShowOnDevice,
 } ) {
 	const replies = thread.replies || [];
 	const [ replyingTo, setReplyingTo ] = useState( null );
@@ -193,6 +181,17 @@ export default function CommentThread( {
 								'View original',
 								'jumplinks-editorial-workflow'
 							) }
+						</Button>
+					) }
+					{ showOnDevice && onShowOnDevice && (
+						<Button
+							className="flow-btn--text flow-comment-thread__reply-btn flow-comment-thread__issue-btn flow-comment-thread__device-btn"
+							icon={ DEVICE_ICONS[ showOnDevice ] }
+							onClick={ () =>
+								onShowOnDevice( thread.id, showOnDevice )
+							}
+						>
+							{ viewDeviceLabel( showOnDevice ) }
 						</Button>
 					) }
 					{ applyFilters( 'flow_ew_comment_byline_extras', null, {

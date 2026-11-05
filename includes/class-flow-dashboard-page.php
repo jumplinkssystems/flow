@@ -8,20 +8,18 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * "Dashboard" subpage under the Flow top-level menu. Personal at-a-glance view
- * for the current user, split into: - reviews they REQUESTED that are still in
- * flight (status in pending / in_review / changes_requested) - reviews they're
- * ASSIGNED to as a reviewer (primary reviewer_id OR Pro multi-reviewer roster
- * member — both come through the `participant_user_id` filter, then we strip
- * their own requester rows so an item that's both isn't shown twice) Reuses
- * the dashboard-widget CSS (`assets/css/dashboard-widget.css`) for the section
- * / list / item visuals, then layers a thin wrapper class
- * (`.flow-ew-dashboard-page`) for full-page adjustments.
+ * "Dashboard" subpage under the Flow top-level menu. Two tabs: Waiting for
+ * my feedback (reviews the user is a reviewer on, plus other people's open
+ * reviews) and My sent reviews (reviews the user requested). A tab with no
+ * rows is hidden, and the page opens on the one that has some. Each tab is
+ * one list of page, open and (Pro) site reviews, filtered by status bucket,
+ * type and person through GET parameters, 20 rows per page. Rows come from
+ * Dashboard_Rows.
  */
 class Dashboard_Page {
 
 	const PAGE_SLUG                     = 'flow-ew-dashboard';
-	const PAGE_BATCH                    = 100;
+	const PER_PAGE                      = 20;
 	const NOTICE_DISMISS_META           = 'flow_ew_assigned_notice_dismissed_count';
 	const NOTICE_DISMISS_AJAX_ACTION    = 'flow_ew_dismiss_assigned_notice';
 	const OPTION_INSTALLED_AT           = 'flow_ew_installed_at';
@@ -69,7 +67,7 @@ class Dashboard_Page {
 
 	public function register_menu(): void {
 		$pending = self::count_assigned_to_me( get_current_user_id() );
-		$label   = __( 'Flow', 'jumplinks-editorial-workflow' );
+		$label   = __( 'Dashboard', 'jumplinks-editorial-workflow' );
 		if ( $pending > 0 ) {
 			$label .= sprintf(
 				' <span class="awaiting-mod count-%1$d"><span class="pending-count">%2$s</span></span>',
@@ -80,7 +78,7 @@ class Dashboard_Page {
 
 		add_menu_page(
 			__( 'Flow', 'jumplinks-editorial-workflow' ),
-			$label,
+			__( 'Flow', 'jumplinks-editorial-workflow' ),
 			'read',
 			self::PAGE_SLUG,
 			[ $this, 'render' ],
@@ -93,7 +91,7 @@ class Dashboard_Page {
 		$this->hook_suffix = add_submenu_page(
 			self::PAGE_SLUG,
 			__( 'Flow Dashboard', 'jumplinks-editorial-workflow' ),
-			__( 'Dashboard', 'jumplinks-editorial-workflow' ),
+			$label,
 			'read',
 			self::PAGE_SLUG,
 			[ $this, 'render' ]
@@ -130,26 +128,34 @@ class Dashboard_Page {
 			[ 'flow-ew-dashboard-widget', 'flow-ew-status-themes' ],
 			$page_ver
 		);
+
+		$js_path = FLOW_EW_PLUGIN_DIR . 'assets/js/dashboard-page.js';
+		wp_enqueue_script(
+			'flow-ew-dashboard-page',
+			FLOW_EW_PLUGIN_URL . 'assets/js/dashboard-page.js',
+			[],
+			file_exists( $js_path ) ? (string) filemtime( $js_path ) : $fallback,
+			true
+		);
+		wp_localize_script(
+			'flow-ew-dashboard-page',
+			'flowEwDashboard',
+			[
+				'restUrl' => esc_url_raw( rest_url( 'flow/v1/reviews/' ) ),
+				'nonce'   => wp_create_nonce( 'wp_rest' ),
+				'i18n'    => [
+					'working'      => __( 'Working…', 'jumplinks-editorial-workflow' ),
+					'genericError' => __( 'Something went wrong. Please try again.', 'jumplinks-editorial-workflow' ),
+				],
+			]
+		);
 	}
 
 	public function render(): void {
 		if ( ! is_user_logged_in() ) {
 			return;
 		}
-		$user_id  = get_current_user_id();
-		$sections = self::sections( $user_id );
-		$all_rows = [];
-		foreach ( $sections as $section ) {
-			foreach ( (array) $section['reviews'] as $row ) {
-				$all_rows[] = $row;
-			}
-		}
-		Review::prime_review_list_caches( $all_rows );
-		$has_any = (bool) apply_filters(
-			'flow_ew_dashboard_has_any_reviews',
-			array_sum( array_map( 'count', array_column( $sections, 'reviews' ) ) ) > 0,
-			$user_id
-		);
+		$user_id = get_current_user_id();
 		?>
 		<div class="wrap flow-ew-dashboard-page">
 			<h1 class="wp-heading-inline"><?php esc_html_e( 'Flow Dashboard', 'jumplinks-editorial-workflow' ); ?></h1>
@@ -157,40 +163,25 @@ class Dashboard_Page {
 			<?php
 			if ( Settings::is_solo_mode() ) {
 				self::render_self_reviews( $user_id );
-			} elseif ( ! $has_any && current_user_can( 'edit_posts' ) ) {
-				self::render_first_review_steps();
-			} elseif ( ! $has_any ) {
-				printf(
-					'<p class="flow-ew-dash-empty flow-ew-dashboard-page__empty">%s</p>',
-					esc_html__( 'Nothing is waiting on you, and you haven’t sent anything for review yet.', 'jumplinks-editorial-workflow' )
-				);
 			} else {
-				foreach ( $sections as $section ) {
-					self::render_section(
-						$section['slug'],
-						$section['heading'],
-						$section['description'],
-						$section['reviews'],
-						$section['edit_link'],
-						$section['extra_info']
+				$tabs    = [
+					Dashboard_Rows::TAB_RECEIVED => Dashboard_Rows::for_tab( Dashboard_Rows::TAB_RECEIVED, $user_id ),
+					Dashboard_Rows::TAB_SENT     => Dashboard_Rows::for_tab( Dashboard_Rows::TAB_SENT, $user_id ),
+				];
+				$has_any = [] !== $tabs[ Dashboard_Rows::TAB_RECEIVED ] || [] !== $tabs[ Dashboard_Rows::TAB_SENT ];
+				if ( ! $has_any && current_user_can( 'edit_posts' ) ) {
+					self::render_first_review_steps();
+				} elseif ( ! $has_any ) {
+					printf(
+						'<p class="flow-ew-dash-empty flow-ew-dashboard-page__empty">%s</p>',
+						esc_html__( 'Nothing is waiting on you, and you haven’t sent anything for review yet.', 'jumplinks-editorial-workflow' )
 					);
-					/**
-					 * Per-section slot for add-ons to interleave their own sections at specific
-					 * positions on the dashboard. `$section` is the slug of the section that just
-					 * rendered (`assigned`, `my-requests`, `open-reviews`). Listeners should print
-					 * HTML matching the existing `flow-ew-dash-section` / `flow-ew-dash-list`
-					 * markup so the visual register stays uniform.
-					 */
-					do_action( 'flow_ew_dashboard_after_section', $section['slug'], $user_id );
+				} else {
+					self::render_board( $tabs );
 				}
 			}
 
-			/**
-			 * Catch-all slot for add-ons to inject extra sections at the very end of the
-			 * dashboard, after every per-post section has rendered. Use
-			 * `flow_ew_dashboard_after_section` instead if you need to slot a section
-			 * between specific per-post sections.
-			 */
+			/** Slot for add-ons to print extra sections after the review list. */
 			do_action( 'flow_ew_dashboard_after_sections', $user_id );
 			?>
 		</div>
@@ -198,38 +189,560 @@ class Dashboard_Page {
 	}
 
 	/**
-	 * The three per-post sections, in display order, with their rows loaded.
+	 * Tabs, filters, the current page of rows and pagination.
 	 *
-	 * @return array<int,array{slug:string,heading:string,description:string,reviews:array<int,object>,edit_link:bool,extra_info:string}>
+	 * @param array<string,array<int,array<string,mixed>>> $tabs Rows keyed by tab.
 	 */
-	private static function sections( int $user_id ): array {
-		$in_flight = [ Review::STATUS_PENDING, Review::STATUS_IN_REVIEW, Review::STATUS_CHANGES_REQUESTED ];
-		return [
-			[
-				'slug'        => 'assigned',
-				'heading'     => __( 'Assigned to me', 'jumplinks-editorial-workflow' ),
-				'description' => __( 'Content waiting for my feedback.', 'jumplinks-editorial-workflow' ),
-				'reviews'     => self::fetch_assigned_to_me( $user_id, $in_flight ),
-				'edit_link'   => false,
-				'extra_info'  => 'author',
-			],
-			[
-				'slug'        => 'my-requests',
-				'heading'     => __( 'My review requests', 'jumplinks-editorial-workflow' ),
-				'description' => __( 'Content waiting for review from colleagues.', 'jumplinks-editorial-workflow' ),
-				'reviews'     => self::fetch_my_requests( $user_id, array_merge( $in_flight, [ Review::STATUS_APPROVED ] ) ),
-				'edit_link'   => true,
-				'extra_info'  => 'reviewers',
-			],
-			[
-				'slug'        => 'open-reviews',
-				'heading'     => __( 'Open reviews', 'jumplinks-editorial-workflow' ),
-				'description' => __( 'Any user can add comments on this content.', 'jumplinks-editorial-workflow' ),
-				'reviews'     => self::fetch_open_reviews( $user_id ),
-				'edit_link'   => false,
-				'extra_info'  => 'author',
-			],
+	private static function render_board( array $tabs ): void {
+		$present = [];
+		foreach ( [ Dashboard_Rows::TAB_RECEIVED, Dashboard_Rows::TAB_SENT ] as $tab ) {
+			if ( [] !== $tabs[ $tab ] ) {
+				$present[] = $tab;
+			}
+		}
+		// One list only: open that one and skip the tab bar. Both: prefer
+		// feedback that is still waiting, unless the query picked a tab.
+		$default = Dashboard_Rows::TAB_SENT;
+		if ( 1 === count( $present ) ) {
+			$default = $present[0];
+		} elseif ( self::count_bucket( $tabs[ Dashboard_Rows::TAB_RECEIVED ], Dashboard_Rows::BUCKET_IN_REVIEW ) > 0 ) {
+			$default = Dashboard_Rows::TAB_RECEIVED;
+		}
+		$view = self::current_view( $default );
+		if ( ! in_array( $view['tab'], $present, true ) ) {
+			$view['tab'] = $default;
+		}
+		$rows = $tabs[ $view['tab'] ];
+
+		$types = array_values( array_unique( array_column( $rows, 'type' ) ) );
+		$rows  = self::filter_rows( $rows, $view['types'], $view['person'] );
+
+		$counts = [
+			'all'                            => count( $rows ),
+			Dashboard_Rows::BUCKET_IN_REVIEW => self::count_bucket( $rows, Dashboard_Rows::BUCKET_IN_REVIEW ),
+			Dashboard_Rows::BUCKET_RESOLVED  => self::count_bucket( $rows, Dashboard_Rows::BUCKET_RESOLVED ),
 		];
+		if ( 'all' !== $view['status'] ) {
+			$rows = array_values(
+				array_filter(
+					$rows,
+					static function ( array $row ) use ( $view ): bool {
+						return $row['bucket'] === $view['status'];
+					}
+				)
+			);
+		}
+
+		$total                     = count( $rows );
+		[ $slice, $paged, $pages ] = self::paginate( $rows, $view['paged'] );
+
+		self::render_tabs( $tabs, $view );
+		echo '<div class="flow-ew-dash-toolbar">';
+		self::render_status_views( $counts, $view );
+		self::render_type_filter( $types, $view );
+		echo '</div>';
+		self::render_person_chip( $view );
+
+		if ( [] === $slice ) {
+			self::render_empty( $view );
+			return;
+		}
+
+		Review::prime_review_list_caches( array_values( array_filter( array_column( $slice, 'source' ), 'is_object' ) ) );
+		Dashboard_Rows::prime_comment_counts( $slice );
+		/**
+		 * @param string|int $person
+		 */
+		$person_url = static function ( $person ) use ( $view ): string {
+			return self::view_url(
+				array_merge(
+					$view,
+					[
+						'person' => $person,
+						'paged'  => 1,
+					]
+				)
+			);
+		};
+		$items      = [];
+		foreach ( $slice as $row ) {
+			$item = ( $row['item'] )( $person_url );
+			if ( is_array( $item ) ) {
+				$items[] = $item;
+			}
+		}
+		echo '<div class="flow-ew-dashboard-page__section flow-ew-dash-board">';
+		Dashboard_List_Renderer::list( $items );
+		echo '</div>';
+		self::render_pagination( 'bottom', $total, $pages, $paged, $view );
+	}
+
+	/**
+	 * Tab, status bucket, type, person and page from the query string.
+	 * Unknown values fall back to the defaults.
+	 *
+	 * @return array{tab:string,status:string,types:?string[],person:string,paged:int}
+	 *   `types` null means every type (the default, all boxes checked).
+	 *   `person` is a WP user id or `email:<address>`; '' means no filter.
+	 */
+	public static function normalize_view( array $query, string $default_tab ): array {
+		$tab = sanitize_key( (string) ( $query['tab'] ?? '' ) );
+		if ( ! in_array( $tab, [ Dashboard_Rows::TAB_RECEIVED, Dashboard_Rows::TAB_SENT ], true ) ) {
+			$tab = $default_tab;
+		}
+		$status = sanitize_key( (string) ( $query['flow_status'] ?? '' ) );
+		if ( ! in_array( $status, [ 'all', Dashboard_Rows::BUCKET_IN_REVIEW, Dashboard_Rows::BUCKET_RESOLVED ], true ) ) {
+			$status = Dashboard_Rows::BUCKET_IN_REVIEW;
+		}
+		return [
+			'tab'    => $tab,
+			'status' => $status,
+			'types'  => self::types_from_query( $query ),
+			'person' => self::person_from_query( $query['flow_person'] ?? '' ),
+			'paged'  => max( 1, (int) ( $query['paged'] ?? 1 ) ),
+		];
+	}
+
+	/**
+	 * Person-filter key: a WP user id as a decimal string, or `email:<address>`
+	 * for a guest reviewer. Anything else is no filter.
+	 *
+	 * @param mixed $raw
+	 */
+	public static function person_from_query( $raw ): string {
+		if ( is_int( $raw ) ) {
+			return $raw > 0 ? (string) $raw : '';
+		}
+		$raw = trim( (string) $raw );
+		if ( 0 === strpos( strtolower( $raw ), 'email:' ) ) {
+			$email = sanitize_email( substr( $raw, 6 ) );
+			return '' !== $email ? 'email:' . strtolower( $email ) : '';
+		}
+		$id = (int) $raw;
+		return $id > 0 ? (string) $id : '';
+	}
+
+	/**
+	 * Checked types. Null when the param is missing or lists every type,
+	 * so the default page leaves every box checked. `none` is an explicit
+	 * empty selection.
+	 *
+	 * @param array<string,mixed> $query
+	 * @return string[]|null
+	 */
+	private static function types_from_query( array $query ): ?array {
+		if ( ! array_key_exists( 'flow_type', $query ) ) {
+			return null;
+		}
+		$raw = $query['flow_type'];
+		if ( is_array( $raw ) ) {
+			$parts = $raw;
+		} else {
+			// sanitize_key() would strip the commas that separate types.
+			$raw = strtolower( (string) $raw );
+			if ( 'none' === $raw ) {
+				return [];
+			}
+			$parts = explode( ',', $raw );
+		}
+		$known = array_keys( Dashboard_Rows::type_labels() );
+		$types = [];
+		foreach ( $parts as $part ) {
+			$part = sanitize_key( (string) $part );
+			if ( in_array( $part, $known, true ) ) {
+				$types[ $part ] = $part;
+			}
+		}
+		if ( [] === $types || count( $types ) === count( $known ) ) {
+			return null;
+		}
+		return array_values( $types );
+	}
+
+	/** @return array{tab:string,status:string,types:?string[],person:string,paged:int} */
+	private static function current_view( string $default_tab ): array {
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only view params.
+		return self::normalize_view( wp_unslash( $_GET ), $default_tab );
+	}
+
+	/**
+	 * Dashboard URL for a view. Defaults stay out of the query string.
+	 *
+	 * @param array{tab:string,status?:string,types?:string[]|null,person?:int|string,paged?:int} $view
+	 */
+	public static function view_url( array $view ): string {
+		$args = [
+			'page' => self::PAGE_SLUG,
+			'tab'  => $view['tab'],
+		];
+		if ( ! empty( $view['status'] ) && Dashboard_Rows::BUCKET_IN_REVIEW !== $view['status'] ) {
+			$args['flow_status'] = $view['status'];
+		}
+		if ( isset( $view['types'] ) && is_array( $view['types'] ) ) {
+			$args['flow_type'] = [] === $view['types'] ? 'none' : implode( ',', $view['types'] );
+		}
+		$person = self::person_from_query( $view['person'] ?? '' );
+		if ( '' !== $person ) {
+			$args['flow_person'] = $person;
+		}
+		if ( ! empty( $view['paged'] ) && (int) $view['paged'] > 1 ) {
+			$args['paged'] = (int) $view['paged'];
+		}
+		return add_query_arg( $args, admin_url( 'admin.php' ) );
+	}
+
+	/**
+	 * @param array<int,array<string,mixed>> $rows
+	 * @param string[]|null                  $types Null keeps every type.
+	 * @param int|string                     $person
+	 * @return array<int,array<string,mixed>>
+	 */
+	public static function filter_rows( array $rows, ?array $types, $person ): array {
+		$person = self::person_from_query( $person );
+		return array_values(
+			array_filter(
+				$rows,
+				static function ( array $row ) use ( $types, $person ): bool {
+					if ( null !== $types && ! in_array( $row['type'], $types, true ) ) {
+						return false;
+					}
+					return '' === $person || in_array( $person, Dashboard_Rows::people( $row ), true );
+				}
+			)
+		);
+	}
+
+	/**
+	 * One page of rows. A page past the end shows the last one.
+	 *
+	 * @param array<int,array<string,mixed>> $rows
+	 * @return array{0:array<int,array<string,mixed>>,1:int,2:int} Rows, current page, page count.
+	 */
+	public static function paginate( array $rows, int $paged ): array {
+		$pages = max( 1, (int) ceil( count( $rows ) / self::PER_PAGE ) );
+		$paged = min( max( 1, $paged ), $pages );
+		return [ array_slice( $rows, ( $paged - 1 ) * self::PER_PAGE, self::PER_PAGE ), $paged, $pages ];
+	}
+
+	/** @param array<int,array<string,mixed>> $rows */
+	public static function count_bucket( array $rows, string $bucket ): int {
+		$count = 0;
+		foreach ( $rows as $row ) {
+			if ( ( $row['bucket'] ?? '' ) === $bucket ) {
+				++$count;
+			}
+		}
+		return $count;
+	}
+
+	/**
+	 * @param array<string,array<int,array<string,mixed>>> $tabs
+	 * @param array<string,mixed>                          $view
+	 */
+	private static function render_tabs( array $tabs, array $view ): void {
+		$labels = [
+			Dashboard_Rows::TAB_RECEIVED => __( 'Waiting for my feedback', 'jumplinks-editorial-workflow' ),
+			Dashboard_Rows::TAB_SENT     => __( 'My sent reviews', 'jumplinks-editorial-workflow' ),
+		];
+		$labels = array_filter(
+			$labels,
+			static function ( string $tab ) use ( $tabs ): bool {
+				return [] !== ( $tabs[ $tab ] ?? [] );
+			},
+			ARRAY_FILTER_USE_KEY
+		);
+		if ( count( $labels ) < 2 ) {
+			return;
+		}
+		echo '<nav class="nav-tab-wrapper flow-ew-dash-tabs" aria-label="' . esc_attr__( 'Reviews', 'jumplinks-editorial-workflow' ) . '">';
+		foreach ( $labels as $tab => $label ) {
+			$active  = $tab === $view['tab'];
+			$waiting = self::count_bucket( $tabs[ $tab ], Dashboard_Rows::BUCKET_IN_REVIEW );
+			printf(
+				'<a href="%1$s" class="nav-tab%2$s"%3$s>%4$s%5$s</a>',
+				esc_url( self::view_url( [ 'tab' => $tab ] ) ),
+				$active ? ' nav-tab-active' : '',
+				$active ? ' aria-current="page"' : '',
+				esc_html( $label ),
+				$waiting > 0
+					? ' <span class="flow-ew-dash-tabs__count">' . esc_html( number_format_i18n( $waiting ) ) . '</span>'
+					: ''
+			);
+		}
+		echo '</nav>';
+	}
+
+	/**
+	 * @param array<string,int>   $counts
+	 * @param array<string,mixed> $view
+	 */
+	private static function render_status_views( array $counts, array $view ): void {
+		$labels = [
+			'all'                            => __( 'All', 'jumplinks-editorial-workflow' ),
+			Dashboard_Rows::BUCKET_IN_REVIEW => __( 'In review', 'jumplinks-editorial-workflow' ),
+			Dashboard_Rows::BUCKET_RESOLVED  => __( 'Resolved', 'jumplinks-editorial-workflow' ),
+		];
+		$links  = [];
+		foreach ( $labels as $status => $label ) {
+			$current = $status === $view['status'];
+			$links[] = sprintf(
+				'<li class="%1$s"><a href="%2$s"%3$s>%4$s <span class="count">(%5$s)</span></a></li>',
+				esc_attr( $status ),
+				esc_url(
+					self::view_url(
+						array_merge(
+							$view,
+							[
+								'status' => $status,
+								'paged'  => 1,
+							]
+						)
+					)
+				),
+				$current ? ' class="current" aria-current="page"' : '',
+				esc_html( $label ),
+				esc_html( number_format_i18n( (int) ( $counts[ $status ] ?? 0 ) ) )
+			);
+		}
+		echo '<ul class="subsubsub flow-ew-dash-views">' . implode( ' | ', $links ) . '</ul>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped above.
+	}
+
+	/**
+	 * Checkboxes for the kinds of review in this tab. Every box starts
+	 * checked; each link toggles one type. Hidden when the tab has only one.
+	 *
+	 * @param string[]            $types Types present in the tab.
+	 * @param array<string,mixed> $view
+	 */
+	private static function render_type_filter( array $types, array $view ): void {
+		$options = [];
+		foreach ( Dashboard_Rows::type_filter_labels() as $type => $label ) {
+			if ( in_array( $type, $types, true ) ) {
+				$options[ $type ] = $label;
+			}
+		}
+		if ( count( $options ) < 2 ) {
+			return;
+		}
+		$checked = is_array( $view['types'] ?? null ) ? $view['types'] : array_keys( $options );
+		echo '<div class="flow-ew-dash-types" role="group" aria-label="' . esc_attr__( 'Review type', 'jumplinks-editorial-workflow' ) . '">';
+		foreach ( $options as $type => $label ) {
+			$on = in_array( $type, $checked, true );
+			printf(
+				'<a href="%1$s" class="flow-ew-dash-types__option%2$s" aria-pressed="%3$s"><span class="flow-ew-dash-types__box" aria-hidden="true"></span>%4$s</a>',
+				esc_url( self::type_toggle_url( $view, array_keys( $options ), $type ) ),
+				$on ? ' is-checked' : '',
+				$on ? 'true' : 'false',
+				esc_html( $label )
+			);
+		}
+		echo '</div>';
+	}
+
+	/**
+	 * URL with one type flipped. Checking the last unchecked box drops the
+	 * param, which is the all-checked default.
+	 *
+	 * @param array<string,mixed> $view
+	 * @param string[]            $available
+	 */
+	private static function type_toggle_url( array $view, array $available, string $type ): string {
+		$selected = is_array( $view['types'] ?? null ) ? $view['types'] : $available;
+		if ( in_array( $type, $selected, true ) ) {
+			$selected = array_values( array_diff( $selected, [ $type ] ) );
+		} else {
+			$selected[] = $type;
+		}
+		$selected = array_values( array_intersect( $available, $selected ) );
+		$next     = count( $selected ) === count( $available ) ? null : $selected;
+		return self::view_url(
+			array_merge(
+				$view,
+				[
+					'types' => $next,
+					'paged' => 1,
+				]
+			)
+		);
+	}
+
+	/** @param array<string,mixed> $view */
+	private static function render_person_chip( array $view ): void {
+		$person = self::person_from_query( $view['person'] ?? '' );
+		$name   = self::person_label( $person );
+		if ( '' === $name ) {
+			return;
+		}
+		$template = Dashboard_Rows::TAB_SENT === $view['tab']
+			/* translators: %s: reviewer display name. */
+			? __( 'Reviewed by %s', 'jumplinks-editorial-workflow' )
+			/* translators: %s: requester display name. */
+			: __( 'Requested by %s', 'jumplinks-editorial-workflow' );
+		printf(
+			'<p class="flow-ew-dash-person"><span>%1$s</span><a class="flow-ew-dash-person__clear" href="%2$s" aria-label="%3$s"><span aria-hidden="true">&times;</span></a></p>',
+			wp_kses( sprintf( esc_html( $template ), '<strong>' . esc_html( $name ) . '</strong>' ), [ 'strong' => [] ] ),
+			esc_url(
+				self::view_url(
+					array_merge(
+						$view,
+						[
+							'person' => '',
+							'paged'  => 1,
+						]
+					)
+				)
+			),
+			esc_attr__( 'Clear person filter', 'jumplinks-editorial-workflow' )
+		);
+	}
+
+	/** Display name for a person-filter key. */
+	private static function person_label( string $person ): string {
+		if ( '' === $person ) {
+			return '';
+		}
+		if ( 0 === strpos( $person, 'email:' ) ) {
+			return substr( $person, 6 );
+		}
+		$user = get_userdata( (int) $person );
+		return $user instanceof \WP_User ? $user->display_name : '';
+	}
+
+	/** @param array<string,mixed> $view */
+	private static function render_empty( array $view ): void {
+		if ( is_array( $view['types'] ?? null ) || '' !== self::person_from_query( $view['person'] ?? '' ) ) {
+			printf(
+				'<p class="flow-ew-dash-empty flow-ew-dashboard-page__empty">%1$s <a href="%2$s">%3$s</a></p>',
+				esc_html__( 'No reviews match these filters.', 'jumplinks-editorial-workflow' ),
+				esc_url(
+					self::view_url(
+						[
+							'tab'    => $view['tab'],
+							'status' => $view['status'],
+						]
+					)
+				),
+				esc_html__( 'Clear filters', 'jumplinks-editorial-workflow' )
+			);
+			return;
+		}
+		$received = Dashboard_Rows::TAB_RECEIVED === $view['tab'];
+		switch ( $view['status'] ) {
+			case Dashboard_Rows::BUCKET_IN_REVIEW:
+				$message = $received
+					? __( 'Nothing is waiting on you.', 'jumplinks-editorial-workflow' )
+					: __( 'None of your requests are waiting on reviewers.', 'jumplinks-editorial-workflow' );
+				break;
+			case Dashboard_Rows::BUCKET_RESOLVED:
+				$message = __( 'No resolved reviews yet.', 'jumplinks-editorial-workflow' );
+				break;
+			default:
+				$message = $received
+					? __( 'No one has asked you for a review yet.', 'jumplinks-editorial-workflow' )
+					: __( 'You haven’t sent anything for review yet.', 'jumplinks-editorial-workflow' );
+		}
+		printf( '<p class="flow-ew-dash-empty flow-ew-dashboard-page__empty">%s</p>', esc_html( $message ) );
+	}
+
+	/**
+	 * The same control as a posts list: item count, first / previous / next /
+	 * last, and a current-page field on top. One page still shows the count.
+	 *
+	 * @param array<string,mixed> $view
+	 */
+	private static function render_pagination( string $which, int $total, int $pages, int $paged, array $view ): void {
+		if ( $total <= 0 ) {
+			return;
+		}
+		$top = 'top' === $which;
+		echo $top ? '<form method="get" class="tablenav top">' : '<div class="tablenav bottom">';
+		if ( $top ) {
+			self::pagination_hidden_fields( $view );
+		}
+
+		$disable_first = 1 === $paged;
+		$disable_last  = $pages === $paged;
+		$links         = [
+			self::pagination_step( $disable_first, 'first-page', '&laquo;', __( 'First page', 'jumplinks-editorial-workflow' ), self::view_url( array_merge( $view, [ 'paged' => 1 ] ) ) ),
+			self::pagination_step( $disable_first, 'prev-page', '&lsaquo;', __( 'Previous page', 'jumplinks-editorial-workflow' ), self::view_url( array_merge( $view, [ 'paged' => max( 1, $paged - 1 ) ] ) ) ),
+			self::pagination_current( $top, $paged, $pages ),
+			self::pagination_step( $disable_last, 'next-page', '&rsaquo;', __( 'Next page', 'jumplinks-editorial-workflow' ), self::view_url( array_merge( $view, [ 'paged' => min( $pages, $paged + 1 ) ] ) ) ),
+			self::pagination_step( $disable_last, 'last-page', '&raquo;', __( 'Last page', 'jumplinks-editorial-workflow' ), self::view_url( array_merge( $view, [ 'paged' => $pages ] ) ) ),
+		];
+
+		printf(
+			'<div class="tablenav-pages%s"><span class="displaying-num">%s</span><span class="pagination-links">%s</span></div><br class="clear" />',
+			$pages < 2 ? ' one-page' : '',
+			esc_html(
+				sprintf(
+					/* translators: %s: number of items. */
+					_n( '%s item', '%s items', $total, 'jumplinks-editorial-workflow' ),
+					number_format_i18n( $total )
+				)
+			),
+			implode( "\n", $links ) // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- each step is escaped in pagination_step() and pagination_current().
+		);
+		echo $top ? '</form>' : '</div>';
+	}
+
+	/** @param array<string,mixed> $view */
+	private static function pagination_hidden_fields( array $view ): void {
+		$fields = [
+			'page' => self::PAGE_SLUG,
+			'tab'  => (string) $view['tab'],
+		];
+		if ( ! empty( $view['status'] ) && Dashboard_Rows::BUCKET_IN_REVIEW !== $view['status'] ) {
+			$fields['flow_status'] = (string) $view['status'];
+		}
+		if ( isset( $view['types'] ) && is_array( $view['types'] ) ) {
+			$fields['flow_type'] = [] === $view['types'] ? 'none' : implode( ',', $view['types'] );
+		}
+		$person = self::person_from_query( $view['person'] ?? '' );
+		if ( '' !== $person ) {
+			$fields['flow_person'] = $person;
+		}
+		foreach ( $fields as $name => $value ) {
+			printf( '<input type="hidden" name="%s" value="%s" />', esc_attr( $name ), esc_attr( $value ) );
+		}
+	}
+
+	/** One arrow. A disabled one is a span, matching the posts list. */
+	private static function pagination_step( bool $disabled, string $link_class, string $glyph, string $label, string $url ): string {
+		if ( $disabled ) {
+			return '<span class="tablenav-pages-navspan button disabled" aria-hidden="true">' . $glyph . '</span>';
+		}
+		return sprintf(
+			'<a class="%1$s button" href="%2$s"><span class="screen-reader-text">%3$s</span><span aria-hidden="true">%4$s</span></a>',
+			esc_attr( $link_class ),
+			esc_url( $url ),
+			esc_html( $label ),
+			$glyph
+		);
+	}
+
+	/** "1 of 3", with the current page editable at the top of the list. */
+	private static function pagination_current( bool $top, int $paged, int $pages ): string {
+		$total = '<span class="total-pages">' . esc_html( number_format_i18n( $pages ) ) . '</span>';
+		if ( $top ) {
+			$current = sprintf(
+				'<label for="current-page-selector" class="screen-reader-text">%1$s</label><input class="current-page" id="current-page-selector" type="text" name="paged" value="%2$s" size="%3$d" aria-describedby="table-paging" /><span class="tablenav-paging-text">',
+				esc_html__( 'Current Page', 'jumplinks-editorial-workflow' ),
+				esc_attr( (string) $paged ),
+				strlen( (string) $pages )
+			);
+			$before  = '<span class="paging-input">';
+			$after   = '</span></span>';
+		} else {
+			$current = (string) $paged;
+			$before  = '<span class="screen-reader-text">' . esc_html__( 'Current Page', 'jumplinks-editorial-workflow' ) . '</span><span id="table-paging" class="paging-input"><span class="tablenav-paging-text">';
+			$after   = '</span></span>';
+		}
+		return $before . sprintf(
+			/* translators: 1: current page, 2: total pages. */
+			_x( '%1$s of %2$s', 'paging', 'jumplinks-editorial-workflow' ),
+			$current,
+			$total
+		) . $after;
 	}
 
 	/**
@@ -238,7 +751,7 @@ class Dashboard_Page {
 	 */
 	private static function render_self_reviews( int $user_id ): void {
 		$accessible = [];
-		foreach ( self::fetch_all_pages( [ 'only_private' => true ] ) as $review ) {
+		foreach ( Dashboard_Rows::fetch_all( [ 'only_private' => true ] ) as $review ) {
 			if ( ! Review::can_user_access_private_review( $review, $user_id ) ) {
 				continue;
 			}
@@ -277,7 +790,7 @@ class Dashboard_Page {
 
 		$items = [];
 		foreach ( $rows as [ $review, $open ] ) {
-			$item = self::item_data( $review, true, '' );
+			$item = self::self_review_item( $review );
 			if ( null === $item ) {
 				continue;
 			}
@@ -397,62 +910,6 @@ class Dashboard_Page {
 		<?php
 	}
 
-	/**
-	 * Reviews where the current user is the requester and the round is
-	 * still in flight.
-	 *
-	 * Open reviews authored by the same user are stripped out — they have
-	 * their own section, and the badge on each row reflects the virtual
-	 * "Open Review" status, so showing them here too would duplicate the
-	 * entry and confuse the column heading ("Content waiting for review
-	 * from colleagues" doesn't apply to an open-link share).
-	 *
-	 * @param string[] $statuses
-	 * @return array<int,object>
-	 */
-	private static function fetch_my_requests( int $user_id, array $statuses ): array {
-		$out = [];
-		foreach ( $statuses as $status ) {
-			foreach (
-				self::fetch_all_pages(
-					[
-						'requester_id' => $user_id,
-						'status'       => $status,
-					]
-				) as $row
-			) {
-				if (
-					! empty( $row->is_open )
-					&& 0 === (int) ( $row->reviewer_id ?? 0 )
-				) {
-					continue;
-				}
-				if (
-					Review::STATUS_APPROVED === (string) $row->status
-					&& self::post_is_published( (int) $row->post_id )
-				) {
-					continue;
-				}
-				$out[ (int) $row->id ] = $row;
-			}
-		}
-		return self::strip_orphans_and_sort( array_values( $out ) );
-	}
-
-	private static function post_is_published( int $post_id ): bool {
-		$post = get_post( $post_id );
-		return $post instanceof \WP_Post && 'publish' === $post->post_status;
-	}
-
-	/**
-	 * Reviews where the current user is the reviewer (primary or via Pro's
-	 * multi-reviewer roster — `participant_user_id` runs the same filter
-	 * Pro hooks for participation lookups). Excludes the user's own
-	 * requests so an item never appears twice across the two sections.
-	 *
-	 * @param string[] $statuses
-	 * @return array<int,object>
-	 */
 	/**
 	 * Site-wide admin notice surfacing pending reviews assigned to the viewer.
 	 * Suppressed on the Flow Dashboard itself (the viewer is already there) and on
@@ -580,7 +1037,7 @@ class Dashboard_Page {
 		$out = [];
 		foreach ( $statuses as $status ) {
 			foreach (
-				self::fetch_all_pages(
+				Dashboard_Rows::fetch_all(
 					[
 						'participant_user_id' => $user_id,
 						'status'              => $status,
@@ -594,66 +1051,6 @@ class Dashboard_Page {
 			}
 		}
 		return self::strip_orphans_and_sort( array_values( $out ) );
-	}
-
-	/**
-	 * Open Review is a Pro feature — when it's disabled the section never
-	 * appears. The roster is global (not user-scoped): any logged-in user
-	 * can see reviews that have been opened to "anyone with the link",
-	 * including the requester who shared the link in the first place
-	 * (their open reviews are now stripped from "My review requests" by
-	 * `fetch_my_requests`, so this is the one and only surface for them).
-	 *
-	 * @return array<int,object>
-	 */
-	private static function fetch_open_reviews( int $user_id ): array {
-		unset( $user_id );
-		if ( ! Review::is_open_review_feature_available() ) {
-			return [];
-		}
-		return self::strip_orphans_and_sort(
-			self::fetch_all_pages(
-				[
-					'is_open'    => true,
-					'unassigned' => true,
-				]
-			)
-		);
-	}
-
-	/**
-	 * `DB::get_reviews()` clamps `per_page` to 100 internally, so to support
-	 * personal dashboards with more than 100 outstanding items we walk pages
-	 * until a batch returns short.
-	 *
-	 * @param array<string,mixed> $args
-	 * @return array<int,object>
-	 */
-	private static function fetch_all_pages( array $args ): array {
-		$out         = [];
-		$page        = 1;
-		$batch_count = 0;
-		do {
-			$batch = DB::get_reviews(
-				array_merge(
-					[
-						'orderby' => 'updated_at',
-						'order'   => 'DESC',
-					],
-					$args,
-					[
-						'per_page' => self::PAGE_BATCH,
-						'page'     => $page,
-					]
-				)
-			);
-			foreach ( $batch as $row ) {
-				$out[] = $row;
-			}
-			$batch_count = count( $batch );
-			++$page;
-		} while ( self::PAGE_BATCH === $batch_count );
-		return $out;
 	}
 
 	/**
@@ -690,33 +1087,11 @@ class Dashboard_Page {
 	}
 
 	/**
-	 * @param array<int,object> $reviews
-	 * @param bool              $show_edit_link Whether each row exposes an Edit link.
-	 * @param string            $extra_info     One of '' | 'author' | 'reviewers'. Appended to the meta line.
-	 */
-	private static function render_section( string $slug, string $heading, string $description, array $reviews, bool $show_edit_link = false, string $extra_info = '' ): void {
-		$items = [];
-		foreach ( $reviews as $review ) {
-			$item = self::item_data( $review, $show_edit_link, $extra_info );
-			if ( null !== $item ) {
-				$items[] = $item;
-			}
-		}
-		Dashboard_List_Renderer::section(
-			$slug,
-			$heading,
-			$items,
-			[
-				'page'        => true,
-				'description' => $description,
-			]
-		);
-	}
-
-	/**
+	 * A self-review row: the page, its type, when it last changed.
+	 *
 	 * @return array<string,mixed>|null Null when the post is gone.
 	 */
-	private static function item_data( object $review, bool $show_edit_link, string $extra_info ): ?array {
+	private static function self_review_item( object $review ): ?array {
 		$post = get_post( (int) $review->post_id );
 		if ( ! $post instanceof \WP_Post ) {
 			return null;
@@ -728,69 +1103,22 @@ class Dashboard_Page {
 		);
 		$status = (string) Review::display_status( $review );
 
-		$meta  = [ esc_html( Dashboard_List_Renderer::post_type_label( $post ) ) ];
-		$extra = self::compute_extra_meta_html( $extra_info, $review, $post );
-		if ( '' !== $extra ) {
-			$meta[] = $extra;
-		}
+		$meta     = [ esc_html( Dashboard_List_Renderer::post_type_label( $post ) ) ];
 		$relative = Dashboard_List_Renderer::relative_time( $review->updated_at ?? null );
 		if ( '' !== $relative ) {
 			$meta[] = esc_html( $relative );
 		}
 
-		// Edit link is opt-in per section (only "My review requests").
-		$edit_url = ( $show_edit_link && current_user_can( 'edit_post', (int) $review->post_id ) )
-			? (string) get_edit_post_link( (int) $review->post_id, '' )
-			: '';
-
 		return [
 			'title'        => Dashboard_List_Renderer::post_title( $post ),
 			'url'          => Review::get_preview_url( (int) $review->id, $rev_id, (int) $review->post_id ),
 			'meta'         => $meta,
-			'edit_url'     => $edit_url,
+			'edit_url'     => current_user_can( 'edit_post', (int) $review->post_id )
+				? (string) get_edit_post_link( (int) $review->post_id, '' )
+				: '',
 			'status_key'   => $status,
 			'status_label' => Review::status_label( $status ),
 		];
-	}
-
-	/**
-	 * Build the extra-meta HTML fragment (already escaped). For 'author' returns
-	 * "by Jane Doe"; for 'reviewers' returns "Reviewer: Jane" / "Reviewers: Jane,
-	 * John, Mira". Caller embeds the return value directly inside the meta line,
-	 * NOT through `esc_html`.
-	 */
-	private static function compute_extra_meta_html( string $kind, object $review, \WP_Post $post ): string {
-		if ( 'author' === $kind ) {
-			$author = get_userdata( (int) $post->post_author );
-			if ( ! $author instanceof \WP_User ) {
-				return '';
-			}
-			return sprintf(
-				/* translators: %s: author display name. */
-				esc_html__( 'by %s', 'jumplinks-editorial-workflow' ),
-				esc_html( $author->display_name )
-			);
-		}
-		if ( 'reviewers' === $kind ) {
-			$ids = [];
-			if ( (int) ( $review->reviewer_id ?? 0 ) > 0 ) {
-				$ids[] = (int) $review->reviewer_id;
-			}
-			$ids   = array_values(
-				array_unique(
-					array_map( 'intval', (array) apply_filters( 'flow_ew_review_reviewer_ids', $ids, $review ) )
-				)
-			);
-			$names = [];
-			foreach ( $ids as $uid ) {
-				$user = get_userdata( $uid );
-				if ( $user instanceof \WP_User ) {
-					$names[] = esc_html( $user->display_name );
-				}
-			}
-			return Dashboard_List_Renderer::reviewers_meta( $names );
-		}
-		return '';
 	}
 
 	/**

@@ -294,6 +294,26 @@
 		width: min(380px, calc(100vw - 24px));
 	}
 
+	// Same yellow wash as the text flash, on the form itself, when the
+	// reviewer highlights some other passage without closing the draft.
+	&--pointed &__editor-wrap {
+		animation: flow-ew-popover-point 0.7s ease;
+	}
+
+	@keyframes flow-ew-popover-point {
+		0% {
+			box-shadow:
+				0 0 0 3px rgba(255, 212, 59, 0.95),
+				0 4px 16px rgba(0, 0, 0, 0.15);
+		}
+
+		100% {
+			box-shadow:
+				0 0 0 0 rgba(255, 212, 59, 0),
+				0 4px 16px rgba(0, 0, 0, 0.15);
+		}
+	}
+
 	&__editor-wrap {
 		$pe-border: #1d2327;
 		$pe-accent: var(--wp-admin-theme-color, #007cba);
@@ -626,6 +646,11 @@
 		}
 	}
 
+	// Pointing up into the flag, the caret takes the flag's colour.
+	&--flagged:not(&--above) &__caret::after {
+		border-bottom-color: #fff6cc;
+	}
+
 	// When the popover doesn't fit below the mark, it flips above. The card
 	// renders first via `flex-direction: column-reverse`, the caret slides to
 	// the bottom and points down toward the mark.
@@ -696,6 +721,49 @@
 	&__header {
 		margin-bottom: 6px;
 		padding-right: 56px;
+	}
+
+	// The card's 14px padding, so the actions keep their corner below the flag.
+	&__card-body {
+		position: relative;
+	}
+
+	&__card-body > &__header-actions {
+		top: -6px;
+		right: -6px;
+	}
+
+	// Same banner as an outdated or other-device comment in the sidebar.
+	&__flag {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) 20px;
+		column-gap: 8px;
+		align-items: center;
+		margin: -14px -14px 12px;
+		padding: 10px 16px;
+		border-radius: 6px 6px 0 0;
+		background: #fff6cc;
+		color: #7a5a00;
+		font-size: 11px;
+		font-weight: 600;
+		line-height: 1.5;
+
+		.flow-inline-anchor__hint {
+			grid-column: 1;
+		}
+
+		.flow-inline-anchor__alert {
+			display: inline-flex;
+			grid-column: 2;
+			color: #7a5a00;
+
+			svg {
+				display: block;
+				width: 20px;
+				height: 20px;
+				fill: currentColor;
+			}
+		}
 	}
 
 	&__header-actions {
@@ -936,6 +1004,21 @@
 		svg,
 		.components-button__icon {
 			margin-right: 0 !important;
+		}
+	}
+
+	// Same yellow as the sidebar's "View original" and the outdated banner.
+	&__issue-btn.components-button.has-icon.has-text {
+		color: $badge-review-text !important;
+
+		svg {
+			fill: currentColor;
+		}
+
+		&:hover:not(:disabled),
+		&:focus-visible:not(:disabled) {
+			background: $badge-review-bg !important;
+			color: $badge-review-text !important;
 		}
 	}
 

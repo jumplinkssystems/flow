@@ -482,29 +482,21 @@ textarea {
 
 	&__btn--request-changes.components-button {
 		background: transparent !important;
-		border: 1px solid #1e1e1e !important;
-		color: #1e1e1e !important;
+		border: 1px solid #d63638 !important;
+		color: #d63638 !important;
 		box-shadow: none !important;
 
 		&:hover:not(:disabled),
 		&:active:not(:disabled) {
-			background: #f6f7f7 !important;
-			border-color: #1e1e1e !important;
-			color: #1e1e1e !important;
+			background: #fcf0f1 !important;
+			border-color: #b32d2e !important;
+			color: #b32d2e !important;
 		}
 
 		&:focus:not(:disabled) {
 			box-shadow: 0 0 0 var(--wp-admin-border-width-focus, 2px) #fff,
-				0 0 0 calc(var(--wp-admin-border-width-focus, 2px) + 1px) #1e1e1e !important;
+				0 0 0 calc(var(--wp-admin-border-width-focus, 2px) + 1px) #d63638 !important;
 			outline: 1px solid transparent;
-		}
-
-		&:disabled,
-		&[aria-disabled='true'] {
-			background: #f6f7f7 !important;
-			border-color: #ddd !important;
-			color: #8c8f94 !important;
-			opacity: 1 !important;
 		}
 	}
 
